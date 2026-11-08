@@ -1,11 +1,12 @@
 import { createServer, type IncomingMessage, type ServerResponse } from 'http';
 import { createHash, randomBytes, scryptSync, timingSafeEqual } from 'crypto';
-import { copyFileSync, existsSync, mkdirSync, readFileSync, readdirSync, renameSync, unlinkSync, writeFileSync } from 'fs';
+import { existsSync, mkdirSync, readFileSync, renameSync, unlinkSync, writeFileSync } from 'fs';
 import { join } from 'path';
 import { Server, Room, Client } from '@colyseus/core';
 import { WebSocketTransport } from '@colyseus/ws-transport';
 import { Schema, type } from '@colyseus/schema';
 import { Player } from './PlayerSchema.js';
+import { createPlayerSaveStore } from './playerSaves.js';
 
 const ONLINE_PLAYERS = new Map<string, Player>();
 const ONLINE_CLIENTS = new Map<string, Client>();
@@ -16,6 +17,7 @@ const FRIEND_REQUESTS = new Map<string,Set<string>>();
 // Administrative commands are disabled unless the server operator explicitly allowlists player IDs.
 const DATA_DIR = join(process.cwd(), 'data');
 const SAVE_FILE = join(DATA_DIR, 'players.json');
+const { loadPlayers, savePlayers } = createPlayerSaveStore(SAVE_FILE, DATA_DIR);
 const CLAN_FILE = join(DATA_DIR, 'clans.json');
 const AUCTION_FILE = join(DATA_DIR, 'auction.json');
 const AUCTION_HISTORY_FILE = join(DATA_DIR, 'auction_history.json');
@@ -670,41 +672,6 @@ class GameRoom extends Room<RoomState> {
   }
 }
 function safeId(v:any){return String(v||'').replace(/[^a-zA-Z0-9_-]/g,'').slice(0,64)||`guest_${Date.now()}`;}
-function loadPlayers():Record<string,any>{
-  if(!existsSync(SAVE_FILE))return {};
-  let raw:string;
-  try{raw=readFileSync(SAVE_FILE,'utf8');}
-  catch{throw new Error('Файл сохранений players.json существует, но его не удалось прочитать. Запись остановлена, исходный файл сохранён.');}
-  let parsed:any;
-  try{parsed=JSON.parse(raw);}
-  catch{throw new Error('Файл сохранений players.json содержит некорректный JSON. Запись остановлена, исходный файл сохранён.');}
-  if(!parsed||typeof parsed!=='object'||Array.isArray(parsed))throw new Error('Файл сохранений players.json имеет неверный формат: ожидался объект игроков. Запись остановлена.');
-  for(const [id,player] of Object.entries(parsed)){
-    if(!player||typeof player!=='object'||Array.isArray(player))throw new Error('Запись игрока '+id+' в players.json имеет неверный формат. Запись остановлена.');
-  }
-  return parsed as Record<string,any>;
-}
-function savePlayers(all:Record<string,any>){
-  if(existsSync(SAVE_FILE)){
-    const suffix=new Date().toISOString().replace(/[:.]/g,'-')+'.'+process.pid+'.'+randomBytes(4).toString('hex');
-    const backupFile=SAVE_FILE+'.'+suffix+'.bak';
-    const backupTemp=backupFile+'.tmp';
-    try{
-      copyFileSync(SAVE_FILE,backupTemp);
-      renameSync(backupTemp,backupFile);
-    }catch{
-      try{if(existsSync(backupTemp))unlinkSync(backupTemp);}catch{}
-      throw new Error('Не удалось создать резервную копию players.json. Сохранение отменено; исходный файл не изменён.');
-    }
-    try{
-      const backups=readdirSync(DATA_DIR).filter(name=>/^players\.json\..+\.bak$/.test(name)).sort();
-      for(const old of backups.slice(0,Math.max(0,backups.length-5))){
-        try{unlinkSync(join(DATA_DIR,old));}catch{}
-      }
-    }catch{}
-  }
-  writeJsonAtomic(SAVE_FILE,all);
-}
 function persistPlayer(p:Player){if(!p?.id)return;const all=loadPlayers();all[p.id]=p.toJSON();savePlayers(all);}
 function loadClans():Record<string,any>{try{return JSON.parse(readFileSync(CLAN_FILE,'utf8'));}catch{return {};}}
 function saveClans(clans:Record<string,any>){writeJsonAtomic(CLAN_FILE,clans);}
