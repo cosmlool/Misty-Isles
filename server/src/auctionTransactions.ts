@@ -69,7 +69,8 @@ export function createAuctionTransactionStore(options: AuctionTransactionOptions
   function commit(snapshot: AuctionSnapshot) {
     recover();
     if (!snapshot.players || typeof snapshot.players !== 'object' || Array.isArray(snapshot.players)
-      || !Array.isArray(snapshot.auction) || !Array.isArray(snapshot.history)) {
+      || !Array.isArray(snapshot.auction) || !Array.isArray(snapshot.history)
+      || Object.values(snapshot.players).some((player: any) => !player || typeof player !== 'object' || Array.isArray(player))) {
       throw new Error('Refusing to commit an invalid auction transaction snapshot.');
     }
     const journal: Journal = { version: 1, snapshot };
