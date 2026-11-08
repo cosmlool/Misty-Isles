@@ -1,7 +1,7 @@
 import { createServer, type IncomingMessage, type ServerResponse } from 'http';
 import { createHash, randomBytes, scryptSync, timingSafeEqual } from 'crypto';
 import { existsSync, mkdirSync, readFileSync, renameSync, unlinkSync, writeFileSync } from 'fs';
-import { join } from 'path';
+import { isAbsolute, join, resolve } from 'path';
 import { Server, Room, Client } from '@colyseus/core';
 import { WebSocketTransport } from '@colyseus/ws-transport';
 import { Schema, type } from '@colyseus/schema';
@@ -17,7 +17,13 @@ const PLAYER_GROUP = new Map<string,string>();
 const GROUP_INVITES = new Map<string,string>();
 const FRIEND_REQUESTS = new Map<string,Set<string>>();
 // Administrative commands are disabled unless the server operator explicitly allowlists player IDs.
-const DATA_DIR = join(process.cwd(), 'data');
+// Tests may point the server at an isolated directory. The default remains the
+// existing ./data directory so normal deployments keep their current behavior.
+const configuredDataDir = process.env.MISTY_DATA_DIR?.trim();
+if (configuredDataDir && !isAbsolute(configuredDataDir)) {
+  throw new Error('MISTY_DATA_DIR must be an absolute path.');
+}
+const DATA_DIR = resolve(configuredDataDir || join(process.cwd(), 'data'));
 const SAVE_FILE = join(DATA_DIR, 'players.json');
 const CLAN_FILE = join(DATA_DIR, 'clans.json');
 const AUCTION_FILE = join(DATA_DIR, 'auction.json');
@@ -707,4 +713,7 @@ function labelForActivity(encounter:string){return encounter==='boss'?'Побе�
 function monsterName(id:string){return ({mistwood:'Лесной слизень',whisper:'Волк-шептун',ruins:'Страж руин',marsh:'Топяной охотник',crystal:'Кристальный голем',frontier:'Пепельный воин',abyss:'Порождение Бездны',sanctum:'Страж святилища',sunken:'Садовый краб',stormcliffs:'Грозовой грифон',embermine:'Шахтный громила',moonfen:'Лунный блуждающий',eclipse:'Затменный автоматон'} as Record<string,string>)[id]||'монстр';}
 function rareMonsterName(id:string){return ({mistwood:'Серебряный лесной альфа',whisper:'Волк безмолвной луны',ruins:'Рунный палач',marsh:'Болотная ведьма',crystal:'Резонансный голем',frontier:'Пепельный дуэлянт',abyss:'Безликий охотник',sanctum:'Изгнанный хранитель',sunken:'Жемчужный ловец',stormcliffs:'Громокрыл',embermine:'Угольный пожиратель',moonfen:'Лунный двойник',eclipse:'Затменный прорицатель'} as Record<string,string>)[id]||'редкий странник';}
 function bossName(id:string){return ({mistwood:'Древний корень-колосс',whisper:'Вожак стаи Тихого крика',ruins:'Архивариус руин',marsh:'Матриарх чёрных топей',crystal:'Кристальный титан',frontier:'Генерал пепельного легиона',abyss:'Пожиратель тумана',sanctum:'Первый хранитель',sunken:'Затонувший король',stormcliffs:'Король грозовых крыльев',embermine:'Древний угольный исполин',moonfen:'Владыка лунного марева',eclipse:'Оракул затмения'} as Record<string,string>)[id]||'древний босс';}
-const httpServer=createServer(authHttpHandler);const gameServer=new Server({transport:new WebSocketTransport({server:httpServer})});gameServer.define('my_room',GameRoom);gameServer.listen(2567).then(()=>console.log('RPG server listening on :2567'));
+const httpServer=createServer(authHttpHandler);const gameServer=new Server({transport:new WebSocketTransport({server:httpServer})});gameServer.define('my_room',GameRoom);
+const PORT = Number(process.env.MISTY_PORT || 2567);
+if (!Number.isInteger(PORT) || PORT < 0 || PORT > 65535) throw new Error('MISTY_PORT must be a valid TCP port.');
+gameServer.listen(PORT).then(()=>console.log('RPG server listening on :' + PORT));
