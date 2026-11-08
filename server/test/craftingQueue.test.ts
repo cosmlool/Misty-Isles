@@ -27,3 +27,49 @@ test('rejects malformed material quantities and oversized refunds', () => {
   assert.equal(refundCraftMaterials([], { materials: { ash_ore: 1001 } }).refunded, false);
   assert.equal(refundCraftMaterials([], { materials: ['ash_ore'] }).refunded, false);
 });
+
+import { claimCraftJob, startCraftJob } from '../src/craftingQueue.js';
+
+test('starting a craft job consumes the exact recipe materials and stores a refund snapshot', () => {
+  const started = startCraftJob({
+    inventory: ['herb', 'herb', 'ore', 'wood'],
+    queue: [],
+    materials: { herb: 2, ore: 1 },
+    job: { id: 'job-1', output: 'potion', count: 2, finishAt: 500 },
+  });
+  assert.deepEqual(started.inventory, ['wood']);
+  assert.deepEqual(started.queue[0].materials, { herb: 2, ore: 1 });
+  assert.deepEqual(startCraftJob({ ...started, materials: { wood: 1 }, job: { id: 'job-2', output: 'ring', count: 1, finishAt: 600 } }).inventory, []);
+});
+
+test('craft start refuses missing materials and a full queue without changing input arrays', () => {
+  const inventory = ['herb'];
+  const queue = [{ id: 'existing-1', output: 'potion', count: 1, finishAt: 100 }];
+  assert.throws(() => startCraftJob({ inventory, queue, materials: { herb: 2 }, job: { id: 'job', output: 'potion', count: 1, finishAt: 200 } }), /Missing craft material/);
+  assert.throws(() => startCraftJob({ inventory, queue: [ ...queue, ...queue, ...queue ], materials: { herb: 1 }, job: { id: 'job', output: 'potion', count: 1, finishAt: 200 } }), /queue is full/);
+  assert.deepEqual(inventory, ['herb']);
+  assert.equal(queue.length, 1);
+});
+
+test('claiming a completed job grants its output once and removes the job', () => {
+  const queue = [{ id: 'job-1', output: 'potion', count: 2, finishAt: 100 }];
+  const result = claimCraftJob({ inventory: ['ore'], queue, jobId: 'job-1', now: 100 });
+  assert.deepEqual(result.inventory, ['ore', 'potion', 'potion']);
+  assert.equal(result.queue.length, 0);
+  assert.equal(result.outputCount, 2);
+  assert.throws(() => claimCraftJob({ inventory: result.inventory, queue: result.queue, jobId: 'job-1', now: 101 }), /not found/);
+});
+
+test('claiming a blocked unique output refunds exact stored materials instead of losing them', () => {
+  const queue = [{ id: 'job-1', output: 'unique_amulet', count: 1, finishAt: 100, materials: { ore: 2, gem: 1 } }];
+  const result = claimCraftJob({ inventory: ['wood'], queue, jobId: 'job-1', now: 100, uniqueConflict: true });
+  assert.deepEqual(result.inventory, ['wood', 'ore', 'ore', 'gem']);
+  assert.equal(result.queue.length, 0);
+  assert.equal(result.refunded, true);
+});
+
+test('blocked unique output with unknown legacy materials remains queued for manual review', () => {
+  const queue = [{ id: 'job-1', output: 'unique_amulet', count: 1, finishAt: 100 }];
+  assert.throws(() => claimCraftJob({ inventory: ['wood'], queue, jobId: 'job-1', now: 100, uniqueConflict: true }), /job retained/);
+  assert.equal(queue.length, 1);
+});
