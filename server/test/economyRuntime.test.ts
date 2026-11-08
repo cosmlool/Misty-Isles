@@ -151,11 +151,11 @@ test('live Colyseus auction flows preserve both players through disconnect and s
     const withdrawalLot = readJson(join(dataDir, 'auction.json'))[0];
     sellerAgain.room.send('auctionCancel', { id: withdrawalLot.id });
     await waitFor(() => readJson(join(dataDir, 'auction.json')).length === 0
-      && JSON.parse(readJson(join(dataDir, 'players.json'))[sellerId].inventory).includes('health_potion'), 'withdrawal to return the item');
+      && JSON.parse(readJson(join(dataDir, 'players.json'))[sellerId].inventory).includes('WPN-C-004'), 'withdrawal to return the item');
 
     saved = readJson(join(dataDir, 'players.json'));
     assert.equal(saved[sellerId].gold, 1463, 'withdrawal does not refund the listing fee');
-    assert.deepEqual(JSON.parse(saved[sellerId].inventory), ['health_potion']);
+    assert.deepEqual(JSON.parse(saved[sellerId].inventory), ['WPN-C-004']);
 
     await Promise.all(rooms.map(room => room.leave().catch(() => undefined)));
     rooms.length = 0;
@@ -173,8 +173,8 @@ test('live Colyseus auction flows preserve both players through disconnect and s
     saved = readJson(join(dataDir, 'players.json'));
     assert.equal(saved[buyerId].gold, 1500);
     assert.equal(saved[sellerId].gold, 1463);
-    assert.deepEqual(JSON.parse(saved[buyerId].inventory), ['wood_sword']);
-    assert.deepEqual(JSON.parse(saved[sellerId].inventory), ['health_potion']);
+    assert.deepEqual(JSON.parse(saved[buyerId].inventory), ['WPN-C-001']);
+    assert.deepEqual(JSON.parse(saved[sellerId].inventory), ['WPN-C-004']);
     assert.equal(readJson(join(dataDir, 'auction.json')).length, 0);
   } finally {
     await Promise.all(rooms.map(room => room.leave().catch(() => undefined)));
