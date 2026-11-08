@@ -1,0 +1,65 @@
+name: Misty Isles Quality Gate
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: misty-isles-quality-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  data-and-project-audit:
+    name: Data, docs and project structure
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Audit project data and required files
+        run: node tools/qa-audit.mjs
+
+  client-build:
+    name: Client TypeScript and Vite build
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: client/package-lock.json
+      - name: Install locked client dependencies
+        run: npm ci --no-audit --no-fund
+        working-directory: client
+      - name: Verify assets, manifest and production build
+        run: npm run verify:project
+        working-directory: client
+
+  server-build:
+    name: Server TypeScript build
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: server/package-lock.json
+      - name: Install locked server dependencies
+        run: npm ci --no-audit --no-fund
+        working-directory: server
+      - name: Compile server
+        run: npm run build
+        working-directory: server

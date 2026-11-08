@@ -1,0 +1,972 @@
+{
+  "schemaVersion": 1,
+  "generatedFor": "Misty Isles Stage 7",
+  "items": [
+    {
+      "id": "abyss_armor",
+      "path": "/assets/items/by-id/abyss_armor.svg",
+      "format": "svg"
+    },
+    {
+      "id": "abyss_shard",
+      "path": "/assets/items/by-id/abyss_shard.svg",
+      "format": "svg"
+    },
+    {
+      "id": "amulet_accuracy",
+      "path": "/assets/items/by-id/amulet_accuracy.svg",
+      "format": "svg"
+    },
+    {
+      "id": "amulet_bloodtide",
+      "path": "/assets/items/by-id/amulet_bloodtide.svg",
+      "format": "svg"
+    },
+    {
+      "id": "amulet_cinderheart",
+      "path": "/assets/items/by-id/amulet_cinderheart.svg",
+      "format": "svg"
+    },
+    {
+      "id": "amulet_crit",
+      "path": "/assets/items/by-id/amulet_crit.svg",
+      "format": "svg"
+    },
+    {
+      "id": "amulet_farseer",
+      "path": "/assets/items/by-id/amulet_farseer.svg",
+      "format": "svg"
+    },
+    {
+      "id": "amulet_fogcrown",
+      "path": "/assets/items/by-id/amulet_fogcrown.svg",
+      "format": "svg"
+    },
+    {
+      "id": "amulet_gold",
+      "path": "/assets/items/by-id/amulet_gold.svg",
+      "format": "svg"
+    },
+    {
+      "id": "amulet_goldvein",
+      "path": "/assets/items/by-id/amulet_goldvein.svg",
+      "format": "svg"
+    },
+    {
+      "id": "amulet_guard",
+      "path": "/assets/items/by-id/amulet_guard.svg",
+      "format": "svg"
+    },
+    {
+      "id": "amulet_health",
+      "path": "/assets/items/by-id/amulet_health.svg",
+      "format": "svg"
+    },
+    {
+      "id": "amulet_hunt",
+      "path": "/assets/items/by-id/amulet_hunt.svg",
+      "format": "svg"
+    },
+    {
+      "id": "amulet_luck",
+      "path": "/assets/items/by-id/amulet_luck.svg",
+      "format": "svg"
+    },
+    {
+      "id": "amulet_mining",
+      "path": "/assets/items/by-id/amulet_mining.svg",
+      "format": "svg"
+    },
+    {
+      "id": "amulet_miststep",
+      "path": "/assets/items/by-id/amulet_miststep.svg",
+      "format": "svg"
+    },
+    {
+      "id": "amulet_nightglass",
+      "path": "/assets/items/by-id/amulet_nightglass.svg",
+      "format": "svg"
+    },
+    {
+      "id": "amulet_oathstone",
+      "path": "/assets/items/by-id/amulet_oathstone.svg",
+      "format": "svg"
+    },
+    {
+      "id": "amulet_oldcompass",
+      "path": "/assets/items/by-id/amulet_oldcompass.svg",
+      "format": "svg"
+    },
+    {
+      "id": "amulet_phoenix",
+      "path": "/assets/items/by-id/amulet_phoenix.svg",
+      "format": "svg"
+    },
+    {
+      "id": "amulet_power",
+      "path": "/assets/items/by-id/amulet_power.svg",
+      "format": "svg"
+    },
+    {
+      "id": "amulet_saltward",
+      "path": "/assets/items/by-id/amulet_saltward.svg",
+      "format": "svg"
+    },
+    {
+      "id": "amulet_scholar",
+      "path": "/assets/items/by-id/amulet_scholar.svg",
+      "format": "svg"
+    },
+    {
+      "id": "amulet_stamina",
+      "path": "/assets/items/by-id/amulet_stamina.svg",
+      "format": "svg"
+    },
+    {
+      "id": "amulet_stormcore",
+      "path": "/assets/items/by-id/amulet_stormcore.svg",
+      "format": "svg"
+    },
+    {
+      "id": "amulet_treasure",
+      "path": "/assets/items/by-id/amulet_treasure.svg",
+      "format": "svg"
+    },
+    {
+      "id": "amulet_vamp",
+      "path": "/assets/items/by-id/amulet_vamp.svg",
+      "format": "svg"
+    },
+    {
+      "id": "amulet_wayfinder",
+      "path": "/assets/items/by-id/amulet_wayfinder.svg",
+      "format": "svg"
+    },
+    {
+      "id": "apprentice_staff",
+      "path": "/assets/items/by-id/apprentice_staff.svg",
+      "format": "svg"
+    },
+    {
+      "id": "arcane_staff",
+      "path": "/assets/items/by-id/arcane_staff.svg",
+      "format": "svg"
+    },
+    {
+      "id": "arcanist_robe",
+      "path": "/assets/items/by-id/arcanist_robe.svg",
+      "format": "svg"
+    },
+    {
+      "id": "arcanist_staff",
+      "path": "/assets/items/by-id/arcanist_staff.svg",
+      "format": "svg"
+    },
+    {
+      "id": "archive_tonic",
+      "path": "/assets/items/by-id/archive_tonic.svg",
+      "format": "svg"
+    },
+    {
+      "id": "armor_abysswalker",
+      "path": "/assets/items/by-id/armor_abysswalker.svg",
+      "format": "svg"
+    },
+    {
+      "id": "armor_ashweave",
+      "path": "/assets/items/by-id/armor_ashweave.svg",
+      "format": "svg"
+    },
+    {
+      "id": "armor_bastion",
+      "path": "/assets/items/by-id/armor_bastion.svg",
+      "format": "svg"
+    },
+    {
+      "id": "armor_glacier",
+      "path": "/assets/items/by-id/armor_glacier.svg",
+      "format": "svg"
+    },
+    {
+      "id": "armor_harborplate",
+      "path": "/assets/items/by-id/armor_harborplate.svg",
+      "format": "svg"
+    },
+    {
+      "id": "armor_lastdawn",
+      "path": "/assets/items/by-id/armor_lastdawn.svg",
+      "format": "svg"
+    },
+    {
+      "id": "armor_mossiron",
+      "path": "/assets/items/by-id/armor_mossiron.svg",
+      "format": "svg"
+    },
+    {
+      "id": "armor_starforged",
+      "path": "/assets/items/by-id/armor_starforged.svg",
+      "format": "svg"
+    },
+    {
+      "id": "armor_wayfarer",
+      "path": "/assets/items/by-id/armor_wayfarer.svg",
+      "format": "svg"
+    },
+    {
+      "id": "armor_windguard",
+      "path": "/assets/items/by-id/armor_windguard.svg",
+      "format": "svg"
+    },
+    {
+      "id": "ash_core",
+      "path": "/assets/items/by-id/ash_core.svg",
+      "format": "svg"
+    },
+    {
+      "id": "ash_ore",
+      "path": "/assets/items/by-id/ash_ore.svg",
+      "format": "svg"
+    },
+    {
+      "id": "assassin_blades",
+      "path": "/assets/items/by-id/assassin_blades.svg",
+      "format": "svg"
+    },
+    {
+      "id": "bird_bow",
+      "path": "/assets/items/by-id/bird_bow.svg",
+      "format": "svg"
+    },
+    {
+      "id": "bird_cloudcloak",
+      "path": "/assets/items/by-id/bird_cloudcloak.svg",
+      "format": "svg"
+    },
+    {
+      "id": "bird_stormbow",
+      "path": "/assets/items/by-id/bird_stormbow.svg",
+      "format": "svg"
+    },
+    {
+      "id": "bird_windfeather",
+      "path": "/assets/items/by-id/bird_windfeather.svg",
+      "format": "svg"
+    },
+    {
+      "id": "bronze_sword",
+      "path": "/assets/items/by-id/bronze_sword.svg",
+      "format": "svg"
+    },
+    {
+      "id": "buffer_mace",
+      "path": "/assets/items/by-id/buffer_mace.svg",
+      "format": "svg"
+    },
+    {
+      "id": "caravan_cleaver",
+      "path": "/assets/items/by-id/caravan_cleaver.svg",
+      "format": "svg"
+    },
+    {
+      "id": "cat_mooncrystal",
+      "path": "/assets/items/by-id/cat_mooncrystal.svg",
+      "format": "svg"
+    },
+    {
+      "id": "cat_moonstaff",
+      "path": "/assets/items/by-id/cat_moonstaff.svg",
+      "format": "svg"
+    },
+    {
+      "id": "cat_nightfang",
+      "path": "/assets/items/by-id/cat_nightfang.svg",
+      "format": "svg"
+    },
+    {
+      "id": "cat_silversilk",
+      "path": "/assets/items/by-id/cat_silversilk.svg",
+      "format": "svg"
+    },
+    {
+      "id": "crystal_amulet",
+      "path": "/assets/items/by-id/crystal_amulet.svg",
+      "format": "svg"
+    },
+    {
+      "id": "crystal_shard",
+      "path": "/assets/items/by-id/crystal_shard.svg",
+      "format": "svg"
+    },
+    {
+      "id": "dawn_charm",
+      "path": "/assets/items/by-id/dawn_charm.svg",
+      "format": "svg"
+    },
+    {
+      "id": "dawn_regalia",
+      "path": "/assets/items/by-id/dawn_regalia.svg",
+      "format": "svg"
+    },
+    {
+      "id": "deep_potion",
+      "path": "/assets/items/by-id/deep_potion.svg",
+      "format": "svg"
+    },
+    {
+      "id": "dog_fortressmail",
+      "path": "/assets/items/by-id/dog_fortressmail.svg",
+      "format": "svg"
+    },
+    {
+      "id": "dog_guardmace",
+      "path": "/assets/items/by-id/dog_guardmace.svg",
+      "format": "svg"
+    },
+    {
+      "id": "dog_ironmark",
+      "path": "/assets/items/by-id/dog_ironmark.svg",
+      "format": "svg"
+    },
+    {
+      "id": "dog_oathaxe",
+      "path": "/assets/items/by-id/dog_oathaxe.svg",
+      "format": "svg"
+    },
+    {
+      "id": "eclipse_lens",
+      "path": "/assets/items/by-id/eclipse_lens.svg",
+      "format": "svg"
+    },
+    {
+      "id": "faction_seal_caravan",
+      "path": "/assets/items/by-id/faction_seal_caravan.svg",
+      "format": "svg"
+    },
+    {
+      "id": "faction_seal_dawn",
+      "path": "/assets/items/by-id/faction_seal_dawn.svg",
+      "format": "svg"
+    },
+    {
+      "id": "faction_seal_lore",
+      "path": "/assets/items/by-id/faction_seal_lore.svg",
+      "format": "svg"
+    },
+    {
+      "id": "field_potion",
+      "path": "/assets/items/by-id/field_potion.svg",
+      "format": "svg"
+    },
+    {
+      "id": "freeblade",
+      "path": "/assets/items/by-id/freeblade.svg",
+      "format": "svg"
+    },
+    {
+      "id": "glow_mushroom",
+      "path": "/assets/items/by-id/glow_mushroom.svg",
+      "format": "svg"
+    },
+    {
+      "id": "greater_potion",
+      "path": "/assets/items/by-id/greater_potion.svg",
+      "format": "svg"
+    },
+    {
+      "id": "guardian_armor",
+      "path": "/assets/items/by-id/guardian_armor.svg",
+      "format": "svg"
+    },
+    {
+      "id": "health_potion",
+      "path": "/assets/items/by-id/health_potion.svg",
+      "format": "svg"
+    },
+    {
+      "id": "herb_bundle",
+      "path": "/assets/items/by-id/herb_bundle.svg",
+      "format": "svg"
+    },
+    {
+      "id": "herb_material",
+      "path": "/assets/items/by-id/herb_material.svg",
+      "format": "svg"
+    },
+    {
+      "id": "hunter_spear",
+      "path": "/assets/items/by-id/hunter_spear.svg",
+      "format": "svg"
+    },
+    {
+      "id": "iron_armor",
+      "path": "/assets/items/by-id/iron_armor.svg",
+      "format": "svg"
+    },
+    {
+      "id": "iron_scrap",
+      "path": "/assets/items/by-id/iron_scrap.svg",
+      "format": "svg"
+    },
+    {
+      "id": "leather_armor",
+      "path": "/assets/items/by-id/leather_armor.svg",
+      "format": "svg"
+    },
+    {
+      "id": "lore_circlet",
+      "path": "/assets/items/by-id/lore_circlet.svg",
+      "format": "svg"
+    },
+    {
+      "id": "mage_rod",
+      "path": "/assets/items/by-id/mage_rod.svg",
+      "format": "svg"
+    },
+    {
+      "id": "marsh_amber",
+      "path": "/assets/items/by-id/marsh_amber.svg",
+      "format": "svg"
+    },
+    {
+      "id": "mist_bloom",
+      "path": "/assets/items/by-id/mist_bloom.svg",
+      "format": "svg"
+    },
+    {
+      "id": "mistwarden_blade",
+      "path": "/assets/items/by-id/mistwarden_blade.svg",
+      "format": "svg"
+    },
+    {
+      "id": "mistwarden_charm",
+      "path": "/assets/items/by-id/mistwarden_charm.svg",
+      "format": "svg"
+    },
+    {
+      "id": "mistwarden_mail",
+      "path": "/assets/items/by-id/mistwarden_mail.svg",
+      "format": "svg"
+    },
+    {
+      "id": "moon_dust",
+      "path": "/assets/items/by-id/moon_dust.svg",
+      "format": "svg"
+    },
+    {
+      "id": "moon_silver",
+      "path": "/assets/items/by-id/moon_silver.svg",
+      "format": "svg"
+    },
+    {
+      "id": "mystery_chest",
+      "path": "/assets/items/by-id/mystery_chest.svg",
+      "format": "svg"
+    },
+    {
+      "id": "protection_seal",
+      "path": "/assets/items/by-id/protection_seal.svg",
+      "format": "svg"
+    },
+    {
+      "id": "ranger_bow",
+      "path": "/assets/items/by-id/ranger_bow.svg",
+      "format": "svg"
+    },
+    {
+      "id": "reinforced_leather",
+      "path": "/assets/items/by-id/reinforced_leather.svg",
+      "format": "svg"
+    },
+    {
+      "id": "reinforced_staff",
+      "path": "/assets/items/by-id/reinforced_staff.svg",
+      "format": "svg"
+    },
+    {
+      "id": "relic_fragment",
+      "path": "/assets/items/by-id/relic_fragment.svg",
+      "format": "svg"
+    },
+    {
+      "id": "rodent_bloodfang",
+      "path": "/assets/items/by-id/rodent_bloodfang.svg",
+      "format": "svg"
+    },
+    {
+      "id": "rodent_glowspore",
+      "path": "/assets/items/by-id/rodent_glowspore.svg",
+      "format": "svg"
+    },
+    {
+      "id": "rodent_relicpick",
+      "path": "/assets/items/by-id/rodent_relicpick.svg",
+      "format": "svg"
+    },
+    {
+      "id": "rodent_sporemail",
+      "path": "/assets/items/by-id/rodent_sporemail.svg",
+      "format": "svg"
+    },
+    {
+      "id": "rune_armor",
+      "path": "/assets/items/by-id/rune_armor.svg",
+      "format": "svg"
+    },
+    {
+      "id": "rune_blade",
+      "path": "/assets/items/by-id/rune_blade.svg",
+      "format": "svg"
+    },
+    {
+      "id": "rune_heart",
+      "path": "/assets/items/by-id/rune_heart.svg",
+      "format": "svg"
+    },
+    {
+      "id": "rune_shard",
+      "path": "/assets/items/by-id/rune_shard.svg",
+      "format": "svg"
+    },
+    {
+      "id": "runic_plate",
+      "path": "/assets/items/by-id/runic_plate.svg",
+      "format": "svg"
+    },
+    {
+      "id": "scale_mail",
+      "path": "/assets/items/by-id/scale_mail.svg",
+      "format": "svg"
+    },
+    {
+      "id": "shadow_blades",
+      "path": "/assets/items/by-id/shadow_blades.svg",
+      "format": "svg"
+    },
+    {
+      "id": "shadowstalker_armor",
+      "path": "/assets/items/by-id/shadowstalker_armor.svg",
+      "format": "svg"
+    },
+    {
+      "id": "shadowstalker_blades",
+      "path": "/assets/items/by-id/shadowstalker_blades.svg",
+      "format": "svg"
+    },
+    {
+      "id": "spoiler_hammer",
+      "path": "/assets/items/by-id/spoiler_hammer.svg",
+      "format": "svg"
+    },
+    {
+      "id": "spoiler_pick",
+      "path": "/assets/items/by-id/spoiler_pick.svg",
+      "format": "svg"
+    },
+    {
+      "id": "steel_armor",
+      "path": "/assets/items/by-id/steel_armor.svg",
+      "format": "svg"
+    },
+    {
+      "id": "steel_blade",
+      "path": "/assets/items/by-id/steel_blade.svg",
+      "format": "svg"
+    },
+    {
+      "id": "storm_feather",
+      "path": "/assets/items/by-id/storm_feather.svg",
+      "format": "svg"
+    },
+    {
+      "id": "sun_pearl",
+      "path": "/assets/items/by-id/sun_pearl.svg",
+      "format": "svg"
+    },
+    {
+      "id": "tempered_sword",
+      "path": "/assets/items/by-id/tempered_sword.svg",
+      "format": "svg"
+    },
+    {
+      "id": "trophy_abyss",
+      "path": "/assets/items/by-id/trophy_abyss.svg",
+      "format": "svg"
+    },
+    {
+      "id": "trophy_crystal",
+      "path": "/assets/items/by-id/trophy_crystal.svg",
+      "format": "svg"
+    },
+    {
+      "id": "trophy_eclipse",
+      "path": "/assets/items/by-id/trophy_eclipse.svg",
+      "format": "svg"
+    },
+    {
+      "id": "trophy_embermine",
+      "path": "/assets/items/by-id/trophy_embermine.svg",
+      "format": "svg"
+    },
+    {
+      "id": "trophy_frontier",
+      "path": "/assets/items/by-id/trophy_frontier.svg",
+      "format": "svg"
+    },
+    {
+      "id": "trophy_marsh",
+      "path": "/assets/items/by-id/trophy_marsh.svg",
+      "format": "svg"
+    },
+    {
+      "id": "trophy_mistwood",
+      "path": "/assets/items/by-id/trophy_mistwood.svg",
+      "format": "svg"
+    },
+    {
+      "id": "trophy_moonfen",
+      "path": "/assets/items/by-id/trophy_moonfen.svg",
+      "format": "svg"
+    },
+    {
+      "id": "trophy_ruins",
+      "path": "/assets/items/by-id/trophy_ruins.svg",
+      "format": "svg"
+    },
+    {
+      "id": "trophy_sanctum",
+      "path": "/assets/items/by-id/trophy_sanctum.svg",
+      "format": "svg"
+    },
+    {
+      "id": "trophy_stormcliffs",
+      "path": "/assets/items/by-id/trophy_stormcliffs.svg",
+      "format": "svg"
+    },
+    {
+      "id": "trophy_sunken",
+      "path": "/assets/items/by-id/trophy_sunken.svg",
+      "format": "svg"
+    },
+    {
+      "id": "trophy_whisper",
+      "path": "/assets/items/by-id/trophy_whisper.svg",
+      "format": "svg"
+    },
+    {
+      "id": "vampire_fang",
+      "path": "/assets/items/by-id/vampire_fang.svg",
+      "format": "svg"
+    },
+    {
+      "id": "vampire_scythe",
+      "path": "/assets/items/by-id/vampire_scythe.svg",
+      "format": "svg"
+    },
+    {
+      "id": "venom_gland",
+      "path": "/assets/items/by-id/venom_gland.svg",
+      "format": "svg"
+    },
+    {
+      "id": "warrior_axe",
+      "path": "/assets/items/by-id/warrior_axe.svg",
+      "format": "svg"
+    },
+    {
+      "id": "weapon_bellmace",
+      "path": "/assets/items/by-id/weapon_bellmace.svg",
+      "format": "svg"
+    },
+    {
+      "id": "weapon_bloodmoon",
+      "path": "/assets/items/by-id/weapon_bloodmoon.svg",
+      "format": "svg"
+    },
+    {
+      "id": "weapon_deepdelver",
+      "path": "/assets/items/by-id/weapon_deepdelver.svg",
+      "format": "svg"
+    },
+    {
+      "id": "weapon_emberstaff",
+      "path": "/assets/items/by-id/weapon_emberstaff.svg",
+      "format": "svg"
+    },
+    {
+      "id": "weapon_fogfang",
+      "path": "/assets/items/by-id/weapon_fogfang.svg",
+      "format": "svg"
+    },
+    {
+      "id": "weapon_frostcall",
+      "path": "/assets/items/by-id/weapon_frostcall.svg",
+      "format": "svg"
+    },
+    {
+      "id": "weapon_gale_needles",
+      "path": "/assets/items/by-id/weapon_gale_needles.svg",
+      "format": "svg"
+    },
+    {
+      "id": "weapon_moonedge",
+      "path": "/assets/items/by-id/weapon_moonedge.svg",
+      "format": "svg"
+    },
+    {
+      "id": "weapon_oathbreaker",
+      "path": "/assets/items/by-id/weapon_oathbreaker.svg",
+      "format": "svg"
+    },
+    {
+      "id": "weapon_ruinbreaker",
+      "path": "/assets/items/by-id/weapon_ruinbreaker.svg",
+      "format": "svg"
+    },
+    {
+      "id": "weapon_stormstring",
+      "path": "/assets/items/by-id/weapon_stormstring.svg",
+      "format": "svg"
+    },
+    {
+      "id": "weapon_tidebreaker",
+      "path": "/assets/items/by-id/weapon_tidebreaker.svg",
+      "format": "svg"
+    },
+    {
+      "id": "wind_feather",
+      "path": "/assets/items/by-id/wind_feather.svg",
+      "format": "svg"
+    },
+    {
+      "id": "wood_material",
+      "path": "/assets/items/by-id/wood_material.svg",
+      "format": "svg"
+    },
+    {
+      "id": "wood_sword",
+      "path": "/assets/items/by-id/wood_sword.svg",
+      "format": "svg"
+    }
+  ],
+  "locations": [
+    {
+      "id": "capital-birds",
+      "path": "/assets/locations/capital-birds.webp",
+      "format": "webp"
+    },
+    {
+      "id": "capital-cats",
+      "path": "/assets/locations/capital-cats.webp",
+      "format": "webp"
+    },
+    {
+      "id": "capital-dogs",
+      "path": "/assets/locations/capital-dogs.webp",
+      "format": "webp"
+    },
+    {
+      "id": "capital-rodents",
+      "path": "/assets/locations/capital-rodents.webp",
+      "format": "webp"
+    },
+    {
+      "id": "coast",
+      "path": "/assets/locations/coast.webp",
+      "format": "webp"
+    },
+    {
+      "id": "dungeon",
+      "path": "/assets/locations/dungeon.webp",
+      "format": "webp"
+    },
+    {
+      "id": "forest",
+      "path": "/assets/locations/forest.webp",
+      "format": "webp"
+    },
+    {
+      "id": "forge-interior",
+      "path": "/assets/locations/forge-interior.webp",
+      "format": "webp"
+    },
+    {
+      "id": "guild-interior",
+      "path": "/assets/locations/guild-interior.webp",
+      "format": "webp"
+    },
+    {
+      "id": "home-interior",
+      "path": "/assets/locations/home-interior.webp",
+      "format": "webp"
+    },
+    {
+      "id": "hunting-grounds",
+      "path": "/assets/locations/hunting-grounds.webp",
+      "format": "webp"
+    },
+    {
+      "id": "mountains",
+      "path": "/assets/locations/mountains.webp",
+      "format": "webp"
+    },
+    {
+      "id": "port",
+      "path": "/assets/locations/port.webp",
+      "format": "webp"
+    },
+    {
+      "id": "shop-interior",
+      "path": "/assets/locations/shop-interior.webp",
+      "format": "webp"
+    },
+    {
+      "id": "tavern-interior",
+      "path": "/assets/locations/tavern-interior.webp",
+      "format": "webp"
+    },
+    {
+      "id": "wasteland",
+      "path": "/assets/locations/wasteland.webp",
+      "format": "webp"
+    }
+  ],
+  "characters": [
+    {
+      "id": "boss-flame-dragon",
+      "path": "/assets/characters/boss-flame-dragon.webp",
+      "format": "webp"
+    },
+    {
+      "id": "boss-ice-giant",
+      "path": "/assets/characters/boss-ice-giant.webp",
+      "format": "webp"
+    },
+    {
+      "id": "boss-sea-leviathan",
+      "path": "/assets/characters/boss-sea-leviathan.webp",
+      "format": "webp"
+    },
+    {
+      "id": "monster-dragon",
+      "path": "/assets/characters/monster-dragon.webp",
+      "format": "webp"
+    },
+    {
+      "id": "monster-goblin",
+      "path": "/assets/characters/monster-goblin.webp",
+      "format": "webp"
+    },
+    {
+      "id": "monster-shadow-mage",
+      "path": "/assets/characters/monster-shadow-mage.webp",
+      "format": "webp"
+    },
+    {
+      "id": "monster-skeleton",
+      "path": "/assets/characters/monster-skeleton.webp",
+      "format": "webp"
+    },
+    {
+      "id": "monster-wolf",
+      "path": "/assets/characters/monster-wolf.webp",
+      "format": "webp"
+    },
+    {
+      "id": "npc-blacksmith",
+      "path": "/assets/characters/npc-blacksmith.webp",
+      "format": "webp"
+    },
+    {
+      "id": "npc-healer",
+      "path": "/assets/characters/npc-healer.webp",
+      "format": "webp"
+    },
+    {
+      "id": "npc-mentor",
+      "path": "/assets/characters/npc-mentor.webp",
+      "format": "webp"
+    },
+    {
+      "id": "npc-merchant",
+      "path": "/assets/characters/npc-merchant.webp",
+      "format": "webp"
+    },
+    {
+      "id": "race-bird",
+      "path": "/assets/characters/race-bird.webp",
+      "format": "webp"
+    },
+    {
+      "id": "race-cat",
+      "path": "/assets/characters/race-cat.webp",
+      "format": "webp"
+    },
+    {
+      "id": "race-dog",
+      "path": "/assets/characters/race-dog.webp",
+      "format": "webp"
+    },
+    {
+      "id": "race-rodent",
+      "path": "/assets/characters/race-rodent.webp",
+      "format": "webp"
+    }
+  ],
+  "illustrations": [
+    {
+      "id": "amulets-consumables",
+      "path": "/assets/illustrations/amulets-consumables.webp",
+      "format": "webp"
+    },
+    {
+      "id": "archipelago-map",
+      "path": "/assets/illustrations/archipelago-map.webp",
+      "format": "webp"
+    },
+    {
+      "id": "character-mage",
+      "path": "/assets/illustrations/character-mage.webp",
+      "format": "webp"
+    },
+    {
+      "id": "city-panel",
+      "path": "/assets/illustrations/city-panel.webp",
+      "format": "webp"
+    },
+    {
+      "id": "coastal-city",
+      "path": "/assets/illustrations/coastal-city.webp",
+      "format": "webp"
+    },
+    {
+      "id": "creature-catalog",
+      "path": "/assets/illustrations/creature-catalog.webp",
+      "format": "webp"
+    },
+    {
+      "id": "equipment-catalog",
+      "path": "/assets/illustrations/equipment-catalog.webp",
+      "format": "webp"
+    },
+    {
+      "id": "forest-region",
+      "path": "/assets/illustrations/forest-region.webp",
+      "format": "webp"
+    },
+    {
+      "id": "legendary-loot",
+      "path": "/assets/illustrations/legendary-loot.webp",
+      "format": "webp"
+    },
+    {
+      "id": "shop-texture",
+      "path": "/assets/illustrations/shop-texture.webp",
+      "format": "webp"
+    },
+    {
+      "id": "atlas-background",
+      "path": "/assets/illustrations/atlas-background.webp",
+      "format": "webp"
+    }
+  ]
+}

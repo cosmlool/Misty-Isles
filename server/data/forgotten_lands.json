@@ -1,0 +1,4083 @@
+{
+  "branchId": "forgotten_lands",
+  "branchName": "Забытые земли",
+  "searchSeconds": 900,
+  "travelSeconds": 1500,
+  "zones": [
+    {
+      "id": "el1",
+      "name": "Заросшая окраина",
+      "region": "Лесная окраина",
+      "minLevel": 1,
+      "maxLevel": 3,
+      "description": "Место первых экспедиций. Колючие заросли скрывают мелких хищников и гнёзда.",
+      "signatureDrop": "Лесная смола",
+      "index": 1,
+      "unlockAfter": 0,
+      "gatekeeperId": "FL-01-10",
+      "bossZone": false
+    },
+    {
+      "id": "el2",
+      "name": "Топкие низины",
+      "region": "Болота",
+      "minLevel": 3,
+      "maxLevel": 5,
+      "description": "Ядовитые лужи, споры и существа, приспособившиеся к вязкой воде.",
+      "signatureDrop": "Болотный хитин",
+      "index": 2,
+      "unlockAfter": 1,
+      "gatekeeperId": "FL-02-10",
+      "bossZone": false
+    },
+    {
+      "id": "el3",
+      "name": "Старый тракт",
+      "region": "Заброшенная дорога",
+      "minLevel": 5,
+      "maxLevel": 7,
+      "description": "Старый караванный путь, занятый мародёрами и наёмниками.",
+      "signatureDrop": "Дорожные жетоны",
+      "index": 3,
+      "unlockAfter": 2,
+      "gatekeeperId": "FL-03-10",
+      "bossZone": true
+    },
+    {
+      "id": "el4",
+      "name": "Гнилой перелесок",
+      "region": "Заражённый лес",
+      "minLevel": 7,
+      "maxLevel": 9,
+      "description": "Искажённые хищники, паразиты и корни, которые охотятся сами.",
+      "signatureDrop": "Споровая ткань",
+      "index": 4,
+      "unlockAfter": 3,
+      "gatekeeperId": "FL-04-10",
+      "bossZone": false
+    },
+    {
+      "id": "el5",
+      "name": "Каменные пустоши",
+      "region": "Скалистая местность",
+      "minLevel": 9,
+      "maxLevel": 12,
+      "description": "Тяжёлые каменные существа и быстрые пустошные охотники.",
+      "signatureDrop": "Гранитное ядро",
+      "index": 5,
+      "unlockAfter": 4,
+      "gatekeeperId": "FL-05-10",
+      "bossZone": false
+    },
+    {
+      "id": "el6",
+      "name": "Забытые фермы",
+      "region": "Заброшенные поселения",
+      "minLevel": 12,
+      "maxLevel": 15,
+      "description": "Одичавшие жители и заражённые животные вокруг пустых амбаров.",
+      "signatureDrop": "Заражённое зерно",
+      "index": 6,
+      "unlockAfter": 5,
+      "gatekeeperId": "FL-06-10",
+      "bossZone": true
+    },
+    {
+      "id": "el7",
+      "name": "Чёрные руины",
+      "region": "Древние строения",
+      "minLevel": 15,
+      "maxLevel": 18,
+      "description": "Рунические стражи и безмолвные служители древнего порядка.",
+      "signatureDrop": "Руническая пыль",
+      "index": 7,
+      "unlockAfter": 6,
+      "gatekeeperId": "FL-07-10",
+      "bossZone": false
+    },
+    {
+      "id": "el8",
+      "name": "Подземный спуск",
+      "region": "Пещеры",
+      "minLevel": 18,
+      "maxLevel": 21,
+      "description": "Глубинные хищники, кристальные существа и обитатели темноты.",
+      "signatureDrop": "Кристальное сердце",
+      "index": 8,
+      "unlockAfter": 7,
+      "gatekeeperId": "FL-08-10",
+      "bossZone": false
+    },
+    {
+      "id": "el9",
+      "name": "Долина костей",
+      "region": "Древнее поле битвы",
+      "minLevel": 21,
+      "maxLevel": 25,
+      "description": "Нежить и останки павшей армии под властью костяного короля.",
+      "signatureDrop": "Осколок души",
+      "index": 9,
+      "unlockAfter": 8,
+      "gatekeeperId": "FL-09-10",
+      "bossZone": true
+    },
+    {
+      "id": "el10",
+      "name": "Сердце забвения",
+      "region": "Древнее святилище",
+      "minLevel": 25,
+      "maxLevel": 30,
+      "description": "Источник проклятия Забытых земель и последний рубеж экспедиции.",
+      "signatureDrop": "Осколок забвения",
+      "index": 10,
+      "unlockAfter": 9,
+      "gatekeeperId": "FL-10-10",
+      "bossZone": true
+    }
+  ],
+  "monsters": [
+    {
+      "id": "FL-01-01",
+      "name": "Колючий ползун",
+      "zoneId": "el1",
+      "zoneIndex": 1,
+      "level": 1,
+      "hp": 45,
+      "attack": 6,
+      "defense": 1,
+      "speed": 5,
+      "rank": "normal",
+      "passiveName": "Колючая кожа",
+      "passiveDescription": "Лучник наносит на 15% меньше урона",
+      "weakness": "Маг +15%",
+      "xp": 18,
+      "gold": 5,
+      "drops": [
+        {
+          "id": "FLDROP-01-01-A",
+          "chance": 0.55
+        },
+        {
+          "id": "FLDROP-01-01-B",
+          "chance": 0.18
+        }
+      ],
+      "gatekeeper": false
+    },
+    {
+      "id": "FL-01-02",
+      "name": "Лесной крысолов",
+      "zoneId": "el1",
+      "zoneIndex": 1,
+      "level": 1,
+      "hp": 55,
+      "attack": 7,
+      "defense": 0,
+      "speed": 9,
+      "rank": "normal",
+      "passiveName": "Проворство",
+      "passiveDescription": "Убийца наносит на 15% меньше урона",
+      "weakness": "Лучник +10%",
+      "xp": 18,
+      "gold": 5,
+      "drops": [
+        {
+          "id": "FLDROP-01-02-A",
+          "chance": 0.55
+        },
+        {
+          "id": "FLDROP-01-02-B",
+          "chance": 0.18
+        }
+      ],
+      "gatekeeper": false
+    },
+    {
+      "id": "FL-01-03",
+      "name": "Грязевой слизень",
+      "zoneId": "el1",
+      "zoneIndex": 1,
+      "level": 1,
+      "hp": 70,
+      "attack": 5,
+      "defense": 3,
+      "speed": 2,
+      "rank": "normal",
+      "passiveName": "Слизь",
+      "passiveDescription": "На 20% меньше физического урона",
+      "weakness": "Маг +20%",
+      "xp": 18,
+      "gold": 5,
+      "drops": [
+        {
+          "id": "FLDROP-01-03-A",
+          "chance": 0.55
+        }
+      ],
+      "gatekeeper": false
+    },
+    {
+      "id": "FL-01-04",
+      "name": "Голодный короед",
+      "zoneId": "el1",
+      "zoneIndex": 1,
+      "level": 2,
+      "hp": 75,
+      "attack": 9,
+      "defense": 2,
+      "speed": 7,
+      "rank": "normal",
+      "passiveName": "Твёрдые челюсти",
+      "passiveDescription": "Защита +15%",
+      "weakness": "Маг +10%",
+      "xp": 36,
+      "gold": 10,
+      "drops": [
+        {
+          "id": "FLDROP-01-04-A",
+          "chance": 0.55
+        }
+      ],
+      "gatekeeper": false
+    },
+    {
+      "id": "FL-01-05",
+      "name": "Кустарниковый шакал",
+      "zoneId": "el1",
+      "zoneIndex": 1,
+      "level": 2,
+      "hp": 85,
+      "attack": 11,
+      "defense": 2,
+      "speed": 10,
+      "rank": "normal",
+      "passiveName": "Стая",
+      "passiveDescription": "Атака +10% при союзниках",
+      "weakness": "Лучник +10%",
+      "xp": 36,
+      "gold": 10,
+      "drops": [
+        {
+          "id": "FLDROP-01-05-A",
+          "chance": 0.55
+        },
+        {
+          "id": "FLDROP-01-05-B",
+          "chance": 0.18
+        }
+      ],
+      "gatekeeper": false
+    },
+    {
+      "id": "FL-01-06",
+      "name": "Болотная мошкара",
+      "zoneId": "el1",
+      "zoneIndex": 1,
+      "level": 2,
+      "hp": 60,
+      "attack": 8,
+      "defense": 1,
+      "speed": 12,
+      "rank": "normal",
+      "passiveName": "Лёгкое тело",
+      "passiveDescription": "Уклонение +15%",
+      "weakness": "Маг +10%",
+      "xp": 36,
+      "gold": 10,
+      "drops": [
+        {
+          "id": "FLDROP-01-06-A",
+          "chance": 0.55
+        }
+      ],
+      "gatekeeper": false
+    },
+    {
+      "id": "FL-01-07",
+      "name": "Старый лесной клещ",
+      "zoneId": "el1",
+      "zoneIndex": 1,
+      "level": 2,
+      "hp": 95,
+      "attack": 9,
+      "defense": 5,
+      "speed": 3,
+      "rank": "rare",
+      "passiveName": "Кровосос",
+      "passiveDescription": "Восстанавливает 5% нанесённого урона",
+      "weakness": "Маг +10%",
+      "xp": 48,
+      "gold": 16,
+      "drops": [
+        {
+          "id": "FLDROP-01-07-A",
+          "chance": 0.55
+        },
+        {
+          "id": "FLDROP-01-07-B",
+          "chance": 0.18
+        }
+      ],
+      "gatekeeper": false
+    },
+    {
+      "id": "FL-01-08",
+      "name": "Пятнистый хищник",
+      "zoneId": "el1",
+      "zoneIndex": 1,
+      "level": 3,
+      "hp": 110,
+      "attack": 14,
+      "defense": 3,
+      "speed": 11,
+      "rank": "rare",
+      "passiveName": "Засада",
+      "passiveDescription": "Первая атака +20%",
+      "weakness": "Воин +10%",
+      "xp": 72,
+      "gold": 24,
+      "drops": [
+        {
+          "id": "FLDROP-01-08-A",
+          "chance": 0.55
+        }
+      ],
+      "gatekeeper": false
+    },
+    {
+      "id": "FL-01-09",
+      "name": "Корневой сторож",
+      "zoneId": "el1",
+      "zoneIndex": 1,
+      "level": 3,
+      "hp": 150,
+      "attack": 12,
+      "defense": 8,
+      "speed": 2,
+      "rank": "elite",
+      "passiveName": "Древесная броня",
+      "passiveDescription": "Физический урон −25%",
+      "weakness": "Маг +20%",
+      "xp": 96,
+      "gold": 36,
+      "drops": [
+        {
+          "id": "FLDROP-01-09-A",
+          "chance": 0.7
+        },
+        {
+          "id": "FLDROP-01-09-B",
+          "chance": 0.18
+        }
+      ],
+      "gatekeeper": false
+    },
+    {
+      "id": "FL-01-10",
+      "name": "Матка колючих гнёзд",
+      "zoneId": "el1",
+      "zoneIndex": 1,
+      "level": 3,
+      "hp": 260,
+      "attack": 18,
+      "defense": 9,
+      "speed": 4,
+      "rank": "guardian",
+      "passiveName": "Материнская защита",
+      "passiveDescription": "Весь урон −20%; ниже 50% HP атака +20%",
+      "weakness": "Маг +25%",
+      "xp": 126,
+      "gold": 45,
+      "drops": [
+        {
+          "id": "FLDROP-01-10-A",
+          "chance": 1.0
+        },
+        {
+          "id": "FLDROP-01-10-B",
+          "chance": 0.18
+        }
+      ],
+      "gatekeeper": true
+    },
+    {
+      "id": "FL-02-01",
+      "name": "Трясинный жук",
+      "zoneId": "el2",
+      "zoneIndex": 2,
+      "level": 3,
+      "hp": 135,
+      "attack": 14,
+      "defense": 7,
+      "speed": 3,
+      "rank": "normal",
+      "passiveName": "Панцирь",
+      "passiveDescription": "Физический урон −20%",
+      "weakness": "Маг +15%",
+      "xp": 54,
+      "gold": 15,
+      "drops": [
+        {
+          "id": "FLDROP-02-01-A",
+          "chance": 0.55
+        }
+      ],
+      "gatekeeper": false
+    },
+    {
+      "id": "FL-02-02",
+      "name": "Ядовитая пиявка",
+      "zoneId": "el2",
+      "zoneIndex": 2,
+      "level": 3,
+      "hp": 115,
+      "attack": 15,
+      "defense": 4,
+      "speed": 6,
+      "rank": "normal",
+      "passiveName": "Кровосос",
+      "passiveDescription": "Восстанавливает 5% нанесённого урона",
+      "weakness": "Лучник +10%",
+      "xp": 54,
+      "gold": 15,
+      "drops": [
+        {
+          "id": "FLDROP-02-02-A",
+          "chance": 0.55
+        }
+      ],
+      "gatekeeper": false
+    },
+    {
+      "id": "FL-02-03",
+      "name": "Гнилостный слизень",
+      "zoneId": "el2",
+      "zoneIndex": 2,
+      "level": 3,
+      "hp": 160,
+      "attack": 12,
+      "defense": 9,
+      "speed": 2,
+      "rank": "normal",
+      "passiveName": "Слизистое тело",
+      "passiveDescription": "Физический урон −20%",
+      "weakness": "Маг +20%",
+      "xp": 54,
+      "gold": 15,
+      "drops": [
+        {
+          "id": "FLDROP-02-03-A",
+          "chance": 0.55
+        }
+      ],
+      "gatekeeper": false
+    },
+    {
+      "id": "FL-02-04",
+      "name": "Топкий падальщик",
+      "zoneId": "el2",
+      "zoneIndex": 2,
+      "level": 4,
+      "hp": 180,
+      "attack": 20,
+      "defense": 7,
+      "speed": 5,
+      "rank": "normal",
+      "passiveName": "Падальщик",
+      "passiveDescription": "Атака +15% против ослабленной цели",
+      "weakness": "Лучник +10%",
+      "xp": 72,
+      "gold": 20,
+      "drops": [
+        {
+          "id": "FLDROP-02-04-A",
+          "chance": 0.55
+        }
+      ],
+      "gatekeeper": false
+    },
+    {
+      "id": "FL-02-05",
+      "name": "Болотная гадюка",
+      "zoneId": "el2",
+      "zoneIndex": 2,
+      "level": 4,
+      "hp": 150,
+      "attack": 22,
+      "defense": 5,
+      "speed": 11,
+      "rank": "normal",
+      "passiveName": "Быстрый выпад",
+      "passiveDescription": "Первая атака +20%",
+      "weakness": "Воин +10%",
+      "xp": 72,
+      "gold": 20,
+      "drops": [
+        {
+          "id": "FLDROP-02-05-A",
+          "chance": 0.55
+        },
+        {
+          "id": "FLDROP-02-05-B",
+          "chance": 0.18
+        }
+      ],
+      "gatekeeper": false
+    },
+    {
+      "id": "FL-02-06",
+      "name": "Мохнатый трясун",
+      "zoneId": "el2",
+      "zoneIndex": 2,
+      "level": 4,
+      "hp": 210,
+      "attack": 19,
+      "defense": 10,
+      "speed": 4,
+      "rank": "normal",
+      "passiveName": "Густой мех",
+      "passiveDescription": "Урон лучника −15%",
+      "weakness": "Маг +15%",
+      "xp": 72,
+      "gold": 20,
+      "drops": [
+        {
+          "id": "FLDROP-02-06-A",
+          "chance": 0.55
+        }
+      ],
+      "gatekeeper": false
+    },
+    {
+      "id": "FL-02-07",
+      "name": "Плесневый клещ",
+      "zoneId": "el2",
+      "zoneIndex": 2,
+      "level": 4,
+      "hp": 190,
+      "attack": 17,
+      "defense": 8,
+      "speed": 6,
+      "rank": "rare",
+      "passiveName": "Споры",
+      "passiveDescription": "Лечение противника −10%",
+      "weakness": "Маг +15%",
+      "xp": 96,
+      "gold": 32,
+      "drops": [
+        {
+          "id": "FLDROP-02-07-A",
+          "chance": 0.55
+        }
+      ],
+      "gatekeeper": false
+    },
+    {
+      "id": "FL-02-08",
+      "name": "Туманная жаба",
+      "zoneId": "el2",
+      "zoneIndex": 2,
+      "level": 5,
+      "hp": 250,
+      "attack": 25,
+      "defense": 11,
+      "speed": 3,
+      "rank": "rare",
+      "passiveName": "Туманная кожа",
+      "passiveDescription": "Урон лучника −20%",
+      "weakness": "Маг +15%",
+      "xp": 120,
+      "gold": 40,
+      "drops": [
+        {
+          "id": "FLDROP-02-08-A",
+          "chance": 0.55
+        }
+      ],
+      "gatekeeper": false
+    },
+    {
+      "id": "FL-02-09",
+      "name": "Червь топких вод",
+      "zoneId": "el2",
+      "zoneIndex": 2,
+      "level": 5,
+      "hp": 320,
+      "attack": 24,
+      "defense": 15,
+      "speed": 2,
+      "rank": "elite",
+      "passiveName": "Подземный панцирь",
+      "passiveDescription": "Физический урон −25%",
+      "weakness": "Маг +20%",
+      "xp": 160,
+      "gold": 60,
+      "drops": [
+        {
+          "id": "FLDROP-02-09-A",
+          "chance": 0.7
+        }
+      ],
+      "gatekeeper": false
+    },
+    {
+      "id": "FL-02-10",
+      "name": "Болотный пожиратель",
+      "zoneId": "el2",
+      "zoneIndex": 2,
+      "level": 5,
+      "hp": 520,
+      "attack": 32,
+      "defense": 20,
+      "speed": 4,
+      "rank": "guardian",
+      "passiveName": "Пожирание",
+      "passiveDescription": "Восстанавливает 8% HP каждый второй раунд",
+      "weakness": "Маг +25%",
+      "xp": 210,
+      "gold": 75,
+      "drops": [
+        {
+          "id": "FLDROP-02-10-A",
+          "chance": 1.0
+        },
+        {
+          "id": "FLDROP-02-10-B",
+          "chance": 0.18
+        }
+      ],
+      "gatekeeper": true
+    },
+    {
+      "id": "FL-03-01",
+      "name": "Дорожный мародёр",
+      "zoneId": "el3",
+      "zoneIndex": 3,
+      "level": 5,
+      "hp": 250,
+      "attack": 26,
+      "defense": 9,
+      "speed": 7,
+      "rank": "normal",
+      "passiveName": "Грязная драка",
+      "passiveDescription": "Критический урон +10%",
+      "weakness": "Лучник +10%",
+      "xp": 90,
+      "gold": 25,
+      "drops": [
+        {
+          "id": "FLDROP-03-01-A",
+          "chance": 0.55
+        }
+      ],
+      "gatekeeper": false
+    },
+    {
+      "id": "FL-03-02",
+      "name": "Бродячий копейщик",
+      "zoneId": "el3",
+      "zoneIndex": 3,
+      "level": 5,
+      "hp": 230,
+      "attack": 28,
+      "defense": 11,
+      "speed": 6,
+      "rank": "normal",
+      "passiveName": "Длинное оружие",
+      "passiveDescription": "Урон +20% по быстрым целям",
+      "weakness": "Маг +10%",
+      "xp": 90,
+      "gold": 25,
+      "drops": [
+        {
+          "id": "FLDROP-03-02-A",
+          "chance": 0.55
+        }
+      ],
+      "gatekeeper": false
+    },
+    {
+      "id": "FL-03-03",
+      "name": "Разбитый щитоносец",
+      "zoneId": "el3",
+      "zoneIndex": 3,
+      "level": 5,
+      "hp": 300,
+      "attack": 20,
+      "defense": 18,
+      "speed": 3,
+      "rank": "normal",
+      "passiveName": "Щит",
+      "passiveDescription": "Урон лучника −25%",
+      "weakness": "Маг +20%",
+      "xp": 90,
+      "gold": 25,
+      "drops": [
+        {
+          "id": "FLDROP-03-03-A",
+          "chance": 0.55
+        }
+      ],
+      "gatekeeper": false
+    },
+    {
+      "id": "FL-03-04",
+      "name": "Псовый налётчик",
+      "zoneId": "el3",
+      "zoneIndex": 3,
+      "level": 6,
+      "hp": 290,
+      "attack": 32,
+      "defense": 10,
+      "speed": 10,
+      "rank": "normal",
+      "passiveName": "Стая",
+      "passiveDescription": "Атака +15% при союзниках",
+      "weakness": "Маг +10%",
+      "xp": 108,
+      "gold": 30,
+      "drops": [
+        {
+          "id": "FLDROP-03-04-A",
+          "chance": 0.55
+        }
+      ],
+      "gatekeeper": false
+    },
+    {
+      "id": "FL-03-05",
+      "name": "Трактовый стрелок",
+      "zoneId": "el3",
+      "zoneIndex": 3,
+      "level": 6,
+      "hp": 240,
+      "attack": 34,
+      "defense": 7,
+      "speed": 12,
+      "rank": "normal",
+      "passiveName": "Прицельный выстрел",
+      "passiveDescription": "Урон +20% по медленным целям",
+      "weakness": "Ассасин +10%",
+      "xp": 108,
+      "gold": 30,
+      "drops": [
+        {
+          "id": "FLDROP-03-05-A",
+          "chance": 0.55
+        },
+        {
+          "id": "FLDROP-03-05-B",
+          "chance": 0.18
+        }
+      ],
+      "gatekeeper": false
+    },
+    {
+      "id": "FL-03-06",
+      "name": "Грязевой головорез",
+      "zoneId": "el3",
+      "zoneIndex": 3,
+      "level": 6,
+      "hp": 330,
+      "attack": 31,
+      "defense": 14,
+      "speed": 4,
+      "rank": "normal",
+      "passiveName": "Грубая броня",
+      "passiveDescription": "Физический урон −15%",
+      "weakness": "Маг +15%",
+      "xp": 108,
+      "gold": 30,
+      "drops": [
+        {
+          "id": "FLDROP-03-06-A",
+          "chance": 0.55
+        }
+      ],
+      "gatekeeper": false
+    },
+    {
+      "id": "FL-03-07",
+      "name": "Сборщик долгов",
+      "zoneId": "el3",
+      "zoneIndex": 3,
+      "level": 6,
+      "hp": 310,
+      "attack": 30,
+      "defense": 13,
+      "speed": 8,
+      "rank": "rare",
+      "passiveName": "Алчность",
+      "passiveDescription": "Атака +10% при HP выше 75%",
+      "weakness": "Лучник +10%",
+      "xp": 144,
+      "gold": 48,
+      "drops": [
+        {
+          "id": "FLDROP-03-07-A",
+          "chance": 0.55
+        }
+      ],
+      "gatekeeper": false
+    },
+    {
+      "id": "FL-03-08",
+      "name": "Наёмник без знамени",
+      "zoneId": "el3",
+      "zoneIndex": 3,
+      "level": 7,
+      "hp": 420,
+      "attack": 38,
+      "defense": 18,
+      "speed": 8,
+      "rank": "rare",
+      "passiveName": "Закалка",
+      "passiveDescription": "Магический урон −15%",
+      "weakness": "Лучник +15%",
+      "xp": 168,
+      "gold": 56,
+      "drops": [
+        {
+          "id": "FLDROP-03-08-A",
+          "chance": 0.55
+        }
+      ],
+      "gatekeeper": false
+    },
+    {
+      "id": "FL-03-09",
+      "name": "Старый дорожный ветеран",
+      "zoneId": "el3",
+      "zoneIndex": 3,
+      "level": 7,
+      "hp": 480,
+      "attack": 36,
+      "defense": 23,
+      "speed": 5,
+      "rank": "elite",
+      "passiveName": "Контратака",
+      "passiveDescription": "После критического удара атака +15%",
+      "weakness": "Маг +15%",
+      "xp": 224,
+      "gold": 84,
+      "drops": [
+        {
+          "id": "FLDROP-03-09-A",
+          "chance": 0.7
+        }
+      ],
+      "gatekeeper": false
+    },
+    {
+      "id": "FL-03-10",
+      "name": "Ржавый капитан тракта",
+      "zoneId": "el3",
+      "zoneIndex": 3,
+      "level": 7,
+      "hp": 850,
+      "attack": 48,
+      "defense": 30,
+      "speed": 7,
+      "rank": "boss",
+      "passiveName": "Командир",
+      "passiveDescription": "Атака и защита +15% при союзниках",
+      "weakness": "Маг +20%",
+      "xp": 350,
+      "gold": 140,
+      "drops": [
+        {
+          "id": "FLDROP-03-10-A",
+          "chance": 1.0
+        },
+        {
+          "id": "FLDROP-03-10-B",
+          "chance": 0.18
+        }
+      ],
+      "gatekeeper": true
+    },
+    {
+      "id": "FL-04-01",
+      "name": "Гнилой волк",
+      "zoneId": "el4",
+      "zoneIndex": 4,
+      "level": 7,
+      "hp": 390,
+      "attack": 38,
+      "defense": 12,
+      "speed": 12,
+      "rank": "normal",
+      "passiveName": "Стая",
+      "passiveDescription": "Атака +15% при союзниках",
+      "weakness": "Лучник +10%",
+      "xp": 126,
+      "gold": 35,
+      "drops": [
+        {
+          "id": "FLDROP-04-01-A",
+          "chance": 0.55
+        },
+        {
+          "id": "FLDROP-04-01-B",
+          "chance": 0.18
+        }
+      ],
+      "gatekeeper": false
+    },
+    {
+      "id": "FL-04-02",
+      "name": "Споровый паук",
+      "zoneId": "el4",
+      "zoneIndex": 4,
+      "level": 7,
+      "hp": 360,
+      "attack": 35,
+      "defense": 14,
+      "speed": 9,
+      "rank": "normal",
+      "passiveName": "Споры",
+      "passiveDescription": "Лечение противника −10%",
+      "weakness": "Маг +15%",
+      "xp": 126,
+      "gold": 35,
+      "drops": [
+        {
+          "id": "FLDROP-04-02-A",
+          "chance": 0.55
+        }
+      ],
+      "gatekeeper": false
+    },
+    {
+      "id": "FL-04-03",
+      "name": "Лесной душитель",
+      "zoneId": "el4",
+      "zoneIndex": 4,
+      "level": 7,
+      "hp": 440,
+      "attack": 32,
+      "defense": 20,
+      "speed": 3,
+      "rank": "normal",
+      "passiveName": "Корни",
+      "passiveDescription": "Физический урон −20%",
+      "weakness": "Маг +20%",
+      "xp": 126,
+      "gold": 35,
+      "drops": [
+        {
+          "id": "FLDROP-04-03-A",
+          "chance": 0.55
+        }
+      ],
+      "gatekeeper": false
+    },
+    {
+      "id": "FL-04-04",
+      "name": "Кровавый кабан",
+      "zoneId": "el4",
+      "zoneIndex": 4,
+      "level": 8,
+      "hp": 510,
+      "attack": 45,
+      "defense": 17,
+      "speed": 7,
+      "rank": "normal",
+      "passiveName": "Разгон",
+      "passiveDescription": "Атака +20% ниже 50% HP",
+      "weakness": "Лучник +10%",
+      "xp": 144,
+      "gold": 40,
+      "drops": [
+        {
+          "id": "FLDROP-04-04-A",
+          "chance": 0.55
+        },
+        {
+          "id": "FLDROP-04-04-B",
+          "chance": 0.18
+        }
+      ],
+      "gatekeeper": false
+    },
+    {
+      "id": "FL-04-05",
+      "name": "Моховой прыгун",
+      "zoneId": "el4",
+      "zoneIndex": 4,
+      "level": 8,
+      "hp": 420,
+      "attack": 42,
+      "defense": 12,
+      "speed": 14,
+      "rank": "normal",
+      "passiveName": "Прыжок",
+      "passiveDescription": "Первая атака +20%",
+      "weakness": "Маг +15%",
+      "xp": 144,
+      "gold": 40,
+      "drops": [
+        {
+          "id": "FLDROP-04-05-A",
+          "chance": 0.55
+        }
+      ],
+      "gatekeeper": false
+    },
+    {
+      "id": "FL-04-06",
+      "name": "Грибной паразит",
+      "zoneId": "el4",
+      "zoneIndex": 4,
+      "level": 8,
+      "hp": 480,
+      "attack": 39,
+      "defense": 19,
+      "speed": 5,
+      "rank": "normal",
+      "passiveName": "Споровая оболочка",
+      "passiveDescription": "Магический урон −20%",
+      "weakness": "Воин +15%",
+      "xp": 144,
+      "gold": 40,
+      "drops": [
+        {
+          "id": "FLDROP-04-06-A",
+          "chance": 0.55
+        }
+      ],
+      "gatekeeper": false
+    },
+    {
+      "id": "FL-04-07",
+      "name": "Слепой лесорез",
+      "zoneId": "el4",
+      "zoneIndex": 4,
+      "level": 8,
+      "hp": 530,
+      "attack": 48,
+      "defense": 16,
+      "speed": 4,
+      "rank": "rare",
+      "passiveName": "Чувство запаха",
+      "passiveDescription": "Не теряет точность от ослепления",
+      "weakness": "Лучник +10%",
+      "xp": 192,
+      "gold": 64,
+      "drops": [
+        {
+          "id": "FLDROP-04-07-A",
+          "chance": 0.55
+        }
+      ],
+      "gatekeeper": false
+    },
+    {
+      "id": "FL-04-08",
+      "name": "Ведьмин корень",
+      "zoneId": "el4",
+      "zoneIndex": 4,
+      "level": 9,
+      "hp": 620,
+      "attack": 47,
+      "defense": 25,
+      "speed": 3,
+      "rank": "rare",
+      "passiveName": "Магическая устойчивость",
+      "passiveDescription": "Магический урон −25%",
+      "weakness": "Воин +20%",
+      "xp": 216,
+      "gold": 72,
+      "drops": [
+        {
+          "id": "FLDROP-04-08-A",
+          "chance": 0.55
+        }
+      ],
+      "gatekeeper": false
+    },
+    {
+      "id": "FL-04-09",
+      "name": "Чёрная лесная рысь",
+      "zoneId": "el4",
+      "zoneIndex": 4,
+      "level": 9,
+      "hp": 560,
+      "attack": 55,
+      "defense": 19,
+      "speed": 15,
+      "rank": "elite",
+      "passiveName": "Засада",
+      "passiveDescription": "Первая атака +25%",
+      "weakness": "Маг +15%",
+      "xp": 288,
+      "gold": 108,
+      "drops": [
+        {
+          "id": "FLDROP-04-09-A",
+          "chance": 0.7
+        }
+      ],
+      "gatekeeper": false
+    },
+    {
+      "id": "FL-04-10",
+      "name": "Сторож гнилого дерева",
+      "zoneId": "el4",
+      "zoneIndex": 4,
+      "level": 9,
+      "hp": 1050,
+      "attack": 62,
+      "defense": 38,
+      "speed": 3,
+      "rank": "guardian",
+      "passiveName": "Древняя защита",
+      "passiveDescription": "Весь урон −20%",
+      "weakness": "Огненный урон +25%",
+      "xp": 378,
+      "gold": 135,
+      "drops": [
+        {
+          "id": "FLDROP-04-10-A",
+          "chance": 1.0
+        },
+        {
+          "id": "FLDROP-04-10-B",
+          "chance": 0.18
+        }
+      ],
+      "gatekeeper": true
+    },
+    {
+      "id": "FL-05-01",
+      "name": "Каменный жук",
+      "zoneId": "el5",
+      "zoneIndex": 5,
+      "level": 9,
+      "hp": 650,
+      "attack": 45,
+      "defense": 31,
+      "speed": 3,
+      "rank": "normal",
+      "passiveName": "Каменный панцирь",
+      "passiveDescription": "Физический урон −25%",
+      "weakness": "Маг +25%",
+      "xp": 162,
+      "gold": 45,
+      "drops": [
+        {
+          "id": "FLDROP-05-01-A",
+          "chance": 0.55
+        }
+      ],
+      "gatekeeper": false
+    },
+    {
+      "id": "FL-05-02",
+      "name": "Пустынный шакал",
+      "zoneId": "el5",
+      "zoneIndex": 5,
+      "level": 9,
+      "hp": 520,
+      "attack": 56,
+      "defense": 18,
+      "speed": 13,
+      "rank": "normal",
+      "passiveName": "Охотник",
+      "passiveDescription": "Атака +15% против мага",
+      "weakness": "Лучник +10%",
+      "xp": 162,
+      "gold": 45,
+      "drops": [
+        {
+          "id": "FLDROP-05-02-A",
+          "chance": 0.55
+        },
+        {
+          "id": "FLDROP-05-02-B",
+          "chance": 0.18
+        }
+      ],
+      "gatekeeper": false
+    },
+    {
+      "id": "FL-05-03",
+      "name": "Осколочный краб",
+      "zoneId": "el5",
+      "zoneIndex": 5,
+      "level": 10,
+      "hp": 720,
+      "attack": 52,
+      "defense": 35,
+      "speed": 4,
+      "rank": "normal",
+      "passiveName": "Панцирь",
+      "passiveDescription": "Урон лучника −20%",
+      "weakness": "Маг +20%",
+      "xp": 180,
+      "gold": 50,
+      "drops": [
+        {
+          "id": "FLDROP-05-03-A",
+          "chance": 0.55
+        }
+      ],
+      "gatekeeper": false
+    },
+    {
+      "id": "FL-05-04",
+      "name": "Песчаный бурильщик",
+      "zoneId": "el5",
+      "zoneIndex": 5,
+      "level": 10,
+      "hp": 680,
+      "attack": 58,
+      "defense": 26,
+      "speed": 7,
+      "rank": "normal",
+      "passiveName": "Подкоп",
+      "passiveDescription": "Первая атака +20%",
+      "weakness": "Лучник +10%",
+      "xp": 180,
+      "gold": 50,
+      "drops": [
+        {
+          "id": "FLDROP-05-04-A",
+          "chance": 0.55
+        }
+      ],
+      "gatekeeper": false
+    },
+    {
+      "id": "FL-05-05",
+      "name": "Каменный падальщик",
+      "zoneId": "el5",
+      "zoneIndex": 5,
+      "level": 10,
+      "hp": 750,
+      "attack": 55,
+      "defense": 32,
+      "speed": 5,
+      "rank": "normal",
+      "passiveName": "Поглощение",
+      "passiveDescription": "Восстанавливает 5% нанесённого урона",
+      "weakness": "Маг +20%",
+      "xp": 180,
+      "gold": 50,
+      "drops": [
+        {
+          "id": "FLDROP-05-05-A",
+          "chance": 0.55
+        }
+      ],
+      "gatekeeper": false
+    },
+    {
+      "id": "FL-05-06",
+      "name": "Пустошный скорпион",
+      "zoneId": "el5",
+      "zoneIndex": 5,
+      "level": 11,
+      "hp": 700,
+      "attack": 68,
+      "defense": 24,
+      "speed": 12,
+      "rank": "normal",
+      "passiveName": "Ядовитый хвост",
+      "passiveDescription": "Атака накладывает яд",
+      "weakness": "Воин +15%",
+      "xp": 198,
+      "gold": 55,
+      "drops": [
+        {
+          "id": "FLDROP-05-06-A",
+          "chance": 0.55
+        },
+        {
+          "id": "FLDROP-05-06-B",
+          "chance": 0.18
+        }
+      ],
+      "gatekeeper": false
+    },
+    {
+      "id": "FL-05-07",
+      "name": "Гранитный громила",
+      "zoneId": "el5",
+      "zoneIndex": 5,
+      "level": 11,
+      "hp": 950,
+      "attack": 65,
+      "defense": 42,
+      "speed": 2,
+      "rank": "rare",
+      "passiveName": "Тяжёлое тело",
+      "passiveDescription": "Критический урон −20%",
+      "weakness": "Маг +25%",
+      "xp": 264,
+      "gold": 88,
+      "drops": [
+        {
+          "id": "FLDROP-05-07-A",
+          "chance": 0.55
+        }
+      ],
+      "gatekeeper": false
+    },
+    {
+      "id": "FL-05-08",
+      "name": "Собиратель осколков",
+      "zoneId": "el5",
+      "zoneIndex": 5,
+      "level": 11,
+      "hp": 820,
+      "attack": 64,
+      "defense": 34,
+      "speed": 8,
+      "rank": "rare",
+      "passiveName": "Осколочная защита",
+      "passiveDescription": "Физический урон −20%",
+      "weakness": "Маг +20%",
+      "xp": 264,
+      "gold": 88,
+      "drops": [
+        {
+          "id": "FLDROP-05-08-A",
+          "chance": 0.55
+        }
+      ],
+      "gatekeeper": false
+    },
+    {
+      "id": "FL-05-09",
+      "name": "Пустошный разрушитель",
+      "zoneId": "el5",
+      "zoneIndex": 5,
+      "level": 12,
+      "hp": 1100,
+      "attack": 78,
+      "defense": 45,
+      "speed": 4,
+      "rank": "elite",
+      "passiveName": "Сокрушение",
+      "passiveDescription": "Урон +20% по защищённым целям",
+      "weakness": "Лучник +15%",
+      "xp": 384,
+      "gold": 144,
+      "drops": [
+        {
+          "id": "FLDROP-05-09-A",
+          "chance": 0.7
+        }
+      ],
+      "gatekeeper": false
+    },
+    {
+      "id": "FL-05-10",
+      "name": "Сердце каменной гряды",
+      "zoneId": "el5",
+      "zoneIndex": 5,
+      "level": 12,
+      "hp": 1750,
+      "attack": 86,
+      "defense": 60,
+      "speed": 2,
+      "rank": "guardian",
+      "passiveName": "Каменная крепость",
+      "passiveDescription": "Физический урон −30%",
+      "weakness": "Маг +30%",
+      "xp": 504,
+      "gold": 180,
+      "drops": [
+        {
+          "id": "FLDROP-05-10-A",
+          "chance": 1.0
+        },
+        {
+          "id": "FLDROP-05-10-B",
+          "chance": 0.18
+        }
+      ],
+      "gatekeeper": true
+    },
+    {
+      "id": "FL-06-01",
+      "name": "Одичавший фермер",
+      "zoneId": "el6",
+      "zoneIndex": 6,
+      "level": 12,
+      "hp": 850,
+      "attack": 75,
+      "defense": 30,
+      "speed": 6,
+      "rank": "normal",
+      "passiveName": "Грубая сила",
+      "passiveDescription": "Атака +15% ниже 50% HP",
+      "weakness": "Маг +15%",
+      "xp": 216,
+      "gold": 60,
+      "drops": [
+        {
+          "id": "FLDROP-06-01-A",
+          "chance": 0.55
+        }
+      ],
+      "gatekeeper": false
+    },
+    {
+      "id": "FL-06-02",
+      "name": "Сторожевой пёс",
+      "zoneId": "el6",
+      "zoneIndex": 6,
+      "level": 12,
+      "hp": 780,
+      "attack": 78,
+      "defense": 26,
+      "speed": 13,
+      "rank": "normal",
+      "passiveName": "Верность стае",
+      "passiveDescription": "Атака +15% при союзниках",
+      "weakness": "Лучник +10%",
+      "xp": 216,
+      "gold": 60,
+      "drops": [
+        {
+          "id": "FLDROP-06-02-A",
+          "chance": 0.55
+        },
+        {
+          "id": "FLDROP-06-02-B",
+          "chance": 0.18
+        }
+      ],
+      "gatekeeper": false
+    },
+    {
+      "id": "FL-06-03",
+      "name": "Заражённый петух",
+      "zoneId": "el6",
+      "zoneIndex": 6,
+      "level": 12,
+      "hp": 700,
+      "attack": 82,
+      "defense": 22,
+      "speed": 15,
+      "rank": "normal",
+      "passiveName": "Яростный крик",
+      "passiveDescription": "Атака +15% после первого раунда",
+      "weakness": "Маг +15%",
+      "xp": 216,
+      "gold": 60,
+      "drops": [
+        {
+          "id": "FLDROP-06-03-A",
+          "chance": 0.55
+        }
+      ],
+      "gatekeeper": false
+    },
+    {
+      "id": "FL-06-04",
+      "name": "Соломенный пугальщик",
+      "zoneId": "el6",
+      "zoneIndex": 6,
+      "level": 13,
+      "hp": 1050,
+      "attack": 72,
+      "defense": 42,
+      "speed": 4,
+      "rank": "normal",
+      "passiveName": "Соломенная набивка",
+      "passiveDescription": "Физический урон −20%",
+      "weakness": "Маг +20%",
+      "xp": 234,
+      "gold": 65,
+      "drops": [
+        {
+          "id": "FLDROP-06-04-A",
+          "chance": 0.55
+        }
+      ],
+      "gatekeeper": false
+    },
+    {
+      "id": "FL-06-05",
+      "name": "Голодная свиноматка",
+      "zoneId": "el6",
+      "zoneIndex": 6,
+      "level": 13,
+      "hp": 1200,
+      "attack": 85,
+      "defense": 40,
+      "speed": 5,
+      "rank": "normal",
+      "passiveName": "Материнская ярость",
+      "passiveDescription": "Атака +25% ниже 40% HP",
+      "weakness": "Лучник +15%",
+      "xp": 234,
+      "gold": 65,
+      "drops": [
+        {
+          "id": "FLDROP-06-05-A",
+          "chance": 0.55
+        },
+        {
+          "id": "FLDROP-06-05-B",
+          "chance": 0.18
+        }
+      ],
+      "gatekeeper": false
+    },
+    {
+      "id": "FL-06-06",
+      "name": "Фермерский мясник",
+      "zoneId": "el6",
+      "zoneIndex": 6,
+      "level": 13,
+      "hp": 950,
+      "attack": 91,
+      "defense": 34,
+      "speed": 8,
+      "rank": "normal",
+      "passiveName": "Тяжёлый тесак",
+      "passiveDescription": "Критический урон +15%",
+      "weakness": "Ассасин +10%",
+      "xp": 234,
+      "gold": 65,
+      "drops": [
+        {
+          "id": "FLDROP-06-06-A",
+          "chance": 0.55
+        }
+      ],
+      "gatekeeper": false
+    },
+    {
+      "id": "FL-06-07",
+      "name": "Плесневый бык",
+      "zoneId": "el6",
+      "zoneIndex": 6,
+      "level": 14,
+      "hp": 1450,
+      "attack": 98,
+      "defense": 52,
+      "speed": 3,
+      "rank": "rare",
+      "passiveName": "Таран",
+      "passiveDescription": "Первая атака +25%",
+      "weakness": "Маг +20%",
+      "xp": 336,
+      "gold": 112,
+      "drops": [
+        {
+          "id": "FLDROP-06-07-A",
+          "chance": 0.55
+        },
+        {
+          "id": "FLDROP-06-07-B",
+          "chance": 0.18
+        }
+      ],
+      "gatekeeper": false
+    },
+    {
+      "id": "FL-06-08",
+      "name": "Хозяин пустого амбара",
+      "zoneId": "el6",
+      "zoneIndex": 6,
+      "level": 14,
+      "hp": 1300,
+      "attack": 100,
+      "defense": 45,
+      "speed": 7,
+      "rank": "rare",
+      "passiveName": "Хитрый хозяин",
+      "passiveDescription": "Атака +20% против ослабленных",
+      "weakness": "Лучник +15%",
+      "xp": 336,
+      "gold": 112,
+      "drops": [
+        {
+          "id": "FLDROP-06-08-A",
+          "chance": 0.55
+        }
+      ],
+      "gatekeeper": false
+    },
+    {
+      "id": "FL-06-09",
+      "name": "Безликий пахарь",
+      "zoneId": "el6",
+      "zoneIndex": 6,
+      "level": 15,
+      "hp": 1650,
+      "attack": 105,
+      "defense": 58,
+      "speed": 5,
+      "rank": "elite",
+      "passiveName": "Безликая маска",
+      "passiveDescription": "Магический урон −20%",
+      "weakness": "Маг +20%",
+      "xp": 480,
+      "gold": 180,
+      "drops": [
+        {
+          "id": "FLDROP-06-09-A",
+          "chance": 0.7
+        }
+      ],
+      "gatekeeper": false
+    },
+    {
+      "id": "FL-06-10",
+      "name": "Хозяин последнего урожая",
+      "zoneId": "el6",
+      "zoneIndex": 6,
+      "level": 15,
+      "hp": 2700,
+      "attack": 120,
+      "defense": 75,
+      "speed": 5,
+      "rank": "boss",
+      "passiveName": "Заражённый урожай",
+      "passiveDescription": "Восстанавливает 10% HP каждый третий раунд; урон лучника −20%",
+      "weakness": "Маг +25%",
+      "xp": 750,
+      "gold": 300,
+      "drops": [
+        {
+          "id": "FLDROP-06-10-A",
+          "chance": 1.0
+        },
+        {
+          "id": "FLDROP-06-10-B",
+          "chance": 0.18
+        }
+      ],
+      "gatekeeper": true
+    },
+    {
+      "id": "FL-07-01",
+      "name": "Руинный крысолов",
+      "zoneId": "el7",
+      "zoneIndex": 7,
+      "level": 15,
+      "hp": 1350,
+      "attack": 105,
+      "defense": 42,
+      "speed": 13,
+      "rank": "normal",
+      "passiveName": "Проворство",
+      "passiveDescription": "Убийца наносит на 15% меньше урона",
+      "weakness": "Лучник +10%",
+      "xp": 270,
+      "gold": 75,
+      "drops": [
+        {
+          "id": "FLDROP-07-01-A",
+          "chance": 0.55
+        }
+      ],
+      "gatekeeper": false
+    },
+    {
+      "id": "FL-07-02",
+      "name": "Каменный писарь",
+      "zoneId": "el7",
+      "zoneIndex": 7,
+      "level": 15,
+      "hp": 1500,
+      "attack": 95,
+      "defense": 58,
+      "speed": 5,
+      "rank": "normal",
+      "passiveName": "Руническая кожа",
+      "passiveDescription": "Магический урон −20%",
+      "weakness": "Воин +15%",
+      "xp": 270,
+      "gold": 75,
+      "drops": [
+        {
+          "id": "FLDROP-07-02-A",
+          "chance": 0.55
+        }
+      ],
+      "gatekeeper": false
+    },
+    {
+      "id": "FL-07-03",
+      "name": "Треснувший страж",
+      "zoneId": "el7",
+      "zoneIndex": 7,
+      "level": 16,
+      "hp": 1750,
+      "attack": 110,
+      "defense": 70,
+      "speed": 3,
+      "rank": "normal",
+      "passiveName": "Каменный щит",
+      "passiveDescription": "Физический урон −25%",
+      "weakness": "Маг +25%",
+      "xp": 288,
+      "gold": 80,
+      "drops": [
+        {
+          "id": "FLDROP-07-03-A",
+          "chance": 0.55
+        }
+      ],
+      "gatekeeper": false
+    },
+    {
+      "id": "FL-07-04",
+      "name": "Пустой служитель",
+      "zoneId": "el7",
+      "zoneIndex": 7,
+      "level": 16,
+      "hp": 1550,
+      "attack": 118,
+      "defense": 52,
+      "speed": 7,
+      "rank": "normal",
+      "passiveName": "Пустота",
+      "passiveDescription": "Получает на 20% больше магического урона",
+      "weakness": "Воин +15%",
+      "xp": 288,
+      "gold": 80,
+      "drops": [
+        {
+          "id": "FLDROP-07-04-A",
+          "chance": 0.55
+        }
+      ],
+      "gatekeeper": false
+    },
+    {
+      "id": "FL-07-05",
+      "name": "Руинный ловец",
+      "zoneId": "el7",
+      "zoneIndex": 7,
+      "level": 16,
+      "hp": 1650,
+      "attack": 125,
+      "defense": 48,
+      "speed": 14,
+      "rank": "normal",
+      "passiveName": "Ловушка",
+      "passiveDescription": "Снижает скорость противника на 20% в первом раунде",
+      "weakness": "Маг +15%",
+      "xp": 288,
+      "gold": 80,
+      "drops": [
+        {
+          "id": "FLDROP-07-05-A",
+          "chance": 0.55
+        }
+      ],
+      "gatekeeper": false
+    },
+    {
+      "id": "FL-07-06",
+      "name": "Чёрный копейщик",
+      "zoneId": "el7",
+      "zoneIndex": 7,
+      "level": 17,
+      "hp": 1950,
+      "attack": 132,
+      "defense": 65,
+      "speed": 8,
+      "rank": "normal",
+      "passiveName": "Контратака",
+      "passiveDescription": "После критического удара атака +15%",
+      "weakness": "Лучник +15%",
+      "xp": 306,
+      "gold": 85,
+      "drops": [
+        {
+          "id": "FLDROP-07-06-A",
+          "chance": 0.55
+        }
+      ],
+      "gatekeeper": false
+    },
+    {
+      "id": "FL-07-07",
+      "name": "Рунический жрец",
+      "zoneId": "el7",
+      "zoneIndex": 7,
+      "level": 17,
+      "hp": 1800,
+      "attack": 125,
+      "defense": 70,
+      "speed": 6,
+      "rank": "rare",
+      "passiveName": "Магический барьер",
+      "passiveDescription": "Магический урон −25%",
+      "weakness": "Воин +20%",
+      "xp": 408,
+      "gold": 136,
+      "drops": [
+        {
+          "id": "FLDROP-07-07-A",
+          "chance": 0.55
+        }
+      ],
+      "gatekeeper": false
+    },
+    {
+      "id": "FL-07-08",
+      "name": "Хранитель печатей",
+      "zoneId": "el7",
+      "zoneIndex": 7,
+      "level": 18,
+      "hp": 2250,
+      "attack": 140,
+      "defense": 82,
+      "speed": 4,
+      "rank": "rare",
+      "passiveName": "Печать защиты",
+      "passiveDescription": "Весь урон −20% пока HP выше 50%",
+      "weakness": "Маг +25%",
+      "xp": 432,
+      "gold": 144,
+      "drops": [
+        {
+          "id": "FLDROP-07-08-A",
+          "chance": 0.55
+        }
+      ],
+      "gatekeeper": false
+    },
+    {
+      "id": "FL-07-09",
+      "name": "Безмолвный судья",
+      "zoneId": "el7",
+      "zoneIndex": 7,
+      "level": 18,
+      "hp": 2000,
+      "attack": 150,
+      "defense": 65,
+      "speed": 10,
+      "rank": "elite",
+      "passiveName": "Приговор",
+      "passiveDescription": "Урон +20% по целям с низкой защитой",
+      "weakness": "Лучник +15%",
+      "xp": 576,
+      "gold": 216,
+      "drops": [
+        {
+          "id": "FLDROP-07-09-A",
+          "chance": 0.7
+        }
+      ],
+      "gatekeeper": false
+    },
+    {
+      "id": "FL-07-10",
+      "name": "Чёрный страж ворот",
+      "zoneId": "el7",
+      "zoneIndex": 7,
+      "level": 18,
+      "hp": 3600,
+      "attack": 165,
+      "defense": 105,
+      "speed": 4,
+      "rank": "guardian",
+      "passiveName": "Древняя защита",
+      "passiveDescription": "Весь урон −25%",
+      "weakness": "Маг +30%",
+      "xp": 756,
+      "gold": 270,
+      "drops": [
+        {
+          "id": "FLDROP-07-10-A",
+          "chance": 1.0
+        },
+        {
+          "id": "FLDROP-07-10-B",
+          "chance": 0.18
+        }
+      ],
+      "gatekeeper": true
+    },
+    {
+      "id": "FL-08-01",
+      "name": "Подземный клещ",
+      "zoneId": "el8",
+      "zoneIndex": 8,
+      "level": 18,
+      "hp": 1900,
+      "attack": 145,
+      "defense": 60,
+      "speed": 9,
+      "rank": "normal",
+      "passiveName": "Кровосос",
+      "passiveDescription": "Восстанавливает 7% нанесённого урона",
+      "weakness": "Маг +15%",
+      "xp": 324,
+      "gold": 90,
+      "drops": [
+        {
+          "id": "FLDROP-08-01-A",
+          "chance": 0.55
+        }
+      ],
+      "gatekeeper": false
+    },
+    {
+      "id": "FL-08-02",
+      "name": "Кристальный слизень",
+      "zoneId": "el8",
+      "zoneIndex": 8,
+      "level": 18,
+      "hp": 2100,
+      "attack": 125,
+      "defense": 90,
+      "speed": 2,
+      "rank": "normal",
+      "passiveName": "Кристальная оболочка",
+      "passiveDescription": "Магический урон −20%",
+      "weakness": "Воин +20%",
+      "xp": 324,
+      "gold": 90,
+      "drops": [
+        {
+          "id": "FLDROP-08-02-A",
+          "chance": 0.55
+        }
+      ],
+      "gatekeeper": false
+    },
+    {
+      "id": "FL-08-03",
+      "name": "Слепой охотник",
+      "zoneId": "el8",
+      "zoneIndex": 8,
+      "level": 19,
+      "hp": 1950,
+      "attack": 160,
+      "defense": 58,
+      "speed": 16,
+      "rank": "normal",
+      "passiveName": "Эхо",
+      "passiveDescription": "Не теряет точность при ослеплении",
+      "weakness": "Маг +15%",
+      "xp": 342,
+      "gold": 95,
+      "drops": [
+        {
+          "id": "FLDROP-08-03-A",
+          "chance": 0.55
+        }
+      ],
+      "gatekeeper": false
+    },
+    {
+      "id": "FL-08-04",
+      "name": "Пещерный жнец",
+      "zoneId": "el8",
+      "zoneIndex": 8,
+      "level": 19,
+      "hp": 2300,
+      "attack": 155,
+      "defense": 78,
+      "speed": 11,
+      "rank": "normal",
+      "passiveName": "Когти",
+      "passiveDescription": "Критический урон +20%",
+      "weakness": "Лучник +15%",
+      "xp": 342,
+      "gold": 95,
+      "drops": [
+        {
+          "id": "FLDROP-08-04-A",
+          "chance": 0.55
+        }
+      ],
+      "gatekeeper": false
+    },
+    {
+      "id": "FL-08-05",
+      "name": "Камнеед",
+      "zoneId": "el8",
+      "zoneIndex": 8,
+      "level": 19,
+      "hp": 2500,
+      "attack": 145,
+      "defense": 105,
+      "speed": 3,
+      "rank": "normal",
+      "passiveName": "Каменная пища",
+      "passiveDescription": "Физический урон −25%",
+      "weakness": "Маг +25%",
+      "xp": 342,
+      "gold": 95,
+      "drops": [
+        {
+          "id": "FLDROP-08-05-A",
+          "chance": 0.55
+        }
+      ],
+      "gatekeeper": false
+    },
+    {
+      "id": "FL-08-06",
+      "name": "Глубинная многоножка",
+      "zoneId": "el8",
+      "zoneIndex": 8,
+      "level": 20,
+      "hp": 2250,
+      "attack": 170,
+      "defense": 75,
+      "speed": 15,
+      "rank": "normal",
+      "passiveName": "Множество ног",
+      "passiveDescription": "Уклонение +15%",
+      "weakness": "Лучник +10%",
+      "xp": 360,
+      "gold": 100,
+      "drops": [
+        {
+          "id": "FLDROP-08-06-A",
+          "chance": 0.55
+        }
+      ],
+      "gatekeeper": false
+    },
+    {
+      "id": "FL-08-07",
+      "name": "Пещерный плевун",
+      "zoneId": "el8",
+      "zoneIndex": 8,
+      "level": 20,
+      "hp": 2400,
+      "attack": 175,
+      "defense": 68,
+      "speed": 8,
+      "rank": "rare",
+      "passiveName": "Кислота",
+      "passiveDescription": "Снижает защиту цели на 10%",
+      "weakness": "Воин +15%",
+      "xp": 480,
+      "gold": 160,
+      "drops": [
+        {
+          "id": "FLDROP-08-07-A",
+          "chance": 0.55
+        }
+      ],
+      "gatekeeper": false
+    },
+    {
+      "id": "FL-08-08",
+      "name": "Кристальный страж",
+      "zoneId": "el8",
+      "zoneIndex": 8,
+      "level": 20,
+      "hp": 3000,
+      "attack": 165,
+      "defense": 125,
+      "speed": 4,
+      "rank": "rare",
+      "passiveName": "Кристальная защита",
+      "passiveDescription": "Физический урон −30%",
+      "weakness": "Маг +25%",
+      "xp": 480,
+      "gold": 160,
+      "drops": [
+        {
+          "id": "FLDROP-08-08-A",
+          "chance": 0.55
+        }
+      ],
+      "gatekeeper": false
+    },
+    {
+      "id": "FL-08-09",
+      "name": "Глубинный разоритель",
+      "zoneId": "el8",
+      "zoneIndex": 8,
+      "level": 21,
+      "hp": 2850,
+      "attack": 190,
+      "defense": 92,
+      "speed": 12,
+      "rank": "elite",
+      "passiveName": "Разрыв брони",
+      "passiveDescription": "Атака снижает DEF цели на 10%",
+      "weakness": "Лучник +15%",
+      "xp": 672,
+      "gold": 252,
+      "drops": [
+        {
+          "id": "FLDROP-08-09-A",
+          "chance": 0.7
+        }
+      ],
+      "gatekeeper": false
+    },
+    {
+      "id": "FL-08-10",
+      "name": "Пожиратель глубины",
+      "zoneId": "el8",
+      "zoneIndex": 8,
+      "level": 21,
+      "hp": 4800,
+      "attack": 205,
+      "defense": 140,
+      "speed": 5,
+      "rank": "guardian",
+      "passiveName": "Пожирание",
+      "passiveDescription": "Восстанавливает 10% нанесённого урона",
+      "weakness": "Маг +25%",
+      "xp": 882,
+      "gold": 315,
+      "drops": [
+        {
+          "id": "FLDROP-08-10-A",
+          "chance": 1.0
+        },
+        {
+          "id": "FLDROP-08-10-B",
+          "chance": 0.18
+        }
+      ],
+      "gatekeeper": true
+    },
+    {
+      "id": "FL-09-01",
+      "name": "Костяной гончий",
+      "zoneId": "el9",
+      "zoneIndex": 9,
+      "level": 21,
+      "hp": 2600,
+      "attack": 185,
+      "defense": 90,
+      "speed": 15,
+      "rank": "normal",
+      "passiveName": "Неживая стая",
+      "passiveDescription": "Атака +15% при союзниках",
+      "weakness": "Маг +15%",
+      "xp": 378,
+      "gold": 105,
+      "drops": [
+        {
+          "id": "FLDROP-09-01-A",
+          "chance": 0.55
+        }
+      ],
+      "gatekeeper": false
+    },
+    {
+      "id": "FL-09-02",
+      "name": "Черепной сборщик",
+      "zoneId": "el9",
+      "zoneIndex": 9,
+      "level": 21,
+      "hp": 2450,
+      "attack": 180,
+      "defense": 105,
+      "speed": 7,
+      "rank": "normal",
+      "passiveName": "Костяной панцирь",
+      "passiveDescription": "Физический урон −20%",
+      "weakness": "Маг +20%",
+      "xp": 378,
+      "gold": 105,
+      "drops": [
+        {
+          "id": "FLDROP-09-02-A",
+          "chance": 0.55
+        }
+      ],
+      "gatekeeper": false
+    },
+    {
+      "id": "FL-09-03",
+      "name": "Могильный ползун",
+      "zoneId": "el9",
+      "zoneIndex": 9,
+      "level": 22,
+      "hp": 2800,
+      "attack": 195,
+      "defense": 110,
+      "speed": 4,
+      "rank": "normal",
+      "passiveName": "Подземная засада",
+      "passiveDescription": "Первая атака +20%",
+      "weakness": "Лучник +15%",
+      "xp": 396,
+      "gold": 110,
+      "drops": [
+        {
+          "id": "FLDROP-09-03-A",
+          "chance": 0.55
+        }
+      ],
+      "gatekeeper": false
+    },
+    {
+      "id": "FL-09-04",
+      "name": "Праховый лучник",
+      "zoneId": "el9",
+      "zoneIndex": 9,
+      "level": 22,
+      "hp": 2550,
+      "attack": 205,
+      "defense": 85,
+      "speed": 12,
+      "rank": "normal",
+      "passiveName": "Меткий выстрел",
+      "passiveDescription": "Урон +20% по медленным целям",
+      "weakness": "Ассасин +15%",
+      "xp": 396,
+      "gold": 110,
+      "drops": [
+        {
+          "id": "FLDROP-09-04-A",
+          "chance": 0.55
+        }
+      ],
+      "gatekeeper": false
+    },
+    {
+      "id": "FL-09-05",
+      "name": "Костяной рыцарь",
+      "zoneId": "el9",
+      "zoneIndex": 9,
+      "level": 23,
+      "hp": 3200,
+      "attack": 220,
+      "defense": 135,
+      "speed": 6,
+      "rank": "normal",
+      "passiveName": "Костяная броня",
+      "passiveDescription": "Физический урон −25%",
+      "weakness": "Маг +25%",
+      "xp": 414,
+      "gold": 115,
+      "drops": [
+        {
+          "id": "FLDROP-09-05-A",
+          "chance": 0.55
+        }
+      ],
+      "gatekeeper": false
+    },
+    {
+      "id": "FL-09-06",
+      "name": "Плачущий мертвец",
+      "zoneId": "el9",
+      "zoneIndex": 9,
+      "level": 23,
+      "hp": 3000,
+      "attack": 210,
+      "defense": 115,
+      "speed": 8,
+      "rank": "normal",
+      "passiveName": "Плач",
+      "passiveDescription": "Атака противника −10%",
+      "weakness": "Маг +20%",
+      "xp": 414,
+      "gold": 115,
+      "drops": [
+        {
+          "id": "FLDROP-09-06-A",
+          "chance": 0.55
+        }
+      ],
+      "gatekeeper": false
+    },
+    {
+      "id": "FL-09-07",
+      "name": "Собиратель душ",
+      "zoneId": "el9",
+      "zoneIndex": 9,
+      "level": 24,
+      "hp": 3350,
+      "attack": 230,
+      "defense": 120,
+      "speed": 10,
+      "rank": "rare",
+      "passiveName": "Похищение",
+      "passiveDescription": "Восстанавливает 8% нанесённого урона",
+      "weakness": "Лучник +15%",
+      "xp": 576,
+      "gold": 192,
+      "drops": [
+        {
+          "id": "FLDROP-09-07-A",
+          "chance": 0.55
+        }
+      ],
+      "gatekeeper": false
+    },
+    {
+      "id": "FL-09-08",
+      "name": "Погребальный великан",
+      "zoneId": "el9",
+      "zoneIndex": 9,
+      "level": 24,
+      "hp": 4200,
+      "attack": 240,
+      "defense": 155,
+      "speed": 3,
+      "rank": "rare",
+      "passiveName": "Тяжёлое тело",
+      "passiveDescription": "Критический урон −25%",
+      "weakness": "Маг +25%",
+      "xp": 576,
+      "gold": 192,
+      "drops": [
+        {
+          "id": "FLDROP-09-08-A",
+          "chance": 0.55
+        }
+      ],
+      "gatekeeper": false
+    },
+    {
+      "id": "FL-09-09",
+      "name": "Безглазый палач",
+      "zoneId": "el9",
+      "zoneIndex": 9,
+      "level": 25,
+      "hp": 3800,
+      "attack": 265,
+      "defense": 130,
+      "speed": 11,
+      "rank": "elite",
+      "passiveName": "Казнь",
+      "passiveDescription": "Урон +25% по целям ниже 30% HP",
+      "weakness": "Лучник +15%",
+      "xp": 800,
+      "gold": 300,
+      "drops": [
+        {
+          "id": "FLDROP-09-09-A",
+          "chance": 0.7
+        }
+      ],
+      "gatekeeper": false
+    },
+    {
+      "id": "FL-09-10",
+      "name": "Король костяной долины",
+      "zoneId": "el9",
+      "zoneIndex": 9,
+      "level": 25,
+      "hp": 6500,
+      "attack": 290,
+      "defense": 185,
+      "speed": 7,
+      "rank": "boss",
+      "passiveName": "Королевский приказ",
+      "passiveDescription": "Атака и защита +15%; физический урон −25%",
+      "weakness": "Маг +30%",
+      "xp": 1250,
+      "gold": 500,
+      "drops": [
+        {
+          "id": "FLDROP-09-10-A",
+          "chance": 1.0
+        },
+        {
+          "id": "FLDROP-09-10-B",
+          "chance": 0.18
+        }
+      ],
+      "gatekeeper": true
+    },
+    {
+      "id": "FL-10-01",
+      "name": "Забвенный служитель",
+      "zoneId": "el10",
+      "zoneIndex": 10,
+      "level": 25,
+      "hp": 4000,
+      "attack": 260,
+      "defense": 145,
+      "speed": 9,
+      "rank": "normal",
+      "passiveName": "Пустая воля",
+      "passiveDescription": "Магический урон −20%",
+      "weakness": "Лучник +15%",
+      "xp": 450,
+      "gold": 125,
+      "drops": [
+        {
+          "id": "FLDROP-10-01-A",
+          "chance": 0.55
+        }
+      ],
+      "gatekeeper": false
+    },
+    {
+      "id": "FL-10-02",
+      "name": "Искажённый рыцарь",
+      "zoneId": "el10",
+      "zoneIndex": 10,
+      "level": 26,
+      "hp": 4500,
+      "attack": 285,
+      "defense": 170,
+      "speed": 7,
+      "rank": "normal",
+      "passiveName": "Искажённая броня",
+      "passiveDescription": "Физический урон −25%",
+      "weakness": "Маг +25%",
+      "xp": 468,
+      "gold": 130,
+      "drops": [
+        {
+          "id": "FLDROP-10-02-A",
+          "chance": 0.55
+        }
+      ],
+      "gatekeeper": false
+    },
+    {
+      "id": "FL-10-03",
+      "name": "Пожиратель имён",
+      "zoneId": "el10",
+      "zoneIndex": 10,
+      "level": 26,
+      "hp": 4200,
+      "attack": 290,
+      "defense": 155,
+      "speed": 12,
+      "rank": "normal",
+      "passiveName": "Поглощение",
+      "passiveDescription": "Снижает силу одного усиления противника на 10%",
+      "weakness": "Лучник +15%",
+      "xp": 468,
+      "gold": 130,
+      "drops": [
+        {
+          "id": "FLDROP-10-03-A",
+          "chance": 0.55
+        }
+      ],
+      "gatekeeper": false
+    },
+    {
+      "id": "FL-10-04",
+      "name": "Туманный палач",
+      "zoneId": "el10",
+      "zoneIndex": 10,
+      "level": 27,
+      "hp": 4800,
+      "attack": 310,
+      "defense": 165,
+      "speed": 14,
+      "rank": "normal",
+      "passiveName": "Туманная атака",
+      "passiveDescription": "Урон по лучникам +20%",
+      "weakness": "Воин +15%",
+      "xp": 486,
+      "gold": 135,
+      "drops": [
+        {
+          "id": "FLDROP-10-04-A",
+          "chance": 0.55
+        }
+      ],
+      "gatekeeper": false
+    },
+    {
+      "id": "FL-10-05",
+      "name": "Сердечный паразит",
+      "zoneId": "el10",
+      "zoneIndex": 10,
+      "level": 27,
+      "hp": 5200,
+      "attack": 295,
+      "defense": 190,
+      "speed": 5,
+      "rank": "normal",
+      "passiveName": "Кровавый рост",
+      "passiveDescription": "Восстанавливает 10% нанесённого урона",
+      "weakness": "Маг +25%",
+      "xp": 486,
+      "gold": 135,
+      "drops": [
+        {
+          "id": "FLDROP-10-05-A",
+          "chance": 0.55
+        }
+      ],
+      "gatekeeper": false
+    },
+    {
+      "id": "FL-10-06",
+      "name": "Хранитель пустого трона",
+      "zoneId": "el10",
+      "zoneIndex": 10,
+      "level": 28,
+      "hp": 5800,
+      "attack": 330,
+      "defense": 210,
+      "speed": 6,
+      "rank": "normal",
+      "passiveName": "Тронная защита",
+      "passiveDescription": "Весь урон −20%",
+      "weakness": "Маг +25%",
+      "xp": 504,
+      "gold": 140,
+      "drops": [
+        {
+          "id": "FLDROP-10-06-A",
+          "chance": 0.55
+        }
+      ],
+      "gatekeeper": false
+    },
+    {
+      "id": "FL-10-07",
+      "name": "Разрушенный пророк",
+      "zoneId": "el10",
+      "zoneIndex": 10,
+      "level": 28,
+      "hp": 5400,
+      "attack": 345,
+      "defense": 180,
+      "speed": 10,
+      "rank": "rare",
+      "passiveName": "Пророчество",
+      "passiveDescription": "Атака +20% ниже 50% HP",
+      "weakness": "Лучник +15%",
+      "xp": 672,
+      "gold": 224,
+      "drops": [
+        {
+          "id": "FLDROP-10-07-A",
+          "chance": 0.55
+        }
+      ],
+      "gatekeeper": false
+    },
+    {
+      "id": "FL-10-08",
+      "name": "Древний безликий",
+      "zoneId": "el10",
+      "zoneIndex": 10,
+      "level": 29,
+      "hp": 6500,
+      "attack": 365,
+      "defense": 225,
+      "speed": 8,
+      "rank": "rare",
+      "passiveName": "Безликая сущность",
+      "passiveDescription": "Критический урон −20%",
+      "weakness": "Маг +25%",
+      "xp": 696,
+      "gold": 232,
+      "drops": [
+        {
+          "id": "FLDROP-10-08-A",
+          "chance": 0.55
+        }
+      ],
+      "gatekeeper": false
+    },
+    {
+      "id": "FL-10-09",
+      "name": "Последний страж забвения",
+      "zoneId": "el10",
+      "zoneIndex": 10,
+      "level": 30,
+      "hp": 8000,
+      "attack": 390,
+      "defense": 250,
+      "speed": 7,
+      "rank": "elite",
+      "passiveName": "Последний рубеж",
+      "passiveDescription": "Защита +25% ниже 25% HP",
+      "weakness": "Маг +20%",
+      "xp": 960,
+      "gold": 360,
+      "drops": [
+        {
+          "id": "FLDROP-10-09-A",
+          "chance": 0.7
+        },
+        {
+          "id": "FLDROP-10-09-B",
+          "chance": 0.18
+        }
+      ],
+      "gatekeeper": false
+    },
+    {
+      "id": "FL-10-10",
+      "name": "Архонт Забвения",
+      "zoneId": "el10",
+      "zoneIndex": 10,
+      "level": 30,
+      "hp": 14000,
+      "attack": 450,
+      "defense": 300,
+      "speed": 8,
+      "rank": "finalBoss",
+      "passiveName": "Владыка ветки",
+      "passiveDescription": "Физический урон −20%; магический урон −15%; ниже 30% HP атака +30%",
+      "weakness": "Лучник +20%",
+      "xp": 2400,
+      "gold": 900,
+      "drops": [
+        {
+          "id": "FLDROP-10-10-A",
+          "chance": 1.0
+        },
+        {
+          "id": "FLDROP-10-10-B",
+          "chance": 0.18
+        }
+      ],
+      "gatekeeper": true
+    }
+  ],
+  "dropItems": [
+    {
+      "id": "FLDROP-01-01-A",
+      "name": "Материал — Колючий ползун",
+      "kind": "material",
+      "slot": null,
+      "price": 0,
+      "level": 1,
+      "description": "Добыча с монстра «Колючий ползун» в локации «Заросшая окраина».",
+      "sourceMonster": "FL-01-01",
+      "legacy": false
+    },
+    {
+      "id": "FLDROP-01-01-B",
+      "name": "Материал — Колючий ползун · редкий",
+      "kind": "material",
+      "slot": null,
+      "price": 0,
+      "level": 1,
+      "description": "Добыча с монстра «Колючий ползун» в локации «Заросшая окраина».",
+      "sourceMonster": "FL-01-01",
+      "legacy": false
+    },
+    {
+      "id": "FLDROP-01-02-A",
+      "name": "Материал — Лесной крысолов",
+      "kind": "material",
+      "slot": null,
+      "price": 0,
+      "level": 1,
+      "description": "Добыча с монстра «Лесной крысолов» в локации «Заросшая окраина».",
+      "sourceMonster": "FL-01-02",
+      "legacy": false
+    },
+    {
+      "id": "FLDROP-01-02-B",
+      "name": "Материал — Лесной крысолов · редкий",
+      "kind": "material",
+      "slot": null,
+      "price": 0,
+      "level": 1,
+      "description": "Добыча с монстра «Лесной крысолов» в локации «Заросшая окраина».",
+      "sourceMonster": "FL-01-02",
+      "legacy": false
+    },
+    {
+      "id": "FLDROP-01-03-A",
+      "name": "Материал — Грязевой слизень",
+      "kind": "material",
+      "slot": null,
+      "price": 0,
+      "level": 1,
+      "description": "Добыча с монстра «Грязевой слизень» в локации «Заросшая окраина».",
+      "sourceMonster": "FL-01-03",
+      "legacy": false
+    },
+    {
+      "id": "FLDROP-01-04-A",
+      "name": "Материал — Голодный короед",
+      "kind": "material",
+      "slot": null,
+      "price": 0,
+      "level": 2,
+      "description": "Добыча с монстра «Голодный короед» в локации «Заросшая окраина».",
+      "sourceMonster": "FL-01-04",
+      "legacy": false
+    },
+    {
+      "id": "FLDROP-01-05-A",
+      "name": "Материал — Кустарниковый шакал",
+      "kind": "material",
+      "slot": null,
+      "price": 0,
+      "level": 2,
+      "description": "Добыча с монстра «Кустарниковый шакал» в локации «Заросшая окраина».",
+      "sourceMonster": "FL-01-05",
+      "legacy": false
+    },
+    {
+      "id": "FLDROP-01-05-B",
+      "name": "Материал — Кустарниковый шакал · редкий",
+      "kind": "material",
+      "slot": null,
+      "price": 0,
+      "level": 2,
+      "description": "Добыча с монстра «Кустарниковый шакал» в локации «Заросшая окраина».",
+      "sourceMonster": "FL-01-05",
+      "legacy": false
+    },
+    {
+      "id": "FLDROP-01-06-A",
+      "name": "Материал — Болотная мошкара",
+      "kind": "material",
+      "slot": null,
+      "price": 0,
+      "level": 2,
+      "description": "Добыча с монстра «Болотная мошкара» в локации «Заросшая окраина».",
+      "sourceMonster": "FL-01-06",
+      "legacy": false
+    },
+    {
+      "id": "FLDROP-01-07-A",
+      "name": "Материал — Старый лесной клещ",
+      "kind": "material",
+      "slot": null,
+      "price": 0,
+      "level": 2,
+      "description": "Добыча с монстра «Старый лесной клещ» в локации «Заросшая окраина».",
+      "sourceMonster": "FL-01-07",
+      "legacy": false
+    },
+    {
+      "id": "FLDROP-01-07-B",
+      "name": "Материал — Старый лесной клещ · редкий",
+      "kind": "material",
+      "slot": null,
+      "price": 0,
+      "level": 2,
+      "description": "Добыча с монстра «Старый лесной клещ» в локации «Заросшая окраина».",
+      "sourceMonster": "FL-01-07",
+      "legacy": false
+    },
+    {
+      "id": "FLDROP-01-08-A",
+      "name": "Материал — Пятнистый хищник",
+      "kind": "material",
+      "slot": null,
+      "price": 0,
+      "level": 3,
+      "description": "Добыча с монстра «Пятнистый хищник» в локации «Заросшая окраина».",
+      "sourceMonster": "FL-01-08",
+      "legacy": false
+    },
+    {
+      "id": "FLDROP-01-09-A",
+      "name": "Материал — Корневой сторож",
+      "kind": "material",
+      "slot": null,
+      "price": 0,
+      "level": 3,
+      "description": "Добыча с монстра «Корневой сторож» в локации «Заросшая окраина».",
+      "sourceMonster": "FL-01-09",
+      "legacy": false
+    },
+    {
+      "id": "FLDROP-01-09-B",
+      "name": "Материал — Корневой сторож · редкий",
+      "kind": "material",
+      "slot": null,
+      "price": 0,
+      "level": 3,
+      "description": "Добыча с монстра «Корневой сторож» в локации «Заросшая окраина».",
+      "sourceMonster": "FL-01-09",
+      "legacy": false
+    },
+    {
+      "id": "FLDROP-01-10-A",
+      "name": "Материал — Матка колючих гнёзд",
+      "kind": "material",
+      "slot": null,
+      "price": 0,
+      "level": 3,
+      "description": "Добыча с монстра «Матка колючих гнёзд» в локации «Заросшая окраина».",
+      "sourceMonster": "FL-01-10",
+      "legacy": false
+    },
+    {
+      "id": "FLDROP-01-10-B",
+      "name": "Материал — Матка колючих гнёзд · редкий",
+      "kind": "material",
+      "slot": null,
+      "price": 0,
+      "level": 3,
+      "description": "Добыча с монстра «Матка колючих гнёзд» в локации «Заросшая окраина».",
+      "sourceMonster": "FL-01-10",
+      "legacy": false
+    },
+    {
+      "id": "FLDROP-02-01-A",
+      "name": "Материал — Трясинный жук",
+      "kind": "material",
+      "slot": null,
+      "price": 0,
+      "level": 3,
+      "description": "Добыча с монстра «Трясинный жук» в локации «Топкие низины».",
+      "sourceMonster": "FL-02-01",
+      "legacy": false
+    },
+    {
+      "id": "FLDROP-02-02-A",
+      "name": "Материал — Ядовитая пиявка",
+      "kind": "material",
+      "slot": null,
+      "price": 0,
+      "level": 3,
+      "description": "Добыча с монстра «Ядовитая пиявка» в локации «Топкие низины».",
+      "sourceMonster": "FL-02-02",
+      "legacy": false
+    },
+    {
+      "id": "FLDROP-02-03-A",
+      "name": "Материал — Гнилостный слизень",
+      "kind": "material",
+      "slot": null,
+      "price": 0,
+      "level": 3,
+      "description": "Добыча с монстра «Гнилостный слизень» в локации «Топкие низины».",
+      "sourceMonster": "FL-02-03",
+      "legacy": false
+    },
+    {
+      "id": "FLDROP-02-04-A",
+      "name": "Материал — Топкий падальщик",
+      "kind": "material",
+      "slot": null,
+      "price": 0,
+      "level": 4,
+      "description": "Добыча с монстра «Топкий падальщик» в локации «Топкие низины».",
+      "sourceMonster": "FL-02-04",
+      "legacy": false
+    },
+    {
+      "id": "FLDROP-02-05-A",
+      "name": "Материал — Болотная гадюка",
+      "kind": "material",
+      "slot": null,
+      "price": 0,
+      "level": 4,
+      "description": "Добыча с монстра «Болотная гадюка» в локации «Топкие низины».",
+      "sourceMonster": "FL-02-05",
+      "legacy": false
+    },
+    {
+      "id": "FLDROP-02-05-B",
+      "name": "Материал — Болотная гадюка · редкий",
+      "kind": "material",
+      "slot": null,
+      "price": 0,
+      "level": 4,
+      "description": "Добыча с монстра «Болотная гадюка» в локации «Топкие низины».",
+      "sourceMonster": "FL-02-05",
+      "legacy": false
+    },
+    {
+      "id": "FLDROP-02-06-A",
+      "name": "Материал — Мохнатый трясун",
+      "kind": "material",
+      "slot": null,
+      "price": 0,
+      "level": 4,
+      "description": "Добыча с монстра «Мохнатый трясун» в локации «Топкие низины».",
+      "sourceMonster": "FL-02-06",
+      "legacy": false
+    },
+    {
+      "id": "FLDROP-02-07-A",
+      "name": "Материал — Плесневый клещ",
+      "kind": "material",
+      "slot": null,
+      "price": 0,
+      "level": 4,
+      "description": "Добыча с монстра «Плесневый клещ» в локации «Топкие низины».",
+      "sourceMonster": "FL-02-07",
+      "legacy": false
+    },
+    {
+      "id": "FLDROP-02-08-A",
+      "name": "Материал — Туманная жаба",
+      "kind": "material",
+      "slot": null,
+      "price": 0,
+      "level": 5,
+      "description": "Добыча с монстра «Туманная жаба» в локации «Топкие низины».",
+      "sourceMonster": "FL-02-08",
+      "legacy": false
+    },
+    {
+      "id": "FLDROP-02-09-A",
+      "name": "Материал — Червь топких вод",
+      "kind": "material",
+      "slot": null,
+      "price": 0,
+      "level": 5,
+      "description": "Добыча с монстра «Червь топких вод» в локации «Топкие низины».",
+      "sourceMonster": "FL-02-09",
+      "legacy": false
+    },
+    {
+      "id": "FLDROP-02-10-A",
+      "name": "Материал — Болотный пожиратель",
+      "kind": "material",
+      "slot": null,
+      "price": 0,
+      "level": 5,
+      "description": "Добыча с монстра «Болотный пожиратель» в локации «Топкие низины».",
+      "sourceMonster": "FL-02-10",
+      "legacy": false
+    },
+    {
+      "id": "FLDROP-02-10-B",
+      "name": "Материал — Болотный пожиратель · редкий",
+      "kind": "material",
+      "slot": null,
+      "price": 0,
+      "level": 5,
+      "description": "Добыча с монстра «Болотный пожиратель» в локации «Топкие низины».",
+      "sourceMonster": "FL-02-10",
+      "legacy": false
+    },
+    {
+      "id": "FLDROP-03-01-A",
+      "name": "Материал — Дорожный мародёр",
+      "kind": "material",
+      "slot": null,
+      "price": 0,
+      "level": 5,
+      "description": "Добыча с монстра «Дорожный мародёр» в локации «Старый тракт».",
+      "sourceMonster": "FL-03-01",
+      "legacy": false
+    },
+    {
+      "id": "FLDROP-03-02-A",
+      "name": "Материал — Бродячий копейщик",
+      "kind": "material",
+      "slot": null,
+      "price": 0,
+      "level": 5,
+      "description": "Добыча с монстра «Бродячий копейщик» в локации «Старый тракт».",
+      "sourceMonster": "FL-03-02",
+      "legacy": false
+    },
+    {
+      "id": "FLDROP-03-03-A",
+      "name": "Материал — Разбитый щитоносец",
+      "kind": "material",
+      "slot": null,
+      "price": 0,
+      "level": 5,
+      "description": "Добыча с монстра «Разбитый щитоносец» в локации «Старый тракт».",
+      "sourceMonster": "FL-03-03",
+      "legacy": false
+    },
+    {
+      "id": "FLDROP-03-04-A",
+      "name": "Материал — Псовый налётчик",
+      "kind": "material",
+      "slot": null,
+      "price": 0,
+      "level": 6,
+      "description": "Добыча с монстра «Псовый налётчик» в локации «Старый тракт».",
+      "sourceMonster": "FL-03-04",
+      "legacy": false
+    },
+    {
+      "id": "FLDROP-03-05-A",
+      "name": "Материал — Трактовый стрелок",
+      "kind": "material",
+      "slot": null,
+      "price": 0,
+      "level": 6,
+      "description": "Добыча с монстра «Трактовый стрелок» в локации «Старый тракт».",
+      "sourceMonster": "FL-03-05",
+      "legacy": false
+    },
+    {
+      "id": "FLDROP-03-05-B",
+      "name": "Материал — Трактовый стрелок · редкий",
+      "kind": "material",
+      "slot": null,
+      "price": 0,
+      "level": 6,
+      "description": "Добыча с монстра «Трактовый стрелок» в локации «Старый тракт».",
+      "sourceMonster": "FL-03-05",
+      "legacy": false
+    },
+    {
+      "id": "FLDROP-03-06-A",
+      "name": "Материал — Грязевой головорез",
+      "kind": "material",
+      "slot": null,
+      "price": 0,
+      "level": 6,
+      "description": "Добыча с монстра «Грязевой головорез» в локации «Старый тракт».",
+      "sourceMonster": "FL-03-06",
+      "legacy": false
+    },
+    {
+      "id": "FLDROP-03-07-A",
+      "name": "Материал — Сборщик долгов",
+      "kind": "material",
+      "slot": null,
+      "price": 0,
+      "level": 6,
+      "description": "Добыча с монстра «Сборщик долгов» в локации «Старый тракт».",
+      "sourceMonster": "FL-03-07",
+      "legacy": false
+    },
+    {
+      "id": "FLDROP-03-08-A",
+      "name": "Материал — Наёмник без знамени",
+      "kind": "material",
+      "slot": null,
+      "price": 0,
+      "level": 7,
+      "description": "Добыча с монстра «Наёмник без знамени» в локации «Старый тракт».",
+      "sourceMonster": "FL-03-08",
+      "legacy": false
+    },
+    {
+      "id": "FLDROP-03-09-A",
+      "name": "Материал — Старый дорожный ветеран",
+      "kind": "material",
+      "slot": null,
+      "price": 0,
+      "level": 7,
+      "description": "Добыча с монстра «Старый дорожный ветеран» в локации «Старый тракт».",
+      "sourceMonster": "FL-03-09",
+      "legacy": false
+    },
+    {
+      "id": "FLDROP-03-10-A",
+      "name": "Трофей — Ржавый капитан тракта",
+      "kind": "material",
+      "slot": null,
+      "price": 0,
+      "level": 7,
+      "description": "Добыча с монстра «Ржавый капитан тракта» в локации «Старый тракт».",
+      "sourceMonster": "FL-03-10",
+      "legacy": false
+    },
+    {
+      "id": "FLDROP-03-10-B",
+      "name": "Материал — Ржавый капитан тракта · редкий",
+      "kind": "material",
+      "slot": null,
+      "price": 0,
+      "level": 7,
+      "description": "Добыча с монстра «Ржавый капитан тракта» в локации «Старый тракт».",
+      "sourceMonster": "FL-03-10",
+      "legacy": false
+    },
+    {
+      "id": "FLDROP-04-01-A",
+      "name": "Материал — Гнилой волк",
+      "kind": "material",
+      "slot": null,
+      "price": 0,
+      "level": 7,
+      "description": "Добыча с монстра «Гнилой волк» в локации «Гнилой перелесок».",
+      "sourceMonster": "FL-04-01",
+      "legacy": false
+    },
+    {
+      "id": "FLDROP-04-01-B",
+      "name": "Материал — Гнилой волк · редкий",
+      "kind": "material",
+      "slot": null,
+      "price": 0,
+      "level": 7,
+      "description": "Добыча с монстра «Гнилой волк» в локации «Гнилой перелесок».",
+      "sourceMonster": "FL-04-01",
+      "legacy": false
+    },
+    {
+      "id": "FLDROP-04-02-A",
+      "name": "Материал — Споровый паук",
+      "kind": "material",
+      "slot": null,
+      "price": 0,
+      "level": 7,
+      "description": "Добыча с монстра «Споровый паук» в локации «Гнилой перелесок».",
+      "sourceMonster": "FL-04-02",
+      "legacy": false
+    },
+    {
+      "id": "FLDROP-04-03-A",
+      "name": "Материал — Лесной душитель",
+      "kind": "material",
+      "slot": null,
+      "price": 0,
+      "level": 7,
+      "description": "Добыча с монстра «Лесной душитель» в локации «Гнилой перелесок».",
+      "sourceMonster": "FL-04-03",
+      "legacy": false
+    },
+    {
+      "id": "FLDROP-04-04-A",
+      "name": "Материал — Кровавый кабан",
+      "kind": "material",
+      "slot": null,
+      "price": 0,
+      "level": 8,
+      "description": "Добыча с монстра «Кровавый кабан» в локации «Гнилой перелесок».",
+      "sourceMonster": "FL-04-04",
+      "legacy": false
+    },
+    {
+      "id": "FLDROP-04-04-B",
+      "name": "Материал — Кровавый кабан · редкий",
+      "kind": "material",
+      "slot": null,
+      "price": 0,
+      "level": 8,
+      "description": "Добыча с монстра «Кровавый кабан» в локации «Гнилой перелесок».",
+      "sourceMonster": "FL-04-04",
+      "legacy": false
+    },
+    {
+      "id": "FLDROP-04-05-A",
+      "name": "Материал — Моховой прыгун",
+      "kind": "material",
+      "slot": null,
+      "price": 0,
+      "level": 8,
+      "description": "Добыча с монстра «Моховой прыгун» в локации «Гнилой перелесок».",
+      "sourceMonster": "FL-04-05",
+      "legacy": false
+    },
+    {
+      "id": "FLDROP-04-06-A",
+      "name": "Материал — Грибной паразит",
+      "kind": "material",
+      "slot": null,
+      "price": 0,
+      "level": 8,
+      "description": "Добыча с монстра «Грибной паразит» в локации «Гнилой перелесок».",
+      "sourceMonster": "FL-04-06",
+      "legacy": false
+    },
+    {
+      "id": "FLDROP-04-07-A",
+      "name": "Материал — Слепой лесорез",
+      "kind": "material",
+      "slot": null,
+      "price": 0,
+      "level": 8,
+      "description": "Добыча с монстра «Слепой лесорез» в локации «Гнилой перелесок».",
+      "sourceMonster": "FL-04-07",
+      "legacy": false
+    },
+    {
+      "id": "FLDROP-04-08-A",
+      "name": "Материал — Ведьмин корень",
+      "kind": "material",
+      "slot": null,
+      "price": 0,
+      "level": 9,
+      "description": "Добыча с монстра «Ведьмин корень» в локации «Гнилой перелесок».",
+      "sourceMonster": "FL-04-08",
+      "legacy": false
+    },
+    {
+      "id": "FLDROP-04-09-A",
+      "name": "Материал — Чёрная лесная рысь",
+      "kind": "material",
+      "slot": null,
+      "price": 0,
+      "level": 9,
+      "description": "Добыча с монстра «Чёрная лесная рысь» в локации «Гнилой перелесок».",
+      "sourceMonster": "FL-04-09",
+      "legacy": false
+    },
+    {
+      "id": "FLDROP-04-10-A",
+      "name": "Материал — Сторож гнилого дерева",
+      "kind": "material",
+      "slot": null,
+      "price": 0,
+      "level": 9,
+      "description": "Добыча с монстра «Сторож гнилого дерева» в локации «Гнилой перелесок».",
+      "sourceMonster": "FL-04-10",
+      "legacy": false
+    },
+    {
+      "id": "FLDROP-04-10-B",
+      "name": "Материал — Сторож гнилого дерева · редкий",
+      "kind": "material",
+      "slot": null,
+      "price": 0,
+      "level": 9,
+      "description": "Добыча с монстра «Сторож гнилого дерева» в локации «Гнилой перелесок».",
+      "sourceMonster": "FL-04-10",
+      "legacy": false
+    },
+    {
+      "id": "FLDROP-05-01-A",
+      "name": "Материал — Каменный жук",
+      "kind": "material",
+      "slot": null,
+      "price": 0,
+      "level": 9,
+      "description": "Добыча с монстра «Каменный жук» в локации «Каменные пустоши».",
+      "sourceMonster": "FL-05-01",
+      "legacy": false
+    },
+    {
+      "id": "FLDROP-05-02-A",
+      "name": "Материал — Пустынный шакал",
+      "kind": "material",
+      "slot": null,
+      "price": 0,
+      "level": 9,
+      "description": "Добыча с монстра «Пустынный шакал» в локации «Каменные пустоши».",
+      "sourceMonster": "FL-05-02",
+      "legacy": false
+    },
+    {
+      "id": "FLDROP-05-02-B",
+      "name": "Материал — Пустынный шакал · редкий",
+      "kind": "material",
+      "slot": null,
+      "price": 0,
+      "level": 9,
+      "description": "Добыча с монстра «Пустынный шакал» в локации «Каменные пустоши».",
+      "sourceMonster": "FL-05-02",
+      "legacy": false
+    },
+    {
+      "id": "FLDROP-05-03-A",
+      "name": "Материал — Осколочный краб",
+      "kind": "material",
+      "slot": null,
+      "price": 0,
+      "level": 10,
+      "description": "Добыча с монстра «Осколочный краб» в локации «Каменные пустоши».",
+      "sourceMonster": "FL-05-03",
+      "legacy": false
+    },
+    {
+      "id": "FLDROP-05-04-A",
+      "name": "Материал — Песчаный бурильщик",
+      "kind": "material",
+      "slot": null,
+      "price": 0,
+      "level": 10,
+      "description": "Добыча с монстра «Песчаный бурильщик» в локации «Каменные пустоши».",
+      "sourceMonster": "FL-05-04",
+      "legacy": false
+    },
+    {
+      "id": "FLDROP-05-05-A",
+      "name": "Материал — Каменный падальщик",
+      "kind": "material",
+      "slot": null,
+      "price": 0,
+      "level": 10,
+      "description": "Добыча с монстра «Каменный падальщик» в локации «Каменные пустоши».",
+      "sourceMonster": "FL-05-05",
+      "legacy": false
+    },
+    {
+      "id": "FLDROP-05-06-A",
+      "name": "Материал — Пустошный скорпион",
+      "kind": "material",
+      "slot": null,
+      "price": 0,
+      "level": 11,
+      "description": "Добыча с монстра «Пустошный скорпион» в локации «Каменные пустоши».",
+      "sourceMonster": "FL-05-06",
+      "legacy": false
+    },
+    {
+      "id": "FLDROP-05-06-B",
+      "name": "Материал — Пустошный скорпион · редкий",
+      "kind": "material",
+      "slot": null,
+      "price": 0,
+      "level": 11,
+      "description": "Добыча с монстра «Пустошный скорпион» в локации «Каменные пустоши».",
+      "sourceMonster": "FL-05-06",
+      "legacy": false
+    },
+    {
+      "id": "FLDROP-05-07-A",
+      "name": "Материал — Гранитный громила",
+      "kind": "material",
+      "slot": null,
+      "price": 0,
+      "level": 11,
+      "description": "Добыча с монстра «Гранитный громила» в локации «Каменные пустоши».",
+      "sourceMonster": "FL-05-07",
+      "legacy": false
+    },
+    {
+      "id": "FLDROP-05-08-A",
+      "name": "Материал — Собиратель осколков",
+      "kind": "material",
+      "slot": null,
+      "price": 0,
+      "level": 11,
+      "description": "Добыча с монстра «Собиратель осколков» в локации «Каменные пустоши».",
+      "sourceMonster": "FL-05-08",
+      "legacy": false
+    },
+    {
+      "id": "FLDROP-05-09-A",
+      "name": "Материал — Пустошный разрушитель",
+      "kind": "material",
+      "slot": null,
+      "price": 0,
+      "level": 12,
+      "description": "Добыча с монстра «Пустошный разрушитель» в локации «Каменные пустоши».",
+      "sourceMonster": "FL-05-09",
+      "legacy": false
+    },
+    {
+      "id": "FLDROP-05-10-A",
+      "name": "Материал — Сердце каменной гряды",
+      "kind": "material",
+      "slot": null,
+      "price": 0,
+      "level": 12,
+      "description": "Добыча с монстра «Сердце каменной гряды» в локации «Каменные пустоши».",
+      "sourceMonster": "FL-05-10",
+      "legacy": false
+    },
+    {
+      "id": "FLDROP-05-10-B",
+      "name": "Материал — Сердце каменной гряды · редкий",
+      "kind": "material",
+      "slot": null,
+      "price": 0,
+      "level": 12,
+      "description": "Добыча с монстра «Сердце каменной гряды» в локации «Каменные пустоши».",
+      "sourceMonster": "FL-05-10",
+      "legacy": false
+    },
+    {
+      "id": "FLDROP-06-01-A",
+      "name": "Материал — Одичавший фермер",
+      "kind": "material",
+      "slot": null,
+      "price": 0,
+      "level": 12,
+      "description": "Добыча с монстра «Одичавший фермер» в локации «Забытые фермы».",
+      "sourceMonster": "FL-06-01",
+      "legacy": false
+    },
+    {
+      "id": "FLDROP-06-02-A",
+      "name": "Материал — Сторожевой пёс",
+      "kind": "material",
+      "slot": null,
+      "price": 0,
+      "level": 12,
+      "description": "Добыча с монстра «Сторожевой пёс» в локации «Забытые фермы».",
+      "sourceMonster": "FL-06-02",
+      "legacy": false
+    },
+    {
+      "id": "FLDROP-06-02-B",
+      "name": "Материал — Сторожевой пёс · редкий",
+      "kind": "material",
+      "slot": null,
+      "price": 0,
+      "level": 12,
+      "description": "Добыча с монстра «Сторожевой пёс» в локации «Забытые фермы».",
+      "sourceMonster": "FL-06-02",
+      "legacy": false
+    },
+    {
+      "id": "FLDROP-06-03-A",
+      "name": "Материал — Заражённый петух",
+      "kind": "material",
+      "slot": null,
+      "price": 0,
+      "level": 12,
+      "description": "Добыча с монстра «Заражённый петух» в локации «Забытые фермы».",
+      "sourceMonster": "FL-06-03",
+      "legacy": false
+    },
+    {
+      "id": "FLDROP-06-04-A",
+      "name": "Материал — Соломенный пугальщик",
+      "kind": "material",
+      "slot": null,
+      "price": 0,
+      "level": 13,
+      "description": "Добыча с монстра «Соломенный пугальщик» в локации «Забытые фермы».",
+      "sourceMonster": "FL-06-04",
+      "legacy": false
+    },
+    {
+      "id": "FLDROP-06-05-A",
+      "name": "Материал — Голодная свиноматка",
+      "kind": "material",
+      "slot": null,
+      "price": 0,
+      "level": 13,
+      "description": "Добыча с монстра «Голодная свиноматка» в локации «Забытые фермы».",
+      "sourceMonster": "FL-06-05",
+      "legacy": false
+    },
+    {
+      "id": "FLDROP-06-05-B",
+      "name": "Материал — Голодная свиноматка · редкий",
+      "kind": "material",
+      "slot": null,
+      "price": 0,
+      "level": 13,
+      "description": "Добыча с монстра «Голодная свиноматка» в локации «Забытые фермы».",
+      "sourceMonster": "FL-06-05",
+      "legacy": false
+    },
+    {
+      "id": "FLDROP-06-06-A",
+      "name": "Материал — Фермерский мясник",
+      "kind": "material",
+      "slot": null,
+      "price": 0,
+      "level": 13,
+      "description": "Добыча с монстра «Фермерский мясник» в локации «Забытые фермы».",
+      "sourceMonster": "FL-06-06",
+      "legacy": false
+    },
+    {
+      "id": "FLDROP-06-07-A",
+      "name": "Материал — Плесневый бык",
+      "kind": "material",
+      "slot": null,
+      "price": 0,
+      "level": 14,
+      "description": "Добыча с монстра «Плесневый бык» в локации «Забытые фермы».",
+      "sourceMonster": "FL-06-07",
+      "legacy": false
+    },
+    {
+      "id": "FLDROP-06-07-B",
+      "name": "Материал — Плесневый бык · редкий",
+      "kind": "material",
+      "slot": null,
+      "price": 0,
+      "level": 14,
+      "description": "Добыча с монстра «Плесневый бык» в локации «Забытые фермы».",
+      "sourceMonster": "FL-06-07",
+      "legacy": false
+    },
+    {
+      "id": "FLDROP-06-08-A",
+      "name": "Материал — Хозяин пустого амбара",
+      "kind": "material",
+      "slot": null,
+      "price": 0,
+      "level": 14,
+      "description": "Добыча с монстра «Хозяин пустого амбара» в локации «Забытые фермы».",
+      "sourceMonster": "FL-06-08",
+      "legacy": false
+    },
+    {
+      "id": "FLDROP-06-09-A",
+      "name": "Материал — Безликий пахарь",
+      "kind": "material",
+      "slot": null,
+      "price": 0,
+      "level": 15,
+      "description": "Добыча с монстра «Безликий пахарь» в локации «Забытые фермы».",
+      "sourceMonster": "FL-06-09",
+      "legacy": false
+    },
+    {
+      "id": "FLDROP-06-10-A",
+      "name": "Трофей — Хозяин последнего урожая",
+      "kind": "material",
+      "slot": null,
+      "price": 0,
+      "level": 15,
+      "description": "Добыча с монстра «Хозяин последнего урожая» в локации «Забытые фермы».",
+      "sourceMonster": "FL-06-10",
+      "legacy": false
+    },
+    {
+      "id": "FLDROP-06-10-B",
+      "name": "Материал — Хозяин последнего урожая · редкий",
+      "kind": "material",
+      "slot": null,
+      "price": 0,
+      "level": 15,
+      "description": "Добыча с монстра «Хозяин последнего урожая» в локации «Забытые фермы».",
+      "sourceMonster": "FL-06-10",
+      "legacy": false
+    },
+    {
+      "id": "FLDROP-07-01-A",
+      "name": "Материал — Руинный крысолов",
+      "kind": "material",
+      "slot": null,
+      "price": 0,
+      "level": 15,
+      "description": "Добыча с монстра «Руинный крысолов» в локации «Чёрные руины».",
+      "sourceMonster": "FL-07-01",
+      "legacy": false
+    },
+    {
+      "id": "FLDROP-07-02-A",
+      "name": "Материал — Каменный писарь",
+      "kind": "material",
+      "slot": null,
+      "price": 0,
+      "level": 15,
+      "description": "Добыча с монстра «Каменный писарь» в локации «Чёрные руины».",
+      "sourceMonster": "FL-07-02",
+      "legacy": false
+    },
+    {
+      "id": "FLDROP-07-03-A",
+      "name": "Материал — Треснувший страж",
+      "kind": "material",
+      "slot": null,
+      "price": 0,
+      "level": 16,
+      "description": "Добыча с монстра «Треснувший страж» в локации «Чёрные руины».",
+      "sourceMonster": "FL-07-03",
+      "legacy": false
+    },
+    {
+      "id": "FLDROP-07-04-A",
+      "name": "Материал — Пустой служитель",
+      "kind": "material",
+      "slot": null,
+      "price": 0,
+      "level": 16,
+      "description": "Добыча с монстра «Пустой служитель» в локации «Чёрные руины».",
+      "sourceMonster": "FL-07-04",
+      "legacy": false
+    },
+    {
+      "id": "FLDROP-07-05-A",
+      "name": "Материал — Руинный ловец",
+      "kind": "material",
+      "slot": null,
+      "price": 0,
+      "level": 16,
+      "description": "Добыча с монстра «Руинный ловец» в локации «Чёрные руины».",
+      "sourceMonster": "FL-07-05",
+      "legacy": false
+    },
+    {
+      "id": "FLDROP-07-06-A",
+      "name": "Материал — Чёрный копейщик",
+      "kind": "material",
+      "slot": null,
+      "price": 0,
+      "level": 17,
+      "description": "Добыча с монстра «Чёрный копейщик» в локации «Чёрные руины».",
+      "sourceMonster": "FL-07-06",
+      "legacy": false
+    },
+    {
+      "id": "FLDROP-07-07-A",
+      "name": "Материал — Рунический жрец",
+      "kind": "material",
+      "slot": null,
+      "price": 0,
+      "level": 17,
+      "description": "Добыча с монстра «Рунический жрец» в локации «Чёрные руины».",
+      "sourceMonster": "FL-07-07",
+      "legacy": false
+    },
+    {
+      "id": "FLDROP-07-08-A",
+      "name": "Материал — Хранитель печатей",
+      "kind": "material",
+      "slot": null,
+      "price": 0,
+      "level": 18,
+      "description": "Добыча с монстра «Хранитель печатей» в локации «Чёрные руины».",
+      "sourceMonster": "FL-07-08",
+      "legacy": false
+    },
+    {
+      "id": "FLDROP-07-09-A",
+      "name": "Материал — Безмолвный судья",
+      "kind": "material",
+      "slot": null,
+      "price": 0,
+      "level": 18,
+      "description": "Добыча с монстра «Безмолвный судья» в локации «Чёрные руины».",
+      "sourceMonster": "FL-07-09",
+      "legacy": false
+    },
+    {
+      "id": "FLDROP-07-10-A",
+      "name": "Материал — Чёрный страж ворот",
+      "kind": "material",
+      "slot": null,
+      "price": 0,
+      "level": 18,
+      "description": "Добыча с монстра «Чёрный страж ворот» в локации «Чёрные руины».",
+      "sourceMonster": "FL-07-10",
+      "legacy": false
+    },
+    {
+      "id": "FLDROP-07-10-B",
+      "name": "Материал — Чёрный страж ворот · редкий",
+      "kind": "material",
+      "slot": null,
+      "price": 0,
+      "level": 18,
+      "description": "Добыча с монстра «Чёрный страж ворот» в локации «Чёрные руины».",
+      "sourceMonster": "FL-07-10",
+      "legacy": false
+    },
+    {
+      "id": "FLDROP-08-01-A",
+      "name": "Материал — Подземный клещ",
+      "kind": "material",
+      "slot": null,
+      "price": 0,
+      "level": 18,
+      "description": "Добыча с монстра «Подземный клещ» в локации «Подземный спуск».",
+      "sourceMonster": "FL-08-01",
+      "legacy": false
+    },
+    {
+      "id": "FLDROP-08-02-A",
+      "name": "Материал — Кристальный слизень",
+      "kind": "material",
+      "slot": null,
+      "price": 0,
+      "level": 18,
+      "description": "Добыча с монстра «Кристальный слизень» в локации «Подземный спуск».",
+      "sourceMonster": "FL-08-02",
+      "legacy": false
+    },
+    {
+      "id": "FLDROP-08-03-A",
+      "name": "Материал — Слепой охотник",
+      "kind": "material",
+      "slot": null,
+      "price": 0,
+      "level": 19,
+      "description": "Добыча с монстра «Слепой охотник» в локации «Подземный спуск».",
+      "sourceMonster": "FL-08-03",
+      "legacy": false
+    },
+    {
+      "id": "FLDROP-08-04-A",
+      "name": "Материал — Пещерный жнец",
+      "kind": "material",
+      "slot": null,
+      "price": 0,
+      "level": 19,
+      "description": "Добыча с монстра «Пещерный жнец» в локации «Подземный спуск».",
+      "sourceMonster": "FL-08-04",
+      "legacy": false
+    },
+    {
+      "id": "FLDROP-08-05-A",
+      "name": "Материал — Камнеед",
+      "kind": "material",
+      "slot": null,
+      "price": 0,
+      "level": 19,
+      "description": "Добыча с монстра «Камнеед» в локации «Подземный спуск».",
+      "sourceMonster": "FL-08-05",
+      "legacy": false
+    },
+    {
+      "id": "FLDROP-08-06-A",
+      "name": "Материал — Глубинная многоножка",
+      "kind": "material",
+      "slot": null,
+      "price": 0,
+      "level": 20,
+      "description": "Добыча с монстра «Глубинная многоножка» в локации «Подземный спуск».",
+      "sourceMonster": "FL-08-06",
+      "legacy": false
+    },
+    {
+      "id": "FLDROP-08-07-A",
+      "name": "Материал — Пещерный плевун",
+      "kind": "material",
+      "slot": null,
+      "price": 0,
+      "level": 20,
+      "description": "Добыча с монстра «Пещерный плевун» в локации «Подземный спуск».",
+      "sourceMonster": "FL-08-07",
+      "legacy": false
+    },
+    {
+      "id": "FLDROP-08-08-A",
+      "name": "Материал — Кристальный страж",
+      "kind": "material",
+      "slot": null,
+      "price": 0,
+      "level": 20,
+      "description": "Добыча с монстра «Кристальный страж» в локации «Подземный спуск».",
+      "sourceMonster": "FL-08-08",
+      "legacy": false
+    },
+    {
+      "id": "FLDROP-08-09-A",
+      "name": "Материал — Глубинный разоритель",
+      "kind": "material",
+      "slot": null,
+      "price": 0,
+      "level": 21,
+      "description": "Добыча с монстра «Глубинный разоритель» в локации «Подземный спуск».",
+      "sourceMonster": "FL-08-09",
+      "legacy": false
+    },
+    {
+      "id": "FLDROP-08-10-A",
+      "name": "Материал — Пожиратель глубины",
+      "kind": "material",
+      "slot": null,
+      "price": 0,
+      "level": 21,
+      "description": "Добыча с монстра «Пожиратель глубины» в локации «Подземный спуск».",
+      "sourceMonster": "FL-08-10",
+      "legacy": false
+    },
+    {
+      "id": "FLDROP-08-10-B",
+      "name": "Материал — Пожиратель глубины · редкий",
+      "kind": "material",
+      "slot": null,
+      "price": 0,
+      "level": 21,
+      "description": "Добыча с монстра «Пожиратель глубины» в локации «Подземный спуск».",
+      "sourceMonster": "FL-08-10",
+      "legacy": false
+    },
+    {
+      "id": "FLDROP-09-01-A",
+      "name": "Материал — Костяной гончий",
+      "kind": "material",
+      "slot": null,
+      "price": 0,
+      "level": 21,
+      "description": "Добыча с монстра «Костяной гончий» в локации «Долина костей».",
+      "sourceMonster": "FL-09-01",
+      "legacy": false
+    },
+    {
+      "id": "FLDROP-09-02-A",
+      "name": "Материал — Черепной сборщик",
+      "kind": "material",
+      "slot": null,
+      "price": 0,
+      "level": 21,
+      "description": "Добыча с монстра «Черепной сборщик» в локации «Долина костей».",
+      "sourceMonster": "FL-09-02",
+      "legacy": false
+    },
+    {
+      "id": "FLDROP-09-03-A",
+      "name": "Материал — Могильный ползун",
+      "kind": "material",
+      "slot": null,
+      "price": 0,
+      "level": 22,
+      "description": "Добыча с монстра «Могильный ползун» в локации «Долина костей».",
+      "sourceMonster": "FL-09-03",
+      "legacy": false
+    },
+    {
+      "id": "FLDROP-09-04-A",
+      "name": "Материал — Праховый лучник",
+      "kind": "material",
+      "slot": null,
+      "price": 0,
+      "level": 22,
+      "description": "Добыча с монстра «Праховый лучник» в локации «Долина костей».",
+      "sourceMonster": "FL-09-04",
+      "legacy": false
+    },
+    {
+      "id": "FLDROP-09-05-A",
+      "name": "Материал — Костяной рыцарь",
+      "kind": "material",
+      "slot": null,
+      "price": 0,
+      "level": 23,
+      "description": "Добыча с монстра «Костяной рыцарь» в локации «Долина костей».",
+      "sourceMonster": "FL-09-05",
+      "legacy": false
+    },
+    {
+      "id": "FLDROP-09-06-A",
+      "name": "Материал — Плачущий мертвец",
+      "kind": "material",
+      "slot": null,
+      "price": 0,
+      "level": 23,
+      "description": "Добыча с монстра «Плачущий мертвец» в локации «Долина костей».",
+      "sourceMonster": "FL-09-06",
+      "legacy": false
+    },
+    {
+      "id": "FLDROP-09-07-A",
+      "name": "Материал — Собиратель душ",
+      "kind": "material",
+      "slot": null,
+      "price": 0,
+      "level": 24,
+      "description": "Добыча с монстра «Собиратель душ» в локации «Долина костей».",
+      "sourceMonster": "FL-09-07",
+      "legacy": false
+    },
+    {
+      "id": "FLDROP-09-08-A",
+      "name": "Материал — Погребальный великан",
+      "kind": "material",
+      "slot": null,
+      "price": 0,
+      "level": 24,
+      "description": "Добыча с монстра «Погребальный великан» в локации «Долина костей».",
+      "sourceMonster": "FL-09-08",
+      "legacy": false
+    },
+    {
+      "id": "FLDROP-09-09-A",
+      "name": "Материал — Безглазый палач",
+      "kind": "material",
+      "slot": null,
+      "price": 0,
+      "level": 25,
+      "description": "Добыча с монстра «Безглазый палач» в локации «Долина костей».",
+      "sourceMonster": "FL-09-09",
+      "legacy": false
+    },
+    {
+      "id": "FLDROP-09-10-A",
+      "name": "Трофей — Король костяной долины",
+      "kind": "material",
+      "slot": null,
+      "price": 0,
+      "level": 25,
+      "description": "Добыча с монстра «Король костяной долины» в локации «Долина костей».",
+      "sourceMonster": "FL-09-10",
+      "legacy": false
+    },
+    {
+      "id": "FLDROP-09-10-B",
+      "name": "Материал — Король костяной долины · редкий",
+      "kind": "material",
+      "slot": null,
+      "price": 0,
+      "level": 25,
+      "description": "Добыча с монстра «Король костяной долины» в локации «Долина костей».",
+      "sourceMonster": "FL-09-10",
+      "legacy": false
+    },
+    {
+      "id": "FLDROP-10-01-A",
+      "name": "Материал — Забвенный служитель",
+      "kind": "material",
+      "slot": null,
+      "price": 0,
+      "level": 25,
+      "description": "Добыча с монстра «Забвенный служитель» в локации «Сердце забвения».",
+      "sourceMonster": "FL-10-01",
+      "legacy": false
+    },
+    {
+      "id": "FLDROP-10-02-A",
+      "name": "Материал — Искажённый рыцарь",
+      "kind": "material",
+      "slot": null,
+      "price": 0,
+      "level": 26,
+      "description": "Добыча с монстра «Искажённый рыцарь» в локации «Сердце забвения».",
+      "sourceMonster": "FL-10-02",
+      "legacy": false
+    },
+    {
+      "id": "FLDROP-10-03-A",
+      "name": "Материал — Пожиратель имён",
+      "kind": "material",
+      "slot": null,
+      "price": 0,
+      "level": 26,
+      "description": "Добыча с монстра «Пожиратель имён» в локации «Сердце забвения».",
+      "sourceMonster": "FL-10-03",
+      "legacy": false
+    },
+    {
+      "id": "FLDROP-10-04-A",
+      "name": "Материал — Туманный палач",
+      "kind": "material",
+      "slot": null,
+      "price": 0,
+      "level": 27,
+      "description": "Добыча с монстра «Туманный палач» в локации «Сердце забвения».",
+      "sourceMonster": "FL-10-04",
+      "legacy": false
+    },
+    {
+      "id": "FLDROP-10-05-A",
+      "name": "Материал — Сердечный паразит",
+      "kind": "material",
+      "slot": null,
+      "price": 0,
+      "level": 27,
+      "description": "Добыча с монстра «Сердечный паразит» в локации «Сердце забвения».",
+      "sourceMonster": "FL-10-05",
+      "legacy": false
+    },
+    {
+      "id": "FLDROP-10-06-A",
+      "name": "Материал — Хранитель пустого трона",
+      "kind": "material",
+      "slot": null,
+      "price": 0,
+      "level": 28,
+      "description": "Добыча с монстра «Хранитель пустого трона» в локации «Сердце забвения».",
+      "sourceMonster": "FL-10-06",
+      "legacy": false
+    },
+    {
+      "id": "FLDROP-10-07-A",
+      "name": "Материал — Разрушенный пророк",
+      "kind": "material",
+      "slot": null,
+      "price": 0,
+      "level": 28,
+      "description": "Добыча с монстра «Разрушенный пророк» в локации «Сердце забвения».",
+      "sourceMonster": "FL-10-07",
+      "legacy": false
+    },
+    {
+      "id": "FLDROP-10-08-A",
+      "name": "Материал — Древний безликий",
+      "kind": "material",
+      "slot": null,
+      "price": 0,
+      "level": 29,
+      "description": "Добыча с монстра «Древний безликий» в локации «Сердце забвения».",
+      "sourceMonster": "FL-10-08",
+      "legacy": false
+    },
+    {
+      "id": "FLDROP-10-09-A",
+      "name": "Материал — Последний страж забвения",
+      "kind": "material",
+      "slot": null,
+      "price": 0,
+      "level": 30,
+      "description": "Добыча с монстра «Последний страж забвения» в локации «Сердце забвения».",
+      "sourceMonster": "FL-10-09",
+      "legacy": false
+    },
+    {
+      "id": "FLDROP-10-09-B",
+      "name": "Материал — Последний страж забвения · редкий",
+      "kind": "material",
+      "slot": null,
+      "price": 0,
+      "level": 30,
+      "description": "Добыча с монстра «Последний страж забвения» в локации «Сердце забвения».",
+      "sourceMonster": "FL-10-09",
+      "legacy": false
+    },
+    {
+      "id": "FLDROP-10-10-A",
+      "name": "Трофей — Архонт Забвения",
+      "kind": "material",
+      "slot": null,
+      "price": 0,
+      "level": 30,
+      "description": "Добыча с монстра «Архонт Забвения» в локации «Сердце забвения».",
+      "sourceMonster": "FL-10-10",
+      "legacy": false
+    },
+    {
+      "id": "FLDROP-10-10-B",
+      "name": "Материал — Архонт Забвения · редкий",
+      "kind": "material",
+      "slot": null,
+      "price": 0,
+      "level": 30,
+      "description": "Добыча с монстра «Архонт Забвения» в локации «Сердце забвения».",
+      "sourceMonster": "FL-10-10",
+      "legacy": false
+    }
+  ],
+  "dungeons": [
+    {
+      "id": "fl_dungeon_03",
+      "name": "Склеп ржавого капитана",
+      "min": 5,
+      "power": 35,
+      "xp": 420,
+      "gold": 220,
+      "resource": "FLDROP-03-10-A",
+      "desc": "Три зала старого караванного склепа. Финальный страж — Ржавый капитан тракта.",
+      "bossId": "FL-03-10",
+      "rooms": [
+        "Дорожные мародёры",
+        "Щитоносцы",
+        "Ржавый капитан тракта"
+      ]
+    },
+    {
+      "id": "fl_dungeon_06",
+      "name": "Амбар последнего урожая",
+      "min": 12,
+      "power": 85,
+      "xp": 1350,
+      "gold": 760,
+      "resource": "FLDROP-06-10-A",
+      "desc": "Заражённые амбары и последний хозяин урожая.",
+      "bossId": "FL-06-10",
+      "rooms": [
+        "Одичавшие фермеры",
+        "Плесневые звери",
+        "Хозяин последнего урожая"
+      ]
+    },
+    {
+      "id": "fl_dungeon_09",
+      "name": "Трон костяной долины",
+      "min": 21,
+      "power": 145,
+      "xp": 3100,
+      "gold": 1850,
+      "resource": "FLDROP-09-10-A",
+      "desc": "Погребальные залы и трон Короля костяной долины.",
+      "bossId": "FL-09-10",
+      "rooms": [
+        "Костяные гончие",
+        "Костяные рыцари",
+        "Король костяной долины"
+      ]
+    },
+    {
+      "id": "fl_dungeon_10",
+      "name": "Святилище Архонта",
+      "min": 25,
+      "power": 210,
+      "xp": 6200,
+      "gold": 3900,
+      "resource": "FLDROP-10-10-A",
+      "desc": "Последнее подземелье Забытых земель. В конце ждёт Архонт Забвения.",
+      "bossId": "FL-10-10",
+      "rooms": [
+        "Забвенные служители",
+        "Искажённые стражи",
+        "Архонт Забвения"
+      ]
+    }
+  ]
+}
