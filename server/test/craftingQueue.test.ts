@@ -1,6 +1,9 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { refundCraftMaterials } from '../src/craftingQueue.js';
+import { mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
+import { claimCraftJob, refundCraftMaterials, startCraftJob } from '../src/craftingQueue.js';
 
 test('refunds the exact materials stored on a craft job', () => {
   const inventory = ['herb_material', 'wood_material'];
@@ -28,7 +31,6 @@ test('rejects malformed material quantities and oversized refunds', () => {
   assert.equal(refundCraftMaterials([], { materials: ['ash_ore'] }).refunded, false);
 });
 
-import { claimCraftJob, startCraftJob } from '../src/craftingQueue.js';
 
 test('starting a craft job consumes the exact recipe materials and stores a refund snapshot', () => {
   const started = startCraftJob({
@@ -72,4 +74,24 @@ test('blocked unique output with unknown legacy materials remains queued for man
   const queue = [{ id: 'job-1', output: 'unique_amulet', count: 1, finishAt: 100 }];
   assert.throws(() => claimCraftJob({ inventory: ['wood'], queue, jobId: 'job-1', now: 100, uniqueConflict: true }), /job retained/);
   assert.equal(queue.length, 1);
+});
+
+test('an in-progress craft job and its reserved materials survive save and reconnect round-trip', () => {
+  const f = mkdtempSync(join(tmpdir(), 'misty-craft-reconnect-'));
+  try {
+    const started = startCraftJob({ inventory: ['ore', 'ore', 'herb'], queue: [],
+      materials: { ore: 2, herb: 1 },
+      job: { id: 'job-reconnect', output: 'iron_sword', count: 1, finishAt: 500 } });
+    const savedPlayer = { id: 'test-player', inventory: JSON.stringify(started.inventory), craftQueue: JSON.stringify(started.queue) };
+    const savePath = join(f, 'players.json');
+    writeFileSync(savePath, JSON.stringify({ 'test-player': savedPlayer }));
+    const reloaded = JSON.parse(readFileSync(savePath, 'utf8'))['test-player'];
+    assert.deepEqual(JSON.parse(reloaded.inventory), []);
+    const restoredQueue = JSON.parse(reloaded.craftQueue);
+    assert.equal(restoredQueue[0].id, 'job-reconnect');
+    assert.deepEqual(restoredQueue[0].materials, { ore: 2, herb: 1 });
+    const claimed = claimCraftJob({ inventory: JSON.parse(reloaded.inventory), queue: restoredQueue, jobId: 'job-reconnect', now: 500 });
+    assert.deepEqual(claimed.inventory, ['iron_sword']);
+    assert.equal(claimed.queue.length, 0);
+  } finally { rmSync(f, { recursive: true, force: true }); }
 });
