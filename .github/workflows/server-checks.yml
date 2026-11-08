@@ -1,0 +1,35 @@
+name: Server checks
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'server/**'
+      - '.github/workflows/server-checks.yml'
+  push:
+    branches: [stage28/save-protection]
+    paths:
+      - 'server/**'
+      - '.github/workflows/server-checks.yml'
+
+jobs:
+  server:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: server
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: server/package-lock.json
+      - name: Install dependencies
+        run: npm ci
+      - name: Run isolated player-save tests
+        run: npm test
+      - name: Build server
+        run: npm run build
