@@ -108,7 +108,7 @@ test('live Colyseus auction flows preserve both players through disconnect and s
     const sellerId = 'runtime_seller_0001';
     const buyerId = 'runtime_buyer_00001';
     writeFileSync(join(dataDir, 'players.json'), JSON.stringify({
-      [sellerId]: makePlayer(sellerId, 'Runtime Seller', 1000, ['wood_sword', 'health_potion']),
+      [sellerId]: makePlayer(sellerId, 'Runtime Seller', 1000, ['WPN-C-001', 'WPN-C-004']),
       [buyerId]: makePlayer(buyerId, 'Runtime Buyer', 2000, []),
     }, null, 2));
 
@@ -122,7 +122,7 @@ test('live Colyseus auction flows preserve both players through disconnect and s
     const buyer = await connect(port, buyerId, buyerToken);
     rooms.push(buyer.room); clients.push(buyer.client);
 
-    seller.room.send('auctionSell', { index: 0, itemId: 'wood_sword', expectedCount: 1, price: 500, currency: 'gold' });
+    seller.room.send('auctionSell', { index: 0, itemId: 'WPN-C-001', expectedCount: 1, price: 500, currency: 'gold' });
     await waitFor(() => {
       const lots = readJson(join(dataDir, 'auction.json'));
       return Array.isArray(lots) && lots.length === 1;
@@ -134,19 +134,19 @@ test('live Colyseus auction flows preserve both players through disconnect and s
     await waitFor(() => {
       const players = readJson(join(dataDir, 'players.json'));
       return Array.isArray(JSON.parse(players[buyerId].inventory))
-        && JSON.parse(players[buyerId].inventory).includes('wood_sword')
+        && JSON.parse(players[buyerId].inventory).includes('WPN-C-001')
         && readJson(join(dataDir, 'auction.json')).length === 0;
     }, 'offline seller purchase to commit');
 
     let saved = readJson(join(dataDir, 'players.json'));
     assert.equal(saved[buyerId].gold, 1500);
     assert.equal(saved[sellerId].gold, 1465);
-    assert.deepEqual(JSON.parse(saved[buyerId].inventory), ['wood_sword']);
-    assert.deepEqual(JSON.parse(saved[sellerId].inventory), ['health_potion']);
+    assert.deepEqual(JSON.parse(saved[buyerId].inventory), ['WPN-C-001']);
+    assert.deepEqual(JSON.parse(saved[sellerId].inventory), ['WPN-C-004']);
 
     const sellerAgain = await connect(port, sellerId, sellerToken);
     rooms.push(sellerAgain.room); clients.push(sellerAgain.client);
-    sellerAgain.room.send('auctionSell', { index: 0, itemId: 'health_potion', expectedCount: 1, price: 100, currency: 'gold' });
+    sellerAgain.room.send('auctionSell', { index: 0, itemId: 'WPN-C-004', expectedCount: 1, price: 100, currency: 'gold' });
     await waitFor(() => readJson(join(dataDir, 'auction.json')).length === 1, 'second listing to persist');
     const withdrawalLot = readJson(join(dataDir, 'auction.json'))[0];
     sellerAgain.room.send('auctionCancel', { id: withdrawalLot.id });
