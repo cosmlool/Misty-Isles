@@ -59,7 +59,6 @@ test('backup failure cancels the save and preserves the original data',()=>{
   try{
     writeFileSync(f.file,'{"original":{"id":"original"}}');
     // A directory at the backup-temp path makes the backup copy fail deterministically.
-    const blocker=f.file+'.'+new Date().toISOString().replace(/[:.]/g,'-')+'.'+process.pid+'.';
     // Use an existing directory as the save target to force copyFileSync to fail safely.
     const dirTarget=join(f.dir,'directory-save');
     mkdirSync(dirTarget);
@@ -67,6 +66,5 @@ test('backup failure cancels the save and preserves the original data',()=>{
     assert.throws(()=>store.savePlayers({new_player:{id:'new_player'}}),/резервную копию/);
     assert.equal(readdirSync(dirTarget).length,0);
     assert.equal(readFileSync(f.file,'utf8'),'{"original":{"id":"original"}}');
-    void blocker;
   }finally{f.cleanup();}
 });
