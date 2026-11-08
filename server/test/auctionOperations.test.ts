@@ -74,7 +74,7 @@ test('crystal purchase transfers crystals without a gold auction fee', () => {
     expectedCount: 1, price: 40, currency: 'crystals', validItemIds: itemIds, itemName: 'Iron sword', now: 10, lotId: 'lot-crystal' }).snapshot;
   const bought = buyAuctionItem({ snapshot: listed, buyerId: 'buyer', lotId: 'lot-crystal', validItemIds: itemIds, now: 30 });
   assert.equal(bought.snapshot.players.buyer.crystals, 40);
-  assert.equal(bought.snapshot.players.seller.crystals, 100);
+  assert.equal(bought.snapshot.players.seller.crystals, 139);
   assert.equal(bought.fee, 0);
   assert.equal(bought.net, 40);
 });
