@@ -7,6 +7,7 @@ import { WebSocketTransport } from '@colyseus/ws-transport';
 import { Schema, type } from '@colyseus/schema';
 import { Player } from './PlayerSchema.js';
 import { createAuctionTransactionStore } from './auctionTransactions.js';
+import { buyAuctionItem, cancelAuctionItem, listAuctionItem } from './auctionOperations.js';
 
 const ONLINE_PLAYERS = new Map<string, Player>();
 const ONLINE_CLIENTS = new Map<string, Client>();
