@@ -38,7 +38,8 @@ export function createAuctionTransactionStore(options: AuctionTransactionOptions
     }
     const snapshot = value.snapshot;
     if (!snapshot.players || typeof snapshot.players !== 'object' || Array.isArray(snapshot.players)
-      || !Array.isArray(snapshot.auction) || !Array.isArray(snapshot.history)) {
+      || !Array.isArray(snapshot.auction) || !Array.isArray(snapshot.history)
+      || Object.values(snapshot.players).some((player: any) => !player || typeof player !== 'object' || Array.isArray(player))) {
       throw new Error('Auction transaction journal contains an invalid snapshot.');
     }
   }
@@ -57,7 +58,7 @@ export function createAuctionTransactionStore(options: AuctionTransactionOptions
     try {
       parsed = JSON.parse(readFileSync(journalFile, 'utf8'));
     } catch (error) {
-      throw new Error('Auction transaction journal is unreadable; refusing to continue.', { cause: error });
+      throw new Error(`Auction transaction journal is unreadable; refusing to continue: ${String(error)}`);
     }
     validateJournal(parsed);
     apply(parsed.snapshot);
@@ -82,7 +83,7 @@ export function createAuctionTransactionStore(options: AuctionTransactionOptions
       try {
         recover();
       } catch (recoveryError) {
-        throw new Error('Auction transaction could not be fully written; recovery journal was retained.', { cause: recoveryError });
+        throw new Error(`Auction transaction could not be fully written; recovery journal was retained: ${String(recoveryError)}`);
       }
     }
   }
