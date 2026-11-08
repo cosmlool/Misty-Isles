@@ -63,12 +63,14 @@ function startServer(dataDir: string, port: number): ChildProcess {
 }
 
 async function stopServer(child: ChildProcess): Promise<void> {
-  if (child.exitCode !== null) return;
+  if (child.exitCode !== null || child.signalCode !== null) return;
+  const exited = new Promise<void>(resolve => child.once('exit', () => resolve()));
   child.kill('SIGTERM');
-  await Promise.race([
-    new Promise<void>(resolve => child.once('exit', () => resolve())),
-    delay(5_000).then(() => { child.kill('SIGKILL'); }),
-  ]);
+  await Promise.race([exited, delay(5_000)]);
+  if (child.exitCode === null && child.signalCode === null) {
+    child.kill('SIGKILL');
+    await Promise.race([exited, delay(5_000)]);
+  }
 }
 
 async function guestToken(port: number, playerId: string): Promise<string> {
@@ -89,11 +91,17 @@ async function connect(port: number, playerId: string, token: string): Promise<{
 
 async function waitFor(predicate: () => boolean, description: string): Promise<void> {
   const deadline = Date.now() + 5_000;
+  let lastError: unknown;
   while (Date.now() < deadline) {
-    if (predicate()) return;
+    try {
+      if (predicate()) return;
+    } catch (error) {
+      // Files may not exist until the server completes the first write.
+      lastError = error;
+    }
     await delay(50);
   }
-  assert.fail('Timed out waiting for ' + description);
+  assert.fail('Timed out waiting for ' + description + (lastError ? ': ' + String(lastError) : ''));
 }
 
 test('live Colyseus auction flows preserve both players through disconnect and server restart', { timeout: 45_000 }, async () => {
@@ -102,7 +110,6 @@ test('live Colyseus auction flows preserve both players through disconnect and s
   assert.notEqual(dataDir, join(serverDir, 'data'), 'runtime test must never use production server/data');
   let child: ChildProcess | undefined;
   const rooms: Room[] = [];
-  const clients: Client[] = [];
   try {
     for (const file of staticDataFiles) copyFileSync(join(serverDir, 'data', file), join(dataDir, file));
     const sellerId = 'runtime_seller_0001';
@@ -118,9 +125,9 @@ test('live Colyseus auction flows preserve both players through disconnect and s
     const sellerToken = await guestToken(port, sellerId);
     const buyerToken = await guestToken(port, buyerId);
     const seller = await connect(port, sellerId, sellerToken);
-    rooms.push(seller.room); clients.push(seller.client);
+    rooms.push(seller.room);
     const buyer = await connect(port, buyerId, buyerToken);
-    rooms.push(buyer.room); clients.push(buyer.client);
+    rooms.push(buyer.room);
 
     seller.room.send('auctionSell', { index: 0, itemId: 'WPN-C-001', expectedCount: 1, price: 500, currency: 'gold' });
     await waitFor(() => {
@@ -145,7 +152,7 @@ test('live Colyseus auction flows preserve both players through disconnect and s
     assert.deepEqual(JSON.parse(saved[sellerId].inventory), ['WPN-C-004']);
 
     const sellerAgain = await connect(port, sellerId, sellerToken);
-    rooms.push(sellerAgain.room); clients.push(sellerAgain.client);
+    rooms.push(sellerAgain.room);
     sellerAgain.room.send('auctionSell', { index: 0, itemId: 'WPN-C-004', expectedCount: 1, price: 100, currency: 'gold' });
     await waitFor(() => readJson(join(dataDir, 'auction.json')).length === 1, 'second listing to persist');
     const withdrawalLot = readJson(join(dataDir, 'auction.json'))[0];
@@ -166,9 +173,9 @@ test('live Colyseus auction flows preserve both players through disconnect and s
     child = restarted;
     await waitForServer(port, restarted);
     const buyerAfterRestart = await connect(port, buyerId, buyerToken);
-    rooms.push(buyerAfterRestart.room); clients.push(buyerAfterRestart.client);
+    rooms.push(buyerAfterRestart.room);
     const sellerAfterRestart = await connect(port, sellerId, sellerToken);
-    rooms.push(sellerAfterRestart.room); clients.push(sellerAfterRestart.client);
+    rooms.push(sellerAfterRestart.room);
 
     saved = readJson(join(dataDir, 'players.json'));
     assert.equal(saved[buyerId].gold, 1500);
@@ -178,7 +185,6 @@ test('live Colyseus auction flows preserve both players through disconnect and s
     assert.equal(readJson(join(dataDir, 'auction.json')).length, 0);
   } finally {
     await Promise.all(rooms.map(room => room.leave().catch(() => undefined)));
-    await Promise.all(clients.map(client => client.close()));
     if (child) await stopServer(child);
     rmSync(dataDir, { recursive: true, force: true });
   }
