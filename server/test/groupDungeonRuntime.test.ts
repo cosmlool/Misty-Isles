@@ -160,6 +160,7 @@ test('group boss dungeon persists win rewards and loss costs for every participa
       assert.ok(histories[id].some(payload => payload.history?.[0]?.result === result.report.result), 'each participant must receive their combat history');
     }
     for (const id of ids.slice(0, 2)) {
+      assert.equal(saved[id].battles, 1, 'each successful group dungeon attempt must count for every member');
       assert.equal(saved[id].gold, 610);
       assert.equal(saved[id].experience, 420);
       assert.equal(JSON.parse(saved[id].quests).dungeonRuns, 3);
@@ -169,6 +170,7 @@ test('group boss dungeon persists win rewards and loss costs for every participa
       assert.equal(JSON.parse(saved[id].quests).activityLog[0].outcome, 'win');
     }
     for (const id of ids.slice(2)) {
+      assert.equal(saved[id].battles, 1, 'each failed group dungeon attempt must count for every member');
       assert.equal(saved[id].gold, 500);
       assert.equal(saved[id].experience, 0);
       assert.equal(JSON.parse(saved[id].quests).dungeonRuns, 1);
