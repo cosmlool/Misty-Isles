@@ -322,3 +322,6 @@ Read `server/data/forgotten_lands.json` (100 monsters, 10 zones, 4 expedition du
 
 
 - **Correction/extension to buff-mode coverage:** a full source search finds only one combat calculation that reads `p.buff` / `buffUntil`: ordinary legacy `hunt`. Expedition search combat, both legacy and expedition boss dungeons, PvP, and clan-war calculations never read the active buff. Thus every timed buff source (paid blessing, chest, racial guild skill, profession skill) is effective only in ordinary hunt, regardless of its advertised duration/next-battle wording. Add an explicit policy and tests for every mode; the prior note naming only solo/group dungeons was incomplete.
+
+
+- **Additional raw-ID disclosure channel confirmed:** public `clanWarList` sends active war records without redaction. Each war stores `lastAttackAtByPlayer` as a map keyed by internal player IDs (see `recordClanWarDamage()`), and the handler sends that object to any requester as well as clan members. Therefore active clan wars disclose IDs of players who have attacked, in addition to the clan, auction and market disclosures listed above. Strip this internal cooldown map from every client-facing war payload.
