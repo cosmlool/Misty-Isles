@@ -85,6 +85,7 @@ test('expedition reports capture pre/post health and disconnect cancels stale gr
   const soloId = 'runtime_expedition_solo_01';
   const leaderId = 'runtime_expedition_leader_01';
   const memberId = 'runtime_expedition_member_01';
+  const orphanId = 'runtime_expedition_orphan_01';
   const port = await unusedPort();
   let child: ChildProcess | undefined;
   const rooms: Room[] = [];
@@ -103,6 +104,9 @@ test('expedition reports capture pre/post health and disconnect cancels stale gr
       }),
       [leaderId]: makePlayer(leaderId, 'Group Leader', memberId),
       [memberId]: makePlayer(memberId, 'Group Member', leaderId),
+      [orphanId]: makePlayer(orphanId, 'Orphaned Explorer', '', {
+        expedition: { branchId: 'forgotten_lands', currentZoneId: 'el1', opened: 1, cleared: [], seen: {}, state: 'searching', startedAt: Date.now() - 1_000, endsAt: Date.now() + 900_000, groupId: 'missing_group_after_restart' },
+      }),
     }, null, 2));
 
     child = spawn(process.execPath, ['--import', 'tsx', 'src/index.ts'], {
@@ -112,7 +116,7 @@ test('expedition reports capture pre/post health and disconnect cancels stale gr
     });
     await waitForServer(port, child);
     const client = new Client(`ws://127.0.0.1:${port}`);
-    const ids = [soloId, leaderId, memberId];
+    const ids = [soloId, leaderId, memberId, orphanId];
     const connected: Record<string, Room> = {};
     for (const id of ids) {
       const token = await guestToken(port, id);
@@ -120,6 +124,19 @@ test('expedition reports capture pre/post health and disconnect cancels stale gr
       connected[id] = room;
       rooms.push(room);
     }
+
+    const orphanState = JSON.parse((connected[orphanId].state as any).player.quests).expedition;
+    assert.equal(orphanState.state, 'idle', 'a search from a missing pre-restart group must not survive reconnect');
+    assert.equal(orphanState.groupId, '');
+    assert.equal(orphanState.endsAt, 0);
+
+    const orphanNotices: string[] = [];
+    connected[orphanId].onMessage('notice', payload => orphanNotices.push(String(payload?.text || '')));
+    connected[orphanId].send('rename', { name: 'Orphaned Explorer' });
+    await waitFor(() => orphanNotices.find(message => message.includes('Имя изменено')), 'orphan cleanup persistence');
+    const persistedOrphan = JSON.parse(readPlayers(join(dataDir, 'players.json'))[orphanId].quests).expedition;
+    assert.equal(persistedOrphan.state, 'idle');
+    assert.equal(persistedOrphan.groupId, '');
 
     const combatResults: any[] = [];
     connected[soloId].onMessage('combatResult', payload => combatResults.push(payload));
