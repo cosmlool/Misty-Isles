@@ -89,7 +89,7 @@ test('a guest can create a character, hunt, and keep progress after reconnecting
   expect(prePurchaseMatch).not.toBeNull();
   const inventoryCountBeforePurchase = Number(prePurchaseMatch![1]);
 
-  // Exercise the real shop transaction: currency is charged exactly once,
+  // Exercise the real shop transaction: currency is charged exactly once at the server's 30% catalog markup,
   // the purchased item enters inventory, and equipping it updates the character.
   await page.locator('.quick-nav [data-tab="shop"]').click();
   await expect(page.getByRole('heading', { name: 'Магазины и расовые товары' })).toBeVisible();
@@ -97,7 +97,7 @@ test('a guest can create a character, hunt, and keep progress after reconnecting
   await expect.poll(async () => {
     const text = await page.locator('.resources').innerText();
     return Number((text.match(/🪙\s*([\d\s\u00a0]+)/)?.[1] || '').replace(/\D/g, ''));
-  }).toBe(goldAfter - 100);
+  }).toBe(goldAfter - 130);
   const goldAfterPurchaseText = await page.locator('.resources').innerText();
   const goldAfterPurchase = Number((goldAfterPurchaseText.match(/🪙\s*([\d\s\u00a0]+)/)?.[1] || '').replace(/\D/g, ''));
 
