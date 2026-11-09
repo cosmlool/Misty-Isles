@@ -486,7 +486,7 @@ class GameRoom extends Room<RoomState> {
   }
   onLeave() { ONLINE_PLAYERS.delete(this.playerId); ONLINE_CLIENTS.delete(this.playerId); const q=readObject(this.state.player.quests);if(q.expedition){q.expedition.groupId='';this.state.player.quests=JSON.stringify(q);}const gid=PLAYER_GROUP.get(this.playerId),g=gid?HUNT_GROUPS.get(gid):undefined;if(g){g.members=g.members.filter(id=>id!==this.playerId);PLAYER_GROUP.delete(this.playerId);if(g.leader===this.playerId&&g.members.length)g.leader=g.members[0];if(!g.members.length)HUNT_GROUPS.delete(g.id);else for(const id of g.members)ONLINE_CLIENTS.get(id)?.send('huntGroupState',{group:groupSnapshot(id)});} this.save(); }
   onDispose() { this.save(); }
-  private save() { if (!this.playerId) return; const all = loadPlayers(); all[this.playerId] = this.state.player.toJSON(); savePlayers(all); }
+  private save() { if (!this.playerId) return; this.state.player.lastSeenAt=Date.now(); const all = loadPlayers(); all[this.playerId] = this.state.player.toJSON(); savePlayers(all); }
   private notice(c: Client, text: string) { c.send('notice', { text }); this.save(); }
   private requireCharacter(c: Client) { const p=this.state.player; if(!p.race){this.notice(c,'Сначала создай персонажа.');return false;} return true; }
   private addXp(p: Player, amount: number) { p.experience += amount; while(p.level<100 && p.experience>=xpNeed(p.level)){p.experience-=xpNeed(p.level);p.level++;p.statPoints+=3;p.experienceToNext=xpNeed(p.level);const healthIncrease=18+p.vitality*0.5;p.maxHealth+=healthIncrease;p.health=Math.min(effectiveMaxHealth(p),p.health+healthIncrease);} }
