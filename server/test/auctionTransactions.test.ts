@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict';
-import { mkdtempSync, mkdirSync, existsSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
+import { mkdtempSync, mkdirSync, existsSync, readFileSync, rmSync, writeFileSync, spawnSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import test from 'node:test';
@@ -35,6 +35,65 @@ test('commit atomically records the complete auction snapshot and removes the jo
     assert.deepEqual(readJson(f.auctionFile), snapshot.auction);
     assert.deepEqual(readJson(f.historyFile), snapshot.history);
     assert.equal(existsSync(f.store.journalFile), false);
+  } finally { f.cleanup(); }
+});
+
+test('process crash after the first target write is recovered exactly once from the WAL', () => {
+  const f = fixture();
+  try {
+    const previous = {
+      players: { buyer: { gold: 100, inventory: [] }, seller: { gold: 0, inventory: ['item_a'] } },
+      auction: [{ id: 'old_lot', itemId: 'item_old' }],
+      history: [{ id: 'old_tx', status: 'completed' }],
+    };
+    writeFileSync(f.playersFile, JSON.stringify(previous.players));
+    writeFileSync(f.auctionFile, JSON.stringify(previous.auction));
+    writeFileSync(f.historyFile, JSON.stringify(previous.history));
+
+    const moduleUrl = new URL('../src/auctionTransactions.ts', import.meta.url).href;
+    const childScript = `
+      import { createAuctionTransactionStore } from ${JSON.stringify(moduleUrl)};
+      const store = createAuctionTransactionStore({
+        dataDir: ${JSON.stringify(f.dataDir)},
+        playersFile: ${JSON.stringify(f.playersFile)},
+        auctionFile: ${JSON.stringify(f.auctionFile)},
+        historyFile: ${JSON.stringify(f.historyFile)},
+        testHooks: {
+          afterTargetWrite(target) {
+            if (target === 'players') process.exit(73);
+          },
+        },
+      });
+      store.commit(${JSON.stringify(snapshot)});
+      process.exit(0);
+    `;
+    const child = spawnSync(process.execPath, ['--import', 'tsx', '--input-type=module', '-e', childScript], {
+      cwd: process.cwd(),
+      encoding: 'utf8',
+      timeout: 10_000,
+    });
+
+    assert.equal(child.status, 73, 'child process must terminate at the injected crash point');
+    assert.equal(existsSync(f.store.journalFile), true, 'write-ahead journal must survive process termination');
+    assert.deepEqual(readJson(f.playersFile), snapshot.players, 'first target may already contain the committed snapshot');
+    assert.deepEqual(readJson(f.auctionFile), previous.auction, 'later targets must still show their pre-transaction state');
+    assert.deepEqual(readJson(f.historyFile), previous.history, 'history must still show its pre-transaction state');
+
+    const restartedStore = createAuctionTransactionStore({
+      dataDir: f.dataDir,
+      playersFile: f.playersFile,
+      auctionFile: f.auctionFile,
+      historyFile: f.historyFile,
+    });
+    assert.equal(restartedStore.recover(), true);
+    assert.deepEqual(readJson(f.playersFile), snapshot.players);
+    assert.deepEqual(readJson(f.auctionFile), snapshot.auction);
+    assert.deepEqual(readJson(f.historyFile), snapshot.history);
+    assert.equal(existsSync(f.store.journalFile), false);
+
+    assert.equal(readJson(f.playersFile).buyer.inventory.filter((id: string) => id === 'item_a').length, 1);
+    assert.equal(readJson(f.playersFile).seller.inventory.length, 0);
+    assert.equal(readJson(f.historyFile).filter((entry: { id: string }) => entry.id === 'tx_1').length, 1);
   } finally { f.cleanup(); }
 });
 
