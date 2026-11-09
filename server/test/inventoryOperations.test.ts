@@ -35,3 +35,10 @@ test('invalid inventory indices are rejected without mutating input', () => {
   assert.deepEqual(inventory, ['iron_sword']);
   assert.deepEqual(equipment, { weapon: 'iron_sword' });
 });
+
+test('item-type properties remain while another copy is still owned', async () => {
+  const { ownsItemCopy } = await import('../src/inventoryOperations.js');
+  assert.equal(ownsItemCopy(['iron_sword'], { weapon: 'iron_sword' }, 'iron_sword'), true);
+  assert.equal(ownsItemCopy([], { weapon: 'iron_sword' }, 'iron_sword'), true);
+  assert.equal(ownsItemCopy(['herb_material'], { weapon: '' }, 'iron_sword'), false);
+});
