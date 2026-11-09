@@ -415,3 +415,18 @@ Reviewed `server/src/pvpOperations.ts`, PvP and clan-war handlers in `server/src
 - Clan season week key is `Math.floor(Date.now()/(7*24*60*60*1000))`, which rolls on fixed seven-day intervals from Unix epoch (Thursday UTC alignment), not ISO Monday weeks. No user-defined week boundary is known; record as a design clarification before changing.
 - Clan daily quests reset using UTC epoch-day integer and reset shared progress/claims as expected when `ensureClanQuests` is invoked. The UI/claim path calls this helper before presenting or claiming.
 - No gameplay code changed. No tests executed.
+
+
+
+### Social groups, crafting, tavern, and buff UI continuation — 2026-11-09
+
+Reviewed the current branch's handlers and matching client actions in `server/src/index.ts` and `client/src/main.ts`. Source-level review only; no tests executed and no gameplay code changed.
+
+- **Confirmed group-composition lock bypass:** `huntGroupInvite` and `huntGroupAccept` both reject composition changes while any participant is searching or moving, and the UI explicitly says composition is locked during these actions. However, `huntGroupLeave` has no equivalent active-action check. It unconditionally resets only the departing member's expedition state, removes them from `group.members`, and can transfer leadership while the other members' search/travel remains active. The client also leaves the “Покинуть группу” action available during active search/travel. This allows the group composition and leader to change mid-action, contrary to the other server guards and UI rule. Decide whether leaving should be blocked until completion or should cancel/reset the action for every participant atomically. Add runtime tests for leader and non-leader leaving during both search and travel.
+- Crafting UI guards `craft` and `craftClaim` against repeat clicks; server verifies recipe/materials/queue capacity, removes materials when a job starts, and checks finish time before claim. Unique pendant conflict has a refund path. No new crafting duplication issue found in this pass.
+- Tavern UI advertises a 47% win chance and a 2x gross payout; server uses the same 0.47 threshold and pays 2x the stake after deducting the stake. Dice and cards currently share the same random mechanic, with different stakes only; this matches the displayed odds, though they are mechanically identical beyond stake size.
+- Temple UI's 30-minute duration matches the server's `buffUntil = Date.now() + 30 minutes`. Guild skills and chest buffs use their separately described 10-minute durations. However, the previously recorded combat-mode limitation remains: active buffs are only read by ordinary hunt, not expedition search, dungeons, PvP, or clan wars.
+- Clan-war attack increments the player's battle counter and ends through `notice()`, which invokes the normal save path; the earlier suspected missing-persistence issue remains explicitly corrected and is not a defect.
+- Friend request/accept flows use public player codes on the wire, verify a pending request, require the other player online at acceptance, and persist both sides' friend lists. Pending requests themselves are in-memory only and disappear on server restart; this is a UX/retry limitation, not a confirmed account or reward exploit.
+
+No local runtime tests were executed. No gameplay code changed.
