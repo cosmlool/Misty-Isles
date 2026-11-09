@@ -2,7 +2,7 @@
 
 This is the lightweight browser QA layer. It launches the game client and
 server, drives a real browser, checks the guest entry, character lifecycle,
-expedition hunting, and save recovery, and captures screenshots and diagnostics.
+expedition hunting, shop/equipment transactions, save recovery, and all primary game sections, and captures screenshots and diagnostics.
 
 ## Requirements
 
@@ -46,8 +46,11 @@ npm run report
 9. The guest buys a level-one weapon through the shop; exactly 100 gold is charged and the item is added to inventory.
 10. The guest equips the purchased weapon and the equipment slot updates.
 11. Gold, inventory, and equipped gear are restored after another page reload.
-12. The page has no uncaught JavaScript errors during the character lifecycle.
-13. The login page does not overflow a narrow mobile viewport.
+12. Gold, inventory, and equipped gear are restored after another page reload.
+13. All 17 main game sections render at a narrow mobile width without horizontal overflow.
+14. The isolated test admin screen renders without changing the character.
+15. The tested pages have no uncaught JavaScript errors.
+16. The login page does not overflow a narrow mobile viewport.
 
 The isolated test server changes `searchSeconds` to one second only in its
 temporary copy of `forgotten_lands.json`. The real game data and normal
