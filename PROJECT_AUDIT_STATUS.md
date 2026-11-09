@@ -381,3 +381,26 @@ Reviewed current branch source: `server/src/index.ts`, `server/src/PlayerSchema.
 3. Test return bonus at exactly 72 hours, just under 72 hours, and 7-day claim cooldown; verify reconnects and process restart.
 4. Test chest expected-count/index mismatch, duplicate chest requests, every reward branch, and rare unique-item duplicate filtering.
 5. Simulate abrupt process termination immediately after a mutation but before save to quantify the durability window; decide if periodic autosave is required.
+
+
+### PvP / clan-war / social-group continuation — 2026-11-09
+
+Reviewed `server/src/pvpOperations.ts`, PvP and clan-war handlers in `server/src/index.ts`, `server/test/pvpRuntime.test.ts`, `server/src/clanWarOperations.ts`, `server/test/clanWarRuntime.test.ts`, and group-travel runtime coverage. Source-level review only; tests not executed.
+
+- **Confirmed conflict with user's PvP specification:** opponent selection in `selectPvpOpponents`, the `pvpList` response filter, and `pvpChallenge` all enforce a ±2 level range. User explicitly required that all registered characters be eligible, with four randomly offered opponents. The current three independent level checks must be removed or replaced consistently when implementing the agreed rule. Existing `pvpRuntime.test.ts` explicitly expects levels 18–22 for a level-20 attacker and excludes level 23; this test must be updated alongside implementation.
+- PvP list correctly selects up to four saved characters, excludes self, uncreated characters and victims under immunity, persists the offered IDs and expires offers at 15 minutes. If fewer than four eligible characters exist, it returns fewer; this is reasonable unless user wants four slots padded with bots.
+- **Confirmed bot challenge bypass:** `pvpChallenge` accepts known bot IDs directly without requiring that bot to be present in the offered list and without applying attacker cooldown, victim immunity, gold transfer, or PvP cooldown persistence. Bot fights are treated as free training and do not award gold/XP. Confirm whether direct training challenges are intended to remain outside the 15-minute real-PvP cadence.
+- PvP combat is an abstract combat-rating comparison: no HP damage or HP loss is applied, and report fields `damage` and `received` are always zero. This is an established current design, not a defect unless the intended PvP is a full HP-based fight.
+- PvP calculation only uses weapon, legacy armor and amulet for stats/properties/set count; other five armor slots are ignored. This is another instance of the combat-equipment inconsistency already recorded above.
+- **Potential persistence gap in clan-war attack:** handler increments `p.battles` after a successful clan-war attack, but the path commits only clan/war state and broadcasts; it does not call `persistPlayer` or `save()` for the attacking player in that handler. The battle count may remain only in live room state until a later save/leave. Confirm whether this statistic is expected to persist immediately; add restart test if yes.
+- Clan-war attack cooldown is 1 second per player, enforced through persisted `lastAttackAtByPlayer`. The clan-war runtime test intentionally verifies this value. It is far shorter than the 15-minute PvP cooldown but these are separate systems; user has not specified a clan-war cadence. Keep as a design question, not a confirmed bug.
+- Clan-war expiry settlement is lazy: it runs when a client requests `clanWarList` or attempts an attack, not on an independent timer. The existing runtime test verifies settlement on list request. No duplicate reward path found in the settlement helper: finished status prevents a second settlement.
+- Group invitation/acceptance enforce online participants, friendship or same-clan relationship, maximum three members, leader-only invitations, and lock composition while any member is searching/moving. Existing group-travel runtime test verifies group travel persistence. The previously recorded mixed expedition-progress bug remains outstanding; no new group-travel defect confirmed in this pass.
+- No gameplay code changed. No tests executed.
+
+#### Follow-up test requirements
+1. Update PvP runtime test to include eligible saved characters at widely different levels and prove four are selected from the full roster (not a ±2 band); challenge one outside the old band successfully.
+2. Decide and test whether bots appear in the four offered opponents and whether training challenges should be exempt from the 15-minute cooldown.
+3. Verify PvP report and character counters persist across restart for wins and losses, both online and offline victims.
+4. Verify clan-war attack increments and persists the attacker's battle statistic immediately, if that counter is meant to include clan-war fights.
+5. Keep the 1-second clan-war cadence as a separately documented game-balance decision.
