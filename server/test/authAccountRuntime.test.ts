@@ -1,6 +1,7 @@
 import assert from 'node:assert/strict';
+import { createHash } from 'node:crypto';
 import { spawn, type ChildProcess } from 'node:child_process';
-import { copyFileSync, mkdtempSync, rmSync } from 'node:fs';
+import { copyFileSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { createServer } from 'node:net';
 import { tmpdir } from 'node:os';
 import { dirname, join, resolve } from 'node:path';
@@ -74,6 +75,9 @@ test('account registration securely links a guest save, revokes the guest token 
     const guestResponse = await post(port, '/auth/guest', { playerId });
     assert.equal(guestResponse.status, 200);
     const guest = await guestResponse.json() as { token: string };
+    const secondGuestResponse = await post(port, '/auth/guest', { playerId });
+    assert.equal(secondGuestResponse.status, 200);
+    const secondGuest = await secondGuestResponse.json() as { token: string };
 
     const registration = await post(port, '/auth/register', {
       username: 'MistyTester', password: 'StrongPass123', playerId, guestToken: guest.token,
@@ -85,6 +89,17 @@ test('account registration securely links a guest save, revokes the guest token 
 
     assert.equal((await post(port, '/auth/check', { token: account.token })).status, 200);
     assert.equal((await post(port, '/auth/check', { token: guest.token })).status, 401);
+    assert.equal((await post(port, '/auth/check', { token: secondGuest.token })).status, 401, 'linking an account must revoke every guest session for that player');
+
+    // Simulate a crash after the account record was written but before stale guest sessions were removed.
+    const sessionsPath = join(dataDir, 'sessions.json');
+    const sessions = JSON.parse(readFileSync(sessionsPath, 'utf8'));
+    for (const token of [guest.token, secondGuest.token]) {
+      sessions.push({ tokenHash: createHash('sha256').update(token).digest('hex'), playerId, accountKey: null, expiresAt: Date.now() + 60_000 });
+    }
+    writeFileSync(sessionsPath, JSON.stringify(sessions, null, 2));
+    assert.equal((await post(port, '/auth/check', { token: guest.token })).status, 401, 'stale guest tokens must be invalid even if a crash left them in sessions.json');
+    assert.equal((await post(port, '/auth/check', { token: secondGuest.token })).status, 401);
 
     const login = await post(port, '/auth/login', { username: 'mistytester', password: 'StrongPass123' });
     assert.equal(login.status, 200);
