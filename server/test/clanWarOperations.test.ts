@@ -2,6 +2,7 @@ import assert from 'node:assert/strict';
 import test from 'node:test';
 import {
   calculateClanWarDamage,
+  disbandClanState,
   clanWarCooldownRemaining,
   recordClanWarDamage,
   settleExpiredClanWars,
@@ -75,4 +76,33 @@ test('a war is not settled before its end time', () => {
   const result = settleExpiredClanWars([activeWar({ aDamage: 10 })], {}, 9_999);
   assert.equal(result.changed, false);
   assert.equal(result.wars[0].status, 'active');
+});
+
+test('disbanding a clan cancels its active wars and releases its territories', () => {
+  const clans = {
+    'clan-a': { level: 2, vault: 300 },
+    'clan-b': { level: 1, vault: 100 },
+    'clan-c': { level: 1, vault: 100 },
+  };
+  const wars = [
+    activeWar(),
+    activeWar({ id: 'unrelated-war', a: 'clan-b', b: 'clan-c' }),
+    activeWar({ id: 'already-finished', status: 'finished', a: 'clan-a', b: 'clan-c' }),
+  ];
+  const territories = [
+    { id: 'isle-a', owner: 'clan-a', ownerName: 'Clan A', capturedAt: 100, defense: 40 },
+    { id: 'isle-b', owner: 'clan-b', ownerName: 'Clan B', capturedAt: 200, defense: 50 },
+  ];
+
+  const result = disbandClanState(clans, wars, territories, 'clan-a', 12_000);
+  assert.equal(result.changed, true);
+  assert.equal(result.clans['clan-a'], undefined);
+  assert.equal(result.wars[0].status, 'cancelled');
+  assert.equal(result.wars[0].winnerId, '');
+  assert.equal(result.wars[0].reward, 0);
+  assert.equal(result.wars[0].cancelledReason, 'clan_disbanded');
+  assert.equal(result.wars[1].status, 'active');
+  assert.equal(result.wars[2].status, 'finished');
+  assert.deepEqual(result.territories[0], { id: 'isle-a', owner: '', ownerName: '', capturedAt: 0, defense: 0 });
+  assert.equal(result.territories[1].owner, 'clan-b');
 });
