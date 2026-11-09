@@ -1,4 +1,4 @@
-import { cpSync, mkdtempSync, rmSync } from 'node:fs';
+import { cpSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -17,6 +17,13 @@ const staticFiles = [
 for (const file of staticFiles) {
   cpSync(join(serverDir, 'data', file), join(dataDir, file));
 }
+
+// Keep browser tests fast without changing the real game configuration.
+// Only the disposable test copy is modified; production data stays untouched.
+const expeditionPath = join(dataDir, 'forgotten_lands.json');
+const expeditionData = JSON.parse(readFileSync(expeditionPath, 'utf8'));
+expeditionData.searchSeconds = 1;
+writeFileSync(expeditionPath, JSON.stringify(expeditionData, null, 2));
 
 const child = spawn(
   process.execPath,
