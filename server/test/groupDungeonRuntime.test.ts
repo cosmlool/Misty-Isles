@@ -165,6 +165,8 @@ test('group boss dungeon persists win rewards and loss costs for every participa
       assert.equal(JSON.parse(saved[id].quests).dungeonRuns, 1);
       assert.equal(saved[id].bossesKilled, 1);
       assert.ok(saved[id].health < 1_000);
+      assert.equal(JSON.parse(saved[id].quests).activityToday.dungeons, 1);
+      assert.equal(JSON.parse(saved[id].quests).activityLog[0].outcome, 'win');
     }
     for (const id of ids.slice(2)) {
       assert.equal(saved[id].gold, 500);
@@ -172,6 +174,8 @@ test('group boss dungeon persists win rewards and loss costs for every participa
       assert.equal(JSON.parse(saved[id].quests).dungeonRuns, 1);
       assert.equal(saved[id].bossesKilled || 0, 0);
       assert.ok(saved[id].health < 1_000);
+      assert.equal(JSON.parse(saved[id].quests).activityToday.dungeons, 1);
+      assert.equal(JSON.parse(saved[id].quests).activityLog[0].outcome, 'loss');
     }
     const sharedLootCount = ids.slice(0, 2).reduce((count, id) => count + JSON.parse(saved[id].inventory).filter((item: string) => item === 'FLDROP-03-10-A').length, 0);
     assert.equal(sharedLootCount, 1, 'the guaranteed dungeon resource is awarded once to one group member');
