@@ -7,7 +7,7 @@
     "dev": "tsx watch src/index.ts",
     "build": "tsc -p tsconfig.json",
     "start": "tsx src/index.ts",
-    "test": "node --import tsx --test test/jsonPersistence.test.ts test/playerSaves.test.ts test/auctionTransactions.test.ts test/auctionOperations.test.ts test/craftingQueue.test.ts test/craftingRuntime.test.ts test/economyRuntime.test.ts"
+    "test": "node --import tsx --test test/jsonPersistence.test.ts test/inventoryOperations.test.ts test/playerSaves.test.ts test/auctionTransactions.test.ts test/auctionOperations.test.ts test/craftingQueue.test.ts test/craftingRuntime.test.ts test/economyRuntime.test.ts"
   },
   "dependencies": {
     "@colyseus/core": "^0.16.0",
