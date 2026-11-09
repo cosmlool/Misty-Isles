@@ -52,3 +52,11 @@ test('group travel requires every participant to share the same group and route'
     { state: 'moving', groupId: 'group-a', currentZoneId: 'el1' },
   ], 'group-a'), { consistent: false, reason: 'mismatch' });
 });
+
+test('group travel rejects missing, non-finite and invalid completion timestamps', () => {
+  for (const endsAt of [undefined, Number.NaN, Number.POSITIVE_INFINITY, 0, -1]) {
+    assert.deepEqual(checkExpeditionTravelReadiness([
+      { state: 'moving', endsAt },
+    ], 10_000), { ready: false, reason: 'not-moving', remainingMs: 0 });
+  }
+});
