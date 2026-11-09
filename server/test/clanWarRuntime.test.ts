@@ -131,25 +131,27 @@ test('clan war attacks enforce per-player cooldown and accumulate real damage', 
     roomB.onMessage('clanWarList', payload => warListsB.push(payload));
 
     roomA.send('clanWarAttack', { id: 'war-runtime' });
-    await waitFor(() => noticesA.find(text => text.includes('Атака нанесла')), 'first clan A attack');
+    await waitFor(() => noticesA.find(text => text.startsWith('Атака нанесла')), 'first clan A attack');
     const afterFirst = readJson(join(dataDir, 'clan_wars.json'))[0];
     assert.ok(afterFirst.aDamage > 0);
     assert.equal(afterFirst.bDamage, 0);
     await waitFor(() => warListsB.find(payload => payload.wars?.some((war:any) => war.id === 'war-runtime' && war.aDamage === afterFirst.aDamage)), 'live score broadcast to opposing clan');
 
     roomA.send('clanWarAttack', { id: 'war-runtime' });
-    await waitFor(() => noticesA.find(text => text.includes('Следующая атака через')), 'clan A cooldown response');
+    await waitFor(() => noticesA.find(text => text.startsWith('Следующая атака через')), 'clan A cooldown response');
     assert.equal(readJson(join(dataDir, 'clan_wars.json'))[0].aDamage, afterFirst.aDamage);
 
     roomB.send('clanWarAttack', { id: 'war-runtime' });
-    await waitFor(() => noticesB.find(text => text.includes('Атака нанесла')), 'first clan B attack');
+    await waitFor(() => noticesB.find(text => text.startsWith('Атака нанесла')), 'first clan B attack');
     const afterB = readJson(join(dataDir, 'clan_wars.json'))[0];
     assert.ok(afterB.bDamage > 0, 'the opposing clan can attack during player A cooldown');
 
     await delay(1_050);
     roomA.send('clanWarAttack', { id: 'war-runtime' });
-    await waitFor(() => noticesA.filter(text => text.includes('Атака нанесла')).length >= 2, 'second clan A attack');
-    const afterSecond = readJson(join(dataDir, 'clan_wars.json'))[0];
+    const afterSecond = await waitFor(() => {
+      const current = readJson(join(dataDir, 'clan_wars.json'))[0];
+      return current.aDamage > afterFirst.aDamage ? current : undefined;
+    }, 'second clan A attack damage persistence');
     assert.ok(afterSecond.aDamage > afterFirst.aDamage, 'second attack adds to the cumulative clan damage');
     assert.ok(afterSecond.bDamage > 0);
     assert.equal(afterSecond.lastAttackAtByPlayer[playerA] > afterFirst.lastAttackAtByPlayer[playerA], true);
