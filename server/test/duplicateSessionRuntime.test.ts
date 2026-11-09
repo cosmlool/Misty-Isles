@@ -106,7 +106,7 @@ test('one character cannot open two concurrent gameplay sessions or overwrite it
     const secondToken = await guestToken(port, playerId);
     await assert.rejects(
       client.joinOrCreate('my_room', { playerId, sessionToken: secondToken }),
-      /already|game|join|seat|room|client/i,
+      /уже находится в игре/i,
       'the server must reject a second live room for the same player',
     );
 
