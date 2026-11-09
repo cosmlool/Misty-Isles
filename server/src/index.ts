@@ -734,8 +734,8 @@ class GameRoom extends Room<RoomState> {
       const enemyId=war.a===clan.id?war.b:war.a;
       const enemy=settled.clans[enemyId];
       if(!enemy)return this.notice(c,'Клан-соперник не найден.');
-      // Reuse the same character combat inputs as arena PvP: equipment, upgrades,
-      // rare item properties, set bonuses and profession modifiers all matter.
+      // Clan wars use an abstract damage score, not a full arena duel. Attacker
+      // character power and clan barracks are compared with the enemy clan baseline.
       const eq=readObject(p.equipment);
       const weapon=ITEMS.find(item=>item.id===eq.weapon),armor=ITEMS.find(item=>item.id===eq.armor);
       const equipmentUpgrades=readObject(p.equipmentEnhancements);
