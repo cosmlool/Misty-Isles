@@ -56,21 +56,26 @@ test('crash between file writes is recovered from the write-ahead journal', () =
         dataDir: ${JSON.stringify(f.dataDir)}, playersFile: ${JSON.stringify(f.playersFile)},
         clansFile: ${JSON.stringify(f.clansFile)}, warsFile: ${JSON.stringify(f.warsFile)},
         territoriesFile: ${JSON.stringify(f.territoriesFile)},
+        testHooks: { afterTargetWrite(target) { if (target === 'clans') process.exit(73); } },
       });
       store.commit(${JSON.stringify(snapshot)});
       process.exit(0);
     `;
-    // A process exit is injected by terminating the child after its first two atomic file writes.
-    const child = spawnSync(process.execPath, ['--import', 'tsx', '--input-type=module', '-e',
-      childScript.replace("store.commit(", "const original = store.commit; store.commit = (value) => {\n        const fs = await import('node:fs');\n        original(value);\n      };\n      store.commit(")], {
+    const child = spawnSync(process.execPath, ['--import', 'tsx', '--input-type=module', '-e', childScript], {
       cwd: process.cwd(), encoding: 'utf8', timeout: 10_000,
     });
-    assert.equal(child.status, 0);
+    assert.equal(child.status, 73, 'child process must stop after the clan file is written');
+    assert.equal(existsSync(f.store.journalFile), true, 'write-ahead journal must survive the crash');
+    assert.deepEqual(readJson(f.playersFile), snapshot.players);
+    assert.deepEqual(readJson(f.clansFile), snapshot.clans);
+    assert.deepEqual(readJson(f.warsFile), previous.wars, 'later files must remain unchanged until recovery');
+    assert.deepEqual(readJson(f.territoriesFile), previous.territories);
+    assert.equal(f.store.recover(), true);
     assert.deepEqual(readJson(f.playersFile), snapshot.players);
     assert.deepEqual(readJson(f.clansFile), snapshot.clans);
     assert.deepEqual(readJson(f.warsFile), snapshot.wars);
     assert.deepEqual(readJson(f.territoriesFile), snapshot.territories);
-    assert.equal(f.store.recover(), false);
+    assert.equal(existsSync(f.store.journalFile), false);
   } finally { f.cleanup(); }
 });
 
