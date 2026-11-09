@@ -43,9 +43,11 @@ npm run report
 6. Reloading reconnects the guest and restores the same character and inventory.
 7. The guest starts an expedition hunt through the game UI and claims the encounter.
 8. A victory increases gold and the resulting inventory remains valid.
-9. Gold and inventory are restored after another page reload.
-10. The page has no uncaught JavaScript errors during the character lifecycle.
-11. The login page does not overflow a narrow mobile viewport.
+9. The guest buys a level-one weapon through the shop; exactly 100 gold is charged and the item is added to inventory.
+10. The guest equips the purchased weapon and the equipment slot updates.
+11. Gold, inventory, and equipped gear are restored after another page reload.
+12. The page has no uncaught JavaScript errors during the character lifecycle.
+13. The login page does not overflow a narrow mobile viewport.
 
 The isolated test server changes `searchSeconds` to one second only in its
 temporary copy of `forgotten_lands.json`. The real game data and normal
