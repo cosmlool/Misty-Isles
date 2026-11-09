@@ -41,3 +41,12 @@ export function isLastEquippedCopy(
   return Object.values(equipment).includes(itemId)
     && inventory.filter(item => item === itemId).length <= 1;
 }
+
+/** Whether the character still owns any copy of an item type after a removal. */
+export function ownsItemCopy(
+  inventory: string[],
+  equipment: EquipmentMap,
+  itemId: string,
+): boolean {
+  return inventory.includes(itemId) || Object.values(equipment).includes(itemId);
+}
