@@ -107,6 +107,9 @@ test('clan war attacks enforce per-player cooldown and accumulate real damage', 
       aDamage: 0, bDamage: 0, lastAttackAtByPlayer: {}, status: 'active',
       createdAt: Date.now(), endsAt: Date.now() + 60_000,
     }], null, 2));
+    writeFileSync(join(dataDir, 'clan_territories.json'), JSON.stringify([
+      { id: 'territory-runtime', owner: 'clan-a', ownerName: 'Клан А', capturedAt: 1, defense: 10 },
+    ], null, 2));
 
     child = spawn(process.execPath, ['--import', 'tsx', 'src/index.ts'], {
       cwd: serverDir,
@@ -133,6 +136,14 @@ test('clan war attacks enforce per-player cooldown and accumulate real damage', 
     roomB.onMessage('clanWarList', payload => warListsB.push(payload));
     roomA.onMessage('clanList', payload => clanListsA.push(payload));
     roomB.onMessage('clanList', payload => clanListsB.push(payload));
+
+    roomA.send('clanDonate', { amount: 100 });
+    await waitFor(() => noticesA.find(text => text.startsWith('Вклад в клан: 100')), 'atomic clan donation');
+    const afterDonationPlayers = readJson(join(dataDir, 'players.json'));
+    const afterDonationClans = readJson(join(dataDir, 'clans.json'));
+    assert.equal(afterDonationPlayers[playerA].gold, 150);
+    assert.equal(afterDonationPlayers[playerA].goldSpent, 100);
+    assert.equal(afterDonationClans['clan-a'].vault, 100);
 
     roomA.send('clanWarAttack', { id: 'war-runtime' });
     await waitFor(() => noticesA.find(text => text.startsWith('Атака нанесла')), 'first clan A attack');
@@ -166,7 +177,7 @@ test('clan war attacks enforce per-player cooldown and accumulate real damage', 
     }], null, 2));
     roomA.send('clanWarList');
     await waitFor(() => clanListsB.find(payload => payload.clans?.some((clan:any) =>
-      clan.id === 'clan-a' && clan.vault === 200 && clan.seasonPoints === 20)),
+      clan.id === 'clan-a' && clan.vault === 300 && clan.seasonPoints === 20)),
     'final clan reward broadcast to opposing team');
     await waitFor(() => warListsB.find(payload => !payload.wars?.some((war:any) => war.id === 'war-runtime')),
       'finished war broadcast to opposing team');
@@ -175,13 +186,24 @@ test('clan war attacks enforce per-player cooldown and accumulate real damage', 
     assert.equal(finished.status, 'finished');
     assert.equal(finished.winnerId, 'clan-a');
     assert.equal(finished.reward, 200);
-    assert.equal(savedClans['clan-a'].vault, 200);
+    assert.equal(savedClans['clan-a'].vault, 300);
     assert.equal(savedClans['clan-a'].seasonPoints, 20);
 
     roomB.send('clanWarList');
     await delay(100);
     const clansAfterRefresh = readJson(join(dataDir, 'clans.json'));
-    assert.equal(clansAfterRefresh['clan-a'].vault, 200, 'refresh must not pay the war reward twice');
+    assert.equal(clansAfterRefresh['clan-a'].vault, 300, 'refresh must not pay the war reward twice');
+
+    roomA.send('clanLeave');
+    await waitFor(() => noticesA.find(text => text === 'Ты покинул клан.'), 'atomic last-member clan disband');
+    const afterDisbandPlayers = readJson(join(dataDir, 'players.json'));
+    const afterDisbandClans = readJson(join(dataDir, 'clans.json'));
+    const afterDisbandWars = readJson(join(dataDir, 'clan_wars.json'));
+    const afterDisbandTerritories = readJson(join(dataDir, 'clan_territories.json'));
+    assert.equal(afterDisbandPlayers[playerA].clan, '');
+    assert.equal(afterDisbandClans['clan-a'], undefined);
+    assert.equal(afterDisbandWars[0].status, 'finished', 'completed wars remain in history');
+    assert.equal(afterDisbandTerritories[0].owner, '', 'disband releases territory ownership');
 
   } finally {
     if (roomA) await roomA.leave().catch(() => undefined);
