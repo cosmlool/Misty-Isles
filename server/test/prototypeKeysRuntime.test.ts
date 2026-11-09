@@ -86,7 +86,7 @@ test('prototype property names cannot bypass stat or clan upgrade validation', {
     writeFileSync(join(dataDir, 'players.json'), JSON.stringify({
       [playerId]: {
         id: playerId, name: 'Prototype Key Tester', race: 'Кот', level: 1,
-        strength: 10, defense: 8, vitality: 10, gold: 10_000, goldSpent: 0,
+        strength: 10, defense: 8, vitality: 10, luck: 5, stamina: 10, accuracy: 10, gold: 10_000, goldSpent: 0,
         clan: 'clan-prototype', inventory: '[]', equipment: '{}', quests: '{}',
       },
     }, null, 2));
@@ -110,7 +110,7 @@ test('prototype property names cannot bypass stat or clan upgrade validation', {
     const notices: string[] = [];
     room.onMessage('notice', payload => notices.push(String(payload?.text || '')));
 
-    for (const stat of ['toString', 'constructor', '__proto__']) {
+    for (const stat of ['toString', 'constructor', '__proto__', 'luck', 'stamina', 'accuracy']) {
       const before = notices.length;
       room.send('upgradeStat', { stat });
       await waitFor(() => notices.slice(before).find(message => message === 'Такой характеристики нет.'), 'invalid stat key rejection');
@@ -126,6 +126,9 @@ test('prototype property names cannot bypass stat or clan upgrade validation', {
     assert.equal(player.gold, 10_000);
     assert.equal(player.goldSpent, 0);
     assert.equal(player.strength, 10);
+    assert.equal(player.luck, 5);
+    assert.equal(player.stamina, 10);
+    assert.equal(player.accuracy, 10);
     assert.equal(clan.vault, 5_000);
     assert.deepEqual(clan.upgrades, { barracks: 0, treasury: 0, banner: 0 });
   } finally {
