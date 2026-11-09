@@ -128,7 +128,11 @@ export function buyAuctionItem(input: {
   if (!buyer) throw new Error('Buyer is missing from the player save.');
   if (!seller) throw new Error('Seller not found; purchase cancelled.');
   const inventory = inventoryOf(buyer);
-  if (input.uniqueItemIds?.has(lot.itemId) && inventory.includes(lot.itemId)) throw new Error('This unique item is already owned.');
+  const equipment = equipmentOf(buyer);
+  if (input.uniqueItemIds?.has(lot.itemId)
+    && (inventory.includes(lot.itemId) || Object.values(equipment).includes(lot.itemId))) {
+    throw new Error('This unique item is already owned.');
+  }
   const field = lot.currency;
   if (!Number.isSafeInteger(Number(buyer[field])) || Number(buyer[field]) < lot.price) throw new Error('Insufficient currency.');
   const fee = field === 'gold' ? Math.max(1, Math.floor(lot.price * 0.05)) : 0;
