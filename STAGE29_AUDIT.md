@@ -91,7 +91,7 @@
 
 ## Результаты CI
 
-<badge label="CI passed" color="success" /> Проверка ветки `stage29/playwright-eyes-foundation` на коммите `0994bcf445b9e8cc0ed719aeea1d3cdbe6b04b75` завершилась успешно:
+**CI passed.** Проверка ветки `stage29/playwright-eyes-foundation` на коммите `0994bcf445b9e8cc0ed719aeea1d3cdbe6b04b75` завершилась успешно:
 
 - Серверные unit/runtime-тесты и TypeScript build — успешно.
 - Клиентская проверка и production build — успешно.
