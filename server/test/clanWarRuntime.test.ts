@@ -125,10 +125,14 @@ test('clan war attacks enforce per-player cooldown and accumulate real damage', 
     const noticesB: string[] = [];
     const warListsA: any[] = [];
     const warListsB: any[] = [];
+    const clanListsA: any[] = [];
+    const clanListsB: any[] = [];
     roomA.onMessage('notice', payload => noticesA.push(String(payload?.text || '')));
     roomB.onMessage('notice', payload => noticesB.push(String(payload?.text || '')));
     roomA.onMessage('clanWarList', payload => warListsA.push(payload));
     roomB.onMessage('clanWarList', payload => warListsB.push(payload));
+    roomA.onMessage('clanList', payload => clanListsA.push(payload));
+    roomB.onMessage('clanList', payload => clanListsB.push(payload));
 
     roomA.send('clanWarAttack', { id: 'war-runtime' });
     await waitFor(() => noticesA.find(text => text.startsWith('Атака нанесла')), 'first clan A attack');
@@ -155,6 +159,30 @@ test('clan war attacks enforce per-player cooldown and accumulate real damage', 
     assert.ok(afterSecond.aDamage > afterFirst.aDamage, 'second attack adds to the cumulative clan damage');
     assert.ok(afterSecond.bDamage > 0);
     assert.equal(afterSecond.lastAttackAtByPlayer[playerA] > afterFirst.lastAttackAtByPlayer[playerA], true);
+
+    // Finish the war and ensure both teams receive the final clan treasury and season standings.
+    writeFileSync(join(dataDir, 'clan_wars.json'), JSON.stringify([{
+      ...afterSecond, aDamage: 1_000, bDamage: 1, endsAt: Date.now() - 1,
+    }], null, 2));
+    roomA.send('clanWarList');
+    await waitFor(() => clanListsB.find(payload => payload.clans?.some((clan:any) =>
+      clan.id === 'clan-a' && clan.vault === 200 && clan.seasonPoints === 20)),
+    'final clan reward broadcast to opposing team');
+    await waitFor(() => warListsB.find(payload => !payload.wars?.some((war:any) => war.id === 'war-runtime')),
+      'finished war broadcast to opposing team');
+    const finished = readJson(join(dataDir, 'clan_wars.json'))[0];
+    const savedClans = readJson(join(dataDir, 'clans.json'));
+    assert.equal(finished.status, 'finished');
+    assert.equal(finished.winnerId, 'clan-a');
+    assert.equal(finished.reward, 200);
+    assert.equal(savedClans['clan-a'].vault, 200);
+    assert.equal(savedClans['clan-a'].seasonPoints, 20);
+
+    roomB.send('clanWarList');
+    await delay(100);
+    const clansAfterRefresh = readJson(join(dataDir, 'clans.json'));
+    assert.equal(clansAfterRefresh['clan-a'].vault, 200, 'refresh must not pay the war reward twice');
+
   } finally {
     if (roomA) await roomA.leave().catch(() => undefined);
     if (roomB) await roomB.leave().catch(() => undefined);
