@@ -130,6 +130,45 @@ test('a guest can create a character, hunt, and keep progress after reconnecting
   expect(pageErrors, 'The game page should not throw JavaScript errors').toEqual([]);
 });
 
+test('all main game sections render on a narrow mobile viewport without page errors or horizontal overflow', async ({ page }) => {
+  const pageErrors: string[] = [];
+  page.on('pageerror', error => pageErrors.push(error.message));
+  const tabs = [
+    'city', 'farm', 'inventory', 'quests', 'shop', 'map', 'character', 'mail',
+    'auction', 'craft', 'dungeons', 'home', 'clan', 'pvp', 'achievements', 'skills', 'guilds'
+  ];
+  await page.addInitScript((items) => {
+    localStorage.setItem('mist_isles_fast_access', JSON.stringify(items));
+  }, tabs);
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.goto('/');
+  await page.getByRole('button', { name: 'Продолжить без регистрации' }).click();
+  await expect(page.locator('[data-race="Кот"]')).toBeVisible({ timeout: 25_000 });
+  await page.locator('[data-race="Кот"]').click();
+  await expect(page.locator('.sidebar-identity strong')).toHaveText('Путник-Кот', { timeout: 15_000 });
+
+  for (const tab of tabs) {
+    const button = page.locator(`.quick-nav [data-tab="${tab}"]`);
+    await expect(button).toBeVisible();
+    await button.click();
+    await expect(page.locator('.page-title')).toBeVisible();
+    const title = (await page.locator('.page-title').innerText()).trim();
+    expect(title.length, `section "${tab}" should render a page title`).toBeGreaterThan(0);
+    const dimensions = await page.evaluate(() => ({
+      documentWidth: document.documentElement.scrollWidth,
+      viewportWidth: document.documentElement.clientWidth
+    }));
+    expect(dimensions.documentWidth, `section "${tab}" should not overflow horizontally`)
+      .toBeLessThanOrEqual(dimensions.viewportWidth);
+  }
+
+  await page.locator('.sidebar nav.nav [data-tab="admin"]').click();
+  await expect(page.locator('.page-title')).toBeVisible();
+  const adminTitle = (await page.locator('.page-title').innerText()).trim();
+  expect(adminTitle.length).toBeGreaterThan(0);
+  expect(pageErrors, 'Game sections should not throw JavaScript errors').toEqual([]);
+});
+
 test('the login screen fits a narrow mobile viewport', async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 844 });
   await page.goto('/');
