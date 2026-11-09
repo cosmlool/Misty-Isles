@@ -61,6 +61,16 @@ Observed rules:
 ### Clans and clan wars
 - `clanTransactions.ts` uses a write-ahead transaction journal for player, clan, war, and territory snapshots.
 - Commit `770f736...` adds a process-crash test that exits after a partial target write, then verifies recovery from the journal.
+- The transaction writes the journal atomically, then atomically replaces the four target JSON files sequentially; startup/next commit recovery replays the snapshot and removes the journal.
+- Recovery fails closed and retains an unreadable journal rather than silently deleting it.
+- Durability limitation: implementation uses write + rename but does not call `fsync` on the journal/target files or containing directory. Existing test proves a child-process termination between writes, not sudden power-loss durability. Decide whether process-crash recovery is the intended guarantee or whether stronger disk-flush guarantees are required.
+- Snapshot validation checks top-level object/array structure and object-valued entries, not the full domain schema of every player/clan record; upstream persistence validation remains important.
+- `clanWarRuntime.test.ts` covers donation, per-player attack cooldown, cumulative damage, score broadcast, expiration settlement, one-time reward, and disband cleanup.
+- `clanWarOperations.ts` currently defines a 1-second clan-war attack cooldown. Verify whether this is intentionally test-build timing or an unintended live gameplay value before public release.
+- Expired wars settle on a later request, not via an independent timer.
+
+- `clanTransactions.ts` uses a write-ahead transaction journal for player, clan, war, and territory snapshots.
+- Commit `770f736...` adds a process-crash test that exits after a partial target write, then verifies recovery from the journal.
 - `clanWarRuntime.test.ts` covers donation, per-player attack cooldown, cumulative damage, score broadcast, expiration settlement, one-time reward, and disband cleanup.
 - `clanWarOperations.ts` currently defines a 1-second clan-war attack cooldown. Verify whether this is intentionally test-build timing or an unintended live gameplay value before public release.
 - Expired wars settle on a later request, not via an independent timer.
@@ -107,10 +117,12 @@ Completed evidence collection in this checkpoint:
 - [x] Read branch server test script (29 test files listed).
 - [x] Read PvP operations and runtime test assertions.
 - [x] Read clan-war operation logic and runtime assertions.
+- [x] Read clan transaction WAL implementation and process-crash recovery tests.
 - [x] Read group travel, group dungeon, and solo dungeon test sources.
 - [x] Inspected PvP/admin handlers in server source.
 - [x] Inspected solo and group dungeon handlers, reward distribution, attempt accounting, and persistence paths.
-- [ ] Resolve exact current HEAD SHA for each active branch.
+- [x] Created the audit checkpoint in the working branch; latest checkpoint commit created by this audit: `7842b91c98b98c5876b86dc39af1693bc4068511`. Re-check for newer commits on resume.
+- [ ] Resolve exact current HEAD SHA for the separate PvP branch.
 - [ ] Confirm full CI for the current PR head.
 - [ ] Run full server tests and client/server builds locally from the same branch snapshot.
 - [ ] Continue systematic handler-by-handler audit of all game systems.
