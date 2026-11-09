@@ -407,3 +407,11 @@ Reviewed `server/src/pvpOperations.ts`, PvP and clan-war handlers in `server/src
 
 
 - **Correction to the clan-war persistence note above:** although `clanWarAttack` does not call `persistPlayer` directly, it ends with `this.notice(...)`, and `notice()` calls `this.save()`. Therefore the incremented `p.battles` is saved immediately; this is **not** a persistence gap. Keep a test only if battle-counter semantics need explicit coverage, not because the current handler omits a save.
+
+
+### Clan reward ranking edge case — 2026-11-09
+
+- **Confirmed clan-season reward rank bug:** `clanSeasonBoard()` sorts all clans but returns only the top 10. `clanSeasonReward` then uses `findIndex(...)+1` on that truncated list. A clan outside the top 10 gets rank `0`; the reward ternary treats every rank `<=3` other than 1 as second/third place, so an unranked clan receives 2,500 gold instead of the intended lower-tier 1,000 gold. Fix by computing rank against the full sorted standings and only truncating the display list, or explicitly treating rank 0 as unranked.
+- Clan season week key is `Math.floor(Date.now()/(7*24*60*60*1000))`, which rolls on fixed seven-day intervals from Unix epoch (Thursday UTC alignment), not ISO Monday weeks. No user-defined week boundary is known; record as a design clarification before changing.
+- Clan daily quests reset using UTC epoch-day integer and reset shared progress/claims as expected when `ensureClanQuests` is invoked. The UI/claim path calls this helper before presenting or claiming.
+- No gameplay code changed. No tests executed.
