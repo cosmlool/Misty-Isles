@@ -53,5 +53,5 @@ child.on('error', (error) => {
 
 child.on('exit', (code, signal) => {
   cleanup();
-  process.exitCode = code ?? (signal ? 1 : 0);
+  process.exitCode = code ?? (signal === 'SIGTERM' || signal === 'SIGINT' ? 0 : 1);
 });
