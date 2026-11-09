@@ -359,3 +359,25 @@ Read `server/data/forgotten_lands.json` (100 monsters, 10 zones, 4 expedition du
 
 
 - Historical exposure check: GitHub commit-path history returned no commits for `server/data/players.json`, `accounts.json`, `sessions.json`, `clans.json`, `auction.json`, runtime backups, root `.env`, or `server/.env`. The current risk is preventive; no evidence was found that these runtime files have already been committed.
+
+
+### Hunt rewards, daily claims, chests, regional events, and reconnect persistence — 2026-11-09
+
+Reviewed current branch source: `server/src/index.ts`, `server/src/PlayerSchema.ts`, `server/src/playerSaves.ts`, `server/test/questRewardsRuntime.test.ts`. Source-level review only; tests not executed.
+
+- **Confirmed regional-event description/implementation mismatch:** all four event definitions advertise different mechanics (Dawn: more XP and reputation; Caravan: more gold and rare feathers; Lore: more XP and rune-shard chance; Eclipse: stronger bosses and rare relics). The common hunt implementation instead applies the same generic +20% reward multiplier to both gold and XP for every event, the same +2 faction reputation per successful hunt (subject to the shared daily cap of +10), and a generic 35% event-resource drop. Event-specific effects are therefore not implemented as described. Event activity also adds +0.012 boss chance to every active event, including those whose descriptions promise different effects. Needs a design decision: implement each advertised event separately or rewrite descriptions to match a shared effect.
+- Regional event selection is deterministic by UTC-day index over the four events, not a timed event scheduler. No bug proven if daily rotation is intended.
+- Chest opening consumes exactly one indexed `mystery_chest`; it checks optional item ID and expected chest count before consuming, then persists through the normal notice/save path. Loot branches include items, crystals, gold, 10-minute attack/defense buff, and a rare-item pool with duplicate filtering. No chest duplication exploit confirmed in the reviewed path.
+- Potion use validates ownership, refuses use at full health, consumes one potion and caps healing at effective max HP. Fountain and daily reward both persist their daily claim markers/rewards through the notice/save path. Daily streak uses UTC date keys and resets to 1 after a missed UTC date; no defect found in the reviewed logic.
+- Return bonus is enabled on join after `lastSeenAt` is at least 3 days old; claim is one-time per eligibility flag and additionally enforces a 7-day timestamp cooldown. `onLeave` and save/notice update `lastSeenAt`. No repeat-claim bypass was confirmed in the inspected lifecycle.
+- Player persistence is action-driven: mutating handlers generally finish via `notice()`, which calls `save()`; `onLeave` and `onDispose` also save. There is no periodic full-player autosave interval (the room interval only regenerates health). This is not automatically a defect because mutations normally save immediately and leave saves again, but abrupt process termination between an in-memory mutation and the corresponding save remains a durability window. Confirm whether production requires periodic autosave and/or transaction-backed saves.
+- `onLeave` and `onDispose` both call save, so normal room teardown may create two successive backups for the same player state. This is backup churn, not a confirmed data-loss bug.
+- Quest reward runtime test covers one-time story/faction/daily challenge/achievement claims, but does not cover faction story chapter III event progress, regional event-specific effect values, daily streak boundary cases, return-bonus eligibility, or chest outcomes. Those remain targeted test gaps.
+- No gameplay code changed. No tests executed.
+
+#### Follow-up test requirements
+1. Assert each regional event's distinct documented effect, boss probability, resource probability, gold/XP/reputation, and daily cap.
+2. Test daily streak on consecutive UTC dates, missed UTC date, same-day duplicate, and daylight-saving/local-time boundaries (UTC should remain authoritative).
+3. Test return bonus at exactly 72 hours, just under 72 hours, and 7-day claim cooldown; verify reconnects and process restart.
+4. Test chest expected-count/index mismatch, duplicate chest requests, every reward branch, and rare unique-item duplicate filtering.
+5. Simulate abrupt process termination immediately after a mutation but before save to quantify the durability window; decide if periodic autosave is required.
