@@ -1,3 +1,5 @@
+import { removeInventoryCopy } from './inventoryOperations.js';
+
 export type EconomyPlayer = Record<string, any>;
 export type AuctionLot = {
   id: string; itemId: string; itemName: string; sellerId: string; sellerName: string;
@@ -66,13 +68,9 @@ export function listAuctionItem(input: {
   if (!Number.isSafeInteger(Number(seller[field])) || Number(seller[field]) < fee) throw new Error('Not enough currency for the listing fee.');
   seller[field] = Number(seller[field]) - fee;
   if (field === 'gold') seller.goldSpent = Number(seller.goldSpent || 0) + fee;
-  inventory.splice(input.index, 1);
-  seller.inventory = JSON.stringify(inventory);
-  const equipment = equipmentOf(seller);
-  for (const slot of ['weapon', 'helmet', 'armor', 'gloves', 'boots', 'cloak', 'amulet']) {
-    if (equipment[slot] === itemId) equipment[slot] = '';
-  }
-  seller.equipment = JSON.stringify(equipment);
+  const removal = removeInventoryCopy(inventory, equipmentOf(seller), input.index);
+  seller.inventory = JSON.stringify(removal.inventory);
+  seller.equipment = JSON.stringify(removal.equipment);
   const lot: AuctionLot = {
     id: input.lotId, itemId, itemName: input.itemName || itemId, sellerId: input.sellerId,
     sellerName: String(seller.name || ''), price: input.price, currency: input.currency,
