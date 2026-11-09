@@ -97,7 +97,7 @@ test('group boss dungeon persists win rewards and loss costs for every participa
       health: 1_000, maxHealth: 1_000, gold: 500, experience: 0,
       inventory: '[]', equipment: '{}',
       collections: JSON.stringify({ friends: [friend] }),
-      quests: JSON.stringify({ dungeonDay: today, dungeonRuns: 0 }),
+      quests: JSON.stringify({ dungeonDay: today, dungeonRuns: strong ? 2 : 0 }),
     });
     writeFileSync(join(dataDir, 'players.json'), JSON.stringify({
       [ids[0]]: makePlayer(ids[0], 'Win Leader', ids[1], true),
@@ -162,7 +162,7 @@ test('group boss dungeon persists win rewards and loss costs for every participa
     for (const id of ids.slice(0, 2)) {
       assert.equal(saved[id].gold, 610);
       assert.equal(saved[id].experience, 420);
-      assert.equal(JSON.parse(saved[id].quests).dungeonRuns, 1);
+      assert.equal(JSON.parse(saved[id].quests).dungeonRuns, 3);
       assert.equal(saved[id].bossesKilled, 1);
       assert.ok(saved[id].health < 1_000);
       assert.equal(JSON.parse(saved[id].quests).activityToday.dungeons, 1);
@@ -177,6 +177,16 @@ test('group boss dungeon persists win rewards and loss costs for every participa
       assert.equal(JSON.parse(saved[id].quests).activityToday.dungeons, 1);
       assert.equal(JSON.parse(saved[id].quests).activityLog[0].outcome, 'loss');
     }
+    const capNotices: string[] = [];
+    connected[ids[0]].onMessage('notice', payload => capNotices.push(String(payload?.text || '')));
+    connected[ids[0]].send('dungeonRun', { id: 'fl_dungeon_03' });
+    await waitFor(() => capNotices.find(message => message.includes('на сегодня закончились попытки в подземельях')), 'group dungeon daily attempt cap');
+    const afterCap = readPlayers(join(dataDir, 'players.json'));
+    assert.equal(afterCap[ids[0]].gold, 610, 'a fourth daily group entry must not award more gold');
+    assert.equal(afterCap[ids[1]].gold, 610);
+    assert.equal(JSON.parse(afterCap[ids[0]].quests).dungeonRuns, 3);
+    assert.equal(results[ids[0]].length, 1, 'a denied extra entry must not produce a second combat result');
+
     const sharedLootCount = ids.slice(0, 2).reduce((count, id) => count + JSON.parse(saved[id].inventory).filter((item: string) => item === 'FLDROP-03-10-A').length, 0);
     assert.equal(sharedLootCount, 1, 'the guaranteed dungeon resource is awarded once to one group member');
     const lossLootCount = ids.slice(2).reduce((count, id) => count + JSON.parse(saved[id].inventory).filter((item: string) => item === 'FLDROP-03-10-A').length, 0);
