@@ -125,7 +125,15 @@ test('story, faction, daily challenge and achievement rewards cannot be claimed 
     assert.equal(readPlayer(savePath, playerId).gold, 1_180, 'story reward must not be duplicated');
 
     await sendAndWait('quest', { id: 'story_2' }, 'story chapter two');
+    const afterStoryTwo = readPlayer(savePath, playerId);
+    const storyTwoReputation = JSON.parse(afterStoryTwo.cityReputation);
+    assert.equal(storyTwoReputation['Золотые дюны'], 10, 'chapter two reputation must use the current city name');
+    assert.equal(storyTwoReputation['Серебряный бастион'], undefined, 'chapter two must not create legacy city reputation');
     await sendAndWait('quest', { id: 'story_3' }, 'story chapter three');
+    const afterStoryThree = readPlayer(savePath, playerId);
+    const storyThreeReputation = JSON.parse(afterStoryThree.cityReputation);
+    assert.equal(storyThreeReputation['Изумрудная долина'], 10, 'chapter three reputation must use the current city name');
+    assert.equal(storyThreeReputation['Гавань семи ветров'], undefined, 'chapter three must not create legacy city reputation');
     await sendAndWait('factionChoice', { choice: 'dawn' }, 'faction choice');
     const lockedChoice = await sendAndWait('factionChoice', { choice: 'caravan' }, 'second faction choice');
     assert.equal(lockedChoice, 'Сюжетный выбор уже сделан и повлиял на отношения фракций.');
