@@ -352,3 +352,7 @@ Read `server/data/forgotten_lands.json` (100 monsters, 10 zones, 4 expedition du
 - `tools/qa-audit.mjs` checks only root `.env`, `.env.local`, and `.env.production`; it does not scan nested environment files or runtime data files. Extend it to enforce the ignore/privacy policy and fail if runtime state is found in the repository.
 - Windows stop script review: `Stop-Game.ps1` correctly terminates only the process trees recorded by this launcher's state file, rather than killing every Node process. No issue found there.
 - No source/runtime code changed.
+
+
+- **Confirmed launcher cleanup gap:** `Start-Game.ps1` starts the server, waits for port 2567, then starts the client and waits for port 5173. The `.misty-game-processes.json` state file is written only after both are ready. If client startup fails/times out after the server is already running, the script throws without stopping the server and without writing the state file; `Stop-Game.ps1` then cannot find the recorded PIDs. Add a cleanup/finally path or write the state file immediately after launching each process.
+- Launcher and `VERIFY_PROJECT.bat` treat existence of a `node_modules` directory as proof dependencies are complete. A partially installed or stale directory (e.g. missing `tsx`) is not repaired automatically. Check required executables/packages or provide a clear repair command.
