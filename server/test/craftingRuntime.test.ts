@@ -68,6 +68,21 @@ function readJson(path: string): any {
   return JSON.parse(readFileSync(path, 'utf8'));
 }
 
+async function withTimeout<T>(promise: Promise<T>, ms: number, label: string): Promise<T> {
+  let timer: NodeJS.Timeout | undefined;
+  try {
+    return await Promise.race([
+      promise,
+      new Promise<T>((_, reject) => {
+        timer = setTimeout(() => reject(new Error(label + ' timed out after ' + ms + 'ms')), ms);
+      }),
+    ]);
+  } finally {
+    if (timer) clearTimeout(timer);
+  }
+}
+
+
 test('starting a craft job sends the updated queue to the connected client', { timeout: 45_000 }, async () => {
   const dataDir = mkdtempSync(join(tmpdir(), 'misty-crafting-runtime-'));
   const playerId = 'runtime_crafter_0001';
@@ -103,10 +118,7 @@ test('starting a craft job sends the updated queue to the connected client', { t
 
     const queueMessage = new Promise<any>(resolve => room!.onMessage('craftQueue', resolve));
     room.send('craft', { recipe: 'field_potion' });
-    const payload = await Promise.race([
-      queueMessage,
-      delay(10_000).then(() => { throw new Error('Timed out waiting for craftQueue response.'); }),
-    ]);
+    const payload = await withTimeout(queueMessage, 10_000, 'craftQueue response');
     assert.equal(payload.jobs.length, 1, 'client must receive the newly queued job immediately');
     assert.equal(payload.jobs[0].recipe, 'field_potion');
     assert.equal(payload.jobs[0].output, 'field_potion');
