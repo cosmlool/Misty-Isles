@@ -95,16 +95,16 @@ test('expedition reports capture pre/post health and disconnect cancels stale gr
       id, name, race: 'Кот', level: 5, strength: 100_000, dexterity: 100_000,
       defense: 100, vitality: 100, stamina: 100, health: 1_000, maxHealth: 1_000,
       gold: 500, inventory: '[]', equipment: '{}',
-      collections: JSON.stringify(friend ? { friends: [friend] } : {}),
+      collections: JSON.stringify(friend ? { friends: friend.split(',') } : {}),
       quests: JSON.stringify(quests),
     });
     writeFileSync(join(dataDir, 'players.json'), JSON.stringify({
-      [soloId]: makePlayer(soloId, 'Solo Explorer', '', {
+      [soloId]: makePlayer(soloId, 'Solo Explorer', leaderId, {
         expedition: { branchId: 'forgotten_lands', currentZoneId: 'el1', opened: 1, cleared: [], seen: {}, state: 'searching', startedAt: Date.now() - 20_000, endsAt: Date.now() - 1_000, groupId: '' },
       }),
-      [leaderId]: makePlayer(leaderId, 'Group Leader', memberId),
+      [leaderId]: makePlayer(leaderId, 'Group Leader', `${memberId},${soloId},${orphanId}`),
       [memberId]: makePlayer(memberId, 'Group Member', leaderId),
-      [orphanId]: makePlayer(orphanId, 'Orphaned Explorer', '', {
+      [orphanId]: makePlayer(orphanId, 'Orphaned Explorer', leaderId, {
         expedition: { branchId: 'forgotten_lands', currentZoneId: 'el1', opened: 1, cleared: [], seen: {}, state: 'searching', startedAt: Date.now() - 1_000, endsAt: Date.now() + 900_000, groupId: 'missing_group_after_restart' },
       }),
     }, null, 2));
@@ -163,6 +163,11 @@ test('expedition reports capture pre/post health and disconnect cancels stale gr
       const q = JSON.parse(players[leaderId].quests);
       return q.expedition ? true : undefined;
     }, 'group setup');
+    const pendingInvites: any[] = [];
+    connected[soloId].onMessage('huntGroupInvite', payload => pendingInvites.push(payload));
+    connected[leaderId].send('huntGroupInvite', { targetId: publicCode(soloId) });
+    const pendingInvite = await waitFor(() => pendingInvites[0], 'pending invite before expedition');
+
     connected[leaderId].send('expeditionSearchStart');
     await waitFor(() => {
       const players = readPlayers(join(dataDir, 'players.json'));
@@ -170,6 +175,19 @@ test('expedition reports capture pre/post health and disconnect cancels stale gr
       const member = JSON.parse(players[memberId].quests).expedition;
       return leader?.state === 'searching' && member?.state === 'searching' ? true : undefined;
     }, 'shared expedition search');
+
+    const lateJoinNotices: string[] = [];
+    connected[soloId].onMessage('notice', payload => lateJoinNotices.push(String(payload?.text || '')));
+    connected[soloId].send('huntGroupAccept', { groupId: pendingInvite.groupId });
+    await waitFor(() => lateJoinNotices.find(message => message.includes('Нельзя вступить в группу во время поиска')), 'late group acceptance lock');
+
+    const activeInviteNotices: string[] = [];
+    connected[leaderId].onMessage('notice', payload => activeInviteNotices.push(String(payload?.text || '')));
+    const lateInvites: any[] = [];
+    connected[orphanId].onMessage('huntGroupInvite', payload => lateInvites.push(payload));
+    connected[leaderId].send('huntGroupInvite', { targetId: publicCode(orphanId) });
+    await waitFor(() => activeInviteNotices.find(message => message.includes('Нельзя менять состав группы во время поиска')), 'active group invitation lock');
+    assert.equal(lateInvites.length, 0, 'an active expedition must not accept new group invitations');
 
     await connected[memberId].leave();
     const savedAfterLeave = await waitFor(() => {
