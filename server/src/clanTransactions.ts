@@ -15,6 +15,7 @@ type Options = {
   clansFile: string;
   warsFile: string;
   territoriesFile: string;
+  testHooks?: { afterTargetWrite?: (target: 'players' | 'clans' | 'wars' | 'territories') => void };
 };
 
 type Journal = { version: 1; snapshot: ClanTransactionSnapshot };
@@ -56,9 +57,13 @@ export function createClanTransactionStore(options: Options) {
 
   function apply(snapshot: ClanTransactionSnapshot) {
     atomicWrite(options.playersFile, snapshot.players);
+    options.testHooks?.afterTargetWrite?.('players');
     atomicWrite(options.clansFile, snapshot.clans);
+    options.testHooks?.afterTargetWrite?.('clans');
     atomicWrite(options.warsFile, snapshot.wars);
+    options.testHooks?.afterTargetWrite?.('wars');
     atomicWrite(options.territoriesFile, snapshot.territories);
+    options.testHooks?.afterTargetWrite?.('territories');
   }
 
   function recover(): boolean {
