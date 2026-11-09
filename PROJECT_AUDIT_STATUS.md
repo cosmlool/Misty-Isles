@@ -430,3 +430,18 @@ Reviewed the current branch's handlers and matching client actions in `server/sr
 - Friend request/accept flows use public player codes on the wire, verify a pending request, require the other player online at acceptance, and persist both sides' friend lists. Pending requests themselves are in-memory only and disappear on server restart; this is a UX/retry limitation, not a confirmed account or reward exploit.
 
 No local runtime tests were executed. No gameplay code changed.
+
+
+### Authentication and account-boundary verification — 2026-11-09
+
+Rechecked the current auth HTTP handler, session store, WebSocket join, guest client identity, public player-code resolution, and admin handler. Source-level review only; no tests executed and no gameplay code changed.
+
+- **Confirmed guest-save ownership risk (revalidated):** the browser generates the guest `playerId` locally and stores it in localStorage. `POST /auth/guest` accepts any syntactically valid unlinked ID and issues a fresh 30-day session without requiring proof of a prior guest session. WebSocket join then accepts that session for the matching ID. Therefore possession/knowledge of a guest ID is sufficient to claim an existing unlinked guest save; a leaked ID can be converted into a new session even if the original browser's session token was not stolen. Public player codes are derived hashes and are not the raw ID, so this is a bearer-identifier exposure risk rather than a demonstrated blind remote takeover. Safer design: server-minted guest identity plus a separate persistent recovery secret/proof for reconnect, and require proof before issuing a replacement session for an existing save.
+- **Confirmed public-launch blocker: admin mutation handler remains unauthenticated.** The `admin` WebSocket handler has no `requireCharacter`, operator allowlist, or permission check. It directly grants gold/crystals/gems/XP, sets level, stats, inventory, profession, and resets character state. Its source comment explicitly says it is intentionally open for the Stage 28 test build. The earlier top-level comment about operator allowlisting is not wired into this handler. This must be disabled or protected server-side before any public deployment; hiding the UI is not authorization.
+- Session tokens are 32 random bytes, stored as SHA-256 digests, expire after 30 days, and are checked against account ownership at WebSocket join. Passwords use per-account random salts with scrypt and constant-time hash comparison. No password-hash or token-entropy defect found in this source pass.
+- Auth rate limiting is process-local, 10 requests per 15 minutes per `req.socket.remoteAddress`. It is not shared across multiple server processes and does not account for trusted reverse-proxy client IP headers. Treat multi-instance/proxy deployment as an operational hardening requirement; do not trust forwarded headers until proxy trust is explicitly configured.
+- Guest IDs use browser-generated UUID/random bytes. The server validates syntax but does not mint or bind the ID to a proof on first guest creation. This reinforces the guest ownership issue above.
+- `/auth/check` verifies a token but is not itself rate-limited; it does not mint sessions or mutate player state. CORS is wildcard, but auth uses bearer tokens in JSON bodies rather than cookies; deployment still must serve the client and auth endpoint over HTTPS.
+- Public player codes are deterministic SHA-256-derived 24-character identifiers. Resolution compares against saved and online player IDs; this does not expose the underlying raw ID in the social UI, but the code is a stable public identifier and should not be treated as an authentication secret.
+
+No tests executed. No gameplay code changed.
