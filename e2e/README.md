@@ -1,8 +1,8 @@
 # Misty Isles — Playwright eyes
 
-This is the first lightweight browser QA layer. It launches the game client and
-server, drives a real browser, checks the guest entry flow, and captures
-screenshots and diagnostics.
+This is the lightweight browser QA layer. It launches the game client and
+server, drives a real browser, checks the guest entry and character lifecycle,
+and captures screenshots and diagnostics.
 
 ## Requirements
 
@@ -37,12 +37,16 @@ npm run report
 
 1. The login page opens.
 2. A new synthetic guest can authenticate against the test server.
-3. The game reaches character creation and displays all four races.
-4. The page has no uncaught JavaScript errors during this flow.
-5. The login page does not overflow a narrow mobile viewport.
+3. Character creation displays all four races.
+4. Selecting a race creates a level-one character in the correct home city.
+5. The new character receives the expected starting gold and two starter items.
+6. Reloading reconnects the guest and restores the same character and inventory.
+7. The page has no uncaught JavaScript errors during the character lifecycle.
+8. The login page does not overflow a narrow mobile viewport.
 
-A screenshot is saved for the character-creation screen. Failed tests also
-retain screenshots, video, and a Playwright trace in `test-results`.
+Screenshots are saved for character creation and the first in-world character
+screen. Failed tests retain screenshots, video, and a Playwright trace in
+`test-results`.
 
 ## Data safety
 
