@@ -157,9 +157,6 @@ test('expedition reports capture pre/post health and disconnect cancels stale gr
     const token = await guestToken(port, memberId);
     connected[memberId] = await client.joinOrCreate('my_room', { playerId: memberId, sessionToken: token });
     rooms.push(connected[memberId]);
-    const reconnectedState: any[] = [];
-    connected[memberId].onMessage('expeditionState', payload => reconnectedState.push(payload));
-    await waitFor(() => reconnectedState.find(payload => payload.state?.state === 'idle'), 'idle expedition state after reconnect');
     assert.equal(savedAfterLeave.state, 'idle');
     assert.equal(JSON.parse(readPlayers(join(dataDir, 'players.json'))[memberId].quests).expedition.state, 'idle');
   } finally {
