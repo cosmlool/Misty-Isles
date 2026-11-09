@@ -86,7 +86,7 @@ export function listAuctionItem(input: {
 }
 
 export function cancelAuctionItem(input: {
-  snapshot: EconomySnapshot; sellerId: string; lotId: string; validItemIds: ReadonlySet<string>; now: number;
+  snapshot: EconomySnapshot; sellerId: string; lotId: string; validItemIds: ReadonlySet<string>; uniqueItemIds?: ReadonlySet<string>; now: number;
 }): EconomySnapshot {
   const next = clone(input.snapshot);
   validateLots(next.auction, input.validItemIds);
@@ -96,6 +96,11 @@ export function cancelAuctionItem(input: {
   const seller = next.players[input.sellerId];
   if (!seller) throw new Error('Seller is missing from the player save.');
   const inventory = inventoryOf(seller);
+  const equipment = equipmentOf(seller);
+  if (input.uniqueItemIds?.has(lot.itemId)
+    && (inventory.includes(lot.itemId) || Object.values(equipment).includes(lot.itemId))) {
+    throw new Error('This unique item is already owned; remove the other copy before withdrawing this lot.');
+  }
   inventory.push(lot.itemId);
   seller.inventory = JSON.stringify(inventory);
   next.auction.splice(index, 1);
