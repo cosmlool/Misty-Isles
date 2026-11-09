@@ -78,7 +78,7 @@ Observed rules:
 - Group drops include one guaranteed resource and optional boss drops; each item is assigned randomly to one group member. Confirm whether this random per-item distribution is intended.
 - Group failure applies health loss, records activity and combat reports, consumes attempts, and persists the group members together.
 - Solo dungeon attempts increment before the outcome; wins award XP/gold/resources and random bonus materials/equipment; losses award no loot and still consume an attempt.
-- The dungeon handler has no explicit request/idempotency key. A second distinct `dungeonRun` message can initiate another run and consume another daily attempt. This may be intentional (up to three runs/day), but rapid duplicate-click behavior should be checked against the client pending-action guard and product expectation.
+- The dungeon handler has no explicit request/idempotency key. The client includes `dungeonRun` in its `guardedActions` set and blocks a second click while the action is pending (with an 8-second fallback timeout). This reduces accidental double-clicks in the official UI, but the server itself still treats a second distinct message as another valid run and consumes another daily attempt. Confirm whether that is acceptable for direct/custom clients; no duplicate reward bug is proven.
 - No definite dungeon exploit is confirmed from this source read alone. Runtime coverage still needs execution on the exact branch snapshot.
 
 - Group travel persistence runtime test covers saving group travel start/claim for every member.
@@ -114,7 +114,8 @@ Completed evidence collection in this checkpoint:
 - [ ] Confirm full CI for the current PR head.
 - [ ] Run full server tests and client/server builds locally from the same branch snapshot.
 - [ ] Continue systematic handler-by-handler audit of all game systems.
-- [ ] Finish dungeon reward/replay/edge-case audit, including rapid duplicate-click behavior and whether random group loot distribution is intended.
+- [x] Checked client pending-action guard for `dungeonRun`; official UI blocks repeated clicks while pending. Server-side request idempotency remains absent and should be considered separately.
+- [ ] Finish dungeon reward/replay/edge-case audit, including whether random group loot distribution and lost remainder from divided group gold are intended.
 - [ ] Decide PvP ±2 level restriction and legacy bot path with the user.
 - [ ] Verify admin handler authorization before public release.
 - [ ] Produce final audit report before gameplay changes.
