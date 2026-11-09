@@ -106,3 +106,37 @@ export function settleExpiredClanWars(
 
   return { wars: nextWars, clans: nextClans, changed };
 }
+
+export function disbandClanState(
+  clans: Record<string, ClanWarClan>,
+  wars: ClanWarRecord[],
+  territories: Array<Record<string, any>>,
+  clanId: string,
+  now: number,
+): {
+  clans: Record<string, ClanWarClan>;
+  wars: ClanWarRecord[];
+  territories: Array<Record<string, any>>;
+  changed: boolean;
+} {
+  if (!clanId || !clans[clanId]) {
+    return { clans, wars, territories, changed: false };
+  }
+  const nextClans = { ...clans };
+  delete nextClans[clanId];
+  const nextWars = wars.map(war => {
+    if (war.status !== 'active' || (war.a !== clanId && war.b !== clanId)) return { ...war };
+    return {
+      ...war,
+      status: 'cancelled',
+      finishedAt: now,
+      winnerId: '',
+      reward: 0,
+      cancelledReason: 'clan_disbanded',
+    };
+  });
+  const nextTerritories = territories.map(territory => territory.owner === clanId
+    ? { ...territory, owner: '', ownerName: '', capturedAt: 0, defense: 0 }
+    : { ...territory });
+  return { clans: nextClans, wars: nextWars, territories: nextTerritories, changed: true };
+}
