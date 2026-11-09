@@ -1,6 +1,6 @@
 # Misty Isles — Project Audit Status
 
-Updated: 2026-11-09
+Updated: 2026-11-09 (continued audit checkpoint)
 
 ## Purpose and handoff rule
 
@@ -70,6 +70,21 @@ Observed rules:
 - Group boss-dungeon runtime test covers win rewards and loss costs for every participant.
 - Solo dungeon runtime test covers remaining daily entries and the three-entry cap.
 - Full group membership reconstruction after disconnect/restart remains unimplemented; orphaned active actions are safely reset. This remains open.
+
+#### Additional dungeon source inspection (server/src/index.ts, lines 502–536)
+- Group boss-dungeon entry requires the leader to start it, every member online, each member at the dungeon minimum level, and each member below the daily cap of three attempts.
+- Attempt count and battle count increment for every participant before the win/loss branch; losses consume an attempt and give no rewards.
+- Group success applies HP loss, healing/passives, XP, gold, activity records, boss/victory counters, combat history, and one persisted snapshot of all participating players. Base dungeon gold is divided with `Math.floor(dungeon.gold / groupSize)`; any remainder is not distributed.
+- Group drops include one guaranteed resource and optional boss drops; each item is assigned randomly to one group member. Confirm whether this random per-item distribution is intended.
+- Group failure applies health loss, records activity and combat reports, consumes attempts, and persists the group members together.
+- Solo dungeon attempts increment before the outcome; wins award XP/gold/resources and random bonus materials/equipment; losses award no loot and still consume an attempt.
+- The dungeon handler has no explicit request/idempotency key. A second distinct `dungeonRun` message can initiate another run and consume another daily attempt. This may be intentional (up to three runs/day), but rapid duplicate-click behavior should be checked against the client pending-action guard and product expectation.
+- No definite dungeon exploit is confirmed from this source read alone. Runtime coverage still needs execution on the exact branch snapshot.
+
+- Group travel persistence runtime test covers saving group travel start/claim for every member.
+- Group boss-dungeon runtime test covers win rewards and loss costs for every participant.
+- Solo dungeon runtime test covers remaining daily entries and the three-entry cap.
+- Full group membership reconstruction after disconnect/restart remains unimplemented; orphaned active actions are safely reset. This remains open.
 - Dungeon rewards, duplicate/replay requests, balance, and edge cases still require deeper audit.
 
 ### Public-launch blockers / design decisions
@@ -94,11 +109,12 @@ Completed evidence collection in this checkpoint:
 - [x] Read clan-war operation logic and runtime assertions.
 - [x] Read group travel, group dungeon, and solo dungeon test sources.
 - [x] Inspected PvP/admin handlers in server source.
+- [x] Inspected solo and group dungeon handlers, reward distribution, attempt accounting, and persistence paths.
 - [ ] Resolve exact current HEAD SHA for each active branch.
 - [ ] Confirm full CI for the current PR head.
 - [ ] Run full server tests and client/server builds locally from the same branch snapshot.
 - [ ] Continue systematic handler-by-handler audit of all game systems.
-- [ ] Finish dungeon reward/replay/edge-case audit.
+- [ ] Finish dungeon reward/replay/edge-case audit, including rapid duplicate-click behavior and whether random group loot distribution is intended.
 - [ ] Decide PvP ±2 level restriction and legacy bot path with the user.
 - [ ] Verify admin handler authorization before public release.
 - [ ] Produce final audit report before gameplay changes.
