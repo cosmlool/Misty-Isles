@@ -82,6 +82,13 @@ test('a guest can create a character, hunt, and keep progress after reconnecting
   const goldAfter = Number((goldAfterText.match(/🪙\s*([\d\s\u00a0]+)/)?.[1] || '').replace(/\D/g, ''));
   expect(goldAfter).toBeGreaterThan(goldBefore);
 
+  // Record the post-hunt inventory because monster drops are intentionally random.
+  await page.locator('.quick-nav [data-tab="inventory"]').click();
+  const prePurchaseSummary = page.getByText(/предметов всего:/i);
+  const prePurchaseMatch = (await prePurchaseSummary.innerText()).match(/(\d+)/);
+  expect(prePurchaseMatch).not.toBeNull();
+  const inventoryCountBeforePurchase = Number(prePurchaseMatch![1]);
+
   // Exercise the real shop transaction: currency is charged exactly once,
   // the purchased item enters inventory, and equipping it updates the character.
   await page.locator('.quick-nav [data-tab="shop"]').click();
@@ -93,17 +100,14 @@ test('a guest can create a character, hunt, and keep progress after reconnecting
 
   await page.locator('.quick-nav [data-tab="inventory"]').click();
   await expect(page.getByRole('heading', { name: 'Инвентарь' })).toBeVisible();
-  await expect(page.getByText(/предметов всего:\s*3/i)).toBeVisible();
-  await page.locator('[data-action="equipItem"][data-id="WPN-C-001"]').click();
-  await expect(page.locator('.gear-slot-button[title="Оружие: Клинок первого прилива"]')).toBeVisible();
-
-  await page.locator('.quick-nav [data-tab="inventory"]').click();
-  await expect(page.getByRole('heading', { name: 'Инвентарь' })).toBeVisible();
   const inventorySummary = page.getByText(/предметов всего:/i);
   const inventoryMatch = (await inventorySummary.innerText()).match(/(\d+)/);
   expect(inventoryMatch).not.toBeNull();
   const inventoryCount = Number(inventoryMatch![1]);
-  expect(inventoryCount).toBeGreaterThanOrEqual(2);
+  expect(inventoryCount).toBe(inventoryCountBeforePurchase + 1);
+  await page.locator('[data-action="equipItem"][data-id="WPN-C-001"]').click();
+  await page.locator('.sidebar [data-tab="character"]').click();
+  await expect(page.locator('.gear-slot-button[title="Оружие: Клинок первого прилива"]')).toBeVisible();
 
   // The earned currency and post-hunt inventory must survive another reconnect.
   await page.reload();
