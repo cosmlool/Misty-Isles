@@ -50,3 +50,13 @@ export function ownsItemCopy(
 ): boolean {
   return inventory.includes(itemId) || Object.values(equipment).includes(itemId);
 }
+
+/** Remove already-owned unique item IDs from a reward pool. */
+export function filterAvailableUniqueItems(
+  itemIds: string[],
+  uniqueItemIds: ReadonlySet<string>,
+  inventory: string[],
+  equipment: EquipmentMap,
+): string[] {
+  return itemIds.filter(itemId => !uniqueItemIds.has(itemId) || !ownsItemCopy(inventory, equipment, itemId));
+}
