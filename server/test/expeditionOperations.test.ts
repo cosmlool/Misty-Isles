@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { checkExpeditionTravelReadiness } from '../src/expeditionOperations.js';
+import { checkExpeditionTravelConsistency, checkExpeditionTravelReadiness } from '../src/expeditionOperations.js';
 
 test('group travel waits for the latest participant before any transition is applied', () => {
   const states = [
@@ -25,4 +25,30 @@ test('group travel rejects empty or inconsistent participant state', () => {
   ], 10_000), {
     ready: false, reason: 'not-moving', remainingMs: 0,
   });
+});
+
+test('group travel requires every participant to share the same group and route', () => {
+  const shared = [
+    { state: 'moving', endsAt: 10_000, groupId: 'group-a', currentZoneId: 'el1', targetZoneId: 'el2' },
+    { state: 'moving', endsAt: 10_025, groupId: 'group-a', currentZoneId: 'el1', targetZoneId: 'el2' },
+  ];
+  assert.deepEqual(checkExpeditionTravelConsistency(shared, 'group-a'), { consistent: true });
+  assert.deepEqual(checkExpeditionTravelConsistency([
+    { ...shared[0]!, targetZoneId: 'el2' },
+    { ...shared[1]!, targetZoneId: 'el3' },
+  ], 'group-a'), { consistent: false, reason: 'mismatch' });
+  assert.deepEqual(checkExpeditionTravelConsistency([
+    shared[0]!,
+    { ...shared[1]!, currentZoneId: 'el4' },
+  ], 'group-a'), { consistent: false, reason: 'mismatch' });
+  assert.deepEqual(checkExpeditionTravelConsistency([
+    shared[0]!,
+    { ...shared[1]!, groupId: 'group-b' },
+  ], 'group-a'), { consistent: false, reason: 'mismatch' });
+  assert.deepEqual(checkExpeditionTravelConsistency([
+    { state: 'moving', groupId: '', currentZoneId: 'el1', targetZoneId: 'el2' },
+  ], ''), { consistent: true });
+  assert.deepEqual(checkExpeditionTravelConsistency([
+    { state: 'moving', groupId: 'group-a', currentZoneId: 'el1' },
+  ], 'group-a'), { consistent: false, reason: 'mismatch' });
 });
