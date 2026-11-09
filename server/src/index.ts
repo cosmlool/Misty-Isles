@@ -758,7 +758,7 @@ class GameRoom extends Room<RoomState> {
       this.notice(c,`Атака нанесла ${damage} урона. Суммарный урон: ${updated.aName||updated.a} — ${updated.aDamage||0}, ${updated.bName||updated.b} — ${updated.bDamage||0}. Следующая атака через 1 сек.`);
       c.send('clanWarList',payload);
     });
-    this.onMessage('pvpList',(c)=>{
+    this.onMessage('pvpList',(c)=>{if(!this.requireCharacter(c))return;
       const p=this.state.player;
       const now=Date.now();
       const all=loadPlayers();
