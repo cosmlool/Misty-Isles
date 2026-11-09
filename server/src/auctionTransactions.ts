@@ -13,6 +13,11 @@ type AuctionTransactionOptions = {
   playersFile: string;
   auctionFile: string;
   historyFile: string;
+  // Fault-injection seam used only by isolated crash-recovery tests.
+  testHooks?: {
+    afterJournalPersisted?: () => void;
+    afterTargetWrite?: (target: 'players' | 'auction' | 'history') => void;
+  };
 };
 
 type Journal = { version: 1; snapshot: AuctionSnapshot };
@@ -48,8 +53,11 @@ export function createAuctionTransactionStore(options: AuctionTransactionOptions
     // The journal is the write-ahead commit record. Startup recovery can safely
     // repeat these atomic replacements if the process stops between files.
     atomicWrite(options.playersFile, snapshot.players);
+    options.testHooks?.afterTargetWrite?.('players');
     atomicWrite(options.auctionFile, snapshot.auction);
+    options.testHooks?.afterTargetWrite?.('auction');
     atomicWrite(options.historyFile, snapshot.history);
+    options.testHooks?.afterTargetWrite?.('history');
   }
 
   function recover(): boolean {
@@ -76,6 +84,7 @@ export function createAuctionTransactionStore(options: AuctionTransactionOptions
     const journal: Journal = { version: 1, snapshot };
     atomicWrite(journalFile, journal);
     try {
+      options.testHooks?.afterJournalPersisted?.();
       apply(snapshot);
       unlinkSync(journalFile);
     } catch (error) {
