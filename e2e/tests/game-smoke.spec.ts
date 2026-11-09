@@ -68,8 +68,9 @@ test('a guest can create a character, hunt, and keep progress after reconnecting
   await page.reload();
   await expect(page.locator('.sidebar-identity strong')).toHaveText('Путник-Кот', { timeout: 20_000 });
   await page.locator('.quick-nav [data-tab="farm"]').click();
-  await expect(page.getByRole('button', { name: 'Завершить поиск и вступить в бой', exact: true })).toBeVisible({ timeout: 10_000 });
-  await page.locator('[data-action="expeditionSearchClaim"]').click();
+  const claimButton = page.getByRole('button', { name: 'Завершить поиск и вступить в бой', exact: true });
+  await expect(claimButton).toBeVisible({ timeout: 10_000 });
+  await claimButton.click();
 
   await expect(page.locator('.combat-journal-head')).toContainText('Победа', { timeout: 15_000 });
   await page.screenshot({
