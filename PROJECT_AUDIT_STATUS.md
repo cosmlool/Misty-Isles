@@ -475,7 +475,7 @@ The unauthenticated admin command handler is intentionally retained for the user
 
 Reviewed the hunt reward pipeline (`hunt`), mining, daily/fountain rewards, race-daily claims, story/faction quest claims, achievements, return rewards, tavern wagers, crafting claims, chest opening, and relevant runtime tests. Source-level review only; no tests executed and no gameplay code changed.
 
-- **Economy balance risk — mining is repeatable every 1 second with no daily or stamina cap.** Each accepted `mine` action grants 1–3 crystals (plus a milestone crystal every fifth mine, and a possible pendant bonus) and 12–35 gold plus 2 gold per character level. At the configured one-second cooldown, a player can generate resources continuously without a daily ceiling. The server enforces the cooldown, so this is not a cooldown bypass; it is an unbounded faucet built into the current rule. Decide whether this is intended active-click gameplay or should have a longer cooldown, energy cost, daily cap, or diminishing returns before balancing the economy.
+- **Mining cooldown is currently a 1-second test setting, not a production economy rule.** The user confirmed the intended live cooldown: 30 minutes for all characters and 15 minutes for characters with the Miner profession. The current 1-second interval is intentionally used for testing; it is not an exploit or a live-balance defect. The production timer change remains pending and has not been implemented.
 - Daily login reward uses a UTC date key and refuses a second claim on the same UTC day; consecutive streak increments only when the stored date is yesterday, otherwise resets to one. Existing runtime test covers consecutive day, missed day, reward amounts and same-day duplicate rejection.
 - Fountain uses a UTC date check and records its claim timestamp before issuing one of three rewards. No duplicate same-day claim path was found in the synchronous single-process handler.
 - Race-daily claims verify race-specific quest ID, level, progress, and a per-day claimed list before issuing gold, XP and reputation. Progress is advanced by mine/hunt events and reset by the shared `raceDailyState` helper. A dedicated runtime test for race-daily rollover, claim, duplicate rejection, and reconnect persistence is not present in the reviewed test set; add one before relying on it in production.
@@ -487,5 +487,12 @@ Reviewed the hunt reward pipeline (`hunt`), mining, daily/fountain rewards, race
 #### Follow-up tests / decisions
 1. Add runtime tests for race-daily day rollover, successful claim, duplicate rejection, and reconnect persistence.
 2. Add a weekly challenge test where 15 hunts are recorded in the prior ISO week, the ISO week changes, and the claim is attempted before any new-week hunt; assert no old-week reward is granted and current-week progress is zero.
-3. Decide the intended mining economy: unlimited 1-second active mining versus a capped/energy-based activity. Balance gold and crystals alongside hunt income, not in isolation.
+3. Implement and test the confirmed mining cooldowns before public gameplay: 30 minutes generally and 15 minutes for the Miner profession. Keep the 1-second interval confined to the test configuration.
 4. Continue reviewing auction, crafting, clan, dungeon, PvP, and reward handlers for request replay, ownership validation, and persistent currency/inventory consistency. Existing findings about these systems remain in their earlier sections.
+
+
+### Ring terminology and mining timer clarification — 2026-11-09
+
+- Player-facing terminology for the equipment slot/category is now «Кольцо» / «Кольца». Item names and player-facing messages using the previous jewelry terminology have been updated.
+- Internal compatibility identifiers remain unchanged intentionally: `kind: 'amulet'`, `equipment.amulet`, `collections.pendantLevels`, `upgradePendant`, PEN item IDs, and existing asset filenames. These are persisted or referenced by existing saves and client/server messages; changing them requires a separate migration and is outside this display-terminology change.
+- Mining timer requirement confirmed by the user: current 1-second cooldown is test-only; target live cooldown is 30 minutes for all characters and 15 minutes for the Miner profession. Timer implementation is deferred; no mining gameplay code changed in this commit.
