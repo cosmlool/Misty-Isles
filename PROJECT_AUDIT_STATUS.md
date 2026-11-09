@@ -404,3 +404,6 @@ Reviewed `server/src/pvpOperations.ts`, PvP and clan-war handlers in `server/src
 3. Verify PvP report and character counters persist across restart for wins and losses, both online and offline victims.
 4. Verify clan-war attack increments and persists the attacker's battle statistic immediately, if that counter is meant to include clan-war fights.
 5. Keep the 1-second clan-war cadence as a separately documented game-balance decision.
+
+
+- **Correction to the clan-war persistence note above:** although `clanWarAttack` does not call `persistPlayer` directly, it ends with `this.notice(...)`, and `notice()` calls `this.save()`. Therefore the incremented `p.battles` is saved immediately; this is **not** a persistence gap. Keep a test only if battle-counter semantics need explicit coverage, not because the current handler omits a save.
