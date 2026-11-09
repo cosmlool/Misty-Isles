@@ -112,6 +112,7 @@ test('guest gameplay actions cannot consume rewards or alter character state bef
       ['quest', { id: 'story_1' }],
       ['achievements', {}],
       ['returnReward', {}],
+      ['pvpList', {}],
     ];
     for (const [action, payload] of actions) {
       const before = notices.length;
@@ -133,6 +134,7 @@ test('guest gameplay actions cannot consume rewards or alter character state bef
     assert.equal(saved.buff, '');
     assert.equal(saved.buildings, '{"training":0,"garden":0,"library":0,"workshop":0,"warehouse":0}');
     assert.equal(JSON.parse(saved.quests).story_1, undefined);
+    assert.equal(JSON.parse(saved.quests).pvp, undefined, 'PvP offer generation must not mutate an uncreated guest save');
   } finally {
     if (room) await room.leave().catch(() => undefined);
     if (child) await stopServer(child);
