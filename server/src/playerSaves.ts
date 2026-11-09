@@ -2,6 +2,9 @@ import { randomBytes } from 'crypto';
 import { copyFileSync, existsSync, readFileSync, readdirSync, renameSync, unlinkSync, writeFileSync } from 'fs';
 import { join } from 'path';
 
+// Keep backup filenames chronologically sortable even when several saves happen in one millisecond.
+let lastBackupTimestamp = 0;
+
 export function createPlayerSaveStore(saveFile:string,dataDir:string){
   function loadPlayers():Record<string,any>{
     if(!existsSync(saveFile))return {};
@@ -21,7 +24,9 @@ export function createPlayerSaveStore(saveFile:string,dataDir:string){
   function savePlayers(all:Record<string,any>){
     let backupFile:string|undefined;
     if(existsSync(saveFile)){
-      const suffix=new Date().toISOString().replace(/[:.]/g,'-')+'.'+process.pid+'.'+randomBytes(4).toString('hex');
+      const backupTimestamp=Math.max(Date.now(),lastBackupTimestamp+1);
+      lastBackupTimestamp=backupTimestamp;
+      const suffix=new Date(backupTimestamp).toISOString().replace(/[:.]/g,'-')+'.'+process.pid+'.'+randomBytes(4).toString('hex');
       backupFile=saveFile+'.'+suffix+'.bak';
       const backupTemp=backupFile+'.tmp';
       try{
