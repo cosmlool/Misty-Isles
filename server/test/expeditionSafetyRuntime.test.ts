@@ -133,7 +133,10 @@ test('expedition reports capture pre/post health and disconnect cancels stale gr
     connected[memberId].onMessage('huntGroupInvite', payload => invitations.push(payload));
     connected[leaderId].send('huntGroupInvite', { targetId: publicCode(memberId) });
     const invite = await waitFor(() => invitations[0], 'group invitation');
+    const groupStates: any[] = [];
+    connected[leaderId].onMessage('huntGroupState', payload => groupStates.push(payload));
     connected[memberId].send('huntGroupAccept', { groupId: invite.groupId });
+    await waitFor(() => groupStates.find(payload => payload.group?.members?.length === 2), 'two-member group acceptance');
     await waitFor(() => {
       const players = readPlayers(join(dataDir, 'players.json'));
       const q = JSON.parse(players[leaderId].quests);
