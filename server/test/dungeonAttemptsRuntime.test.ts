@@ -89,8 +89,8 @@ test('solo dungeon reports remaining daily entries accurately and enforces the t
         id: playerId, name: 'Dungeon Tester', race: 'Кот', profession: 'Вампир', level: 8,
         strength: 100_000, dexterity: 100_000, intelligence: 100_000,
         defense: 100_000, vitality: 100_000, stamina: 100_000,
-        health: 1_080, maxHealth: 1_000, gold: 500,
-        inventory: '[]', equipment: JSON.stringify({ weapon: 'wood_sword', armor: '', amulet: 'amulet_health' }), quests: JSON.stringify({ dungeonDay: today, dungeonRuns: 0 }),
+        health: 1_084, maxHealth: 1_000, gold: 500,
+        inventory: '[]', equipment: JSON.stringify({ weapon: 'wood_sword', helmet: 'ARM-C-1-001', armor: '', amulet: 'amulet_health' }), quests: JSON.stringify({ dungeonDay: today, dungeonRuns: 0 }),
       },
     }, null, 2));
 
@@ -114,8 +114,8 @@ test('solo dungeon reports remaining daily entries accurately and enforces the t
       room.send('dungeonRun', { id: 'root_vault' });
       const result = await waitFor(() => results[before], `dungeon attempt ${attempt}`);
       assert.equal(result.report.result, 'win');
-      assert.equal(result.report.maxHealth, 1_080, 'legacy health amulet must contribute its listed +8% maximum health');
-      assert.equal(result.report.hpAfter, 1_080, 'vampire healing must preserve the amulet health bonus');
+      assert.equal(result.report.maxHealth, 1_084, 'legacy health amulet must contribute its listed +8% maximum health');
+      assert.equal(result.report.hpAfter, 1_084, 'vampire healing must preserve the amulet health bonus');
       assert.ok(result.text.includes(`Осталось входов сегодня: ${3 - attempt}.`));
     }
 
@@ -130,7 +130,7 @@ test('solo dungeon reports remaining daily entries accurately and enforces the t
     assert.equal(quests.dungeonDay, today);
     assert.equal(saved.gold, 1_250);
     assert.equal(saved.experience, 1_260);
-    assert.equal(saved.health, 1_080, 'saved health must remain within the effective maximum, not the legacy base maximum');
+    assert.equal(saved.health, 1_084, 'saved health must remain within the effective maximum, not the legacy base maximum');
   } finally {
     if (room) await room.leave().catch(() => undefined);
     if (child) await stopServer(child);
