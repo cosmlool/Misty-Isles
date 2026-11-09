@@ -684,7 +684,7 @@ class GameRoom extends Room<RoomState> {
       const p=this.state.player;
       if(!p?.clan)return this.notice(c,'Сначала вступи в клан.');
       const clans=loadClans(),clan=clans[p.clan];
-      if(!clan||!Array.isArray(clan.members)||!clan.members.includes(this.playerId))return this.notice(c,'Персонаж не состоит в этом клане.');
+      if(!clan||!Array.isArray(clan.members)||!clan.members.some((member:any)=>member?.id===this.playerId))return this.notice(c,'Персонаж не состоит в этом клане.');
       const wars=loadWars();
       const selected= wars.find((w:any)=>w.id===String(d?.id||'')&&(w.a===clan.id||w.b===clan.id));
       if(!selected)return this.notice(c,'Активная война не найдена.');
