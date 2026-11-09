@@ -64,6 +64,22 @@ test('withdrawal returns the item exactly once and does not refund the listing f
   assert.throws(() => cancelAuctionItem({ snapshot: withdrawn, sellerId: 'seller', lotId: 'lot-1', validItemIds: itemIds, now: 21 }), /not found/);
 });
 
+test('withdrawing a unique pendant lot cannot create a duplicate copy', () => {
+  const start = initial();
+  const seller = start.players.seller;
+  seller.inventory = JSON.stringify(['amulet_unique']);
+  seller.equipment = JSON.stringify({ weapon: '', helmet: '', armor: '', gloves: '', boots: '', cloak: '', amulet: 'amulet_unique' });
+  const valid = new Set([...itemIds, 'amulet_unique']);
+  const unique = new Set(['amulet_unique']);
+  const listed = listAuctionItem({ snapshot: start, sellerId: 'seller', index: 0, expectedItemId: 'amulet_unique',
+    expectedCount: 1, price: 500, currency: 'gold', validItemIds: valid, itemName: 'Unique pendant', now: 10, lotId: 'lot-unique' }).snapshot;
+  listed.players.seller.inventory = JSON.stringify(['amulet_unique']);
+  assert.throws(() => cancelAuctionItem({ snapshot: listed, sellerId: 'seller', lotId: 'lot-unique',
+    validItemIds: valid, uniqueItemIds: unique, now: 20 }), /unique item is already owned/);
+  assert.equal(listed.auction.length, 1);
+  assert.deepEqual(JSON.parse(listed.players.seller.inventory), ['amulet_unique']);
+});
+
 test('purchase transfers one item and the exact net currency after the 5% gold fee', () => {
   const listed = listAuctionItem({ snapshot: initial(), sellerId: 'seller', index: 0, expectedItemId: 'iron_sword',
     expectedCount: 1, price: 500, currency: 'gold', validItemIds: itemIds, itemName: 'Iron sword', now: 10, lotId: 'lot-1' }).snapshot;
