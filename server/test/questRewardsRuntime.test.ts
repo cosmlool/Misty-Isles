@@ -139,7 +139,7 @@ test('story, faction, daily challenge and achievement rewards cannot be claimed 
     await sendAndWait('quest', { id: 'faction_reward_dawn' }, 'faction maximum reward');
     const afterFactionReward = readPlayer(savePath, playerId);
     assert.equal(JSON.parse(afterFactionReward.quests).faction_reward_dawn, true);
-    assert.equal(JSON.parse(afterFactionReward.collections).title_dawn, 'Дозорный Рассвета');
+    assert.equal(JSON.parse(afterFactionReward.collections).title_dawn, 'Заступник Первого Рассвета');
     const factionGold = afterFactionReward.gold;
     const duplicateMaxReward = await sendAndWait('quest', { id: 'faction_reward_dawn' }, 'duplicate faction maximum reward');
     assert.equal(duplicateMaxReward, 'Эксклюзивная награда уже получена.');
