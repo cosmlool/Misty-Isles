@@ -1,6 +1,6 @@
 import { expect, test } from '@playwright/test';
 
-test('a guest can create a character, enter the world, and keep the save after reconnecting', async ({ page }, testInfo) => {
+test('a guest can create a character, hunt, and keep progress after reconnecting', async ({ page }, testInfo) => {
   const pageErrors: string[] = [];
   page.on('pageerror', error => pageErrors.push(error.message));
 
@@ -49,6 +49,58 @@ test('a guest can create a character, enter the world, and keep the save after r
   await page.locator('[data-tab="inventory"]').first().click();
   await expect(page.getByRole('heading', { name: 'Инвентарь' })).toBeVisible();
   await expect(page.getByText(/предметов всего:\s*2/i)).toBeVisible();
+
+  // Start an expedition through the visible game UI. The isolated test server
+  // shortens only its disposable copy of the search timer to one second.
+  await page.locator('.quick-nav [data-tab="farm"]').click();
+  await expect(page.getByRole('heading', { name: 'Экспедиции и охота' })).toBeVisible();
+
+  const goldBeforeText = await page.locator('.resources').innerText();
+  const goldBefore = Number((goldBeforeText.match(/🪙\s*([\d\s\u00a0]+)/)?.[1] || '').replace(/\D/g, ''));
+  expect(Number.isFinite(goldBefore)).toBeTruthy();
+
+  await page.locator('[data-action="expeditionSearchStart"]').click();
+  await expect(page.locator('.expedition-timer')).toBeVisible();
+
+  // Let the short test-only search finish, then reconnect to prove its state
+  // was persisted before claiming the encounter.
+  await page.waitForTimeout(1_300);
+  await page.reload();
+  await expect(page.locator('.sidebar-identity strong')).toHaveText('Путник-Кот', { timeout: 20_000 });
+  await page.locator('.quick-nav [data-tab="farm"]').click();
+  await expect(page.locator('[data-action="expeditionSearchClaim"]')).toBeVisible({ timeout: 10_000 });
+  await page.locator('[data-action="expeditionSearchClaim"]').click();
+
+  await expect(page.locator('.combat-journal-head')).toContainText('Победа', { timeout: 15_000 });
+  await page.screenshot({
+    path: testInfo.outputPath('hunt-victory.png'),
+    fullPage: true
+  });
+
+  const goldAfterText = await page.locator('.resources').innerText();
+  const goldAfter = Number((goldAfterText.match(/🪙\s*([\d\s\u00a0]+)/)?.[1] || '').replace(/\D/g, ''));
+  expect(goldAfter).toBeGreaterThan(goldBefore);
+
+  await page.locator('.quick-nav [data-tab="inventory"]').click();
+  await expect(page.getByRole('heading', { name: 'Инвентарь' })).toBeVisible();
+  const inventorySummary = page.getByText(/предметов всего:/i);
+  const inventoryMatch = (await inventorySummary.innerText()).match(/(\d+)/);
+  expect(inventoryMatch).not.toBeNull();
+  const inventoryCount = Number(inventoryMatch![1]);
+  expect(inventoryCount).toBeGreaterThanOrEqual(2);
+
+  // The earned currency and post-hunt inventory must survive another reconnect.
+  await page.reload();
+  await expect(page.locator('.sidebar-identity strong')).toHaveText('Путник-Кот', { timeout: 20_000 });
+  const restoredGoldText = await page.locator('.resources').innerText();
+  const restoredGold = Number((restoredGoldText.match(/🪙\s*([\d\s\u00a0]+)/)?.[1] || '').replace(/\D/g, ''));
+  expect(restoredGold).toBe(goldAfter);
+
+  await page.locator('[data-tab="inventory"]').first().click();
+  await expect(page.getByRole('heading', { name: 'Инвентарь' })).toBeVisible();
+  const restoredInventoryMatch = (await page.getByText(/предметов всего:/i).innerText()).match(/(\d+)/);
+  expect(restoredInventoryMatch).not.toBeNull();
+  expect(Number(restoredInventoryMatch![1])).toBe(inventoryCount);
 
   expect(pageErrors, 'The game page should not throw JavaScript errors').toEqual([]);
 });
