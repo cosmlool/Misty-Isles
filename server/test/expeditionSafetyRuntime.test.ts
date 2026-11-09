@@ -91,6 +91,10 @@ test('expedition reports capture pre/post health and disconnect cancels stale gr
   const rooms: Room[] = [];
   try {
     for (const file of staticDataFiles) copyFileSync(join(serverDir, 'data', file), join(dataDir, file));
+    const expeditionDataPath = join(dataDir, 'forgotten_lands.json');
+    const expeditionData = JSON.parse(readFileSync(expeditionDataPath, 'utf8'));
+    expeditionData.searchSeconds = 0;
+    writeFileSync(expeditionDataPath, JSON.stringify(expeditionData, null, 2));
     const makePlayer = (id: string, name: string, friend: string, quests: any = {}) => ({
       id, name, race: 'Кот', level: 5, strength: 100_000, dexterity: 100_000,
       defense: 100, vitality: 100, stamina: 100, health: 1_000, maxHealth: 1_000,
@@ -188,6 +192,39 @@ test('expedition reports capture pre/post health and disconnect cancels stale gr
     connected[leaderId].send('huntGroupInvite', { targetId: publicCode(orphanId) });
     await waitFor(() => activeInviteNotices.find(message => message.includes('Нельзя менять состав группы во время поиска')), 'active group invitation lock');
     assert.equal(lateInvites.length, 0, 'an active expedition must not accept new group invitations');
+
+    const groupResults: Record<string, any[]> = { [leaderId]: [], [memberId]: [] };
+    const groupHistories: Record<string, any[]> = { [leaderId]: [], [memberId]: [] };
+    for (const id of [leaderId, memberId]) {
+      connected[id].onMessage('combatResult', payload => groupResults[id].push(payload));
+      connected[id].onMessage('combatHistory', payload => groupHistories[id].push(payload));
+    }
+    connected[leaderId].send('expeditionSearchClaim');
+    const leaderResult = await waitFor(() => groupResults[leaderId][0], 'group expedition leader result');
+    const memberResult = await waitFor(() => groupResults[memberId][0], 'group expedition member result');
+    assert.equal(leaderResult.report.result, 'win');
+    assert.equal(memberResult.report.result, 'win');
+    const afterGroupFight = readPlayers(join(dataDir, 'players.json'));
+    for (const [id, result] of [[leaderId, leaderResult], [memberId, memberResult]] as const) {
+      const player = afterGroupFight[id];
+      const quests = JSON.parse(player.quests);
+      assert.equal(result.report.hpBefore, 1_000);
+      assert.equal(result.report.hpAfter, player.health);
+      assert.equal(player.battles, 1, 'every group expedition participant must count the battle');
+      assert.equal(player.mobsKilled, 1);
+      assert.equal(player.victories, 1);
+      assert.equal(quests.activityToday.hunts, 1);
+      assert.equal(quests.activityToday.wins, 1);
+      assert.ok(groupHistories[id].some(payload => payload.history?.[0]?.result === 'win'));
+    }
+
+    connected[leaderId].send('expeditionSearchStart');
+    await waitFor(() => {
+      const players = readPlayers(join(dataDir, 'players.json'));
+      const leader = JSON.parse(players[leaderId].quests).expedition;
+      const member = JSON.parse(players[memberId].quests).expedition;
+      return leader?.state === 'searching' && member?.state === 'searching' ? true : undefined;
+    }, 'second shared expedition search before disconnect');
 
     await connected[memberId].leave();
     const savedAfterLeave = await waitFor(() => {
