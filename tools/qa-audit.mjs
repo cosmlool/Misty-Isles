@@ -5,16 +5,42 @@ import { fileURLToPath } from 'node:url';
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const errors = [];
 const warnings = [];
+
+// Required files reflect the repository's actual, top-level documentation layout.
+// Do not require a generated docs/ tree: project history and current Stage 28
+// instructions are maintained in the existing README and stage notes.
 const required = [
-  'client/package.json', 'client/package-lock.json', 'client/tsconfig.json',
-  'server/package.json', 'server/package-lock.json', 'server/tsconfig.json',
-  'client/index.html', 'client/src/main.ts', 'server/src/index.ts', 'server/src/PlayerSchema.ts',
-  'docs/START_HERE.md', 'docs/PROJECT_MASTER.md', 'docs/GAME_DESIGN.md',
-  'docs/TECHNICAL_RULES.md', 'docs/STAGE_HISTORY.md', 'docs/DECISION_REGISTER.md',
-  'VERIFY_PROJECT.bat', 'Запустить игру.bat', 'Остановить игру.bat',
-  'tools/Start-Game.ps1', 'tools/Stop-Game.ps1', 'tools/Check-Game.ps1',
+  'README.md',
+  'README_STAGE28_CORRECTIVE_UPDATE_1.md',
+  'CHANGELOG_STAGE28.md',
+  'STAGE27_NOTES.md',
+  'client/package.json',
+  'client/package-lock.json',
+  'client/tsconfig.json',
+  'client/index.html',
+  'client/src/main.ts',
+  'client/scripts/verify-project.mjs',
+  'client/scripts/audit-assets.mjs',
+  'client/public/assets/asset-manifest.json',
+  'server/package.json',
+  'server/package-lock.json',
+  'server/tsconfig.json',
+  'server/src/index.ts',
+  'server/src/PlayerSchema.ts',
+  'VERIFY_PROJECT.bat',
+  'Запустить игру.bat',
+  'Остановить игру.bat',
+  'tools/Start-Game.ps1',
+  'tools/Stop-Game.ps1',
+  'tools/Check-Game.ps1',
+  '.github/workflows/quality.yml',
 ];
-for (const rel of required) if (!fs.existsSync(path.join(root, rel))) errors.push(`Missing required project file: ${rel}`);
+
+for (const rel of required) {
+  if (!fs.existsSync(path.join(root, rel))) {
+    errors.push(`Missing required project file: ${rel}`);
+  }
+}
 
 let jsonCount = 0;
 function walk(dir) {
@@ -42,7 +68,11 @@ for (const rel of ['client/package-lock.json', 'server/package-lock.json']) {
 }
 
 const forbidden = ['.env', '.env.local', '.env.production'];
-for (const rel of forbidden) if (fs.existsSync(path.join(root, rel))) errors.push(`Potential secret-bearing file must not be committed: ${rel}`);
+for (const rel of forbidden) {
+  if (fs.existsSync(path.join(root, rel))) {
+    errors.push(`Potential secret-bearing file must not be committed: ${rel}`);
+  }
+}
 
 console.log(`Misty Isles QA audit: ${jsonCount} JSON files parsed.`);
 console.log(`Required files checked: ${required.length}.`);

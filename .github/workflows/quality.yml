@@ -60,6 +60,9 @@ jobs:
       - name: Install locked server dependencies
         run: npm ci --no-audit --no-fund
         working-directory: server
+      - name: Test server transaction recovery
+        run: npm test
+        working-directory: server
       - name: Compile server
         run: npm run build
         working-directory: server
