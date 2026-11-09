@@ -429,7 +429,7 @@ function authHttpHandler(req:IncomingMessage,res:ServerResponse) {
   if(req.method==='OPTIONS'){res.writeHead(204);res.end();return;}
   const path=String(req.url||'').split('?')[0];if(!path?.startsWith('/auth/')){res.writeHead(404);res.end('Not found');return;}
   if(req.method!=='POST'){sendJson(res,405,{error:'Используй POST.'});return;}
-  if(path==='/auth/login'||path==='/auth/register'||path==='/auth/guest'){const ip=req.socket.remoteAddress||'unknown';if(!allowAuthAttempt(ip)){sendJson(res,429,{error:'Слишком много попыток. Попробуй позже.'});return;}}
+  if(path==='/auth/login'||path==='/auth/register'||path==='/auth/guest'||path==='/auth/logout'){const ip=req.socket.remoteAddress||'unknown';if(!allowAuthAttempt(ip)){sendJson(res,429,{error:'Слишком много попыток. Попробуй позже.'});return;}}
   let body='';req.on('data',chunk=>{body+=String(chunk);if(body.length>8192){sendJson(res,413,{error:'Слишком большой запрос.'});req.destroy();}});
   req.on('end',()=>{
     try {
@@ -458,7 +458,7 @@ function authHttpHandler(req:IncomingMessage,res:ServerResponse) {
         const session=verifySession(String(d.token||''));if(!session){sendJson(res,401,{error:'Сессия истекла. Войди снова.'});return;}sendJson(res,200,{ok:true,playerId:session.playerId});return;
       }
       if(path==='/auth/logout'){
-        const token=String(d.token||'');const hash=tokenDigest(token);saveSessions(loadSessions().filter(x=>x.tokenHash!==hash));sendJson(res,200,{ok:true});return;
+        const token=String(d.token||'');const session=verifySession(token);if(!session){sendJson(res,401,{error:'Сессия не найдена или истекла.'});return;}const hash=tokenDigest(token);saveSessions(loadSessions().filter(x=>x.tokenHash!==hash));sendJson(res,200,{ok:true});return;
       }
       sendJson(res,404,{error:'Неизвестный запрос.'});
     } catch { sendJson(res,400,{error:'Не удалось обработать запрос.'}); }
