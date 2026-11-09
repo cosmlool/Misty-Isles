@@ -123,14 +123,19 @@ test('clan war attacks enforce per-player cooldown and accumulate real damage', 
 
     const noticesA: string[] = [];
     const noticesB: string[] = [];
+    const warListsA: any[] = [];
+    const warListsB: any[] = [];
     roomA.onMessage('notice', payload => noticesA.push(String(payload?.text || '')));
     roomB.onMessage('notice', payload => noticesB.push(String(payload?.text || '')));
+    roomA.onMessage('clanWarList', payload => warListsA.push(payload));
+    roomB.onMessage('clanWarList', payload => warListsB.push(payload));
 
     roomA.send('clanWarAttack', { id: 'war-runtime' });
     await waitFor(() => noticesA.find(text => text.includes('Атака нанесла')), 'first clan A attack');
     const afterFirst = readJson(join(dataDir, 'clan_wars.json'))[0];
     assert.ok(afterFirst.aDamage > 0);
     assert.equal(afterFirst.bDamage, 0);
+    await waitFor(() => warListsB.find(payload => payload.wars?.some((war:any) => war.id === 'war-runtime' && war.aDamage === afterFirst.aDamage)), 'live score broadcast to opposing clan');
 
     roomA.send('clanWarAttack', { id: 'war-runtime' });
     await waitFor(() => noticesA.find(text => text.includes('Следующая атака через')), 'clan A cooldown response');
