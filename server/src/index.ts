@@ -701,11 +701,25 @@ class GameRoom extends Room<RoomState> {
       const enemyId=war.a===clan.id?war.b:war.a;
       const enemy=settled.clans[enemyId];
       if(!enemy)return this.notice(c,'Клан-соперник не найден.');
+      // Reuse the same character combat inputs as arena PvP: equipment, upgrades,
+      // rare item properties, set bonuses and profession modifiers all matter.
+      const eq=readObject(p.equipment);
+      const weapon=ITEMS.find(item=>item.id===eq.weapon),armor=ITEMS.find(item=>item.id===eq.armor);
+      const equipmentUpgrades=readObject(p.equipmentEnhancements);
+      const weaponLevel=Number(equipmentUpgrades[`weapon:${eq.weapon}`]||0);
+      const armorLevel=Number(equipmentUpgrades[`armor:${eq.armor}`]||0);
+      const ownProps=readObject(p.collections).equipmentProperties||{};
+      const ownSets=EQUIPMENT_SETS.filter((set:any)=>set.items.filter((id:string)=>[eq.weapon,eq.armor,eq.amulet].includes(id)).length>=2);
+      const ownMagic=p.profession==='Боевой маг';
+      const ownAgile=['Ассасин','Лучник','Вампир'].includes(p.profession);
+      const attack=(p.strength*(ownMagic?.35:1.25)+p.dexterity*(ownAgile?.65:.35)+p.intelligence*(ownMagic?.85:.2)+(weapon?.attack||0)*(1+weaponLevel*.04))*(1+(ownProps[eq.weapon]?.effect==='attack'?ownProps[eq.weapon].value:0))*(ownSets.some((set:any)=>set.effect==='attack')?1.08:1)*(p.profession==='Боевой маг'?1.05:1)+rand(0,10);
+      const defense=(p.defense+p.vitality*.45+(armor?.defense||0)*(1+armorLevel*.04))*(1+(ownProps[eq.armor]?.effect==='defense'?ownProps[eq.armor].value:0))*(ownSets.some((set:any)=>set.effect==='defense')?1.08:1)*(p.profession==='Воин'?1.10:p.profession==='Баффер'?1.06:1);
+      const critBonus=(ownProps[eq.weapon]?.effect==='crit'?ownProps[eq.weapon].value:0)+(ownProps[eq.armor]?.effect==='crit'?ownProps[eq.armor].value:0)+(ownSets.some((set:any)=>set.effect==='crit')?.06:0)+(p.profession==='Ассасин'?.07:p.profession==='Лучник'?.03:0);
       const upgrades=clan.upgrades||{};
       const barracks=Math.max(0,Number(upgrades.barracks)||0);
-      const power=(Number(p.level||1)+Number(p.strength||10)*.3+Number(p.defense||8)*.2+Number(clan.level||1)*4)*(1+barracks*.02)+rand(0,20);
-      const enemyPower=Number(enemy.level||1)*4+(Array.isArray(enemy.members)?enemy.members.length:1)*3;
-      const damage=calculateClanWarDamage(power,enemyPower,rand(0,30));
+      const arenaCombatPower=(attack*(1+critBonus)+defense*.4+rand(0,20))*(1+barracks*.02);
+      const enemyPower=Number(enemy.level||1)*4+(Array.isArray(enemy.members)?enemy.members.length:1)*3+rand(0,30);
+      const damage=calculateClanWarDamage(arenaCombatPower,enemyPower);
       const updated=recordClanWarDamage(war,clan.id,this.playerId,damage,now);
       const index=settled.wars.findIndex((w:any)=>w.id===war.id);
       settled.wars[index]=updated;
