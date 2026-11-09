@@ -18,7 +18,11 @@ export function checkExpeditionTravelReadiness(
   if (!states.length || states.some(state => state.state !== 'moving')) {
     return { ready: false, reason: 'not-moving', remainingMs: 0 };
   }
-  const remainingMs = Math.max(0, ...states.map(state => Number(state.endsAt || 0) - now));
+  const endsAt = states.map(state => Number(state.endsAt));
+  if (endsAt.some(value => !Number.isFinite(value) || value <= 0)) {
+    return { ready: false, reason: 'not-moving', remainingMs: 0 };
+  }
+  const remainingMs = Math.max(0, ...endsAt.map(value => value - now));
   if (remainingMs > 0) return { ready: false, reason: 'waiting', remainingMs };
   return { ready: true, remainingMs: 0 };
 }
