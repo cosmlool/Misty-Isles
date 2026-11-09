@@ -7,6 +7,7 @@ import { WebSocketTransport } from '@colyseus/ws-transport';
 import { Schema, type } from '@colyseus/schema';
 import { Player } from './PlayerSchema.js';
 import { createPlayerSaveStore } from './playerSaves.js';
+import { readJsonFile as readPersistentJson } from './jsonPersistence.js';
 import { createAuctionTransactionStore } from './auctionTransactions.js';
 import { buyAuctionItem, cancelAuctionItem, listAuctionItem } from './auctionOperations.js';
 import { claimCraftJob, startCraftJob } from './craftingQueue.js';
@@ -400,15 +401,15 @@ type SessionRecord = { tokenHash:string; playerId:string; accountKey:string|null
 const AUTH_SESSION_MS = 30 * 24 * 60 * 60 * 1000;
 const AUTH_RATE_WINDOW_MS=15*60*1000;const AUTH_RATE_LIMIT=10;const AUTH_ATTEMPTS=new Map<string,{count:number;resetAt:number}>();let authRateOps=0;
 function allowAuthAttempt(ip:string){const now=Date.now();let entry=AUTH_ATTEMPTS.get(ip);if(!entry||entry.resetAt<=now){entry={count:0,resetAt:now+AUTH_RATE_WINDOW_MS};AUTH_ATTEMPTS.set(ip,entry);}entry.count++;if(++authRateOps%100===0){for(const [key,value] of AUTH_ATTEMPTS)if(value.resetAt<=now)AUTH_ATTEMPTS.delete(key);if(AUTH_ATTEMPTS.size>10000){const oldest=Array.from(AUTH_ATTEMPTS.entries()).sort((a,b)=>a[1].resetAt-b[1].resetAt).slice(0,AUTH_ATTEMPTS.size-10000);for(const [key] of oldest)AUTH_ATTEMPTS.delete(key);}}return entry.count<=AUTH_RATE_LIMIT;}
-function readJsonFile<T>(file:string, fallback:T):T { try { return JSON.parse(readFileSync(file,'utf8')) as T; } catch { return fallback; } }
 /** Write a complete JSON snapshot to a sibling temp file, then atomically replace the target.
  * This protects existing saves from being truncated if the process stops during serialization/write.
  * It does not remove synchronous-I/O latency; database migration/load testing remain separate work.
  */
 function writeJsonAtomic(file:string,value:unknown) { const temp=`${file}.${process.pid}.${Date.now()}.${randomBytes(4).toString('hex')}.tmp`; try { writeFileSync(temp,JSON.stringify(value,null,2),{encoding:'utf8',flag:'wx'}); renameSync(temp,file); } catch(error) { try { if(existsSync(temp)) unlinkSync(temp); } catch {} throw error; } }
-function loadAccounts():AccountRecord[] { const value=readJsonFile<any>(ACCOUNT_FILE,[]); return Array.isArray(value)?value:[]; }
+function isPlainObject(value:any):value is Record<string,any>{return !!value&&typeof value==='object'&&!Array.isArray(value);}
+function loadAccounts():AccountRecord[] { return readPersistentJson<AccountRecord[]>(ACCOUNT_FILE,[],value=>Array.isArray(value)&&value.every((x:any)=>isPlainObject(x)&&typeof x.username==='string'&&typeof x.usernameKey==='string'&&typeof x.playerId==='string'&&typeof x.salt==='string'&&typeof x.passwordHash==='string'&&Number.isFinite(x.createdAt))); }
 function saveAccounts(value:AccountRecord[]) { writeJsonAtomic(ACCOUNT_FILE,value); }
-function loadSessions():SessionRecord[] { const value=readJsonFile<any>(SESSION_FILE,[]); return Array.isArray(value)?value:[]; }
+function loadSessions():SessionRecord[] { return readPersistentJson<SessionRecord[]>(SESSION_FILE,[],value=>Array.isArray(value)&&value.every((x:any)=>isPlainObject(x)&&typeof x.tokenHash==='string'&&typeof x.playerId==='string'&&(x.accountKey===null||typeof x.accountKey==='string')&&Number.isFinite(x.expiresAt))); }
 function saveSessions(value:SessionRecord[]) { writeJsonAtomic(SESSION_FILE,value); }
 function tokenDigest(token:string) { return createHash('sha256').update(token).digest('hex'); }
 function issueSession(playerId:string, accountKey:string|null) { const token=randomBytes(32).toString('hex'); const sessions=loadSessions().filter(x=>x.expiresAt>Date.now()); sessions.push({tokenHash:tokenDigest(token),playerId,accountKey,expiresAt:Date.now()+AUTH_SESSION_MS}); saveSessions(sessions); return token; }
@@ -686,19 +687,19 @@ function safeId(v:any){return String(v||'').replace(/[^a-zA-Z0-9_-]/g,'').slice(
 
 function loadPlayersForAuction():Record<string,any>{return loadPlayers();}
 function persistPlayer(p:Player){if(!p?.id)return;const all=loadPlayers();all[p.id]=p.toJSON();savePlayers(all);}
-function loadClans():Record<string,any>{try{return JSON.parse(readFileSync(CLAN_FILE,'utf8'));}catch{return {};}}
+function loadClans():Record<string,any>{return readPersistentJson<Record<string,any>>(CLAN_FILE,{},value=>isPlainObject(value)&&Object.values(value).every(isPlainObject));}
 function saveClans(clans:Record<string,any>){writeJsonAtomic(CLAN_FILE,clans);}
-function loadTerritories():any[]{try{const parsed=JSON.parse(readFileSync(TERRITORY_FILE,'utf8'));return Array.isArray(parsed)?parsed:TERRITORIES.map(t=>({...t,owner:'',ownerName:'',capturedAt:0,defense:0}));}catch{const list=TERRITORIES.map(t=>({...t,owner:'',ownerName:'',capturedAt:0,defense:0}));saveTerritories(list);return list;}}
+function loadTerritories():any[]{const defaults=TERRITORIES.map(t=>({...t,owner:'',ownerName:'',capturedAt:0,defense:0}));const list=readPersistentJson<any[]>(TERRITORY_FILE,defaults,value=>Array.isArray(value)&&value.every(isPlainObject));if(!existsSync(TERRITORY_FILE))saveTerritories(list);return list;}
 function saveTerritories(list:any[]){writeJsonAtomic(TERRITORY_FILE,list);}
 function ensureClanQuests(clan:any):any[]{const day=Math.floor(Date.now()/(24*60*60*1000));if(!clan.questDay||clan.questDay!==day){clan.questDay=day;clan.questProgress={donate:0,raid:0,war:0,territory:0};clan.quests=[{id:'donate',name:'Общая казна',desc:'Внесите вместе 2 000 золота в казну клана',goal:2000,progress:0,claimed:false},{id:'raid',name:'Экспедиция гильдии',desc:'Успешно завершите 2 клановых похода',goal:2,progress:0,claimed:false},{id:'war',name:'Защитники знамени',desc:'Выиграйте 3 сражения в клановой войне',goal:3,progress:0,claimed:false},{id:'territory',name:'Расширение владений',desc:'Захватите 1 новую территорию',goal:1,progress:0,claimed:false}];}const progress=clan.questProgress||{};for(const q of clan.quests||[]){q.progress=Math.min(q.goal,Number(progress[q.id]||0));}return clan.quests||[];}
 function clanSeasonBoard(clans:Record<string,any>):any[]{return Object.values(clans).map((x:any)=>({id:x.id,name:x.name,level:x.level||1,seasonPoints:Number(x.seasonPoints||0),territories:loadTerritories().filter((t:any)=>t.owner===x.id).length})).sort((a:any,b:any)=>b.seasonPoints-a.seasonPoints||b.territories-a.territories).slice(0,10);}
-function loadAuction():any[]{try{const list=JSON.parse(readFileSync(AUCTION_FILE,'utf8'));return Array.isArray(list)?list.map((x:any)=>({...x,status:x.status||'active'})):[];}catch{return [];}}
+function loadAuction():any[]{const list=readPersistentJson<any[]>(AUCTION_FILE,[],value=>Array.isArray(value)&&value.every(isPlainObject));return list.map((x:any)=>({...x,status:x.status||'active'}));}
 function saveAuction(list:any[]){writeJsonAtomic(AUCTION_FILE,list);}
-function loadAuctionHistory():any[]{try{const x=JSON.parse(readFileSync(AUCTION_HISTORY_FILE,'utf8'));return Array.isArray(x)?x:[];}catch{return [];}}
+function loadAuctionHistory():any[]{return readPersistentJson<any[]>(AUCTION_HISTORY_FILE,[],value=>Array.isArray(value)&&value.every(isPlainObject));}
 function loadAuctionForTransaction():any[]{if(!existsSync(AUCTION_FILE))return [];const list=JSON.parse(readFileSync(AUCTION_FILE,'utf8'));if(!Array.isArray(list)||list.some((x:any)=>!x||typeof x!=='object'||Array.isArray(x)))throw new Error('Auction listing data is invalid; transaction cancelled.');return list.map((x:any)=>({...x,status:x.status||'active'}));}
 function loadAuctionHistoryForTransaction():any[]{if(!existsSync(AUCTION_HISTORY_FILE))return [];const history=JSON.parse(readFileSync(AUCTION_HISTORY_FILE,'utf8'));if(!Array.isArray(history)||history.some((x:any)=>!x||typeof x!=='object'||Array.isArray(x)))throw new Error('Auction history data is invalid; transaction cancelled.');return history;}
 function saveAuctionHistory(list:any[]){writeJsonAtomic(AUCTION_HISTORY_FILE,list.slice(-5000));}
-function loadWars():any[]{try{return JSON.parse(readFileSync(WAR_FILE,'utf8'));}catch{return [];}}
+function loadWars():any[]{return readPersistentJson<any[]>(WAR_FILE,[],value=>Array.isArray(value)&&value.every(isPlainObject));}
 function saveWars(wars:any[]){writeJsonAtomic(WAR_FILE,wars);}
 
 function applySaved(p:Player,s:any){for(const [key,value] of Object.entries(s||{})){if(key in p && value!==undefined)(p as any)[key]=value;}if(!p.experienceToNext)p.experienceToNext=xpNeed(p.level||1);}
