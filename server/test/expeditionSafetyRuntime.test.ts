@@ -125,7 +125,11 @@ test('expedition reports capture pre/post health and disconnect cancels stale gr
       rooms.push(room);
     }
 
-    const orphanState = JSON.parse((connected[orphanId].state as any).player.quests).expedition;
+    const orphanStates: any[] = [];
+    connected[orphanId].onMessage('expeditionState', payload => orphanStates.push(payload));
+    connected[orphanId].send('expeditionState');
+    const orphanPayload = await waitFor(() => orphanStates[0], 'orphaned expedition state');
+    const orphanState = orphanPayload.state;
     assert.equal(orphanState.state, 'idle', 'a search from a missing pre-restart group must not survive reconnect');
     assert.equal(orphanState.groupId, '');
     assert.equal(orphanState.endsAt, 0);
