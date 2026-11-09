@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { isLastEquippedCopy, removeInventoryCopy } from '../src/inventoryOperations.js';
+import { isLastEquippedCopy, ownsItemCopy, removeInventoryCopy } from '../src/inventoryOperations.js';
 
 test('removing one duplicate keeps the remaining equipped copy equipped', () => {
   const inventory = ['iron_sword', 'iron_sword', 'herb_material'];
@@ -36,8 +36,7 @@ test('invalid inventory indices are rejected without mutating input', () => {
   assert.deepEqual(equipment, { weapon: 'iron_sword' });
 });
 
-test('item-type properties remain while another copy is still owned', async () => {
-  const { ownsItemCopy } = await import('../src/inventoryOperations.js');
+test('item-type properties remain while another copy is still owned', () => {
   assert.equal(ownsItemCopy(['iron_sword'], { weapon: 'iron_sword' }, 'iron_sword'), true);
   assert.equal(ownsItemCopy([], { weapon: 'iron_sword' }, 'iron_sword'), true);
   assert.equal(ownsItemCopy(['herb_material'], { weapon: '' }, 'iron_sword'), false);
