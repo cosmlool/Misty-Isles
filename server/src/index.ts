@@ -794,7 +794,7 @@ function safeId(v:any){return String(v||'').replace(/[^a-zA-Z0-9_-]/g,'').slice(
 
 function loadPlayersForAuction():Record<string,any>{return loadPlayers();}
 function persistPlayers(players:Player[]){const all=loadPlayers();for(const p of players)if(p?.id)all[p.id]=p.toJSON();savePlayers(all);}
-function persistPlayer(p:Player){persistPlayers([p]);}
+function persistPlayer(p:Player){if(!p?.id)return;persistPlayers([p]);}
 function loadClans():Record<string,any>{return readPersistentJson<Record<string,any>>(CLAN_FILE,{},value=>isPlainObject(value)&&Object.values(value).every(isPlainObject));}
 function saveClans(clans:Record<string,any>){writeJsonAtomic(CLAN_FILE,clans);}
 function loadTerritories():any[]{const defaults=TERRITORIES.map(t=>({...t,owner:'',ownerName:'',capturedAt:0,defense:0}));const list=readPersistentJson<any[]>(TERRITORY_FILE,defaults,value=>Array.isArray(value)&&value.every(isPlainObject));if(!existsSync(TERRITORY_FILE))saveTerritories(list);return list;}
