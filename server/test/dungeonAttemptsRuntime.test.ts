@@ -116,9 +116,7 @@ test('solo dungeon reports remaining daily entries accurately and enforces the t
 
     const results: any[] = [];
     const lossResults: any[] = [];
-    const lossNotices: string[] = [];
     lossRoom.onMessage('combatResult', payload => lossResults.push(payload));
-    lossRoom.onMessage('notice', payload => lossNotices.push(String(payload?.text || '')));
     const notices: string[] = [];
     room.onMessage('combatResult', payload => results.push(payload));
     room.onMessage('notice', payload => notices.push(String(payload?.text || '')));
