@@ -78,10 +78,12 @@ function readJson(path: string): any {
 test('solo dungeon reports remaining daily entries accurately and enforces the three-entry cap', { timeout: 45_000 }, async () => {
   const dataDir = mkdtempSync(join(tmpdir(), 'misty-dungeon-attempts-'));
   const playerId = 'runtime_dungeon_attempts_01';
+  const lossPlayerId = 'runtime_dungeon_loss_01';
   const today = new Date().toISOString().slice(0, 10);
   const port = await unusedPort();
   let child: ChildProcess | undefined;
   let room: Room | undefined;
+  let lossRoom: Room | undefined;
   try {
     for (const file of staticDataFiles) copyFileSync(join(serverDir, 'data', file), join(dataDir, file));
     writeFileSync(join(dataDir, 'players.json'), JSON.stringify({
@@ -91,6 +93,12 @@ test('solo dungeon reports remaining daily entries accurately and enforces the t
         defense: 100_000, vitality: 100_000, stamina: 100_000,
         health: 1_089, maxHealth: 1_000, gold: 500,
         inventory: JSON.stringify(['ARM-C-1-001', 'ARM-C-5-001']), equipment: JSON.stringify({ weapon: 'wood_sword', helmet: 'ARM-C-1-001', armor: '', cloak: 'ARM-C-5-001', amulet: 'amulet_health' }), quests: JSON.stringify({ dungeonDay: today, dungeonRuns: 0 }),
+      },
+      [lossPlayerId]: {
+        id: lossPlayerId, name: 'Weak Dungeon Tester', race: 'Кот', profession: '', level: 8,
+        strength: 1, dexterity: 1, intelligence: 1, defense: 1, vitality: 1, stamina: 1,
+        health: 1_000, maxHealth: 1_000, gold: 500,
+        inventory: '[]', equipment: '{}', quests: JSON.stringify({ dungeonDay: today, dungeonRuns: 0 }),
       },
     }, null, 2));
 
@@ -103,8 +111,14 @@ test('solo dungeon reports remaining daily entries accurately and enforces the t
     const client = new Client(`ws://127.0.0.1:${port}`);
     const token = await guestToken(port, playerId);
     room = await client.joinOrCreate('my_room', { playerId, sessionToken: token });
+    const lossToken = await guestToken(port, lossPlayerId);
+    lossRoom = await client.joinOrCreate('my_room', { playerId: lossPlayerId, sessionToken: lossToken });
 
     const results: any[] = [];
+    const lossResults: any[] = [];
+    const lossNotices: string[] = [];
+    lossRoom.onMessage('combatResult', payload => lossResults.push(payload));
+    lossRoom.onMessage('notice', payload => lossNotices.push(String(payload?.text || '')));
     const notices: string[] = [];
     room.onMessage('combatResult', payload => results.push(payload));
     room.onMessage('notice', payload => notices.push(String(payload?.text || '')));
@@ -132,6 +146,21 @@ test('solo dungeon reports remaining daily entries accurately and enforces the t
     assert.equal(saved.experience, 1_260);
     assert.equal(saved.health, 1_089, 'saved health must remain within the effective maximum, not the legacy base maximum');
 
+    lossRoom.send('dungeonRun', { id: 'root_vault' });
+    const loss = await waitFor(() => lossResults[0], 'solo dungeon loss');
+    assert.equal(loss.report.result, 'loss');
+    assert.equal(loss.report.hpBefore, 1_000);
+    assert.equal(loss.report.hpAfter < loss.report.hpBefore, true);
+    assert.equal(loss.report.rewards.gold, 0);
+    assert.equal(loss.report.rewards.xp, 0);
+    assert.ok(loss.text.includes('Осталось входов сегодня: 2.'));
+    const lossSaved = readJson(join(dataDir, 'players.json'))[lossPlayerId];
+    assert.equal(lossSaved.gold, 500, 'failed solo dungeon must not grant gold');
+    assert.equal(lossSaved.experience, 0, 'failed solo dungeon must not grant experience');
+    assert.equal(lossSaved.inventory, '[]', 'failed solo dungeon must not grant loot');
+    assert.equal(JSON.parse(lossSaved.quests).dungeonRuns, 1, 'failed attempt must consume one daily entry');
+    assert.equal(lossSaved.health, loss.report.hpAfter, 'failed attempt health must be persisted');
+
     room.send('discardItem', { index: 0, itemId: 'ARM-C-1-001', expectedCount: 1 });
     await waitFor(() => notices.find(message => message.includes('удалён из инвентаря')), 'discarding equipped HP armor');
     const afterDiscard = readJson(join(dataDir, 'players.json'))[playerId];
@@ -149,6 +178,7 @@ test('solo dungeon reports remaining daily entries accurately and enforces the t
     assert.equal(afterListing.gold, 1_248, 'listing fee is charged exactly once');
   } finally {
     if (room) await room.leave().catch(() => undefined);
+    if (lossRoom) await lossRoom.leave().catch(() => undefined);
     if (child) await stopServer(child);
     rmSync(dataDir, { recursive: true, force: true });
   }
