@@ -71,7 +71,7 @@ export function settleExpiredClanWars(
   clans: Record<string, ClanWarClan>,
   now: number,
 ): { wars: ClanWarRecord[]; clans: Record<string, ClanWarClan>; changed: boolean } {
-  const nextWars = wars.map(war => ({ ...war, lastAttackAtByPlayer: { ...(war.lastAttackAtByPlayer || {}) } }));
+  const nextWars: ClanWarRecord[] = wars.map(war => ({ ...war, lastAttackAtByPlayer: { ...(war.lastAttackAtByPlayer || {}) } }));
   const nextClans: Record<string, ClanWarClan> = Object.fromEntries(
     Object.entries(clans).map(([id, clan]) => [
       id,
