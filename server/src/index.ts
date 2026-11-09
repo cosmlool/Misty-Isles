@@ -692,7 +692,7 @@ class GameRoom extends Room<RoomState> {
           const warPayload=broadcastClanWarList(disbanded.wars,disbanded.clans);
           c.send('clanList',clanPayload);
           c.send('clanWarList',warPayload);
-          c.send('clanTerritories',{territories:disbanded.territories});
+          broadcastClanTerritories(disbanded.clans,disbanded.territories);c.send('clanTerritories',{territories:disbanded.territories});
         }else{
           p.clan='';
           commitClanState(clans);
