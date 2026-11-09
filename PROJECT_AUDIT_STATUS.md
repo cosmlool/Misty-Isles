@@ -312,3 +312,7 @@ Read `server/data/forgotten_lands.json` (100 monsters, 10 zones, 4 expedition du
   3. Add integration tests proving an arbitrary ID cannot obtain a session, public clan/auction/market responses contain no internal player IDs, and an attacker cannot register/link a victim's guest save using only a disclosed ID.
   4. Consider invalidating/rotating exposed guest credentials and auditing existing unlinked guest saves during deployment.
 - No gameplay code or auth code changed during audit. This finding is source-level confirmed; exploit was not executed against a live service.
+
+
+- The existing `server/test/authAccountRuntime.test.ts` makes the weakness explicit: it calls `POST /auth/guest` twice with the same existing `playerId` and asserts that both requests return 200. It then uses one of those newly issued tokens to link the ID to an account. The test verifies revocation of old tokens after linking, but does not verify ownership proof when minting a session for an existing guest ID. Add a negative test and change this contract; do not preserve the current second-guest-session behavior.
+- Account registration does not check `ONLINE_PLAYERS` before linking the guest ID. An attacker can therefore link an exposed guest ID even while its owner has an active room; the current room may continue temporarily, but the owner loses valid guest-session credentials for the next reconnect.
