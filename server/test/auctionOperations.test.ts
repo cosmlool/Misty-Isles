@@ -41,6 +41,17 @@ test('listing removes exactly one item, charges the 2% fee and persists the lot 
   } finally { f.cleanup(); }
 });
 
+test('listing one duplicate does not unequip the remaining owned copy', () => {
+  const start = initial();
+  const seller = start.players.seller;
+  seller.inventory = JSON.stringify(['iron_sword', 'iron_sword', 'herb_material']);
+  seller.equipment = JSON.stringify({ weapon: 'iron_sword', helmet: '', armor: '', gloves: '', boots: '', cloak: '', amulet: '' });
+  const listed = listAuctionItem({ snapshot: start, sellerId: 'seller', index: 0, expectedItemId: 'iron_sword',
+    expectedCount: 2, price: 500, currency: 'gold', validItemIds: itemIds, itemName: 'Iron sword', now: 10, lotId: 'lot-duplicate' });
+  assert.deepEqual(JSON.parse(listed.snapshot.players.seller.inventory), ['iron_sword', 'herb_material']);
+  assert.equal(JSON.parse(listed.snapshot.players.seller.equipment).weapon, 'iron_sword');
+});
+
 test('withdrawal returns the item exactly once and does not refund the listing fee', () => {
   const start = initial();
   const listed = listAuctionItem({ snapshot: start, sellerId: 'seller', index: 0, expectedItemId: 'iron_sword',
