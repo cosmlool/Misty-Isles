@@ -134,19 +134,31 @@ test('group boss dungeon persists win rewards and loss costs for every participa
       await waitFor(() => groupStates[leader].find(payload => payload.group?.members?.length === 2), `group ${leader} acceptance`);
     }
 
-    const winResults: any[] = [];
-    const lossResults: any[] = [];
-    connected[ids[0]].onMessage('combatResult', payload => winResults.push(payload));
-    connected[ids[2]].onMessage('combatResult', payload => lossResults.push(payload));
+    const results: Record<string, any[]> = Object.fromEntries(ids.map(id => [id, []]));
+    const histories: Record<string, any[]> = Object.fromEntries(ids.map(id => [id, []]));
+    for (const id of ids) {
+      connected[id].onMessage('combatResult', payload => results[id].push(payload));
+      connected[id].onMessage('combatHistory', payload => histories[id].push(payload));
+    }
     connected[ids[0]].send('dungeonRun', { id: 'fl_dungeon_03' });
-    const win = await waitFor(() => winResults[0], 'group boss dungeon win');
+    const win = await waitFor(() => results[ids[0]][0], 'group boss dungeon win');
+    const winMember = await waitFor(() => results[ids[1]][0], 'group member boss dungeon win');
     assert.equal(win.report.result, 'win');
+    assert.equal(winMember.report.result, 'win');
 
     connected[ids[2]].send('dungeonRun', { id: 'fl_dungeon_03' });
-    const loss = await waitFor(() => lossResults[0], 'group boss dungeon loss');
+    const loss = await waitFor(() => results[ids[2]][0], 'group boss dungeon loss');
+    const lossMember = await waitFor(() => results[ids[3]][0], 'group member boss dungeon loss');
     assert.equal(loss.report.result, 'loss');
+    assert.equal(lossMember.report.result, 'loss');
 
     const saved = readPlayers(join(dataDir, 'players.json'));
+    for (const [id, result] of [[ids[0], win], [ids[1], winMember], [ids[2], loss], [ids[3], lossMember]] as const) {
+      assert.equal(result.report.hpBefore, 1_000, 'each participant report must capture their own pre-fight health');
+      assert.equal(result.report.hpAfter, saved[id].health, 'each participant report must show their own saved post-fight health');
+      assert.equal(result.report.level, saved[id].level, 'each participant report must show their own level');
+      assert.ok(histories[id].some(payload => payload.history?.[0]?.result === result.report.result), 'each participant must receive their combat history');
+    }
     for (const id of ids.slice(0, 2)) {
       assert.equal(saved[id].gold, 610);
       assert.equal(saved[id].experience, 420);
