@@ -139,6 +139,7 @@ test('solo dungeon reports remaining daily entries accurately and enforces the t
     const saved = readJson(join(dataDir, 'players.json'))[playerId];
     const quests = JSON.parse(saved.quests);
     assert.equal(quests.dungeonRuns, 3);
+    assert.equal(saved.battles, 3, 'each successful solo dungeon attempt must count as a battle');
     assert.equal(quests.dungeonDay, today);
     assert.equal(saved.gold, 1_250);
     assert.equal(saved.experience, 1_260);
@@ -157,6 +158,7 @@ test('solo dungeon reports remaining daily entries accurately and enforces the t
     assert.equal(lossSaved.experience, 0, 'failed solo dungeon must not grant experience');
     assert.equal(lossSaved.inventory, '[]', 'failed solo dungeon must not grant loot');
     assert.equal(JSON.parse(lossSaved.quests).dungeonRuns, 1, 'failed attempt must consume one daily entry');
+    assert.equal(lossSaved.battles, 1, 'a failed solo dungeon attempt must also count as a battle');
     assert.equal(lossSaved.health, loss.report.hpAfter, 'failed attempt health must be persisted');
 
     room.send('discardItem', { index: 0, itemId: 'ARM-C-1-001', expectedCount: 1 });
