@@ -139,7 +139,7 @@ test('PvP offers four saved real characters, steals 20 percent gold, persists co
     assert.equal(new Set(firstOffer.players.map((player: any) => player.id)).size, 4);
     assert.ok(firstOffer.players.every((player: any) => player.isBot === false));
     assert.ok(firstOffer.players.every((player: any) => player.level >= 18 && player.level <= 22));
-    assert.ok(firstOffer.players.every((player: any) => !targetIds.includes('pvp_runtime_protected') || player.id !== publicCode('pvp_runtime_protected')));
+    assert.ok(!firstOffer.players.some((player: any) => player.id === publicCode('pvp_runtime_protected')));
     const chosen = firstOffer.players[0];
     const targetId = targetIds.find(id => publicCode(id) === chosen.id);
     assert.ok(targetId, 'the offered target must be one of the offline saved characters');
