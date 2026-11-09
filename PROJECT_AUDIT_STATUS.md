@@ -121,7 +121,7 @@ Completed evidence collection in this checkpoint:
 - [x] Read group travel, group dungeon, and solo dungeon test sources.
 - [x] Inspected PvP/admin handlers in server source.
 - [x] Inspected solo and group dungeon handlers, reward distribution, attempt accounting, and persistence paths.
-- [x] Created and extended the audit checkpoint in the working branch. Checkpoint commits created in this session, newest last: `6fc4168c34cdd2789ce2959dcb3f2a37244bdefe`, `7842b91c98b98c5876b86dc39af1693bc4068511`, `2480fea86d7606817b231892a0cce275416126fb`. Re-resolve the branch tip on resume.
+- [x] Created and extended the audit checkpoint in `stage29/playwright-eyes-foundation`; its complete history is in that branch. Re-resolve the branch tip on resume rather than relying on a chat transcript.
 - [ ] Resolve exact current HEAD SHA for the separate PvP branch.
 - [ ] Confirm full CI for the current PR head.
 - [ ] Run full server tests and client/server builds locally from the same branch snapshot.
