@@ -94,9 +94,12 @@ test('a guest can create a character, hunt, and keep progress after reconnecting
   await page.locator('.quick-nav [data-tab="shop"]').click();
   await expect(page.getByRole('heading', { name: 'Магазины и расовые товары' })).toBeVisible();
   await page.locator('[data-action="buyItem"][data-id="WPN-C-001"]').click();
+  await expect.poll(async () => {
+    const text = await page.locator('.resources').innerText();
+    return Number((text.match(/🪙\s*([\d\s\u00a0]+)/)?.[1] || '').replace(/\D/g, ''));
+  }).toBe(goldAfter - 100);
   const goldAfterPurchaseText = await page.locator('.resources').innerText();
   const goldAfterPurchase = Number((goldAfterPurchaseText.match(/🪙\s*([\d\s\u00a0]+)/)?.[1] || '').replace(/\D/g, ''));
-  expect(goldAfterPurchase).toBe(goldAfter - 100);
 
   await page.locator('.quick-nav [data-tab="inventory"]').click();
   await expect(page.getByRole('heading', { name: 'Инвентарь' })).toBeVisible();
