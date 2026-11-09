@@ -141,9 +141,12 @@ test('live Colyseus auction flows preserve both players through disconnect and s
     for (const file of staticDataFiles) copyFileSync(join(serverDir, 'data', file), join(dataDir, file));
     const sellerId = 'runtime_seller_0001';
     const buyerId = 'runtime_buyer_00001';
+    const secondBuyerId = 'runtime_buyer_00002';
+    let concurrentWinnerId = '';
     writeFileSync(join(dataDir, 'players.json'), JSON.stringify({
       [sellerId]: makePlayer(sellerId, 'Runtime Seller', 1000, ['WPN-C-001', 'WPN-C-004']),
-      [buyerId]: makePlayer(buyerId, 'Runtime Buyer', 2000, []),
+      [buyerId]: makePlayer(buyerId, 'Runtime Buyer One', 2000, []),
+      [secondBuyerId]: makePlayer(secondBuyerId, 'Runtime Buyer Two', 2000, []),
     }, null, 2));
 
     stage = 'starting isolated server';
@@ -157,9 +160,13 @@ test('live Colyseus auction flows preserve both players through disconnect and s
     stage = 'connecting seller to Colyseus';
     const seller = await connect(port, sellerId, sellerToken);
     rooms.push(seller.room);
-    stage = 'connecting buyer to Colyseus';
+    stage = 'connecting first buyer to Colyseus';
     const buyer = await connect(port, buyerId, buyerToken);
     rooms.push(buyer.room);
+    stage = 'authenticating and connecting second synthetic buyer';
+    const secondBuyerToken = await guestToken(port, secondBuyerId);
+    const secondBuyer = await connect(port, secondBuyerId, secondBuyerToken);
+    rooms.push(secondBuyer.room);
 
     stage = 'seller listing auction item';
     seller.room.send('auctionSell', { index: 0, itemId: 'WPN-C-001', expectedCount: 1, price: 500, currency: 'gold' });
@@ -171,20 +178,30 @@ test('live Colyseus auction flows preserve both players through disconnect and s
     stage = 'disconnecting seller before purchase';
     await leaveRoom(seller.room);
     const lot = readJson(join(dataDir, 'auction.json'))[0];
-    stage = 'buyer purchasing while seller is offline';
+    stage = 'two buyers sending concurrent purchase requests for the same offline-seller lot';
     buyer.room.send('auctionBuy', { id: lot.id });
+    secondBuyer.room.send('auctionBuy', { id: lot.id });
     await waitFor(() => {
       const players = readJson(join(dataDir, 'players.json'));
-      return Array.isArray(JSON.parse(players[buyerId].inventory))
-        && JSON.parse(players[buyerId].inventory).includes('WPN-C-001')
-        && readJson(join(dataDir, 'auction.json')).length === 0;
-    }, 'offline seller purchase to commit');
+      const firstHasItem = JSON.parse(players[buyerId].inventory).includes('WPN-C-001');
+      const secondHasItem = JSON.parse(players[secondBuyerId].inventory).includes('WPN-C-001');
+      if (firstHasItem !== secondHasItem && readJson(join(dataDir, 'auction.json')).length === 0) {
+        concurrentWinnerId = firstHasItem ? buyerId : secondBuyerId;
+        return true;
+      }
+      return false;
+    }, 'exactly one concurrent buyer to complete the purchase');
 
     let saved = readJson(join(dataDir, 'players.json'));
-    assert.equal(saved[buyerId].gold, 1500);
-    assert.equal(saved[sellerId].gold, 1465);
-    assert.deepEqual(JSON.parse(saved[buyerId].inventory), ['WPN-C-001']);
+    const losingBuyerId = concurrentWinnerId === buyerId ? secondBuyerId : buyerId;
+    assert.equal(saved[concurrentWinnerId].gold, 1500, 'only the winning buyer pays the lot price');
+    assert.equal(saved[losingBuyerId].gold, 2000, 'the rejected buyer keeps all currency');
+    assert.equal(saved[sellerId].gold, 1465, 'seller receives the net proceeds exactly once');
+    assert.deepEqual(JSON.parse(saved[concurrentWinnerId].inventory), ['WPN-C-001']);
+    assert.deepEqual(JSON.parse(saved[losingBuyerId].inventory), []);
     assert.deepEqual(JSON.parse(saved[sellerId].inventory), ['WPN-C-004']);
+    assert.equal(readJson(join(dataDir, 'auction_history.json')).filter((entry: any) => entry.lotId === lot.id && entry.status === 'completed').length, 1,
+      'the lot produces exactly one completed sale history entry');
 
     stage = 'reconnecting seller after offline purchase';
     const sellerAgain = await connect(port, sellerId, sellerToken);
@@ -213,17 +230,21 @@ test('live Colyseus auction flows preserve both players through disconnect and s
     const restarted = startServer(dataDir, port, serverOutput);
     child = restarted;
     await waitForServer(port, restarted);
-    stage = 'reconnecting buyer after server restart';
+    stage = 'reconnecting both buyers after server restart';
     const buyerAfterRestart = await connect(port, buyerId, buyerToken);
     rooms.push(buyerAfterRestart.room);
+    const secondBuyerAfterRestart = await connect(port, secondBuyerId, secondBuyerToken);
+    rooms.push(secondBuyerAfterRestart.room);
     stage = 'reconnecting seller after server restart';
     const sellerAfterRestart = await connect(port, sellerId, sellerToken);
     rooms.push(sellerAfterRestart.room);
 
     saved = readJson(join(dataDir, 'players.json'));
-    assert.equal(saved[buyerId].gold, 1500);
+    assert.equal(saved[concurrentWinnerId].gold, 1500);
+    assert.equal(saved[concurrentWinnerId === buyerId ? secondBuyerId : buyerId].gold, 2000);
     assert.equal(saved[sellerId].gold, 1463);
-    assert.deepEqual(JSON.parse(saved[buyerId].inventory), ['WPN-C-001']);
+    assert.deepEqual(JSON.parse(saved[concurrentWinnerId].inventory), ['WPN-C-001']);
+    assert.deepEqual(JSON.parse(saved[concurrentWinnerId === buyerId ? secondBuyerId : buyerId].inventory), []);
     assert.deepEqual(JSON.parse(saved[sellerId].inventory), ['WPN-C-004']);
     assert.equal(readJson(join(dataDir, 'auction.json')).length, 0);
   } catch (error) {
