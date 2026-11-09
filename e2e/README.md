@@ -1,8 +1,8 @@
 # Misty Isles — Playwright eyes
 
 This is the lightweight browser QA layer. It launches the game client and
-server, drives a real browser, checks the guest entry and character lifecycle,
-and captures screenshots and diagnostics.
+server, drives a real browser, checks the guest entry, character lifecycle,
+expedition hunting, and save recovery, and captures screenshots and diagnostics.
 
 ## Requirements
 
@@ -41,12 +41,19 @@ npm run report
 4. Selecting a race creates a level-one character in the correct home city.
 5. The new character receives the expected starting gold and two starter items.
 6. Reloading reconnects the guest and restores the same character and inventory.
-7. The page has no uncaught JavaScript errors during the character lifecycle.
-8. The login page does not overflow a narrow mobile viewport.
+7. The guest starts an expedition hunt through the game UI and claims the encounter.
+8. A victory increases gold and the resulting inventory remains valid.
+9. Gold and inventory are restored after another page reload.
+10. The page has no uncaught JavaScript errors during the character lifecycle.
+11. The login page does not overflow a narrow mobile viewport.
 
-Screenshots are saved for character creation and the first in-world character
-screen. Failed tests retain screenshots, video, and a Playwright trace in
-`test-results`.
+The isolated test server changes `searchSeconds` to one second only in its
+temporary copy of `forgotten_lands.json`. The real game data and normal
+15-minute expedition timer are not modified.
+
+Screenshots are saved for character creation, the first in-world character
+screen, and the hunt victory. Failed tests retain screenshots, video, and a
+Playwright trace in `test-results`.
 
 ## Data safety
 
