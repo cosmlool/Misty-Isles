@@ -422,7 +422,7 @@ function loadSessions():SessionRecord[] { return readPersistentJson<SessionRecor
 function saveSessions(value:SessionRecord[]) { writeJsonAtomic(SESSION_FILE,value); }
 function tokenDigest(token:string) { return createHash('sha256').update(token).digest('hex'); }
 function issueSession(playerId:string, accountKey:string|null) { const token=randomBytes(32).toString('hex'); const sessions=loadSessions().filter(x=>x.expiresAt>Date.now()); sessions.push({tokenHash:tokenDigest(token),playerId,accountKey,expiresAt:Date.now()+AUTH_SESSION_MS}); saveSessions(sessions); return token; }
-function verifySession(token:string):SessionRecord|null { if(!token||token.length>256)return null;const hash=tokenDigest(token);const sessions=loadSessions();const session=sessions.find(x=>x.tokenHash===hash&&x.expiresAt>Date.now());if(!session)return null;return session; }
+function verifySession(token:string):SessionRecord|null { if(!token||token.length>256)return null;const hash=tokenDigest(token);const sessions=loadSessions();const session=sessions.find(x=>x.tokenHash===hash&&x.expiresAt>Date.now());if(!session)return null;const account=loadAccounts().find(x=>x.playerId===session.playerId);if(session.accountKey===null?Boolean(account):!account||account.usernameKey!==session.accountKey)return null;return session; }
 function publicPlayerCode(id:string) { return createHash('sha256').update(`MistyIslesPublic:${id}`).digest('hex').slice(0,24); }
 function resolvePublicPlayerCode(code:string, players:Record<string,any>=loadPlayers()) { for(const [id,online] of ONLINE_PLAYERS)players[id]=online.toJSON();const key=String(code||'');return Object.keys(players).find(id=>publicPlayerCode(id)===key)||''; }
 function passwordMatches(password:string,salt:string,expected:string) { try { const actual=scryptSync(password,salt,64);const target=Buffer.from(expected,'hex');return target.length===actual.length&&timingSafeEqual(actual,target); } catch { return false; } }
@@ -450,7 +450,7 @@ function authHttpHandler(req:IncomingMessage,res:ServerResponse) {
         if(guestId&&(!guestSession||guestSession.accountKey!==null||guestSession.playerId!==guestId)){sendJson(res,401,{error:'Не удалось подтвердить доступ к гостевому персонажу. Перезайди в гостевой режим и повтори.'});return;}
         const existing=accounts.find(a=>a.playerId===guestId);if(existing){sendJson(res,409,{error:'Этот персонаж уже привязан к другому аккаунту.'});return;}
         const playerId=guestId||`acct_${randomBytes(12).toString('hex')}`;const salt=randomBytes(16).toString('hex');const passwordHash=scryptSync(password,salt,64).toString('hex');
-        accounts.push({username,usernameKey,playerId,salt,passwordHash,createdAt:Date.now()});saveAccounts(accounts);if(guestSession)saveSessions(loadSessions().filter(x=>x.tokenHash!==tokenDigest(guestToken)));const token=issueSession(playerId,usernameKey);sendJson(res,201,{ok:true,playerId,token,username});return;
+        accounts.push({username,usernameKey,playerId,salt,passwordHash,createdAt:Date.now()});saveAccounts(accounts);if(guestSession)saveSessions(loadSessions().filter(x=>x.playerId!==playerId));const token=issueSession(playerId,usernameKey);sendJson(res,201,{ok:true,playerId,token,username});return;
       }
       if(path==='/auth/login'){
         const usernameKey=String(d.username||'').trim().toLocaleLowerCase('en-US');const password=String(d.password||'');const account=loadAccounts().find(a=>a.usernameKey===usernameKey);
