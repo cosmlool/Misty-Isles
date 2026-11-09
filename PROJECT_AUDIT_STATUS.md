@@ -51,12 +51,12 @@ Observed rules:
 - Victim immunity: 60 minutes.
 - Winner steals 20% of the loser's current gold (floor).
 - Offer contains up to four real saved characters.
-- Current eligibility also restricts level difference to ±2 and excludes characters with active immunity.
+- Current code also restricts level difference to ±2 and excludes characters with active immunity.
 - Server validates that a real-player target is in the attacker's offered list.
 - Runtime test seeds offline saved characters and checks four offered real opponents, 20% transfer, saved cooldown, victim immunity, and exclusion during immunity.
 - Combat is still a combat-rating comparison; report fields `damage` and `received` are zero. This matches the old passport note; do not silently convert it to HP combat.
 - Known bot IDs are still accepted directly by `pvpChallenge`, although `pvpList` currently builds its list from saved characters. Review whether this legacy training-bot path is intentional and whether it should remain accessible.
-- User's previously confirmed design: PvP on a 15-minute cadence; show four opponents; player chooses one; 20% gold transfer. The ±2-level eligibility rule remains an explicit design question, not yet approved as final.
+- User's previously confirmed design: PvP on a 15-minute cadence; the candidate pool may include all registered characters; show four opponents; player chooses one; 20% gold transfer. The current ±2-level restriction conflicts with the stated all-registered-characters pool and must be treated as a mismatch to correct, not as an approved design rule. Immunity exclusion remains a separate protection rule.
 
 ### Clans and clan wars
 - `clanTransactions.ts` uses a write-ahead transaction journal for player, clan, war, and territory snapshots.
@@ -128,7 +128,7 @@ Completed evidence collection in this checkpoint:
 - [ ] Continue systematic handler-by-handler audit of all game systems.
 - [x] Checked client pending-action guard for `dungeonRun`; official UI blocks repeated clicks while pending. Server-side request idempotency remains absent and should be considered separately.
 - [ ] Finish dungeon reward/replay/edge-case audit, including whether random group loot distribution and lost remainder from divided group gold are intended.
-- [ ] Decide PvP ±2 level restriction and legacy bot path with the user.
+- [ ] Correct the PvP candidate pool to honor the user's stated all-registered-characters requirement; review legacy bot direct-challenge path separately.
 - [ ] Verify admin handler authorization before public release.
 - [ ] Produce final audit report before gameplay changes.
 
