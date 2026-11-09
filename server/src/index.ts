@@ -9,6 +9,7 @@ import { Player } from './PlayerSchema.js';
 import { createPlayerSaveStore } from './playerSaves.js';
 import { readJsonFile as readPersistentJson } from './jsonPersistence.js';
 import { isLastEquippedCopy, removeInventoryCopy } from './inventoryOperations.js';
+import { readPlayerArray as readArray, readPlayerObject as readObject } from './playerJson.js';
 import { createAuctionTransactionStore } from './auctionTransactions.js';
 import { buyAuctionItem, cancelAuctionItem, listAuctionItem } from './auctionOperations.js';
 import { claimCraftJob, startCraftJob } from './craftingQueue.js';
@@ -704,8 +705,8 @@ function loadWars():any[]{return readPersistentJson<any[]>(WAR_FILE,[],value=>Ar
 function saveWars(wars:any[]){writeJsonAtomic(WAR_FILE,wars);}
 
 function applySaved(p:Player,s:any){for(const [key,value] of Object.entries(s||{})){if(key in p && value!==undefined)(p as any)[key]=value;}if(!p.experienceToNext)p.experienceToNext=xpNeed(p.level||1);}
-function readArray(s:string):any[]{try{const x=JSON.parse(s);return Array.isArray(x)?x:[];}catch{return [];}}
-function readObject(s:string):Record<string,any>{try{const x=JSON.parse(s);return x&&typeof x==='object'&&!Array.isArray(x)?x:{};}catch{return {};}}
+
+
 function recordActivity(p:Player,entry:Record<string,any>){const q=readObject(p.quests);const now=Date.now();const day=new Date(now).toISOString().slice(0,10);if(q.activityDay!==day){q.activityDay=day;q.activityToday={hunts:0,wins:0,losses:0,gold:0,xp:0,dungeons:0,crafts:0};}const stats=q.activityToday||{hunts:0,wins:0,losses:0,gold:0,xp:0,dungeons:0,crafts:0};if(entry.type==='hunt'){stats.hunts++;if(entry.outcome==='win')stats.wins++;else stats.losses++;stats.gold+=Number(entry.gold||0);stats.xp+=Number(entry.xp||0);}if(entry.type==='dungeon')stats.dungeons++;if(entry.type==='craft')stats.crafts++;q.activityToday=stats;q.activityLog=Array.isArray(q.activityLog)?q.activityLog:[];q.activityLog.unshift({at:now,...entry});q.activityLog=q.activityLog.slice(0,30);p.quests=JSON.stringify(q);}
 function saveCombatReport(p:Player,report:Record<string,any>){const q=readObject(p.quests);q.combatHistory=Array.isArray(q.combatHistory)?q.combatHistory:[];q.combatHistory.unshift(report);q.combatHistory=q.combatHistory.slice(0,20);p.quests=JSON.stringify(q);return q.combatHistory;}
 
