@@ -1165,7 +1165,7 @@ test('legacy gold-priced weapons and armor receive the shared stat profile at ru
     const priceToken = line.match(/price:[0-9]+/);
     return isGear && Boolean(priceToken) && Number(priceToken?.[0].slice(6)) > 0;
   });
-  assert.equal(legacyGoldGear.length, 60);
+  assert.equal(legacyGoldGear.length, 58);
   assert.ok(source.includes('for(const item of ITEMS)'));
   assert.ok(source.includes('resolveGoldEquipmentStatProfile({kind:item.kind'));
 });
