@@ -7,7 +7,7 @@ import { WebSocketTransport } from '@colyseus/ws-transport';
 import { Schema, type } from '@colyseus/schema';
 import { Player } from './PlayerSchema.js';
 import { calculateCombatSpeed } from './monsterBattle.js';
-import { calculatePlayerMonsterCombatStats, parseMonsterCombatEffectClauses, resolveMonsterCombatProperty, resolveMonsterPendantCombatEffect } from './monsterCombatStats.js';
+import { calculatePlayerMonsterCombatStats, parseMonsterCombatEffectClauses, resolveEquipmentSetTierDescriptions, resolveMonsterCombatProperty, resolveMonsterPendantCombatEffect } from './monsterCombatStats.js';
 import { applyPlayerSave, createPlayerSaveStore } from './playerSaves.js';
 import { readJsonFile as readPersistentJson } from './jsonPersistence.js';
 import { filterAvailableUniqueItems, isLastEquippedCopy, ownsItemCopy, removeInventoryCopy } from './inventoryOperations.js';
@@ -803,11 +803,13 @@ function resolvePlayerMonsterStats(p:Player,monster:any,options:{applyFivePieceS
  const mastery=collections.setMastery||{};
  const setBonuses=EQUIPMENT_SETS.filter((set:any)=>!set.legacy).map((set:any)=>{
   const itemCount=set.items.filter((id:string)=>Object.values(eq).includes(id)).length;
-  const descriptions:string[]=[];
-  if(itemCount>=2&&set.two)descriptions.push(String(set.two));
-  if(itemCount>=3&&(set.three||set.full))descriptions.push(String(set.three||set.full));
-  if(itemCount>=4&&set.four)descriptions.push(String(set.four));
-  if(itemCount>=5&&set.full&&set.three)descriptions.push(String(set.full));
+  const descriptions=resolveEquipmentSetTierDescriptions({
+   itemCount,
+   two:typeof set.two==='string'?set.two:undefined,
+   three:typeof set.three==='string'?set.three:undefined,
+   four:typeof set.four==='string'?set.four:undefined,
+   full:typeof set.full==='string'?set.full:undefined,
+  });
   return {effect:String(set.effect||''),itemCount,mastery:Number(mastery[set.id]||0),descriptions};
 });
  const pendant=NEW_EQUIPMENT_ITEMS.find(item=>item.id===eq.amulet),now=Date.now();
