@@ -576,3 +576,94 @@ test('negative magic resistance increases incoming magic damage', () => {
   });
   assert.equal(result.totalDamageToMonster, 120);
 });
+
+
+test('damage bonuses against fast and slow targets use initiative-adjusted speed', () => {
+  const run = (playerSpeed: number, passiveDescription: string) => resolveMonsterBattle({
+    monster: { id: 'm-speed-target', name: 'Speed hunter', hp: 10000, attack: 100, defense: 0, speed: 10, passiveDescription },
+    party: [{ id: 'p-speed-target', profession: 'Воин', hp: 1000, maxHp: 1000, attack: 1, defense: 0, speed: playerSpeed }],
+    maxRounds: 1,
+    random: () => 0.5,
+  });
+  assert.equal(run(20, 'Урон +20% по быстрым целям').totalDamageToParty, 120);
+  assert.equal(run(5, 'Урон +20% по медленным целям').totalDamageToParty, 120);
+  assert.equal(run(5, 'Урон +20% по быстрым целям').totalDamageToParty, 100);
+  assert.equal(run(20, 'Урон +20% по медленным целям').totalDamageToParty, 100);
+});
+
+test('damage bonus against armored targets checks the target defense threshold', () => {
+  const run = (passiveDescription?: string) => resolveMonsterBattle({
+    monster: { id: 'm-armored', name: 'Armor hunter', hp: 10000, attack: 100, defense: 0, speed: 20, passiveDescription },
+    party: [{ id: 'p-armored', profession: 'Воин', hp: 1000, maxHp: 1000, attack: 1, defense: 100, speed: 10 }],
+    maxRounds: 1,
+    random: () => 0.5,
+  });
+  assert.equal(run().totalDamageToParty, 50);
+  assert.equal(run('Урон +20% по защищённым целям').totalDamageToParty, 60);
+});
+
+test('damage bonus against low-defense targets checks the target defense threshold', () => {
+  const run = (passiveDescription?: string) => resolveMonsterBattle({
+    monster: { id: 'm-low-defense', name: 'Defense hunter', hp: 10000, attack: 100, defense: 0, speed: 20, passiveDescription },
+    party: [{ id: 'p-low-defense', profession: 'Воин', hp: 1000, maxHp: 1000, attack: 1, defense: 40, speed: 10 }],
+    maxRounds: 1,
+    random: () => 0.5,
+  });
+  assert.equal(run().totalDamageToParty, 71);
+  assert.equal(run('Урон +20% по целям с низкой защитой').totalDamageToParty, 85);
+});
+
+test('damage bonus against low-HP targets activates below its threshold', () => {
+  const run = (hp: number, passiveDescription?: string) => resolveMonsterBattle({
+    monster: { id: 'm-low-target-hp', name: 'Finisher', hp: 10000, attack: 100, defense: 0, speed: 20, passiveDescription },
+    party: [{ id: 'p-low-target-hp', profession: 'Воин', hp, maxHp: 1000, attack: 1, defense: 0, speed: 10 }],
+    maxRounds: 1,
+    random: () => 0.5,
+  });
+  assert.equal(run(400, 'Урон +25% по целям ниже 30% HP').totalDamageToParty, 100);
+  assert.equal(run(200, 'Урон +25% по целям ниже 30% HP').totalDamageToParty, 125);
+});
+
+test('attack bonus against a profession affects only the matching target profession', () => {
+  const run = (profession: string) => resolveMonsterBattle({
+    monster: { id: 'm-vs-profession', name: 'Mage hunter', hp: 10000, attack: 100, defense: 0, speed: 20, passiveDescription: 'Атака +15% против мага' },
+    party: [{ id: 'p-vs-profession', profession, hp: 1000, maxHp: 1000, attack: 1, defense: 0, speed: 10 }],
+    maxRounds: 1,
+    random: () => 0.5,
+  });
+  assert.equal(run('Боевой маг').totalDamageToParty, 115);
+  assert.equal(run('Воин').totalDamageToParty, 100);
+});
+
+test('damage bonus against a profession affects incoming damage only for that profession', () => {
+  const run = (profession: string) => resolveMonsterBattle({
+    monster: { id: 'm-damage-profession', name: 'Archer hunter', hp: 10000, attack: 100, defense: 0, speed: 20, passiveDescription: 'Урон по лучникам +20%' },
+    party: [{ id: 'p-damage-profession', profession, hp: 1000, maxHp: 1000, attack: 1, defense: 0, speed: 10 }],
+    maxRounds: 1,
+    random: () => 0.5,
+  });
+  assert.equal(run('Лучник').totalDamageToParty, 120);
+  assert.equal(run('Воин').totalDamageToParty, 100);
+});
+
+test('monster defense bonus activates below its low-HP threshold', () => {
+  const result = resolveMonsterBattle({
+    monster: { id: 'm-defense-low-hp', name: 'Last stand', hp: 100, attack: 100, defense: 0, speed: 10, passiveDescription: 'Защита +25% ниже 25% HP' },
+    party: [{ id: 'p-defense-low-hp', profession: 'Воин', hp: 1000, maxHp: 1000, attack: 80, defense: 0, speed: 20 }],
+    maxRounds: 1,
+    random: () => 0.5,
+  });
+  assert.equal(result.monsterHp, 20);
+  assert.equal(result.totalDamageToParty, 80);
+});
+
+test('compound passive applies attack, defense and physical resistance together', () => {
+  const result = resolveMonsterBattle({
+    monster: { id: 'm-compound', name: 'Iron guardian', hp: 10000, attack: 100, defense: 100, speed: 20, passiveDescription: 'Атака и защита +15%; физический урон −25%' },
+    party: [{ id: 'p-compound', profession: 'Воин', hp: 1000, maxHp: 1000, attack: 100, defense: 0, speed: 10, damageType: 'physical' }],
+    maxRounds: 1,
+    random: () => 0.5,
+  });
+  assert.equal(result.totalDamageToMonster, 46);
+  assert.equal(result.totalDamageToParty, 115);
+});
