@@ -2645,3 +2645,5 @@ PEN-009 стоит 100 кристаллов и при максимальном �
 - applySaved() now delegates to the validated hydrator. Added unit coverage for malformed numeric values, mismatched string/object values, valid numeric updates, and prototype keys.
 - This protects hydration from malformed data; it does not yet replace the broader persistence write-coordination/WAL review.
 - Tests/builds remain unexecuted.
+
+- After hydration, onJoin() now reasserts the authenticated player ID from the verified session, so a malformed or mismatched stored id field cannot change the live character identity.
