@@ -364,9 +364,8 @@ export function resolveGoldEquipmentStatProfile(input: GoldEquipmentStatProfileI
       combatStats.resistance = q;
       combatStats.health = q2;
     } else if (slot === 'gloves') {
-      combatStats[profession === 'Боевой маг' ? 'magicDamage' : 'physicalDamage'] = q;
+      combatStats[profession === 'Боевой маг' ? 'magicDamage' : profession === 'Баффер' ? 'healing' : 'physicalDamage'] = q;
       if (profession === 'Ассасин' || profession === 'Лучник') combatStats.critDamage = q2;
-      else if (profession === 'Баффер') combatStats.healing = q2;
       else if (profession === 'Вампир') combatStats.lifesteal = q2;
       else if (profession === 'Добытчик') combatStats.loot = q2;
     } else if (slot === 'boots') {
