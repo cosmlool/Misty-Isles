@@ -293,7 +293,7 @@ Read `server/data/forgotten_lands.json` (100 monsters, 10 zones, 4 expedition du
 ### Clan weekly season ranking audit — 2026-11-09
 
 - **Confirmed UI/server season-period mismatch:** the client labels the board `Недельный сезонный рейтинг` and says points are awarded for weekly activities. The server's `clanSeasonBoard()` sorts the persistent `clan.seasonPoints` without any weekly reset or period key. `clanSeasonReward` only gates the claim with `lastSeasonRewardWeek`; it does not reset points or freeze standings at week end. As written, the so-called weekly ranking is cumulative/all-time, while the reward is claimable once during each 7-day epoch window. This means long-lived clans retain historical points indefinitely and a member can claim the current rank before the week closes. Decide whether points should reset on a defined weekly/season boundary and whether rewards are claimable only after that boundary.
-- `clanSeasonBoard()` returns only the top 10; clans outside that list resolve to rank 0 in `clanSeasonReward` and receive the default 1,000-gold reward. Confirm whether this is an intentional participation reward.
+- `clanSeasonBoard()` returns only the top 10; clans outside that list resolve to rank 0 in `clanSeasonReward`. The reward ternary currently treats rank 0 as `<= 3`, so they receive 2,500 gold. See the confirmed finding below.
 - The inspected `clanWarRuntime.test.ts` verifies season points after war settlement but has no test for weekly ranking reset, reward timing, or rank-based reward tiers.
 
 
@@ -924,3 +924,8 @@ Source-level comparison of skill definitions, activation handlers, and ordinary-
 - Для всех колец необходимо унифицировать описание и отображаемую прогрессию по `cap * 0.5 * level / 99` на уровнях 1–99 и полный `cap` на уровне 100. Не использовать `value` как отдельную альтернативную формулу для новых колец.
 
 Это подтверждённое расхождение текущих значений/описаний с новой согласованной моделью; пока только зафиксировано, код не менялся.
+
+
+### Clan season — revalidated
+Current code confirms the top-10 truncation defect: `clanSeasonBoard()` returns only 10 clans, while `clanSeasonReward` calculates rank from that truncated array. Outside-top-10 rank becomes 0 and receives 2,500 gold due to `rank <= 3`; the intended lower reward is 1,000. The earlier one-line note claiming 1,000 for rank 0 was inaccurate and has been corrected.
+Additional design question: `seasonPoints` are accumulated in clan records and the inspected code has no seasonal reset/period rollover, while the reward claim marker resets weekly. Confirm whether the board is meant to be a lifetime leaderboard with weekly payout or a true seasonal leaderboard; do not reset points without defining the season boundary.
