@@ -2600,3 +2600,12 @@ PEN-009 стоит 100 кристаллов и при максимальном �
 - User decision supersedes the earlier “allocation design undecided” note: retain statPoints for a character-specific passive-skill progression system. Primary attribute purchases remain gold-based and separate.
 - Implementation is intentionally deferred until the audit maps every combat/economy calculation that passive bonuses could affect. The later design must define per-character ownership, node/rank caps, respec policy, point budget, server-side validation, save migration, and effect coverage across expedition, solo/group dungeon, PvP and clan war. Passive effects must be calculated centrally or through shared helpers so modes do not silently disagree.
 - No passive-skill code or UI was added in this checkpoint.
+
+
+## PvP target validation hardening — 2026-11-10
+
+- Current matchmaking helper selects saved character profiles across all level ranges, excludes the attacker and profiles with active one-hour immunity, and returns up to four opponents. This matches the user's requirement; no level-difference cap is present in the current helper.
+- Found a separate direct-message bypass: pvpChallenge previously accepted four hard-coded training bot IDs outside the server-issued offer, skipped the 15-minute cooldown and victim immunity, and did not apply normal PvP rewards. The client list did not expose those IDs, but a custom WebSocket client could invoke them.
+- The handler now resolves every target only through a server-generated public character code. Raw bot IDs are rejected, so all accepted PvP challenges use the registered-character offer, cooldown, and immunity path. A runtime regression assertion was added to pvpRuntime.test.ts.
+- The older isKnownPvpBotId utility and its isolated unit test remain as catalog-only code; they no longer authorize a challenge in the live handler.
+- Runtime tests and builds remain unexecuted on this checkpoint.
