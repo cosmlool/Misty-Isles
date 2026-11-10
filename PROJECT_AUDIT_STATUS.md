@@ -2609,3 +2609,10 @@ PEN-009 стоит 100 кристаллов и при максимальном �
 - The handler now resolves every target only through a server-generated public character code. Raw bot IDs are rejected, so all accepted PvP challenges use the registered-character offer, cooldown, and immunity path. A runtime regression assertion was added to pvpRuntime.test.ts.
 - The older isKnownPvpBotId utility and its isolated unit test remain as catalog-only code; they no longer authorize a challenge in the live handler.
 - Runtime tests and builds remain unexecuted on this checkpoint.
+
+
+### Test-fixture migration for proof-based guest auth — 2026-11-10
+- All 14 runtime test files that previously issued sessions for arbitrary pre-seeded player IDs now seed deterministic test-only guest credential records in their isolated temporary data directory and authenticate with the matching proof.
+- Added server/test/guestAuthTestHelpers.ts for this isolated fixture setup. No test-only bypass or environment flag was added to production server code.
+- The duplicate-session runtime test now creates its guest through the server-issued-ID flow and seeds the test save after receiving that ID.
+- Static source checks confirm the updated test helpers send guestProof and seed the credential file. This is not a substitute for executing the runtime suite; full test execution is still pending.
