@@ -231,7 +231,7 @@ export function resolveMonsterBattle(input: MonsterBattleInput): MonsterBattleRe
         const modifiers = fighter.combatModifiers || {};
         const attack = fighter.attack * (1 + activeAttackBuff + activeSecondaryAttackBuff) * (1 + clamp(safeStat(modifiers.attackBonus), 0, 5)) * (1 - (partyAttackReduction.get(fighter.id) || 0));
         const hitChance = clamp(
-          (safeStat(fighter.accuracy, 100) * (1 + clamp(safeStat(modifiers.accuracyBonus), 0, 5)) / 100) *
+          (safeStat(fighter.accuracy, 100) / 100) *
           (fighter.blind ? 0.65 : 1),
           0.05,
           1,
