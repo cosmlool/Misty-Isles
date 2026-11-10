@@ -1440,3 +1440,21 @@ test('legacy Shadowstalker set tiers contribute explicit typed crit effects to t
     controlResistance: 0, healingBonus: 0,
   });
 });
+
+test('unknown player damage type does not receive physical or magic damage bonuses', () => {
+  const run = (damageType?: 'physical' | 'magic' | 'fire') => resolveMonsterBattle({
+    monster: { id: 'training-dummy', name: 'Манекен', hp: 1000, attack: 1, defense: 0, speed: 0 },
+    party: [{
+      id: 'fighter', profession: 'Воин', hp: 100, maxHp: 100,
+      attack: 100, defense: 0, speed: 10, damageType,
+      combatModifiers: { physicalDamageBonus: 0.50, magicDamageBonus: 0.80 },
+    }],
+    maxRounds: 1,
+    random: () => 0.99,
+  });
+
+  assert.equal(run().party[0].damageDealt, 100);
+  assert.equal(run('physical').party[0].damageDealt, 150);
+  assert.equal(run('magic').party[0].damageDealt, 180);
+  assert.equal(run('fire').party[0].damageDealt, 180);
+});
