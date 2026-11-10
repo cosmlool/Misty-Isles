@@ -33,6 +33,7 @@ export class Player extends Schema {
   @type('number') lastPvpAt = 0;
   @type('string') lastPvpResult = '';
   @type('string') buff = '';
+  @type('number') buffValue = 0;
   @type('number') buffUntil = 0;
   @type('number') level = 1;
   @type('number') experience = 0;
