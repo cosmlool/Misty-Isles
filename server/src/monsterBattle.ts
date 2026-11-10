@@ -22,6 +22,13 @@ export type MonsterBattleCombatant = {
   buffUntil?: number;
 };
 
+export type MonsterBattleHealingAction = {
+  round: number;
+  actorId: string;
+  targetId: string;
+  amount: number;
+};
+
 export type MonsterBattleInput = {
   monster: {
     id: string;
@@ -37,6 +44,8 @@ export type MonsterBattleInput = {
     critMultiplier?: number;
   };
   party: MonsterBattleCombatant[];
+  /** Pre-resolved party healing actions; each actor may perform at most one per round. */
+  healingActions?: MonsterBattleHealingAction[];
   maxRounds?: number;
   random?: () => number;
   now?: number;
@@ -114,6 +123,7 @@ export function resolveMonsterBattle(input: MonsterBattleInput): MonsterBattleRe
   let attackAfterCritical = false;
   let monsterHasAttacked = false;
   const buffSuppressionApplied = new Set<string>();
+  const healingActionsApplied = new Set<string>();
   const events: MonsterBattleEvent[] = [];
   const party = input.party.map(member => ({
     ...member,
@@ -157,6 +167,26 @@ export function resolveMonsterBattle(input: MonsterBattleInput): MonsterBattleRe
       if (actor.kind === 'party') {
         const fighter = party.find(member => member.id === actor.id);
         if (!fighter || fighter.hp <= 0) continue;
+
+        const healingActionKey = `${round}:${fighter.id}`;
+        if (!healingActionsApplied.has(healingActionKey)) {
+          const healingAction = (input.healingActions || []).find(action => action.round === round && action.actorId === fighter.id);
+          if (healingAction) {
+            healingActionsApplied.add(healingActionKey);
+            const target = party.find(member => member.id === healingAction.targetId);
+            const baseHealing = safeStat(healingAction.amount);
+            if (target && target.hp > 0 && baseHealing > 0) {
+              const healingMultiplier = 1 - clamp(effect.healReduction || 0, 0, 1);
+              const effectiveHealing = Math.floor(baseHealing * healingMultiplier);
+              const healed = Math.min(target.maxHp - target.hp, effectiveHealing);
+              if (healed > 0) {
+                target.hp += healed;
+                events.push({ round, actor: fighter.id, action: 'heal', target: target.id, healing: healed });
+              }
+            }
+          }
+        }
+
         const monsterHpRatio = monsterHp / monsterMaxHp;
         const activeAttackBuff = fighter.buff === 'attack' && safeStat(fighter.buffUntil) > now ? safeStat(fighter.buffValue) : 0;
         const activeSecondaryAttackBuff = fighter.buffSecondaryEffect === 'attack' && safeStat(fighter.buffUntil) > now ? safeStat(fighter.buffSecondaryValue) : 0;
