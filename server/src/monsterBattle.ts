@@ -240,7 +240,13 @@ export function resolveMonsterBattle(input: MonsterBattleInput): MonsterBattleRe
           events.push({ round, actor: fighter.id, action: 'miss', target: input.monster.name });
           continue;
         }
-        const monsterEvasionChance = clamp(effect.evasion || 0, 0, 0.75);
+        // Accuracy counters monster evasion in percentage points; it does not
+        // inflate an already-capped base hit chance or affect player evasion.
+        const monsterEvasionChance = clamp(
+          (effect.evasion || 0) - clamp(safeStat(modifiers.accuracyBonus), 0, 0.75),
+          0,
+          0.75,
+        );
         if (monsterEvasionChance > 0 && random() < monsterEvasionChance) {
           events.push({ round, actor: input.monster.name, action: 'dodge', target: fighter.id });
           continue;
