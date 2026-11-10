@@ -1122,6 +1122,38 @@ test('set effect identifiers do not invent typed bonuses without an explicit tie
   assert.equal(stats.combatModifiers.defenseBonus, 0);
 });
 
+test('gold-purchasable weapons and armor define level-scaled attributes and combat stats', () => {
+  const catalog = JSON.parse(readFileSync(resolve(serverDir, 'data/equipment_catalog.json'), 'utf8'));
+  const gear = catalog.filter((item: any) => Number(item.price) > 0 && ['weapon', 'armor'].includes(item.kind));
+  assert.equal(gear.length, 300);
+  for (const item of gear) {
+    assert.ok(item.attributes && Object.keys(item.attributes).length > 0, `Missing attributes: ${item.id}`);
+    assert.ok(item.combatStats && Object.keys(item.combatStats).length > 0, `Missing combat stats: ${item.id}`);
+    for (const value of Object.values(item.attributes) as number[]) {
+      assert.ok(Number.isInteger(value) && value > 0, `Invalid attribute value: ${item.id}`);
+    }
+    for (const value of Object.values(item.combatStats) as number[]) {
+      assert.ok(Number.isFinite(value) && value > 0 && value <= 0.05, `Invalid combat-stat value: ${item.id}`);
+    }
+  }
+  assert.equal(catalog.filter((item: any) => Number(item.price) <= 0 && ['weapon', 'armor'].includes(item.kind) && item.attributes).length, 0);
+});
+
+test('armor attribute bonuses contribute to attack, defense and combat speed', () => {
+  const base = calculatePlayerMonsterCombatStats({
+    profession: 'Воин', strength: 10, dexterity: 10, intelligence: 10,
+    vitality: 10, stamina: 10, baseDefense: 10,
+  });
+  const geared = calculatePlayerMonsterCombatStats({
+    profession: 'Воин', strength: 10, dexterity: 10, intelligence: 10,
+    vitality: 10, stamina: 10, baseDefense: 10,
+    armorItems: [{ strength: 4, dexterity: 2, intelligence: 3, vitality: 5, stamina: 2 }],
+  });
+  assert.ok(geared.attack > base.attack);
+  assert.ok(geared.defense > base.defense);
+  assert.equal(geared.speed, base.speed + 2);
+});
+
 test('typed combat modifier aggregation keeps each effect in its own stat channel', () => {
   const modifiers = aggregateMonsterCombatModifiers([
     parseMonsterCombatEffect('+5% к критическому шансу'),
