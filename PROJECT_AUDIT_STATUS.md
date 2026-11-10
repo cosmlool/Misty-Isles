@@ -2616,3 +2616,13 @@ PEN-009 стоит 100 кристаллов и при максимальном �
 - Added server/test/guestAuthTestHelpers.ts for this isolated fixture setup. No test-only bypass or environment flag was added to production server code.
 - The duplicate-session runtime test now creates its guest through the server-issued-ID flow and seeds the test save after receiving that ID.
 - Static source checks confirm the updated test helpers send guestProof and seed the credential file. This is not a substitute for executing the runtime suite; full test execution is still pending.
+
+
+## Daily and weekly monster-win challenges — 2026-11-10
+
+- Rechecking the live expedition flow after removing the legacy TOWNS hunt found that the current server no longer updated dailyHunts or weeklyHunts anywhere. The UI described both challenges as monster victories, but the only active expedition combat activity recorder updated activityToday. This meant the challenges could not progress through the new combat system.
+- Expedition victory activity now increments dailyHunts and weeklyHunts for that character. Losses do not count, matching the UI wording “Победи монстров”. The daily counter rolls over by UTC date; the weekly counter uses the shared UTC ISO-week helper.
+- Weekly claim now compares challengeWeek to the current ISO week before checking progress. On rollover it writes the new week key, resets weeklyHunts to 0, persists the reset, and returns without awarding the previous week's reward. Claim keys use the current ISO week.
+- The client now displays zero weekly progress when the stored challengeWeek is stale, rather than showing an expired 15/15 state.
+- Added tests for the ISO-week reset helper, old-week claim rejection without gold/XP, successful current-week claim and duplicate rejection, and expedition victories incrementing daily/weekly counters.
+- These tests and builds have not been executed yet.
