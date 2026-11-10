@@ -239,3 +239,93 @@ test('expired buffs are not suppressed or applied to combat stats', () => {
   assert.equal(result.events.some(event => event.action === 'suppress'), false);
 });
 
+
+
+test('party healing actions restore the full requested amount without heal reduction', () => {
+  const result = resolveMonsterBattle({
+    monster: { id: 'm-heal-full', name: 'Training monster', hp: 10000, attack: 1, defense: 0, speed: 1 },
+    party: [
+      { id: 'healer', profession: 'Баффер', hp: 100, maxHp: 100, attack: 1, defense: 0, speed: 20 },
+      { id: 'wounded', profession: 'Воин', hp: 50, maxHp: 100, attack: 1, defense: 0, speed: 10 },
+    ],
+    healingActions: [{ round: 1, actorId: 'healer', targetId: 'wounded', amount: 40 }],
+    maxRounds: 1,
+    random: () => 0.5,
+  });
+  assert.deepEqual(result.events.filter(event => event.action === 'heal').map(event => event.healing), [40]);
+});
+
+test('monster heal reduction lowers party healing by ten percent', () => {
+  const result = resolveMonsterBattle({
+    monster: {
+      id: 'm-heal-reduction',
+      name: 'Healing ward monster',
+      hp: 10000,
+      attack: 1,
+      defense: 0,
+      speed: 1,
+      passiveDescription: 'Лечение противника −10%',
+    },
+    party: [
+      { id: 'healer', profession: 'Баффер', hp: 100, maxHp: 100, attack: 1, defense: 0, speed: 20 },
+      { id: 'wounded', profession: 'Воин', hp: 50, maxHp: 100, attack: 1, defense: 0, speed: 10 },
+    ],
+    healingActions: [{ round: 1, actorId: 'healer', targetId: 'wounded', amount: 40 }],
+    maxRounds: 1,
+    random: () => 0.5,
+  });
+  assert.deepEqual(result.events.filter(event => event.action === 'heal').map(event => event.healing), [36]);
+});
+
+test('party healing never restores health above the target max HP', () => {
+  const result = resolveMonsterBattle({
+    monster: { id: 'm-heal-cap', name: 'Training monster', hp: 10000, attack: 1, defense: 0, speed: 1 },
+    party: [
+      { id: 'healer', profession: 'Баффер', hp: 100, maxHp: 100, attack: 1, defense: 0, speed: 20 },
+      { id: 'almost-full', profession: 'Воин', hp: 90, maxHp: 100, attack: 1, defense: 0, speed: 10 },
+    ],
+    healingActions: [{ round: 1, actorId: 'healer', targetId: 'almost-full', amount: 50 }],
+    maxRounds: 1,
+    random: () => 0.5,
+  });
+  assert.equal(result.events.find(event => event.action === 'heal')?.healing, 10);
+  assert.equal(result.party.find(member => member.id === 'almost-full')?.remainingHp, 99);
+});
+
+test('party healing ignores dead and unknown targets', () => {
+  const result = resolveMonsterBattle({
+    monster: { id: 'm-heal-invalid', name: 'Training monster', hp: 10000, attack: 1, defense: 0, speed: 1 },
+    party: [
+      { id: 'healer-a', profession: 'Баффер', hp: 100, maxHp: 100, attack: 1, defense: 0, speed: 30 },
+      { id: 'healer-b', profession: 'Баффер', hp: 100, maxHp: 100, attack: 1, defense: 0, speed: 20 },
+      { id: 'dead', profession: 'Воин', hp: 0, maxHp: 100, attack: 1, defense: 0, speed: 10 },
+    ],
+    healingActions: [
+      { round: 1, actorId: 'healer-a', targetId: 'dead', amount: 50 },
+      { round: 1, actorId: 'healer-b', targetId: 'missing', amount: 50 },
+    ],
+    maxRounds: 1,
+    random: () => 0.5,
+  });
+  assert.equal(result.party.find(member => member.id === 'dead')?.remainingHp, 0);
+  assert.equal(result.events.some(event => event.action === 'heal'), false);
+});
+
+test('monster periodic healing remains independent from party healing actions', () => {
+  const result = resolveMonsterBattle({
+    monster: {
+      id: 'm-own-heal',
+      name: 'Regenerating monster',
+      hp: 100,
+      attack: 1,
+      defense: 0,
+      speed: 1,
+      passiveDescription: 'Восстанавливает 8% HP каждый второй раунд',
+    },
+    party: [{ id: 'fighter', profession: 'Воин', hp: 1000, maxHp: 1000, attack: 1, defense: 0, speed: 20 }],
+    healingActions: [{ round: 1, actorId: 'fighter', targetId: 'fighter', amount: 20 }],
+    maxRounds: 2,
+    random: () => 0.5,
+  });
+  assert.ok(result.events.some(event => event.actor === 'Regenerating monster' && event.target === 'Regenerating monster' && event.healing === 8));
+});
