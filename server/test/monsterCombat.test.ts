@@ -7,7 +7,7 @@ import test from 'node:test';
 import { getMonsterPassiveDescriptions, parseMonsterWeakness, resolveMonsterPassive } from '../src/monsterCombat.js';
 import { calculateCombatSpeed, resolveMonsterBattle } from '../src/monsterBattle.js';
 import { adaptPlayerCombatant, buildPlayerCombatantForMonsterBattle } from '../src/monsterCombatantAdapter.js';
-import { resolveEquipmentSetTierDescriptions, aggregateMonsterCombatModifiers, calculatePlayerMonsterCombatStats, parseMonsterCombatEffect, parseMonsterCombatEffectClauses, resolveMonsterCombatProperty, resolveMonsterPendantCombatEffect, resolvePlayerMonsterCombatHealth, resolveEquipmentSetCombatEffects } from '../src/monsterCombatStats.js';
+import { resolveEquipmentSetTierDescriptions, aggregateMonsterCombatModifiers, calculatePlayerMonsterCombatStats, parseMonsterCombatEffect, parseMonsterCombatEffectClauses, resolveMonsterCombatProperty, resolveMonsterPendantCombatEffect, resolvePlayerMonsterCombatHealth, resolveEquipmentSetCombatEffects, resolveGoldEquipmentStatProfile } from '../src/monsterCombatStats.js';
 
 const serverDir = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const bestiary = JSON.parse(readFileSync(resolve(serverDir, 'data/forgotten_lands.json'), 'utf8'));
@@ -1129,6 +1129,9 @@ test('gold-purchasable weapons and armor define level-scaled attributes and comb
   for (const item of gear) {
     assert.ok(item.attributes && Object.keys(item.attributes).length > 0, `Missing attributes: ${item.id}`);
     assert.ok(item.combatStats && Object.keys(item.combatStats).length > 0, `Missing combat stats: ${item.id}`);
+    const expected = resolveGoldEquipmentStatProfile({ kind: item.kind, level: item.level, profession: item.profession, slot: item.slot });
+    assert.deepEqual(item.attributes, expected.attributes, `Unexpected attributes: ${item.id}`);
+    assert.deepEqual(item.combatStats, expected.combatStats, `Unexpected combat stats: ${item.id}`);
     for (const value of Object.values(item.attributes) as number[]) {
       assert.ok(Number.isInteger(value) && value > 0, `Invalid attribute value: ${item.id}`);
     }
