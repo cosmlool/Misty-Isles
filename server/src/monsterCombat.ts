@@ -110,7 +110,7 @@ export function getMonsterPassiveDescriptions(): string[] {
 }
 
 export function parseMonsterWeakness(value: string): { profession: string; bonus: number } | undefined {
-  const match = /^(.+?)\\s*\\+(\\d+)%$/.exec(value.trim());
+  const match = /^(.+?)\s*\+(\d+)%$/.exec(value.trim());
   if (!match) return undefined;
   return { profession: match[1].trim(), bonus: Number(match[2]) / 100 };
 }
