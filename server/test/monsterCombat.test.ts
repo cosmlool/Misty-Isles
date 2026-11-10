@@ -20,11 +20,13 @@ test('every bestiary passive description has one typed registry entry', () => {
   }
 });
 
-test('monster weakness parser converts profession bonus into a multiplier value', () => {
-  assert.deepEqual(parseMonsterWeakness('Маг +25%'), { profession: 'Маг', bonus: 0.25 });
-  assert.deepEqual(parseMonsterWeakness('Лучник +10%'), { profession: 'Лучник', bonus: 0.10 });
+test('monster weakness parser distinguishes professions from damage types', () => {
+  assert.deepEqual(parseMonsterWeakness('Маг +25%'), { kind: 'profession', profession: 'Маг', bonus: 0.25 });
+  assert.deepEqual(parseMonsterWeakness('Лучник +10%'), { kind: 'profession', profession: 'Лучник', bonus: 0.10 });
+  assert.deepEqual(parseMonsterWeakness('Огненный урон +25%'), { kind: 'damageType', damageType: 'fire', bonus: 0.25 });
   assert.equal(parseMonsterWeakness('нет'), undefined);
   assert.equal(parseMonsterWeakness('Маг +x%'), undefined);
+  assert.equal(parseMonsterWeakness('Лёд +25%'), undefined);
 });
 
 test('passive registry keeps compound effects instead of dropping secondary clauses', () => {
