@@ -773,3 +773,11 @@ Source-level call-site and catalog comparison only; no gameplay code changed and
 - Required later decision: either implement the documented tier effects consistently in the relevant modes, or revise catalog/UI descriptions to match the chosen shared set-bonus contract. Do not infer the intended balance from the current generic formula.
 
 Source-level catalog/runtime comparison only; no gameplay code changed and no tests were executed.
+
+
+### Ring boss-damage effect coverage — 2026-11-10
+
+- **Confirmed bossDamage ring effect is limited to group expedition dungeon:** the ring's configured effect is applied in runExpeditionDungeon() when calculating group boss attack. Ordinary hunt increases enemyPower for boss encounters but never applies the equipped ring's bossDamage multiplier; solo dungeonRun also omits ring effects entirely. The advertised boss-damage benefit therefore does not apply to ordinary hunt bosses or solo dungeons.
+- Together with the previously recorded loot-ring omission, this confirms that ring effects are implemented piecemeal by mode. The later combat refactor needs an explicit effect-by-effect applicability matrix (hunt normal/rare/boss, solo dungeon, group dungeon, PvP, clan war, mining, crafting, regeneration, reputation) and tests for each advertised effect.
+
+Source-level review only; no gameplay code changed and no tests were executed.
