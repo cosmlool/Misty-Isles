@@ -70,9 +70,9 @@ test('logout only revokes a valid session and invalid logout requests do not rev
     });
     await waitForServer(port, child);
 
-    const guest = await post(port, '/auth/guest', { playerId: 'runtime_auth_logout_01' });
+    const guest = await post(port, '/auth/guest', {});
     assert.equal(guest.status, 200);
-    const { token } = await guest.json() as { token: string };
+    const { token } = await guest.json() as { playerId: string; token: string; guestProof: string };
 
     const invalidLogout = await post(port, '/auth/logout', { token: 'not-a-session-token' });
     assert.equal(invalidLogout.status, 401);
