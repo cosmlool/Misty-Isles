@@ -52,6 +52,7 @@ export type MonsterCombatModifiers = {
   goldBonus: number;
   productionBonus: number;
   resistanceBonus: number;
+  controlResistance: number;
   healingBonus: number;
 };
 
@@ -64,7 +65,7 @@ export function aggregateMonsterCombatModifiers(
     lifestealBonus: 0, lootBonus: 0, healthBonus: 0, accuracyBonus: 0,
     evasionBonus: 0, attackSpeedBonus: 0, magicDamageBonus: 0,
     physicalDamageBonus: 0, bossDamageBonus: 0, experienceBonus: 0,
-    goldBonus: 0, productionBonus: 0, resistanceBonus: 0, healingBonus: 0,
+    goldBonus: 0, productionBonus: 0, resistanceBonus: 0, controlResistance: 0, healingBonus: 0,
   };
   const targets: Partial<Record<MonsterCombatEffectTarget, keyof MonsterCombatModifiers>> = {
     attack: 'attackBonus', defense: 'defenseBonus',
@@ -74,7 +75,7 @@ export function aggregateMonsterCombatModifiers(
     attackSpeed: 'attackSpeedBonus', magicDamage: 'magicDamageBonus',
     physicalDamage: 'physicalDamageBonus', bossDamage: 'bossDamageBonus',
     experience: 'experienceBonus', gold: 'goldBonus',
-    production: 'productionBonus', resistance: 'resistanceBonus',
+    production: 'productionBonus', resistance: 'resistanceBonus', controlResistance: 'controlResistance',
     healing: 'healingBonus',
   };
   for (const effect of effects) {
