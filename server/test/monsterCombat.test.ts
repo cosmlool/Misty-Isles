@@ -7,7 +7,7 @@ import test from 'node:test';
 import { getMonsterPassiveDescriptions, parseMonsterWeakness, resolveMonsterPassive } from '../src/monsterCombat.js';
 import { calculateCombatSpeed, resolveMonsterBattle } from '../src/monsterBattle.js';
 import { adaptPlayerCombatant } from '../src/monsterCombatantAdapter.js';
-import { calculatePlayerMonsterCombatStats, parseMonsterCombatEffect } from '../src/monsterCombatStats.js';
+import { aggregateMonsterCombatModifiers, calculatePlayerMonsterCombatStats, parseMonsterCombatEffect } from '../src/monsterCombatStats.js';
 
 const serverDir = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const bestiary = JSON.parse(readFileSync(resolve(serverDir, 'data/forgotten_lands.json'), 'utf8'));
@@ -1041,6 +1041,27 @@ test('shared player combat stats route profile bonuses to the profession-specifi
   assert.equal(gatherer.attack, 18);
 });
 
+
+test('typed combat modifier aggregation keeps each effect in its own stat channel', () => {
+  const modifiers = aggregateMonsterCombatModifiers([
+    parseMonsterCombatEffect('+5% к критическому шансу'),
+    parseMonsterCombatEffect('+12% к критическому шансу'),
+    parseMonsterCombatEffect('+8% к критическому урону'),
+    parseMonsterCombatEffect('Восстанавливает 3% максимального здоровья после победы'),
+    parseMonsterCombatEffect('+5% к количеству обычных ресурсов'),
+    parseMonsterCombatEffect('+8% к атаке'),
+    parseMonsterCombatEffect('+8% к физической защите'),
+    parseMonsterCombatEffect('Усиление роли'),
+  ]);
+  assert.equal(modifiers.critChanceBonus, 0.17);
+  assert.equal(modifiers.critDamageBonus, 0.08);
+  assert.equal(modifiers.lifestealBonus, 0.03);
+  assert.equal(modifiers.lootBonus, 0.05);
+  assert.equal(modifiers.attackBonus, 0.08);
+  assert.equal(modifiers.defenseBonus, 0.08);
+  assert.equal(modifiers.magicDamageBonus, 0);
+  assert.equal(modifiers.bossDamageBonus, 0);
+});
 
 test('catalog combat effects map to typed modifiers without collapsing into attack', () => {
   assert.deepEqual(parseMonsterCombatEffect('+5% к критическому шансу'), { target: 'critChance', value: 0.05 });
