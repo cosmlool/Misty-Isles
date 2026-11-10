@@ -650,3 +650,17 @@ A legacy direct `pvpChallenge` path still accepts four known bot IDs and bypasse
 #### Additional PvP roster consistency edge case
 
 - **Confirmed conditional underfilled-list case:** while an offer set is still within its 15-minute validity window, `pvpList` does not regenerate it if one or more offered characters become protected by another attack. The response filters protected targets out of the displayed list, but retains the original `offeredIds` and expiry. The attacker can therefore see fewer than four opponents until the offer set expires, even when other eligible registered characters exist. Server challenge validation correctly rejects a now-protected target. Recommended follow-up: refresh/refill the current offer set when its currently eligible count falls below four, preserving still-valid offers where possible and selecting replacements without repeating the previous batch.
+
+
+### General online-player snapshot overwrite risk — expanded finding
+
+A deeper check of `playerSaves.ts` and `GameRoom.save()` shows that the issue recorded for auction transactions is not limited to the auction.
+
+- `savePlayers(all)` writes the supplied complete players object as the new `players.json`; it does not merge online state itself.
+- `GameRoom.save()` loads the persisted file, replaces only the current room's player entry with `this.state.player.toJSON()`, then writes the complete object. It does not merge the other entries in `ONLINE_PLAYERS`.
+- The shared `persistPlayers(players)` helper similarly loads disk state and replaces only the supplied participant entries. It is used by grouped dungeon and expedition flows, and `persistPlayer(other)` is used by friend acceptance.
+- Therefore, a save initiated by one character can replace a different online character's newer in-memory state with that character's older persisted copy. The clearest recurring unsaved field is health regeneration, which mutates live player state once per second without an immediate save; join-time normalization and other state changes between save triggers can also be affected. If the affected character later saves normally, the current live state may be written back, but a process crash before that save can make the regressed disk snapshot authoritative after restart.
+- This is a **confirmed cross-player persistence consistency defect** from source structure. It is not proof that every action loses another player's currency or inventory: most mutating actions save the acting player immediately, and many group/transaction flows persist their explicit participants. The missing invariant is that a whole-file save must not silently omit newer live state belonging to unrelated online players.
+- Clan transaction commits are an exception: `commitClanState` explicitly merges every `ONLINE_PLAYERS` entry before writing its multi-file snapshot.
+
+Recommended fix after the audit: introduce a single, carefully ordered player-snapshot coordinator. Ordinary saves should merge all online player snapshots before writing. Multi-player transaction commits must first apply their transaction result to the participating live Player objects (or preserve the committed participant records separately), then merge unrelated online players, so the merge cannot overwrite the transaction's own debits/credits with pre-transaction in-memory values. Add a three-client test: client A has unsaved in-memory state, client B performs a normal save, and client C triggers a group/auction transaction; assert all three latest states survive and restart restores them.
