@@ -41,13 +41,13 @@ async function waitForServer(port: number, child: ChildProcess): Promise<void> {
   throw new Error('Isolated test server did not become ready.');
 }
 
-async function guestToken(port: number, playerId: string): Promise<string> {
+async function guestSession(port: number, playerId?: string, guestProof?: string): Promise<{ playerId: string; token: string; guestProof: string }> {
   const response = await fetch(`http://127.0.0.1:${port}/auth/guest`, {
     method: 'POST', headers: { 'content-type': 'application/json' },
-    body: JSON.stringify({ playerId }),
+    body: JSON.stringify(playerId ? { playerId, guestProof } : {}),
   });
   assert.equal(response.status, 200);
-  return (await response.json() as { token: string }).token;
+  return await response.json() as { playerId: string; token: string; guestProof: string };
 }
 
 async function stopServer(child: ChildProcess): Promise<void> {
@@ -77,21 +77,13 @@ function readPlayers(path: string): any {
 
 test('one character cannot open two concurrent gameplay sessions or overwrite its active save', { timeout: 45_000 }, async () => {
   const dataDir = mkdtempSync(join(tmpdir(), 'misty-duplicate-session-'));
-  const playerId = 'runtime_duplicate_session_01';
+  let playerId = '';
   const port = await unusedPort();
   let child: ChildProcess | undefined;
   let firstRoom: Room | undefined;
   let secondRoom: Room | undefined;
   try {
     for (const file of staticDataFiles) copyFileSync(join(serverDir, 'data', file), join(dataDir, file));
-    writeFileSync(join(dataDir, 'players.json'), JSON.stringify({
-      [playerId]: {
-        id: playerId, name: 'Single Session Hero', race: 'Кот', level: 1,
-        strength: 10, defense: 8, vitality: 10, gold: 500,
-        inventory: '[]', equipment: '{}', quests: '{}',
-      },
-    }, null, 2));
-
     child = spawn(process.execPath, ['--import', 'tsx', 'src/index.ts'], {
       cwd: serverDir,
       env: { ...process.env, MISTY_DATA_DIR: dataDir, MISTY_PORT: String(port) },
@@ -100,10 +92,19 @@ test('one character cannot open two concurrent gameplay sessions or overwrite it
     await waitForServer(port, child);
 
     const client = new Client(`ws://127.0.0.1:${port}`);
-    const firstToken = await guestToken(port, playerId);
-    firstRoom = await client.joinOrCreate('my_room', { playerId, sessionToken: firstToken });
+    const firstGuest = await guestSession(port);
+    playerId = firstGuest.playerId;
+    writeFileSync(join(dataDir, 'players.json'), JSON.stringify({
+      [playerId]: {
+        id: playerId, name: 'Single Session Hero', race: 'Кот', level: 1,
+        strength: 10, defense: 8, vitality: 10, gold: 500,
+        inventory: '[]', equipment: '{}', quests: '{}',
+      },
+    }, null, 2));
+    firstRoom = await client.joinOrCreate('my_room', { playerId, sessionToken: firstGuest.token });
 
-    const secondToken = await guestToken(port, playerId);
+    const secondGuest = await guestSession(port, playerId, firstGuest.guestProof);
+    const secondToken = secondGuest.token;
     await assert.rejects(
       client.joinOrCreate('my_room', { playerId, sessionToken: secondToken }),
       /уже находится в игре/i,
