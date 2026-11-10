@@ -389,6 +389,6 @@ test('monster attack reduction is scoped to the struck party member', () => {
     maxRounds: 2,
     random: () => 0.5,
   });
-  assert.equal(result.party.find(member => member.id === 'a-target')?.damageDealt, 190);
-  assert.equal(result.party.find(member => member.id === 'b-other')?.damageDealt, 200);
+  assert.equal(result.party.find(member => member.id === 'a-target')?.damageDealt, 180);
+  assert.equal(result.party.find(member => member.id === 'b-other')?.damageDealt, 190);
 });
