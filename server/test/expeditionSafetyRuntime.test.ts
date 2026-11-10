@@ -10,6 +10,8 @@ import { setTimeout as delay } from 'node:timers/promises';
 import { Client, type Room } from 'colyseus.js';
 import test from 'node:test';
 
+import { seedGuestCredentials, testGuestProof } from './guestAuthTestHelpers.js';
+
 const serverDir = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const staticDataFiles = ['city_npcs.json', 'equipment_catalog.json', 'forgotten_lands.json'];
 
@@ -45,7 +47,7 @@ async function waitForServer(port: number, child: ChildProcess): Promise<void> {
 async function guestToken(port: number, playerId: string): Promise<string> {
   const response = await fetch(`http://127.0.0.1:${port}/auth/guest`, {
     method: 'POST', headers: { 'content-type': 'application/json' },
-    body: JSON.stringify({ playerId }),
+    body: JSON.stringify({ playerId, guestProof: testGuestProof(playerId) }),
   });
   assert.equal(response.status, 200);
   return (await response.json() as { token: string }).token;
@@ -112,6 +114,9 @@ test('expedition reports capture pre/post health and disconnect cancels stale gr
         expedition: { branchId: 'forgotten_lands', currentZoneId: 'el1', opened: 1, cleared: [], seen: {}, state: 'searching', startedAt: Date.now() - 1_000, endsAt: Date.now() + 900_000, groupId: 'missing_group_after_restart' },
       }),
     }, null, 2));
+
+    seedGuestCredentials(dataDir);
+
 
     child = spawn(process.execPath, ['--import', 'tsx', 'src/index.ts'], {
       cwd: serverDir,
