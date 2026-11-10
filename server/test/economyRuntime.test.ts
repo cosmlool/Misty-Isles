@@ -9,6 +9,8 @@ import { setTimeout as delay } from 'node:timers/promises';
 import { Client, type Room } from 'colyseus.js';
 import test from 'node:test';
 
+import { seedGuestCredentials, testGuestProof } from './guestAuthTestHelpers.js';
+
 const serverDir = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const staticDataFiles = ['city_npcs.json', 'equipment_catalog.json', 'forgotten_lands.json'];
 
@@ -55,6 +57,7 @@ async function waitForServer(port: number, child: ChildProcess): Promise<void> {
 }
 
 function startServer(dataDir: string, port: number, output: string[]): ChildProcess {
+  seedGuestCredentials(dataDir);
   const child = spawn(process.execPath, ['--import', 'tsx', 'src/index.ts'], {
     cwd: serverDir,
     env: { ...process.env, MISTY_DATA_DIR: dataDir, MISTY_PORT: String(port) },
@@ -78,7 +81,7 @@ async function stopServer(child: ChildProcess): Promise<void> {
 
 async function guestToken(port: number, playerId: string): Promise<string> {
   const response = await fetch('http://127.0.0.1:' + port + '/auth/guest', {
-    method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ playerId }),
+    method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ playerId, guestProof: testGuestProof(playerId) }),
   });
   assert.equal(response.status, 200, 'synthetic guest session should be issued');
   const payload = await response.json() as { token: string };
