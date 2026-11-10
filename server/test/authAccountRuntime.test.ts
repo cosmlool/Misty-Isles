@@ -85,8 +85,14 @@ test('account registration securely links a guest save, revokes the guest token 
     const secondGuest = await secondGuestResponse.json() as { token: string; guestProof: string };
     assert.equal(secondGuest.guestProof, guest.guestProof);
 
+    const legacyMigration = await post(port, '/auth/guest', { playerId, sessionToken: secondGuest.token });
+    assert.equal(legacyMigration.status, 200, 'a valid legacy guest session can be upgraded once to a recovery proof');
+    const migrated = await legacyMigration.json() as { token: string; guestProof: string };
+    assert.equal(migrated.guestProof.length, 64);
+    assert.notEqual(migrated.guestProof, guest.guestProof);
+
     const registration = await post(port, '/auth/register', {
-      username: 'MistyTester', password: 'StrongPass123', playerId, guestProof: guest.guestProof,
+      username: 'MistyTester', password: 'StrongPass123', playerId, guestProof: migrated.guestProof,
     });
     assert.equal(registration.status, 201);
     const account = await registration.json() as { playerId: string; token: string; username: string };
