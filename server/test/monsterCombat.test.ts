@@ -7,7 +7,7 @@ import test from 'node:test';
 import { getMonsterPassiveDescriptions, parseMonsterWeakness, resolveMonsterPassive } from '../src/monsterCombat.js';
 import { calculateCombatSpeed, resolveMonsterBattle } from '../src/monsterBattle.js';
 import { adaptPlayerCombatant } from '../src/monsterCombatantAdapter.js';
-import { calculatePlayerMonsterCombatStats } from '../src/monsterCombatStats.js';
+import { calculatePlayerMonsterCombatStats, parseMonsterCombatEffect } from '../src/monsterCombatStats.js';
 
 const serverDir = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const bestiary = JSON.parse(readFileSync(resolve(serverDir, 'data/forgotten_lands.json'), 'utf8'));
@@ -1039,4 +1039,19 @@ test('shared player combat stats route profile bonuses to the profession-specifi
   assert.equal(warrior.defense, 15.7);
   assert.equal(gatherer.lootBonus, 0.25);
   assert.equal(gatherer.attack, 18);
+});
+
+
+test('catalog combat effects map to typed modifiers without collapsing into attack', () => {
+  assert.deepEqual(parseMonsterCombatEffect('+5% к критическому шансу'), { target: 'critChance', value: 0.05 });
+  assert.deepEqual(parseMonsterCombatEffect('+8% к критическому урону'), { target: 'critDamage', value: 0.08 });
+  assert.deepEqual(parseMonsterCombatEffect('Восстанавливает 3% максимального здоровья после победы'), { target: 'lifesteal', value: 0.03 });
+  assert.deepEqual(parseMonsterCombatEffect('+8% к магическому урону'), { target: 'magicDamage', value: 0.08 });
+  assert.deepEqual(parseMonsterCombatEffect('+8% к физическому урону'), { target: 'physicalDamage', value: 0.08 });
+  assert.deepEqual(parseMonsterCombatEffect('+8% к урону по боссам'), { target: 'bossDamage', value: 0.08 });
+  assert.deepEqual(parseMonsterCombatEffect('+5% к количеству обычных ресурсов'), { target: 'loot', value: 0.05 });
+  assert.deepEqual(parseMonsterCombatEffect('+8% к физической защите'), { target: 'defense', value: 0.08 });
+  assert.equal(parseMonsterCombatEffect('+6% профильного параметра'), undefined);
+  assert.equal(parseMonsterCombatEffect('Усиление роли'), undefined);
+  assert.equal(parseMonsterCombatEffect('Нет'), undefined);
 });
