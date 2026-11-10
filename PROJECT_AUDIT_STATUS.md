@@ -2626,3 +2626,11 @@ PEN-009 стоит 100 кристаллов и при максимальном �
 - The client now displays zero weekly progress when the stored challengeWeek is stale, rather than showing an expired 15/15 state.
 - Added tests for the ISO-week reset helper, old-week claim rejection without gold/XP, successful current-week claim and duplicate rejection, and expedition victories incrementing daily/weekly counters.
 - These tests and builds have not been executed yet.
+
+
+## Group expedition travel readiness — 2026-11-10
+
+- Closed a server-side guard gap in expeditionTravelStart: the handler previously checked only the leader's state before travel, then could overwrite a participant's pre-existing searching/moving state if the group data became inconsistent.
+- The handler now checks every online participant is idle before mutating any member. The check is factored into checkExpeditionTravelStartReadiness and covered by expeditionOperations.test.ts for empty, idle, searching and moving participant sets.
+- This does not yet resolve the separate mixed expedition-progression issue: group search still derives encounter progression from the leader and writes it to all members. A policy is still needed (require matching progress or calculate progression independently per member).
+- Tests/builds have not been executed.
