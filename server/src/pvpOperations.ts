@@ -39,24 +39,34 @@ export function pvpImmunityRemaining(player: PvpPlayerLike, now: number): number
 export function selectPvpOpponents<T extends PvpPlayerLike>(
   players: Record<string, T>,
   attackerId: string,
-  attackerLevel: number,
+  _attackerLevel: number,
   now: number,
   random: () => number = Math.random,
+  previouslyOfferedIds: readonly string[] = [],
 ): T[] {
   const eligible = Object.entries(players)
     .filter(([id, player]) => id !== attackerId
       && Boolean(player?.race)
       && Number.isFinite(Number(player?.level))
-      && Math.abs(Number(player.level) - attackerLevel) <= 2
       && pvpImmunityRemaining(player, now) === 0)
-    .map(([, player]) => player);
+    .map(([id, player]) => ({ id, player }));
 
-  // Fisher–Yates keeps the four offered opponents random without sorting the full player list.
-  for (let i = eligible.length - 1; i > 0; i -= 1) {
-    const j = Math.min(i, Math.max(0, Math.floor(random() * (i + 1))));
-    [eligible[i], eligible[j]] = [eligible[j], eligible[i]];
-  }
-  return eligible.slice(0, PVP_OPPONENT_COUNT);
+  const shuffle = <V>(values: V[]): V[] => {
+    for (let i = values.length - 1; i > 0; i -= 1) {
+      const j = Math.min(i, Math.max(0, Math.floor(random() * (i + 1))));
+      [values[i], values[j]] = [values[j], values[i]];
+    }
+    return values;
+  };
+  const previous = new Set(previouslyOfferedIds);
+  const fresh = shuffle(eligible.filter(entry => !previous.has(entry.id)));
+  // Prefer a completely new group. If fewer than four alternatives exist,
+  // fill remaining slots from the full eligible pool to keep the arena usable.
+  const selected = fresh.length >= PVP_OPPONENT_COUNT
+    ? fresh.slice(0, PVP_OPPONENT_COUNT)
+    : shuffle([...fresh, ...shuffle(eligible.filter(entry => previous.has(entry.id)))])
+        .slice(0, PVP_OPPONENT_COUNT);
+  return selected.map(entry => entry.player);
 }
 
 export function isPvpTargetOffered(offeredIds: unknown, targetId: string): boolean {
