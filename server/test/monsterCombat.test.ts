@@ -513,6 +513,22 @@ test('monster evasion passive avoids incoming player attacks, not monster attack
   assert.ok(result.events.some(event => event.actor === 'Evasive monster' && event.target === 'p-evasion' && event.action === 'dodge'));
 });
 
+test('player accuracy reduces monster evasion by percentage points', () => {
+  const result = resolveMonsterBattle({
+    monster: { id: 'm-accuracy-counter', name: 'Evasive target', hp: 10000, attack: 100, defense: 0, speed: 0, passiveDescription: 'Уклонение +15%' },
+    party: [{
+      id: 'p-accuracy-counter', profession: 'Лучник', hp: 1000, maxHp: 1000,
+      attack: 100, defense: 0, speed: 10, accuracy: 100,
+      combatModifiers: { accuracyBonus: 0.06 },
+    }],
+    maxRounds: 1,
+    random: () => 0.1,
+  });
+  assert.ok(result.events.some(event => event.actor === 'p-accuracy-counter' && event.action === 'attack' && event.target === 'Evasive target'));
+  assert.ok(!result.events.some(event => event.actor === 'Evasive target' && event.action === 'dodge'));
+  assert.equal(result.monsterHp, 9900);
+});
+
 test('player evasion modifier avoids incoming monster attacks', () => {
   const result = resolveMonsterBattle({
     monster: { id: 'm-player-evasion', name: 'Attacker', hp: 10000, attack: 100, defense: 0, speed: 20 },
