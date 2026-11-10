@@ -407,8 +407,8 @@ export function calculatePlayerMonsterCombatStats(
     baseDefense: Math.max(1, Number.isFinite(baseDefense) ? baseDefense : 1),
     speed: calculateCombatSpeed(totalDexterity, 0),
     profession,
-    lootBonus: value(input.weaponLootBonus) + (buffActive ? value(buffs.loot) : 0),
-    lifestealBonus: buffActive ? value(buffs.lifesteal) : 0,
+    lootBonus: value(input.weaponLootBonus) + (buffActive ? value(buffs.loot) : 0) + combatModifiers.lootBonus,
+    lifestealBonus: (buffActive ? value(buffs.lifesteal) : 0) + combatModifiers.lifestealBonus,
     combatModifiers,
   };
 }
