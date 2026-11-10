@@ -348,8 +348,7 @@ export function resolveMonsterBattle(input: MonsterBattleInput): MonsterBattleRe
         if (effect.enemyBuffSuppression && !buffSuppressionApplied.has(target.id)) {
           const controlResistance = clamp(safeStat(targetModifiers.controlResistance), 0, 0.75);
           const resistsBuffSuppression = controlResistance > 0 && random() < controlResistance;
-          if (resistsBuffSuppression) continue;
-          const candidates = [
+          const candidates = resistsBuffSuppression ? [] : [
             { slot: 'primary' as const, effect: target.buff || '', value: safeStat(target.buffValue) },
             { slot: 'secondary' as const, effect: target.buffSecondaryEffect || '', value: safeStat(target.buffSecondaryValue) },
           ].filter(buff => buff.effect && buff.value > 0 && safeStat(target.buffUntil) > now)
