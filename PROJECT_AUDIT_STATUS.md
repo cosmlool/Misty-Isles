@@ -638,3 +638,10 @@ Reviewed auction transaction snapshots, auction handlers, online-player state, c
 4. Test online PvP victim Schema, saved gold, losses/wins, immunity and reconnect state against the same transaction result.
 
 No gameplay code changed during this audit step. No tests were executed.
+
+
+#### PvP timing clarification from source verification
+
+The current audit-branch source already defines real-player PvP cooldown as 15 minutes (`PVP_ATTACK_COOLDOWN_MS = 15 * 60 * 1000`), and the PvP runtime test previously asserted that constant. The one-second cooldown found elsewhere is `CLAN_WAR_ATTACK_COOLDOWN_MS = 1_000`, used for a player's next attack in a clan war; it is a separate mechanic and has not been changed. The PvP fix therefore closes the missing offer-expiry enforcement, adds automatic list refresh and opponent rotation, and preserves the existing 15-minute real-player cooldown rather than changing a one-second PvP constant.
+
+A legacy direct `pvpChallenge` path still accepts four known bot IDs and bypasses real-player cooldown/offer checks; these bots are not returned in the arena list and award no PvP rewards. Whether these training-only direct challenges should also trigger the 15-minute cooldown remains a gameplay-policy decision; no change was made to this legacy path.
