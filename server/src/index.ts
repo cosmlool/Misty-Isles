@@ -7,7 +7,7 @@ import { WebSocketTransport } from '@colyseus/ws-transport';
 import { Schema, type } from '@colyseus/schema';
 import { Player } from './PlayerSchema.js';
 import { calculateCombatSpeed } from './monsterBattle.js';
-import { calculatePlayerMonsterCombatStats, resolveMonsterCombatProperty, resolveMonsterPendantCombatEffect } from './monsterCombatStats.js';
+import { calculatePlayerMonsterCombatStats, parseMonsterCombatEffectClauses, resolveMonsterCombatProperty, resolveMonsterPendantCombatEffect } from './monsterCombatStats.js';
 import { applyPlayerSave, createPlayerSaveStore } from './playerSaves.js';
 import { readJsonFile as readPersistentJson } from './jsonPersistence.js';
 import { filterAvailableUniqueItems, isLastEquippedCopy, ownsItemCopy, removeInventoryCopy } from './inventoryOperations.js';
@@ -796,6 +796,10 @@ function resolvePlayerMonsterStats(p:Player,monster:any,options:{applyFivePieceS
  const eq=readObject(p.equipment),up=readObject(p.equipmentEnhancements),collections=readObject(p.collections);
  const weapon=ITEMS.find(item=>item.id===eq.weapon),wp=weaponProfile(p,weapon);
  const armorItems=['armor','helmet','gloves','boots','cloak'].map(slot=>({slot,item:ITEMS.find(item=>item.id===eq[slot])})).filter(entry=>entry.item).map(entry=>({attack:Number(entry.item?.attack||0),defense:Number(entry.item?.defense||0),enhancementLevel:Number(up[`${entry.slot}:${eq[entry.slot]}`]||0)}));
+ const catalogArmorEffects=['armor','helmet','gloves','boots','cloak']
+  .map(slot=>ITEMS.find(item=>item.id===eq[slot]))
+  .filter((item:any)=>item&&typeof item.effects==='string')
+  .flatMap((item:any)=>parseMonsterCombatEffectClauses(String(item.effects)));
  const mastery=collections.setMastery||{};
  const setBonuses=EQUIPMENT_SETS.filter((set:any)=>!set.legacy).map((set:any)=>{
   const itemCount=set.items.filter((id:string)=>Object.values(eq).includes(id)).length;
@@ -822,7 +826,7 @@ function resolvePlayerMonsterStats(p:Player,monster:any,options:{applyFivePieceS
   weaponDexterityBonus:wp.dexterity,weaponProfileBonus:wp.profileBonus,weaponLootBonus:wp.lootBonus,
   pendantEffect:pendant?.effect,pendantValue:pendantEffectValue(pendant,Number(collections.pendantLevels?.[pendant?.id||'']||1)),isBoss:options.isBoss??['boss','finalBoss'].includes(String(monster?.rank||'')),setBonuses,
   buffs:{attack:activeBuffValue(p,'attack',now),crit:activeBuffValue(p,'crit',now),defense:activeBuffValue(p,'defense',now),loot:activeBuffValue(p,'loot',now),lifesteal:options.includeLifestealBuff?activeBuffValue(p,'lifesteal',now):0},
-  equipmentEffects,pendantCombatEffect,
+  equipmentEffects:[...equipmentEffects,...catalogArmorEffects],pendantCombatEffect,
   now,buffUntil:Number(p.buffUntil||0),applyFivePieceSetBonus:options.applyFivePieceSetBonus});
 }
 function rand(a:number,b:number){return Math.floor(Math.random()*(b-a+1))+a;}
