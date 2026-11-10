@@ -84,10 +84,12 @@ test('clan war attacks enforce per-player cooldown and accumulate real damage', 
   const dataDir = mkdtempSync(join(tmpdir(), 'misty-clan-war-runtime-'));
   const playerA = 'runtime_war_player_a';
   const playerB = 'runtime_war_player_b';
+  const playerC = 'runtime_war_nonmember';
   const port = await unusedPort();
   let child: ChildProcess | undefined;
   let roomA: Room | undefined;
   let roomB: Room | undefined;
+  let roomC: Room | undefined;
   try {
     for (const file of staticDataFiles) copyFileSync(join(serverDir, 'data', file), join(dataDir, file));
     writeFileSync(join(dataDir, 'players.json'), JSON.stringify({
@@ -98,6 +100,10 @@ test('clan war attacks enforce per-player cooldown and accumulate real damage', 
       [playerB]: {
         id: playerB, name: 'War Attacker B', race: 'Собака', level: 25, strength: 35, defense: 20,
         gold: 250, clan: 'clan-b', inventory: '[]', equipment: '{}', quests: '{}',
+      },
+      [playerC]: {
+        id: playerC, name: 'Clan Nonmember', race: 'Кот', level: 25, strength: 40, defense: 20,
+        gold: 500, goldSpent: 0, crystals: 0, clan: 'clan-a', inventory: '[]', equipment: '{}', quests: '{}',
       },
     }, null, 2));
     writeFileSync(join(dataDir, 'clans.json'), JSON.stringify({
@@ -123,24 +129,54 @@ test('clan war attacks enforce per-player cooldown and accumulate real damage', 
     });
     await waitForServer(port, child);
     const client = new Client(`ws://127.0.0.1:${port}`);
-    const [tokenA, tokenB] = await Promise.all([guestToken(port, playerA), guestToken(port, playerB)]);
-    [roomA, roomB] = await Promise.all([
+    const [tokenA, tokenB, tokenC] = await Promise.all([guestToken(port, playerA), guestToken(port, playerB), guestToken(port, playerC)]);
+    [roomA, roomB, roomC] = await Promise.all([
       client.joinOrCreate('my_room', { playerId: playerA, sessionToken: tokenA }),
       client.joinOrCreate('my_room', { playerId: playerB, sessionToken: tokenB }),
+      client.joinOrCreate('my_room', { playerId: playerC, sessionToken: tokenC }),
     ]);
 
     const noticesA: string[] = [];
     const noticesB: string[] = [];
+    const noticesC: string[] = [];
     const warListsA: any[] = [];
     const warListsB: any[] = [];
     const clanListsA: any[] = [];
     const clanListsB: any[] = [];
     roomA.onMessage('notice', payload => noticesA.push(String(payload?.text || '')));
     roomB.onMessage('notice', payload => noticesB.push(String(payload?.text || '')));
+    roomC.onMessage('notice', payload => noticesC.push(String(payload?.text || '')));
     roomA.onMessage('clanWarList', payload => warListsA.push(payload));
     roomB.onMessage('clanWarList', payload => warListsB.push(payload));
     roomA.onMessage('clanList', payload => clanListsA.push(payload));
     roomB.onMessage('clanList', payload => clanListsB.push(payload));
+
+    const unauthorizedClanActions: Array<[string, any]> = [
+      ['clanDonate', { amount: 100 }],
+      ['clanRaid', {}],
+      ['clanSeasonReward', {}],
+      ['clanTerritoryCapture', { id: 'territory-runtime' }],
+      ['clanQuestClaim', { id: 'donate' }],
+      ['clanUpgrade', { upgrade: 'barracks' }],
+      ['clanWarChallenge', { clanId: 'clan-b' }],
+      ['clanWarAttack', { id: 'war-runtime' }],
+    ];
+    for (const [action, payload] of unauthorizedClanActions) {
+      const before = noticesC.length;
+      roomC.send(action, payload);
+      await waitFor(() => noticesC.slice(before).find(text => text === 'Персонаж не состоит в этом клане.'), `nonmember rejection for ${action}`);
+    }
+    const nonmemberPlayers = readJson(join(dataDir, 'players.json'));
+    const nonmemberClans = readJson(join(dataDir, 'clans.json'));
+    assert.equal(nonmemberPlayers[playerC].gold, 500);
+    assert.equal(nonmemberPlayers[playerC].goldSpent, 0);
+    assert.equal(nonmemberPlayers[playerC].crystals, 0);
+    assert.equal(nonmemberClans['clan-a'].vault, 0);
+    assert.equal(nonmemberClans['clan-a'].seasonPoints, 0);
+    assert.equal(nonmemberClans['clan-a'].lastRaidAt, undefined);
+    assert.equal(nonmemberClans['clan-a'].lastTerritoryCaptureAt, undefined);
+    assert.equal(nonmemberClans['clan-a'].lastSeasonRewardWeek, undefined);
+    assert.equal(readJson(join(dataDir, 'clan_wars.json')).length, 1);
 
     roomA.send('clanDonate', { amount: 100 });
     await waitFor(() => noticesA.find(text => text.startsWith('Вклад в клан: 100')), 'atomic clan donation');
@@ -213,6 +249,7 @@ test('clan war attacks enforce per-player cooldown and accumulate real damage', 
   } finally {
     if (roomA) await roomA.leave().catch(() => undefined);
     if (roomB) await roomB.leave().catch(() => undefined);
+    if (roomC) await roomC.leave().catch(() => undefined);
     if (child) await stopServer(child);
     rmSync(dataDir, { recursive: true, force: true });
   }
