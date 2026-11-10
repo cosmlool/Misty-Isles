@@ -60,7 +60,7 @@ const EXPEDITION_BESTIARY:any[] = EXPEDITION_DATA.monsters
   });
 const CITY_NPCS:any[] = JSON.parse(readFileSync(join(DATA_DIR,'city_npcs.json'),'utf8'));
 
-type Item = { id:string; name:string; kind:'weapon'|'armor'|'amulet'|'potion'|'material'|'chest'; slot?:string; price:number; currency?:string; level:number; maxLevel?:number; attack?:number; defense?:number; health?:number; heal?:number; effect?:string; value?:number; profession?:string; race?:string; description?:string; legacy?:boolean; attributes?:Record<string,number>; combatStats?:Record<string,number>; [key:string]:any };
+type Item = { id:string; name:string; kind:'weapon'|'armor'|'amulet'|'potion'|'material'|'chest'; slot?:string; price:number; currency?:string; level:number; maxLevel?:number; attack?:number; defense?:number; health?:number; heal?:number; effect?:string; value?:number; profession?:string; race?:string; description?:string; legacy?:boolean; attributes?:Record<string,number>; combatStats?:Record<string,number>; primaryAttribute?:string; [key:string]:any };
 type Recipe = {id:string;name:string;level:number;seconds:number;output:string;count:number;materials:Record<string,number>;description:string;profession?:string};
 const RACES = ['Кот','Собака','Птица','Грызун'];
 const PROFESSIONS: Record<string,string[]> = {'Кот':['Боевой маг','Ассасин'],'Собака':['Воин','Баффер'],'Птица':['Лучник'],'Грызун':['Вампир','Добытчик']};
@@ -282,6 +282,7 @@ for(const item of ITEMS){
  const profile=resolveGoldEquipmentStatProfile({kind:item.kind as 'weapon'|'armor',level:Number(item.level||1),profession:item.profession,slot:item.slot});
  item.attributes=item.attributes||profile.attributes;
  item.combatStats=item.combatStats||profile.combatStats;
+ if(item.kind==='weapon'&&!item.primaryAttribute)item.primaryAttribute=`+${Math.max(1,Math.round(Number(item.level||1)/10))} к выбранному основному атрибуту`;
 }
 function pendantEffectValue(item:Item|undefined,level:number):number { if(!item)return 0;const rates:Record<string,number>={xp:.005,defense:.0005,crit:.0005,health:.001,loot:.001,gold:.001,production:.001,regen:.001,reputation:.001,bossDamage:.001,crystalChance:.001};const caps:Record<string,number>={xp:.5,defense:.1,crit:.1,health:.2,loot:.2,gold:.2,production:.2,regen:.2,reputation:.2,bossDamage:.2,crystalChance:.2};const lv=Math.max(1,Math.min(100,level));return lv>=100?(caps[item.effect||'']||0):(rates[item.effect||'']||0)*lv;}
 function shopCatalogForPlayer(p:Player){const activeProfession=String((p as any).activeSubclass|| (p as any).subclassProfession || p.profession || '');return ITEMS.filter(i=>i.price>0&&!i.legacy&&(!i.race||i.race===p.race)&&(!i.profession||i.profession===p.profession||i.profession===activeProfession)).sort((a,b)=>Number(a.level||1)-Number(b.level||1)||String(a.name).localeCompare(String(b.name),'ru'));}
