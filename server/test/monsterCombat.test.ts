@@ -412,3 +412,49 @@ test('monster deals bonus damage to a blinded weakened target', () => {
   assert.equal(run(true).totalDamageToParty, 115);
   assert.equal(run(false).totalDamageToParty, 100);
 });
+
+
+test('blindness immunity protects monster accuracy, not player accuracy', () => {
+  const monsterBlindWithoutImmunity = resolveMonsterBattle({
+    monster: { id: 'm-blind', name: 'Blinded monster', hp: 10000, attack: 100, defense: 0, speed: 20, accuracy: 100, blind: true },
+    party: [{ id: 'p-clear', profession: 'Воин', hp: 1000, maxHp: 1000, attack: 1, defense: 0, speed: 10 }],
+    maxRounds: 1,
+    random: () => 0.8,
+  });
+  const monsterBlindWithImmunity = resolveMonsterBattle({
+    monster: {
+      id: 'm-blind-immune',
+      name: 'Blindness-proof monster',
+      hp: 10000,
+      attack: 100,
+      defense: 0,
+      speed: 20,
+      accuracy: 100,
+      blind: true,
+      passiveDescription: 'Не теряет точность от ослепления',
+    },
+    party: [{ id: 'p-clear', profession: 'Воин', hp: 1000, maxHp: 1000, attack: 1, defense: 0, speed: 10 }],
+    maxRounds: 1,
+    random: () => 0.8,
+  });
+  const blindedPlayerAgainstImmuneMonster = resolveMonsterBattle({
+    monster: {
+      id: 'm-no-blind',
+      name: 'Unblinded monster',
+      hp: 10000,
+      attack: 100,
+      defense: 0,
+      speed: 20,
+      accuracy: 100,
+      passiveDescription: 'Не теряет точность от ослепления',
+    },
+    party: [{ id: 'p-blind', profession: 'Воин', hp: 1000, maxHp: 1000, attack: 1, defense: 0, speed: 10, blind: true }],
+    maxRounds: 1,
+    random: () => 0.8,
+  });
+
+  assert.equal(monsterBlindWithoutImmunity.totalDamageToParty, 0);
+  assert.equal(monsterBlindWithImmunity.totalDamageToParty, 100);
+  assert.equal(blindedPlayerAgainstImmuneMonster.totalDamageToParty, 100);
+  assert.ok(blindedPlayerAgainstImmuneMonster.events.some(event => event.actor === 'p-blind' && event.action === 'miss'));
+});
