@@ -514,3 +514,18 @@ Continued the persistence audit from the current branch head. Rechecked the exac
 4. Decide whether regeneration must be durable continuously or whether saving on action/leave is sufficient for this single-instance game. If continuous durability is required, use a bounded autosave interval or a transactional persistence layer rather than writing the full player file every second.
 
 No code changed; this is an audit/documentation update only.
+### Restart coverage and auth-test source defect — 2026-11-10
+
+Reviewed the current auth/account runtime tests and test command for server restart coverage. Source inspection only; tests were not executed.
+
+- **Confirmed test-source blocker:** server/test/authAccountRuntime.test.ts declares `const secondGuest` twice in the same `try` block: first as the parsed guest-session response, then again for the unrelated unlinked guest response near the end of the test. This is a duplicate lexical declaration and prevents the test module from parsing. Since this file is explicitly included in the `server` npm test script, the full server test command is expected to fail when it reaches this module unless the second variable is renamed. This has not been verified by executing the test command; the source-level syntax conflict is definitive.
+- Existing runtime helpers start a child server and stop it by sending SIGTERM, with SIGKILL fallback after five seconds. The production server source has no explicit SIGTERM/SIGINT handler, so the helper's termination path does not establish graceful room disposal or persistence.
+- The reviewed runtime tests exercise duplicate live-session rejection, account linking and stale guest-token rejection, logout revocation, and group travel persistence. They do not restart the same server against the same data directory and then reconnect using a previously issued valid session token.
+- Session records are persisted to sessions.json and verification reads them from disk on each auth check. The code structure suggests valid tokens should survive a normal process restart while unexpired, but this behavior remains unverified end-to-end because there is no restart/reconnect runtime test.
+
+#### Required follow-up
+1. Rename the second `secondGuest` local in authAccountRuntime.test.ts (for example, `unlinkedGuestResponse`) and rerun the auth test plus full server suite.
+2. Add a two-process restart test using the same temporary data directory: create guest session, connect and mutate character, stop server, start a fresh server on a new free port, verify the original token via /auth/check, reconnect through WebSocket, and assert the saved character state.
+3. Add a separate abrupt-stop case that documents which unsaved in-memory changes are expected to be lost; do not conflate it with a graceful-shutdown guarantee.
+
+No code changed; this entry records an audit finding only.
