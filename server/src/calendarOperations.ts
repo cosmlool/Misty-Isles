@@ -8,3 +8,10 @@ export function utcIsoWeekKey(date: Date = new Date()): string {
   const week = Math.ceil(((thursday.getTime() - yearStart.getTime()) / 86_400_000 + 1) / 7);
   return `${isoYear}-W${String(week).padStart(2, '0')}`;
 }
+
+export function resetWeeklyHuntProgress(quests: Record<string, any>, weekKey: string = utcIsoWeekKey()): boolean {
+  if (quests.challengeWeek === weekKey) return false;
+  quests.challengeWeek = weekKey;
+  quests.weeklyHunts = 0;
+  return true;
+}
