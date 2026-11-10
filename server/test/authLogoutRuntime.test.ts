@@ -84,16 +84,22 @@ test('logout revokes a valid session, closes its active WebSocket and rejects fu
     const client = new Client(`ws://127.0.0.1:${port}`);
     room = await client.joinOrCreate('my_room', { playerId, sessionToken: token });
     const notices: string[] = [];
+    let groupListResponses = 0;
     room.onMessage('notice', payload => notices.push(String(payload?.text || '')));
+    room.onMessage('huntGroupPlayers', () => { groupListResponses++; });
     room.send('createCharacter', { race: 'Кот', name: 'LogoutTestHero' });
     await waitFor(() => notices.find(message => message.includes('Персонаж создан')), 'character creation before logout');
     let leaveCode: number | undefined;
     const left = new Promise<number>(resolve => room!.onLeave(code => { leaveCode = code; resolve(code); }));
 
+    room.send('huntGroupList', {});
+    await waitFor(() => groupListResponses > 0 ? groupListResponses : undefined, 'gameplay command before invalid logout');
     const invalidLogout = await post(port, '/auth/logout', { token: 'not-a-session-token' });
     assert.equal(invalidLogout.status, 401);
     const stillValid = await post(port, '/auth/check', { token });
     assert.equal(stillValid.status, 200);
+    room.send('huntGroupList', {});
+    await waitFor(() => groupListResponses > 1 ? groupListResponses : undefined, 'active socket after invalid logout');
 
     const validLogout = await post(port, '/auth/logout', { token });
     assert.equal(validLogout.status, 200);
@@ -101,6 +107,8 @@ test('logout revokes a valid session, closes its active WebSocket and rejects fu
     assert.equal(typeof leaveCode, 'number', 'the active gameplay socket must be closed after logout');
     const revoked = await post(port, '/auth/check', { token });
     assert.equal(revoked.status, 401);
+    const staleClient = new Client(`ws://127.0.0.1:${port}`);
+    await assert.rejects(() => staleClient.joinOrCreate('my_room', { playerId, sessionToken: token }), 'a revoked token must not open a new gameplay socket');
 
     const repeatedLogout = await post(port, '/auth/logout', { token });
     assert.equal(repeatedLogout.status, 401);
