@@ -1229,6 +1229,10 @@ test('player combatant adapter forwards typed modifiers without folding them int
       lifestealBonus: 0.03,
       physicalDamageBonus: 0.12,
       bossDamageBonus: 0.10,
+      healthBonus: 0.20,
+      attackSpeedBonus: 0.15,
+      healingBonus: 0.25,
+      controlResistance: 0.30,
     },
   });
   assert.equal(combatant.attack, 100);
@@ -1242,7 +1246,77 @@ test('player combatant adapter forwards typed modifiers without folding them int
     lifestealBonus: 0.03,
     physicalDamageBonus: 0.12,
     bossDamageBonus: 0.10,
+    healthBonus: 0.20,
+    attackSpeedBonus: 0.15,
+    healingBonus: 0.25,
+    controlResistance: 0.30,
   });
+});
+
+test('typed modifier aggregation preserves control resistance as its own channel', () => {
+  const modifiers = aggregateMonsterCombatModifiers([
+    parseMonsterCombatEffect('+25% к сопротивлению контролю'),
+  ]);
+  assert.equal(modifiers.controlResistance, 0.25);
+  assert.equal(modifiers.resistanceBonus, 0);
+});
+
+test('monster battle applies health and attack speed bonuses without granting extra turns', () => {
+  const result = resolveMonsterBattle({
+    monster: { id: 'training-dummy', name: 'Манекен', hp: 100, attack: 10, defense: 0, speed: 15 },
+    party: [{
+      id: 'fast-fighter', profession: 'Воин', hp: 50, maxHp: 100,
+      attack: 100, defense: 0, speed: 10,
+      combatModifiers: { healthBonus: 0.20, attackSpeedBonus: 1 },
+    }],
+    maxRounds: 1,
+    random: (() => { const values = [0, 0.99]; let i = 0; return () => values[i++] ?? 0.99; })(),
+  });
+
+  assert.equal(result.winner, 'party');
+  assert.equal(result.party[0].maxHp, 120);
+  assert.equal(result.party[0].remainingHp, 60);
+  assert.equal(result.events.filter(event => event.actor === 'fast-fighter' && event.action === 'attack').length, 1);
+  assert.equal(result.events.some(event => event.actor === 'Манекен' && event.action === 'attack'), false);
+});
+
+test('monster battle applies healing bonus to submitted healing actions', () => {
+  const result = resolveMonsterBattle({
+    monster: { id: 'training-dummy', name: 'Манекен', hp: 1000, attack: 1, defense: 0, speed: 0 },
+    party: [
+      {
+        id: 'healer', profession: 'Баффер', hp: 100, maxHp: 100,
+        attack: 1, defense: 0, speed: 20,
+        combatModifiers: { healingBonus: 0.50 },
+      },
+      { id: 'ally', profession: 'Воин', hp: 50, maxHp: 100, attack: 1, defense: 0, speed: 10 },
+    ],
+    healingActions: [{ round: 1, actorId: 'healer', targetId: 'ally', amount: 20 }],
+    maxRounds: 1,
+    random: () => 0.99,
+  });
+
+  assert.ok(result.events.some(event => event.action === 'heal' && event.actor === 'healer' && event.target === 'ally' && event.healing === 30));
+  assert.equal(result.party.find(member => member.id === 'ally')?.remainingHp, 79);
+});
+
+test('control resistance can prevent monster poison without reducing incoming damage resistance', () => {
+  const result = resolveMonsterBattle({
+    monster: {
+      id: 'poisoner', name: 'Ядовитый монстр', hp: 1000, attack: 1, defense: 0, speed: 10,
+      passiveDescription: 'Атака накладывает яд',
+    },
+    party: [{
+      id: 'resistant', profession: 'Воин', hp: 1000, maxHp: 1000,
+      attack: 1, defense: 0, speed: 0,
+      combatModifiers: { controlResistance: 0.75 },
+    }],
+    maxRounds: 2,
+    random: () => 0.1,
+  });
+
+  assert.equal(result.events.some(event => event.action === 'poison'), false);
+  assert.equal(result.party[0].damageTaken, 2);
 });
 
 test('monster battle applies typed attack, damage-type and lifesteal modifiers', () => {
