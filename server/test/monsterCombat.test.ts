@@ -987,3 +987,56 @@ test('shared player combat stats do not apply attack, defense or crit buffs afte
 
   assert.deepEqual(expired, baseline);
 });
+
+
+test('shared player combat stats cover every current combat profession baseline', () => {
+  const professions = [
+    { profession: 'Боевой маг', attack: 17.05, defense: 15.7 },
+    { profession: 'Ассасин', attack: 22.68, defense: 15.7 },
+    { profession: 'Воин', attack: 18, defense: 17.27 },
+    { profession: 'Баффер', attack: 18, defense: 15.7 },
+    { profession: 'Лучник', attack: 22.26, defense: 15.7 },
+    { profession: 'Вампир', attack: 21, defense: 15.7 },
+    { profession: 'Добытчик', attack: 18, defense: 15.7 },
+  ];
+
+  for (const expected of professions) {
+    const actual = calculatePlayerMonsterCombatStats({
+      profession: expected.profession,
+      strength: 10,
+      dexterity: 10,
+      intelligence: 10,
+      vitality: 10,
+      stamina: 10,
+      baseDefense: 10,
+    });
+    assert.ok(Math.abs(actual.attack - expected.attack) < 0.000001, expected.profession + ' attack');
+    assert.ok(Math.abs(actual.defense - expected.defense) < 0.000001, expected.profession + ' defense');
+    assert.equal(actual.speed, 10, expected.profession + ' speed');
+  }
+});
+
+test('shared player combat stats route profile bonuses to the profession-specific output', () => {
+  const buffer = calculatePlayerMonsterCombatStats({
+    profession: 'Баффер',
+    strength: 10, dexterity: 10, intelligence: 10, vitality: 10, stamina: 10,
+    baseDefense: 10, weaponProfileBonus: 0.2,
+  });
+  const warrior = calculatePlayerMonsterCombatStats({
+    profession: 'Воин',
+    strength: 10, dexterity: 10, intelligence: 10, vitality: 10, stamina: 10,
+    baseDefense: 10, weaponProfileBonus: 0.2,
+  });
+  const gatherer = calculatePlayerMonsterCombatStats({
+    profession: 'Добытчик',
+    strength: 10, dexterity: 10, intelligence: 10, vitality: 10, stamina: 10,
+    baseDefense: 10, weaponLootBonus: 0.25,
+  });
+
+  assert.ok(Math.abs(buffer.defense - 18.84) < 0.000001);
+  assert.equal(buffer.attack, 18);
+  assert.ok(Math.abs(warrior.attack - 21.6) < 0.000001);
+  assert.equal(warrior.defense, 15.7);
+  assert.equal(gatherer.lootBonus, 0.25);
+  assert.equal(gatherer.attack, 18);
+});
