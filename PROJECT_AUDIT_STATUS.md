@@ -588,3 +588,31 @@ Reviewed the Colyseus Player schema, room state lifecycle, client state/message 
 5. Add browser tests for PvP list expiry (including waiting beyond 15 minutes without clicking refresh), reconnect rehydration of player + side-channel state, and queue consistency after craft start/claim.
 
 No gameplay code changed; this entry records source-level findings and follow-up work. No tests were executed.
+
+
+### PvP cooldown and opponent rotation implementation — 2026-11-10
+
+The user explicitly confirmed the intended arena behavior: after each real PvP battle, the attacker waits 15 minutes (the current one-second test timing is not the desired live rule); when the timer ends, the arena must offer different opponents. This is an approved gameplay change and was implemented on the audit branch.
+
+Changes made:
+- Kept the canonical `PVP_ATTACK_COOLDOWN_MS = 15 * 60 * 1000` and verified the server derives cooldown from persisted `lastPvpAt`.
+- Server now returns an empty opponent list while the attack cooldown is active.
+- On a new offer generation, matchmaking first excludes the four IDs from the previous offer set. If at least four other eligible registered characters exist, all four new offers are different. If fewer than four alternatives exist, it fills remaining slots from the eligible pool so the arena can still show up to four.
+- Removed the ±2 level restriction from both matchmaking and challenge validation, matching the user's earlier requirement that all registered characters may appear. Characters still need a valid created profile and must not currently have PvP immunity.
+- After a battle, the server stores the previous offered IDs before clearing the active list.
+- The server now rejects a challenge when its offer timestamp has expired, even if the requested ID remains in an old persisted list.
+- Client automatically requests a fresh list when the 15-minute cooldown/offer expiry ends; it no longer requires the player to manually press refresh. Expired opponent cards are cleared while the refresh is requested.
+- Updated PvP screen copy to describe unrestricted level matchmaking.
+
+Tests updated (not yet executed):
+- `pvpOperations.test.ts`: 15-minute cooldown, unrestricted level matching, protected/invalid profile exclusion, and selecting four new opponents when enough alternatives exist.
+- `pvpRuntime.test.ts`: integration scenario uses nine saved targets across widely different levels, verifies four offers, a 20% gold transfer, persisted cooldown and victim immunity, then restarts the isolated test server with the same session after advancing only the fixture timestamp and verifies that the next four offers do not repeat the previous set.
+- No test execution, build, or browser run has been performed in this environment. The user's Windows test environment should run the focused PvP tests and then the full server suite.
+
+Implementation commits:
+- `2b775164d60d680a60c42e57cdb898dbd3957404` — opponent selection logic
+- `3e2010aedd37c9554db95da57505d4c5bdced9f9` — server offer expiry/rotation
+- `3cb32238b8f633ce2ee082a22d6eec26d4cab6a4` — client automatic refresh
+- `bd5dd5cea81f593d661b761bb54ba507714fb181` — PvP operation tests
+- `55e363d79b6e04d25f024050fc783738121219fa` and `9288d0db1882efb28906c7a1385b79712941f799` — PvP runtime test
+- `aed23b1d7aa15aee87fc49b942ffc416dc10ce16` — UI copy
