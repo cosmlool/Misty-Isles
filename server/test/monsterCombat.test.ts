@@ -343,3 +343,52 @@ test('a party healing action consumes the actor turn instead of also attacking',
   assert.equal(result.events.some(event => event.actor === 'healer' && event.action === 'attack'), false);
   assert.equal(result.events.find(event => event.actor === 'healer' && event.action === 'heal')?.healing, 20);
 });
+
+
+test('monster defense reduction is scoped to the struck party member', () => {
+  const result = resolveMonsterBattle({
+    monster: {
+      id: 'm-target-defense',
+      name: 'Defense breaker',
+      hp: 10000,
+      attack: 100,
+      defense: 0,
+      speed: 20,
+      passiveDescription: 'Снижает защиту цели на 10%',
+    },
+    party: [
+      { id: 'a-target', profession: 'Воин', hp: 900, maxHp: 1000, attack: 1, defense: 100, speed: 10 },
+      { id: 'b-other', profession: 'Воин', hp: 950, maxHp: 1000, attack: 1, defense: 100, speed: 9 },
+      { id: 'healer', profession: 'Баффер', hp: 1000, maxHp: 1000, attack: 1, defense: 0, speed: 15 },
+    ],
+    healingActions: [{ round: 1, actorId: 'healer', targetId: 'a-target', amount: 200 }],
+    maxRounds: 2,
+    random: () => 0.5,
+  });
+  assert.equal(result.party.find(member => member.id === 'a-target')?.damageTaken, 50);
+  assert.equal(result.party.find(member => member.id === 'b-other')?.damageTaken, 50);
+});
+
+test('monster attack reduction is scoped to the struck party member', () => {
+  const result = resolveMonsterBattle({
+    monster: {
+      id: 'm-target-attack',
+      name: 'Attack breaker',
+      hp: 10000,
+      attack: 1,
+      defense: 0,
+      speed: 20,
+      passiveDescription: 'Атака противника −10%',
+    },
+    party: [
+      { id: 'a-target', profession: 'Воин', hp: 900, maxHp: 1000, attack: 100, defense: 0, speed: 10 },
+      { id: 'b-other', profession: 'Воин', hp: 950, maxHp: 1000, attack: 100, defense: 0, speed: 9 },
+      { id: 'healer', profession: 'Баффер', hp: 1000, maxHp: 1000, attack: 1, defense: 0, speed: 15 },
+    ],
+    healingActions: [{ round: 1, actorId: 'healer', targetId: 'a-target', amount: 200 }],
+    maxRounds: 2,
+    random: () => 0.5,
+  });
+  assert.equal(result.party.find(member => member.id === 'a-target')?.damageDealt, 190);
+  assert.equal(result.party.find(member => member.id === 'b-other')?.damageDealt, 200);
+});
