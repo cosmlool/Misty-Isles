@@ -1,5 +1,69 @@
 import { calculateCombatSpeed } from './monsterBattle.js';
 
+export type MonsterCombatEffectTarget =
+  | 'attack'
+  | 'defense'
+  | 'critChance'
+  | 'critDamage'
+  | 'lifesteal'
+  | 'loot'
+  | 'health'
+  | 'accuracy'
+  | 'evasion'
+  | 'attackSpeed'
+  | 'magicDamage'
+  | 'physicalDamage'
+  | 'bossDamage'
+  | 'experience'
+  | 'gold'
+  | 'production'
+  | 'resistance'
+  | 'healing'
+  | 'support'
+  | 'unknown';
+
+export type ParsedMonsterCombatEffect = {
+  target: MonsterCombatEffectTarget;
+  value: number;
+};
+
+/**
+ * Parses one catalog effect clause into a typed modifier.
+ * Unknown or compound descriptions are deliberately not guessed or converted to attack.
+ */
+export function parseMonsterCombatEffect(description: string): ParsedMonsterCombatEffect | undefined {
+  const text = String(description || '').trim().toLocaleLowerCase('ru');
+  const match = /([+-]?\\d+(?:[.,]\\d+)?)\\s*%/.exec(text);
+  if (!match) return undefined;
+  const amount = Number(match[1].replace(',', '.')) / 100;
+  if (!Number.isFinite(amount)) return undefined;
+
+  const target: MonsterCombatEffectTarget | undefined =
+    /критическ\w*\\s+(?:шанс|вероятност)/i.test(text) ? 'critChance' :
+    /критическ\w*\\s+урон/i.test(text) ? 'critDamage' :
+    /вампиризм|похищен\w*\\s+здоров|восстанавлива\w*\\s+\\d/i.test(text) ? 'lifesteal' :
+    /добыч|ресурс|трофе|редк\\w*\\s+материал/i.test(text) ? 'loot' :
+    /магическ\w*\\s+урон/i.test(text) ? 'magicDamage' :
+    /физическ\w*\\s+урон/i.test(text) ? 'physicalDamage' :
+    /урон\\s+по\\s+босс|босс\\w*\\s+урон/i.test(text) ? 'bossDamage' :
+    /скорост\\w*\\s+атак/i.test(text) ? 'attackSpeed' :
+    /точност|меткост/i.test(text) ? 'accuracy' :
+    /уклонен|уклонени/i.test(text) ? 'evasion' :
+    /сопротивлен/i.test(text) ? 'resistance' :
+    /лечени|восстановлени\\w*\\s+hp/i.test(text) ? 'healing' :
+    /поддержк|положительн\\w*\\s+эффект/i.test(text) ? 'support' :
+    /производств/i.test(text) ? 'production' :
+    /опыт/i.test(text) ? 'experience' :
+    /золот/i.test(text) ? 'gold' :
+    /максимальн\\w*\\s+hp|здоровь/i.test(text) ? 'health' :
+    /защит/i.test(text) ? 'defense' :
+    /атак/i.test(text) ? 'attack' :
+    /сопротивлен/i.test(text) ? 'resistance' :
+    undefined;
+
+  return target ? { target, value: amount } : undefined;
+}
+
 export type MonsterCombatSetBonusInput = {
   effect: string;
   itemCount: number;
