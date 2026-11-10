@@ -589,7 +589,7 @@
       "vitality": 1
     },
     "combatStats": {
-      "healing": 0.008
+      "healing": 0.012
     }
   },
   {
@@ -610,7 +610,7 @@
       "vitality": 1
     },
     "combatStats": {
-      "healing": 0.01
+      "healing": 0.015
     }
   },
   {
@@ -631,7 +631,7 @@
       "vitality": 2
     },
     "combatStats": {
-      "healing": 0.013
+      "healing": 0.02
     }
   },
   {
@@ -652,7 +652,7 @@
       "vitality": 2
     },
     "combatStats": {
-      "healing": 0.015
+      "healing": 0.023
     }
   },
   {
@@ -673,7 +673,7 @@
       "vitality": 2
     },
     "combatStats": {
-      "healing": 0.018
+      "healing": 0.027
     }
   },
   {
@@ -694,7 +694,7 @@
       "vitality": 3
     },
     "combatStats": {
-      "healing": 0.02
+      "healing": 0.03
     }
   },
   {
