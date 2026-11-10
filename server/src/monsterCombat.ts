@@ -11,6 +11,8 @@ export type MonsterPassiveEffect = {
   attackBelowHpRatio?: { threshold: number; multiplier: number };
   attackAboveHpRatio?: { threshold: number; multiplier: number };
   attackAfterRound?: { round: number; multiplier: number };
+  attackAfterCritical?: number;
+  defenseBelowHpRatio?: { threshold: number; multiplier: number };
   attackVsProfession?: { profession: string; multiplier: number };
   attackVsWeakened?: number;
   damageVsFastTargets?: number;
@@ -58,7 +60,7 @@ const passiveEffects: Record<string, MonsterPassiveEffect> = {
   'Физический урон −15%': { physicalResistance: 0.15 },
   'Атака +10% при HP выше 75%': { attackAboveHpRatio: { threshold: 0.75, multiplier: 1.10 } },
   'Магический урон −15%': { magicResistance: 0.15 },
-  'После критического удара атака +15%': { attackAfterRound: { round: 1, multiplier: 1.15 } },
+  'После критического удара атака +15%': { attackAfterCritical: 0.15 },
   'Атака и защита +15% при союзниках': { attackWhenAllies: 0.15, defenseWhenAllies: 0.15 },
   'Атака +20% ниже 50% HP': { attackBelowHpRatio: { threshold: 0.50, multiplier: 1.20 } },
   'Магический урон −20%': { magicResistance: 0.20 },
@@ -95,7 +97,7 @@ const passiveEffects: Record<string, MonsterPassiveEffect> = {
   'Атака и защита +15%; физический урон −25%': { attackMultiplier: 1.15, defenseMultiplier: 1.15, physicalResistance: 0.25 },
   'Снижает силу одного усиления противника на 10%': { enemyBuffSuppression: 0.10 },
   'Урон по лучникам +20%': { damageVsProfession: { profession: 'Лучник', multiplier: 1.20 } },
-  'Защита +25% ниже 25% HP': { attackBelowHpRatio: { threshold: 0.25, multiplier: 1.25 } },
+  'Защита +25% ниже 25% HP': { defenseBelowHpRatio: { threshold: 0.25, multiplier: 1.25 } },
   'Физический урон −20%; магический урон −15%; ниже 30% HP атака +30%': { physicalResistance: 0.20, magicResistance: 0.15, attackBelowHpRatio: { threshold: 0.30, multiplier: 1.30 } }
 };
 
