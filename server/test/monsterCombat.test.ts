@@ -149,3 +149,93 @@ test('equal-speed initiative uses a stable monster-first tie-break', () => {
   assert.deepEqual(first.events.slice(0, 3).map(event => event.actor), ['Tie monster', 'p-a', 'p-z']);
 });
 
+test('monster resistance above half HP ends when the monster drops below the threshold', () => {
+  const result = resolveMonsterBattle({
+    monster: {
+      id: 'm-conditional-resist',
+      name: 'Threshold guardian',
+      hp: 100,
+      attack: 1,
+      defense: 0,
+      speed: 1,
+      passiveDescription: 'Весь урон −20% пока HP выше 50%',
+    },
+    party: [
+      { id: 'p-first', profession: 'Воин', hp: 1000, maxHp: 1000, attack: 70, defense: 0, speed: 20 },
+      { id: 'p-second', profession: 'Воин', hp: 1000, maxHp: 1000, attack: 10, defense: 0, speed: 19 },
+    ],
+    random: () => 0.5,
+  });
+  assert.deepEqual(result.events.filter(event => event.action === 'attack' && event.target === 'Threshold guardian').map(event => event.damage), [56, 10]);
+});
+
+test('monster suppresses one strongest active buff once per target', () => {
+  const result = resolveMonsterBattle({
+    monster: {
+      id: 'm-suppress',
+      name: 'Hexing monster',
+      hp: 10000,
+      attack: 1,
+      defense: 0,
+      speed: 20,
+      passiveDescription: 'Снижает силу одного усиления противника на 10%',
+    },
+    party: [{
+      id: 'p-buffed',
+      profession: 'Воин',
+      hp: 1000,
+      maxHp: 1000,
+      attack: 100,
+      defense: 0,
+      speed: 10,
+      buff: 'attack',
+      buffValue: 0.20,
+      buffSecondaryEffect: 'defense',
+      buffSecondaryValue: 0.10,
+      buffUntil: 10000,
+    }],
+    now: 1000,
+    maxRounds: 2,
+    random: () => 0.5,
+  });
+  assert.equal(result.party[0]?.buffValue, 0.18);
+  assert.equal(result.party[0]?.buffSecondaryValue, 0.10);
+  assert.equal(result.totalDamageToMonster, 236);
+  assert.equal(result.events.filter(event => event.action === 'suppress').length, 1);
+  assert.deepEqual(
+    result.events.filter(event => event.action === 'suppress').map(event => ({ effect: event.effect, value: event.value })),
+    [{ effect: 'attack', value: 0.18 }],
+  );
+});
+
+test('expired buffs are not suppressed or applied to combat stats', () => {
+  const result = resolveMonsterBattle({
+    monster: {
+      id: 'm-expired',
+      name: 'Buff hunter',
+      hp: 10000,
+      attack: 1,
+      defense: 0,
+      speed: 20,
+      passiveDescription: 'Снижает силу одного усиления противника на 10%',
+    },
+    party: [{
+      id: 'p-expired',
+      profession: 'Воин',
+      hp: 1000,
+      maxHp: 1000,
+      attack: 100,
+      defense: 0,
+      speed: 10,
+      buff: 'attack',
+      buffValue: 0.20,
+      buffUntil: 999,
+    }],
+    now: 1000,
+    random: () => 0.5,
+  });
+  assert.equal(result.totalDamageToMonster, 3000);
+  assert.equal(result.party[0]?.buffValue, 0.20);
+  assert.equal(result.events.some(event => event.action === 'suppress'), false);
+});
+
