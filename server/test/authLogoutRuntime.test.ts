@@ -72,7 +72,7 @@ test('logout only revokes a valid session and invalid logout requests do not rev
 
     const guest = await post(port, '/auth/guest', {});
     assert.equal(guest.status, 200);
-    const { token } = await guest.json() as { playerId: string; token: string; guestProof: string };
+    const { playerId, token, guestProof } = await guest.json() as { playerId: string; token: string; guestProof: string };
 
     const invalidLogout = await post(port, '/auth/logout', { token: 'not-a-session-token' });
     assert.equal(invalidLogout.status, 401);
@@ -86,6 +86,12 @@ test('logout only revokes a valid session and invalid logout requests do not rev
 
     const repeatedLogout = await post(port, '/auth/logout', { token });
     assert.equal(repeatedLogout.status, 401);
+
+    const recovered = await post(port, '/auth/guest', { playerId, guestProof });
+    assert.equal(recovered.status, 200, 'logout must not destroy the persistent guest recovery credential');
+    const renewed = await recovered.json() as { token: string; playerId: string };
+    assert.equal(renewed.playerId, playerId);
+    assert.equal((await post(port, '/auth/check', { token: renewed.token })).status, 200);
   } finally {
     if (child) await stopServer(child);
     rmSync(dataDir, { recursive: true, force: true });
