@@ -674,3 +674,33 @@ The same full-snapshot omission also exists in the real-player `pvpChallenge` sa
 - The reviewed auction unit tests prove that a second sequential purchase fails after the lot has been removed, and the transaction-store tests prove journal recovery after a simulated process crash. They do not create two live buyer clients and race two `auctionBuy` messages against the same lot.
 - The server's current auction message handlers are synchronous and contain no `await`, so Node processes each handler callback to completion before the next callback; this reduces the risk of an in-process interleaving race. Still, a two-client runtime test is needed to verify the real Colyseus path: exactly one buyer succeeds, the other receives “lot is no longer available”, one item is delivered, one payment is charged, and both clients eventually see the same listing state.
 - The reviewed PvP runtime test uses one online attacker and offline saved targets. A two-online-player PvP test is still needed to verify the victim's live Schema, result notification, persisted gold/stat changes, immunity, and reconnect hydration.
+
+
+### Complete player-save write-path inventory — 2026-11-10
+
+Re-scanned every production server source file in the current branch for direct player-file writes, savePlayers, and the shared persistence helpers. This is source inspection only; no tests or live multi-client session were run.
+
+The production write paths to players.json are:
+
+1. **Ordinary room save — GameRoom.save()** (server/src/index.ts): reads the disk snapshot, replaces only the current room's player, then calls savePlayers. Invoked by notice(), onLeave(), and onDispose(). It does not merge other entries from ONLINE_PLAYERS.
+2. **Shared participant helper — persistPlayers() / persistPlayer()** (server/src/index.ts): reads disk and replaces only the explicitly supplied player entries. Call sites include group dungeon success/failure, expedition search start/claim and travel start/claim, and friend acceptance. It does not merge unrelated online players. The helper is therefore another instance of the same full-snapshot omission, not an independent safe writer.
+3. **PvP list generation** (pvpList): merges every current ONLINE_PLAYERS entry and the current player into the disk snapshot before saving. This path already follows the all-online merge pattern.
+4. **PvP battle** (pvpChallenge): starts from disk, replaces the attacker and target only, then calls savePlayers. It does not merge unrelated online players.
+5. **Auction transactions** (auctionSell, auctionCancel, auctionBuy): build full snapshots from disk plus the seller/buyer and, for a buy, the online seller; then auctionTransactions.commit replaces the complete players.json. They do not merge every online player. This is the previously recorded auction lost-update window.
+6. **Clan and clan-war transactions** (commitClanState): merges every ONLINE_PLAYERS entry into the disk snapshot before clanTransactions.commit. This is the currently consistent all-online snapshot pattern.
+7. **Transaction recovery**: auction and clan transaction stores can replay a previously journaled full players.json snapshot at startup or before a later transaction. These are additional whole-file replacement paths, but they replay the exact transaction snapshot rather than reading live online state.
+
+No other production writer of players.json was found in the scanned server/src tree. playerSaves.savePlayers itself is a low-level whole-file writer; it does not merge online players. Auction/clan transaction stores also write the configured players file directly through their own atomic-write helper and therefore bypass the ordinary player-save backup rotation.
+
+**Additional confirmed journal-coordination risk:** if an auction or clan transaction fails while applying its target files and its immediate recovery attempt also fails, the transaction code retains the journal and throws. The message handler then catches the error and calls this.notice(), which invokes ordinary GameRoom.save(); other ordinary saves and pvpList can also continue while the journal remains. Those writers do not first recover or block on the pending journal. A later transaction or server restart replays the older retained full snapshot, which can overwrite player changes successfully saved after the failed transaction. This is a conditional failure-path data-loss risk, not evidence that normal successful transactions lose data. The centralized persistence layer must treat a pending journal as a write barrier: recover it successfully before accepting any unrelated whole-file player write, or fail closed until recovery succeeds.
+
+#### Centralized correction requirements
+
+- One player-snapshot coordinator must merge live online state and persisted offline state without allowing stale online snapshots to overwrite transaction participants' committed results.
+- Every path above must route through the coordinator, including ordinary saves, group/expedition helpers, PvP, auction, clan commits, and journal recovery.
+- Transaction participants must be reconciled to their committed result before the all-online merge, or their committed records must be explicitly protected during the merge.
+- Pending transaction journals must block unrelated player-file writes until replay succeeds.
+- Preserve the existing backup policy for ordinary saves and explicitly decide whether transaction commits also need backup snapshots.
+- Add tests for: unsaved third online player during ordinary save; same during group/expedition save; same during auction sell/cancel/buy; PvP challenge with a third online player; clan transaction; and failed transaction + failed recovery followed by attempted ordinary save and subsequent recovery/restart.
+
+No gameplay code was changed in this audit step. No tests were executed.
