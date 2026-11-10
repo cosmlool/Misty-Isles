@@ -495,7 +495,7 @@ class GameRoom extends Room<RoomState> {
   onDispose() { this.save(); }
   private save() { if (!this.playerId) return; this.state.player.lastSeenAt=Date.now(); const all = loadPlayersWithOnline(); all[this.playerId] = this.state.player.toJSON(); savePlayers(all); }
   private notice(c: Client, text: string) { c.send('notice', { text }); this.save(); }
-  private requireCharacter(c: Client) { const p=this.state.player; if(!p.race){this.notice(c,'Сначала создай персонажа.');return false;} return true; }
+  private requireCharacter(c: Client) { const session=verifySession(this.sessionToken);if(!session||session.playerId!==this.playerId||ONLINE_CLIENTS.get(this.playerId)!==c){c.leave(4001,'Session revoked');return false;}const p=this.state.player; if(!p.race){this.notice(c,'Сначала создай персонажа.');return false;} return true; }
   private addXp(p: Player, amount: number) { p.experience += amount; while(p.level<100 && p.experience>=xpNeed(p.level)){p.experience-=xpNeed(p.level);p.level++;p.statPoints+=3;p.experienceToNext=xpNeed(p.level);const healthIncrease=18+p.vitality*0.5;p.maxHealth+=healthIncrease;p.health=Math.min(effectiveMaxHealth(p),p.health+healthIncrease);} }
   private finishCraftJobs(p: Player) { /* completed jobs stay claimable until the player collects them */ }
   private runExpeditionDungeon(c:Client,dungeon:any) {
