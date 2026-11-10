@@ -475,7 +475,7 @@ class GameRoom extends Room<RoomState> {
     if (ONLINE_PLAYERS.has(session.playerId)) throw new Error('Этот персонаж уже находится в игре.');
     this.playerId = session.playerId;
     const saved = loadPlayers()[this.playerId];
-    if (saved) applySaved(this.state.player, saved);
+    if (saved) { applySaved(this.state.player, saved); this.state.player.id = this.playerId; }
     else { this.state.player.id = this.playerId; this.state.player.name = 'Путник'; }
     const player=this.state.player; normalizePlayerCityData(player); applyHealthRegeneration(player); const regenState=readObject(player.quests); if(!regenState.hpRegenAt){regenState.hpRegenAt=Date.now();player.quests=JSON.stringify(regenState);} const now=Date.now(); if(player.lastSeenAt>0 && now-player.lastSeenAt>=3*24*60*60*1000) player.returnBonusAvailable=1; player.lastSeenAt=now;
     ONLINE_PLAYERS.set(this.playerId, this.state.player);
