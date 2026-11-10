@@ -237,6 +237,33 @@ export type PlayerMonsterStatsInput = {
   applyFivePieceSetBonus?: boolean;
 };
 
+/**
+ * Convert the live character HP snapshot into the pre-percentage base HP
+ * contract expected by the typed battle engine. The current HP ratio is
+ * measured against the legacy effective maximum (including currently applied
+ * equipment health), then projected onto baseMaxHp. The engine applies the
+ * aggregated healthBonus exactly once after adaptation.
+ */
+export type PlayerMonsterCombatHealthInput = {
+  currentHp: number;
+  legacyEffectiveMaxHp: number;
+  baseMaxHp: number;
+};
+
+export type PlayerMonsterCombatHealth = { hp: number; maxHp: number };
+
+export function resolvePlayerMonsterCombatHealth(
+  input: PlayerMonsterCombatHealthInput,
+): PlayerMonsterCombatHealth {
+  const baseMaxHp = Number.isFinite(input.baseMaxHp) ? Math.max(1, input.baseMaxHp) : 1;
+  const effectiveMaxHp = Number.isFinite(input.legacyEffectiveMaxHp)
+    ? Math.max(1, input.legacyEffectiveMaxHp)
+    : 1;
+  const currentHp = Number.isFinite(input.currentHp) ? Math.max(0, input.currentHp) : 0;
+  const healthRatio = Math.min(1, currentHp / effectiveMaxHp);
+  return { hp: Math.min(baseMaxHp, Math.floor(baseMaxHp * healthRatio)), maxHp: baseMaxHp };
+}
+
 export type PlayerMonsterCombatStats = {
   /** Legacy totals retained for existing expedition/dungeon callers. */
   attack: number;
