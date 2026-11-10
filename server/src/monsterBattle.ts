@@ -153,8 +153,6 @@ export function resolveMonsterBattle(input: MonsterBattleInput): MonsterBattleRe
       fighter.damageDealt += dealt;
       totalDamageToMonster += dealt;
       if (effect.poisonOnHit) monsterPoisoned = true;
-      if (effect.enemyDefenseReduction) partyDefenseReduction = clamp(partyDefenseReduction + effect.enemyDefenseReduction, 0, 0.75);
-      if (effect.enemyAttackReduction) partyAttackReduction = clamp(partyAttackReduction + effect.enemyAttackReduction, 0, 0.75);
       events.push({ round, actor: fighter.id, action: 'attack', target: input.monster.name, damage: dealt, critical: crit });
     }
 
@@ -197,6 +195,8 @@ export function resolveMonsterBattle(input: MonsterBattleInput): MonsterBattleRe
           events.push({ round, actor: input.monster.name, action: 'heal', target: input.monster.name, healing: healed });
         }
       }
+      if (effect.enemyDefenseReduction) partyDefenseReduction = clamp(partyDefenseReduction + effect.enemyDefenseReduction, 0, 0.75);
+      if (effect.enemyAttackReduction) partyAttackReduction = clamp(partyAttackReduction + effect.enemyAttackReduction, 0, 0.75);
     }
     if (effect.healEveryRounds && round % effect.healEveryRounds.rounds === 0) {
       const healed = Math.min(monsterMaxHp - monsterHp, Math.floor(monsterMaxHp * effect.healEveryRounds.maxHpRatio));
