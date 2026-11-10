@@ -113,8 +113,12 @@ export type MonsterWeakness =
   | { kind: 'profession'; profession: string; bonus: number }
   | { kind: 'damageType'; damageType: 'fire'; bonus: number };
 
+export type MonsterWeakness =
+  | { kind: 'profession'; profession: string; bonus: number }
+  | { kind: 'damageType'; damageType: 'fire'; bonus: number };
+
 export function parseMonsterWeakness(value: string): MonsterWeakness | undefined {
-  const match = /^(.+?)\\s*\\+(\\d+)%$/.exec(value.trim());
+  const match = /^(.+?)\s*\+(\d+)%$/.exec(value.trim());
   if (!match) return undefined;
   const target = match[1].trim();
   const bonus = Number(match[2]) / 100;
