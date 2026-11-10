@@ -1,5 +1,6 @@
 import type { MonsterBattleCombatant, MonsterDamageType } from './monsterBattle.js';
-import type { MonsterCombatModifiers } from './monsterCombatStats.js';
+import type { MonsterCombatModifiers, PlayerMonsterCombatStats } from './monsterCombatStats.js';
+import { resolvePlayerMonsterCombatHealth } from './monsterCombatStats.js';
 import { calculateCombatSpeed } from './monsterBattle.js';
 
 /**
@@ -83,4 +84,51 @@ export function adaptPlayerCombatant(input: PlayerCombatantAdapterInput): Monste
   }
 
   return result;
+}
+
+
+/** Inputs needed to build a new-engine combatant from the shared resolved player stats. */
+export type BuildPlayerCombatantInput = {
+  id: string;
+  currentHp: number;
+  legacyEffectiveMaxHp: number;
+  baseMaxHp: number;
+  stats: PlayerMonsterCombatStats;
+  damageType?: MonsterDamageType;
+  /** Omit until a canonical base chance is defined by game rules. */
+  critChance?: number;
+  critMultiplier?: number;
+  /** Omit until legacy accuracy is normalized to the engine's scale. */
+  accuracy?: number;
+};
+
+/**
+ * Builds a clean typed-engine combatant. Legacy totals are deliberately ignored;
+ * base stats are used and all typed bonuses stay in their own modifier channels.
+ * Active lifesteal buff is merged with gear lifesteal exactly once.
+ */
+export function buildPlayerCombatantForMonsterBattle(input: BuildPlayerCombatantInput): MonsterBattleCombatant {
+  const health = resolvePlayerMonsterCombatHealth({
+    currentHp: input.currentHp,
+    legacyEffectiveMaxHp: input.legacyEffectiveMaxHp,
+    baseMaxHp: input.baseMaxHp,
+  });
+  const modifiers: Partial<MonsterCombatModifiers> = {
+    ...input.stats.combatModifiers,
+    lifestealBonus: input.stats.combatModifiers.lifestealBonus + input.stats.lifestealBonus,
+  };
+  return adaptPlayerCombatant({
+    id: input.id,
+    profession: input.stats.profession,
+    hp: health.hp,
+    maxHp: health.maxHp,
+    attack: input.stats.baseAttack,
+    defense: input.stats.baseDefense,
+    dexterity: input.stats.speed,
+    damageType: input.damageType,
+    critChance: input.critChance,
+    critMultiplier: input.critMultiplier,
+    accuracy: input.accuracy,
+    combatModifiers: modifiers,
+  });
 }
