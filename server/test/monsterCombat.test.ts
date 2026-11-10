@@ -1052,6 +1052,8 @@ test('catalog combat effects map to typed modifiers without collapsing into atta
   assert.deepEqual(parseMonsterCombatEffect('+5% к количеству обычных ресурсов'), { target: 'loot', value: 0.05 });
   assert.deepEqual(parseMonsterCombatEffect('+8% к физической защите'), { target: 'defense', value: 0.08 });
   assert.equal(parseMonsterCombatEffect('+6% профильного параметра'), undefined);
+  assert.equal(parseMonsterCombatEffect('+5% к HP; +8% к защите'), undefined);
+  assert.equal(parseMonsterCombatEffect('+5% к HP и +8% к защите'), undefined);
   assert.equal(parseMonsterCombatEffect('Усиление роли'), undefined);
   assert.equal(parseMonsterCombatEffect('Нет'), undefined);
 });
