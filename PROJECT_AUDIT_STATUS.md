@@ -756,3 +756,11 @@ Source-level review only; no gameplay code changed and no tests were executed.
 - These findings strengthen the existing requirement for a shared combat-stat calculation or explicit per-mode rules. Do not fix by copying the hunt formula blindly: PvP, clan war, solo dungeon, group dungeon, and hunt currently use different combat models and need a deliberate shared-stat contract plus mode-specific modifiers.
 
 Source-level catalog and handler comparison only; no gameplay code changed and no tests were executed.
+
+
+### Weapon profile full call-site correction and ring loot effect — 2026-11-10
+
+- **Correction/extension to the preceding weapon-profile entry:** a call-site search confirms weaponProfile() is invoked only by group expedition dungeon combat. It is not invoked by ordinary hunt either. Thus all 50 non-legacy weapons' primaryAttribute bonuses are omitted from ordinary hunt, PvP, and clan-war calculations; group expedition dungeon is the only reviewed combat mode that applies them. The same applies to the 21 high-tier +4% to +6% profile-efficiency weapon effects: their parsed bonuses are only consumed in group expedition dungeon. (The prior entry's wording that ordinary hunt calls weaponProfile was incorrect; this entry supersedes it.)
+- **Confirmed ring loot effect missing from ordinary hunt:** the non-legacy PEN-003 ring advertises an increased chance of additional resources. Ordinary hunt's loot probability includes profession, active loot buff, weapon rare property, armor rare property, and encounter modifiers, but does not include the equipped amulet's loot effect/value. Group expedition dungeon separately reads ring loot effect for drop bonus. The ring therefore does not provide its advertised hunt loot chance in the ordinary hunt mode.
+
+Source-level call-site and catalog comparison only; no gameplay code changed and no tests were executed.
