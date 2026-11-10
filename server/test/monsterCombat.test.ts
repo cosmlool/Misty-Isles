@@ -7,6 +7,7 @@ import test from 'node:test';
 import { getMonsterPassiveDescriptions, parseMonsterWeakness, resolveMonsterPassive } from '../src/monsterCombat.js';
 import { calculateCombatSpeed, resolveMonsterBattle } from '../src/monsterBattle.js';
 import { adaptPlayerCombatant } from '../src/monsterCombatantAdapter.js';
+import { calculatePlayerMonsterCombatStats } from '../src/monsterCombatStats.js';
 
 const serverDir = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const bestiary = JSON.parse(readFileSync(resolve(serverDir, 'data/forgotten_lands.json'), 'utf8'));
@@ -848,4 +849,79 @@ test('player combatant adapter normalizes invalid stats and clamps optional comb
   assert.equal(combatant.accuracy, 0);
   assert.equal(combatant.buffValue, undefined);
   assert.equal(combatant.buffUntil, undefined);
+});
+
+
+test('player monster combat stats preserve legacy stat, gear, set, pendant and active buff modifiers', () => {
+  const stats = calculatePlayerMonsterCombatStats({
+    profession: 'Воин',
+    strength: 10,
+    dexterity: 10,
+    intelligence: 10,
+    vitality: 10,
+    stamina: 10,
+    baseDefense: 10,
+    weaponAttack: 20,
+    armorAttack: 5,
+    armorDefense: 5,
+    weaponDexterityBonus: 4,
+    weaponProfileBonus: 0.1,
+    weaponLootBonus: 0.05,
+    pendantEffect: 'bossDamage',
+    pendantValue: 0.1,
+    isBoss: true,
+    setBonuses: [{ effect: 'attack', itemCount: 2, mastery: 0 }],
+    buffs: { attack: 0.2, crit: 0.1, defense: 0.1, loot: 0.2, lifesteal: 0.03 },
+    now: 100,
+    buffUntil: 200,
+  });
+
+  assert.ok(Math.abs(stats.attack - 66.868956) < 0.000001);
+  assert.ok(Math.abs(stats.defense - 25.047) < 0.000001);
+  assert.equal(stats.speed, 14);
+  assert.equal(stats.lootBonus, 0.25);
+  assert.equal(stats.lifestealBonus, 0.03);
+  assert.equal(stats.profession, 'Воин');
+});
+
+test('player monster combat stats preserve dungeon and non-boss pendant boundaries', () => {
+  const common = {
+    profession: 'Воин',
+    strength: 10,
+    dexterity: 10,
+    intelligence: 10,
+    vitality: 10,
+    stamina: 10,
+    baseDefense: 10,
+    pendantEffect: 'bossDamage',
+    pendantValue: 0.5,
+    buffs: { attack: 0.5, defense: 0.5 },
+    now: 100,
+    buffUntil: 50,
+  };
+  const nonBoss = calculatePlayerMonsterCombatStats({ ...common, isBoss: false });
+  const dungeonBoss = calculatePlayerMonsterCombatStats({ ...common, isBoss: true });
+
+  assert.equal(nonBoss.attack, 18);
+  assert.equal(dungeonBoss.attack, 27);
+  assert.equal(nonBoss.defense, 22.77);
+  assert.equal(dungeonBoss.defense, 22.77);
+});
+
+test('player monster combat stats can preserve the dungeon five-piece set rule', () => {
+  const common = {
+    profession: 'Воин',
+    strength: 10,
+    dexterity: 10,
+    intelligence: 10,
+    vitality: 10,
+    stamina: 10,
+    baseDefense: 10,
+    setBonuses: [{ effect: 'defense', itemCount: 5, mastery: 0 }],
+  };
+  const expedition = calculatePlayerMonsterCombatStats(common);
+  const dungeon = calculatePlayerMonsterCombatStats({ ...common, applyFivePieceSetBonus: false });
+
+  assert.ok(Math.abs(expedition.defense - 25.047) < 0.000001);
+  assert.ok(Math.abs(dungeon.defense - 23.85) < 0.000001);
 });
