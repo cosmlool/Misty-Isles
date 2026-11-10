@@ -7,7 +7,7 @@ import test from 'node:test';
 import { getMonsterPassiveDescriptions, parseMonsterWeakness, resolveMonsterPassive } from '../src/monsterCombat.js';
 import { calculateCombatSpeed, resolveMonsterBattle } from '../src/monsterBattle.js';
 import { adaptPlayerCombatant } from '../src/monsterCombatantAdapter.js';
-import { aggregateMonsterCombatModifiers, calculatePlayerMonsterCombatStats, parseMonsterCombatEffect, parseMonsterCombatEffectClauses } from '../src/monsterCombatStats.js';
+import { aggregateMonsterCombatModifiers, calculatePlayerMonsterCombatStats, parseMonsterCombatEffect, parseMonsterCombatEffectClauses, resolveMonsterCombatProperty, resolveMonsterPendantCombatEffect } from '../src/monsterCombatStats.js';
 
 const serverDir = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const bestiary = JSON.parse(readFileSync(resolve(serverDir, 'data/forgotten_lands.json'), 'utf8'));
@@ -1098,4 +1098,44 @@ test('catalog combat effects map to typed modifiers without collapsing into atta
   assert.equal(parseMonsterCombatEffect('+5% к HP и +8% к защите'), undefined);
   assert.equal(parseMonsterCombatEffect('Усиление роли'), undefined);
   assert.equal(parseMonsterCombatEffect('Нет'), undefined);
+});
+
+test('equipped rare properties resolve to their declared typed combat channels', () => {
+  const effects = [
+    resolveMonsterCombatProperty('crit', 0.05),
+    resolveMonsterCombatProperty('lifesteal', 0.03),
+    resolveMonsterCombatProperty('loot', 0.12),
+    resolveMonsterCombatProperty('defense', 0.08),
+    resolveMonsterCombatProperty('attack', 0.08),
+    resolveMonsterCombatProperty('unknown', 0.50),
+  ];
+  const modifiers = aggregateMonsterCombatModifiers(effects);
+  assert.equal(modifiers.critChanceBonus, 0.05);
+  assert.equal(modifiers.lifestealBonus, 0.03);
+  assert.equal(modifiers.lootBonus, 0.12);
+  assert.equal(modifiers.defenseBonus, 0.08);
+  assert.equal(modifiers.attackBonus, 0.08);
+  assert.equal(resolveMonsterCombatProperty('unknown', 0.5), undefined);
+});
+
+test('pendant effects preserve relative crit scaling and stay separate from legacy attack', () => {
+  const baseline = calculatePlayerMonsterCombatStats({
+    profession: 'Ассасин', strength: 10, dexterity: 10, intelligence: 10,
+    vitality: 10, stamina: 10, baseDefense: 10,
+  });
+  const equipped = calculatePlayerMonsterCombatStats({
+    profession: 'Ассасин', strength: 10, dexterity: 10, intelligence: 10,
+    vitality: 10, stamina: 10, baseDefense: 10,
+    pendantCombatEffect: resolveMonsterPendantCombatEffect('crit', 0.10),
+    equipmentEffects: [
+      resolveMonsterCombatProperty('crit', 0.05),
+      resolveMonsterCombatProperty('lifesteal', 0.03),
+    ].filter((effect): effect is NonNullable<typeof effect> => Boolean(effect)),
+  });
+  assert.equal(equipped.combatModifiers.critChanceBonus, 0.05);
+  assert.equal(equipped.combatModifiers.critChanceMultiplierBonus, 0.10);
+  assert.equal(equipped.combatModifiers.lifestealBonus, 0.03);
+  assert.equal(equipped.attack, baseline.attack);
+  assert.equal(equipped.defense, baseline.defense);
+  assert.deepEqual(resolveMonsterPendantCombatEffect('crystalChance', 0.20), undefined);
 });
