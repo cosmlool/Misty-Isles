@@ -458,3 +458,12 @@ test('blindness immunity protects monster accuracy, not player accuracy', () => 
   assert.equal(blindedPlayerAgainstImmuneMonster.totalDamageToParty, 100);
   assert.ok(blindedPlayerAgainstImmuneMonster.events.some(event => event.actor === 'p-blind' && event.action === 'miss'));
 });
+
+
+test('every weakness value used by the bestiary is supported by the parser', () => {
+  const weaknesses = [...new Set(bestiary.monsters.map((monster: any) => monster.weakness).filter(Boolean))];
+  assert.ok(weaknesses.length > 0);
+  for (const weakness of weaknesses) {
+    assert.ok(parseMonsterWeakness(weakness), `Unsupported bestiary weakness: ${weakness}`);
+  }
+});
