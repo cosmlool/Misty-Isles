@@ -4,6 +4,7 @@ export type MonsterCombatEffectTarget =
   | 'attack'
   | 'defense'
   | 'critChance'
+  | 'critChanceMultiplier'
   | 'critDamage'
   | 'lifesteal'
   | 'loot'
@@ -35,6 +36,7 @@ export type MonsterCombatModifiers = {
   attackBonus: number;
   defenseBonus: number;
   critChanceBonus: number;
+  critChanceMultiplierBonus: number;
   critDamageBonus: number;
   lifestealBonus: number;
   lootBonus: number;
@@ -57,7 +59,7 @@ export function aggregateMonsterCombatModifiers(
   effects: readonly (ParsedMonsterCombatEffect | undefined)[],
 ): MonsterCombatModifiers {
   const result: MonsterCombatModifiers = {
-    attackBonus: 0, defenseBonus: 0, critChanceBonus: 0, critDamageBonus: 0,
+    attackBonus: 0, defenseBonus: 0, critChanceBonus: 0, critChanceMultiplierBonus: 0, critDamageBonus: 0,
     lifestealBonus: 0, lootBonus: 0, healthBonus: 0, accuracyBonus: 0,
     evasionBonus: 0, attackSpeedBonus: 0, magicDamageBonus: 0,
     physicalDamageBonus: 0, bossDamageBonus: 0, experienceBonus: 0,
@@ -65,7 +67,7 @@ export function aggregateMonsterCombatModifiers(
   };
   const targets: Partial<Record<MonsterCombatEffectTarget, keyof MonsterCombatModifiers>> = {
     attack: 'attackBonus', defense: 'defenseBonus',
-    critChance: 'critChanceBonus', critDamage: 'critDamageBonus',
+    critChance: 'critChanceBonus', critChanceMultiplier: 'critChanceMultiplierBonus', critDamage: 'critDamageBonus',
     lifesteal: 'lifestealBonus', loot: 'lootBonus', health: 'healthBonus',
     accuracy: 'accuracyBonus', evasion: 'evasionBonus',
     attackSpeed: 'attackSpeedBonus', magicDamage: 'magicDamageBonus',
@@ -134,6 +136,28 @@ export function parseMonsterCombatEffect(description: string): ParsedMonsterComb
   return target ? { target, value: amount } : undefined;
 }
 
+/** Resolve catalog property identifiers without guessing from display text. */
+export function resolveMonsterCombatProperty(effect: string, amount: number): ParsedMonsterCombatEffect | undefined {
+  if (!Number.isFinite(amount) || amount <= 0) return undefined;
+  const targets: Record<string, MonsterCombatEffectTarget> = {
+    attack: 'attack', defense: 'defense', crit: 'critChance',
+    lifesteal: 'lifesteal', loot: 'loot', bossDamage: 'bossDamage',
+  };
+  const target = targets[String(effect || '')];
+  return target ? { target, value: amount } : undefined;
+}
+
+/** Pendant crit is a relative multiplier to base crit chance, unlike flat rare-property crit. */
+export function resolveMonsterPendantCombatEffect(effect: string, amount: number): ParsedMonsterCombatEffect | undefined {
+  if (!Number.isFinite(amount) || amount <= 0) return undefined;
+  const targets: Record<string, MonsterCombatEffectTarget> = {
+    defense: 'defense', crit: 'critChanceMultiplier', bossDamage: 'bossDamage',
+    health: 'health', loot: 'loot', xp: 'experience', gold: 'gold', production: 'production',
+  };
+  const target = targets[String(effect || '')];
+  return target ? { target, value: amount } : undefined;
+}
+
 export type MonsterCombatSetBonusInput = {
   effect: string;
   itemCount: number;
@@ -183,6 +207,8 @@ export type PlayerMonsterStatsInput = {
   pendantValue?: number;
   isBoss?: boolean;
   setBonuses?: MonsterCombatSetBonusInput[];
+  equipmentEffects?: ParsedMonsterCombatEffect[];
+  pendantCombatEffect?: ParsedMonsterCombatEffect;
   buffs?: Partial<MonsterCombatBuffInput>;
   now?: number;
   buffUntil?: number;
@@ -197,6 +223,7 @@ export type PlayerMonsterCombatStats = {
   profession: string;
   lootBonus: number;
   lifestealBonus: number;
+  combatModifiers: MonsterCombatModifiers;
 };
 
 const value = (n: number | undefined): number =>
@@ -278,7 +305,11 @@ export function calculatePlayerMonsterCombatStats(
   }
 
   const setEffects = (input.setBonuses || []).flatMap(set => (set.descriptions || []).flatMap(parseMonsterCombatEffectClauses));
-  const combatModifiers = aggregateMonsterCombatModifiers(setEffects);
+  const combatModifiers = aggregateMonsterCombatModifiers([
+    ...(input.equipmentEffects || []),
+    ...(input.pendantCombatEffect ? [input.pendantCombatEffect] : []),
+    ...setEffects,
+  ]);
 
   return {
     attack: Math.max(1, Number.isFinite(attack) ? attack : 1),
