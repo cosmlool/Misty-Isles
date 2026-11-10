@@ -338,3 +338,9 @@ export function resolveMonsterBattle(input: MonsterBattleInput): MonsterBattleRe
     passiveDescription: input.monster.passiveDescription || '',
   };
 }
+/** Initiative speed is derived from base dexterity plus explicit equipment dexterity bonuses. */
+export function calculateCombatSpeed(dexterity: number, equipmentDexterityBonus = 0): number {
+  const base = Number.isFinite(dexterity) ? Math.max(0, dexterity) : 0;
+  const equipmentBonus = Number.isFinite(equipmentDexterityBonus) ? Math.max(0, equipmentDexterityBonus) : 0;
+  return base + equipmentBonus;
+}
