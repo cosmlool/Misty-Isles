@@ -86,6 +86,19 @@ export function aggregateMonsterCombatModifiers(
  * Parses one catalog effect clause into a typed modifier.
  * Unknown or compound descriptions are deliberately not guessed or converted to attack.
  */
+/** Parse a description containing multiple explicitly joined percentage clauses. */
+export function parseMonsterCombatEffectClauses(description: string): ParsedMonsterCombatEffect[] {
+  const text = String(description || '').trim();
+  if (!text) return [];
+  const clauses = text.split(/\s+и\s+/i);
+  if (clauses.length === 1) {
+    const parsed = parseMonsterCombatEffect(text);
+    return parsed ? [parsed] : [];
+  }
+  const parsed = clauses.map(clause => parseMonsterCombatEffect(clause));
+  return parsed.every((effect): effect is ParsedMonsterCombatEffect => Boolean(effect)) ? parsed : [];
+}
+
 export function parseMonsterCombatEffect(description: string): ParsedMonsterCombatEffect | undefined {
   const text = String(description || '').trim().toLocaleLowerCase('ru');
   if (/[;；]/.test(text)) return undefined;
@@ -125,6 +138,7 @@ export type MonsterCombatSetBonusInput = {
   effect: string;
   itemCount: number;
   mastery: number;
+  descriptions?: string[];
 };
 
 export type MonsterCombatArmorItemInput = {
@@ -263,6 +277,9 @@ export function calculatePlayerMonsterCombatStats(
     defense *= 1 + value(buffs.defense);
   }
 
+  const setEffects = (input.setBonuses || []).flatMap(set => (set.descriptions || []).flatMap(parseMonsterCombatEffectClauses));
+  const combatModifiers = aggregateMonsterCombatModifiers(setEffects);
+
   return {
     attack: Math.max(1, Number.isFinite(attack) ? attack : 1),
     defense: Math.max(1, Number.isFinite(defense) ? defense : 1),
@@ -270,5 +287,6 @@ export function calculatePlayerMonsterCombatStats(
     profession,
     lootBonus: value(input.weaponLootBonus) + (buffActive ? value(buffs.loot) : 0),
     lifestealBonus: buffActive ? value(buffs.lifesteal) : 0,
+    combatModifiers,
   };
 }
