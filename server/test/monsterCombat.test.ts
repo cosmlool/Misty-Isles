@@ -6,6 +6,7 @@ import test from 'node:test';
 
 import { getMonsterPassiveDescriptions, parseMonsterWeakness, resolveMonsterPassive } from '../src/monsterCombat.js';
 import { calculateCombatSpeed, resolveMonsterBattle } from '../src/monsterBattle.js';
+import { adaptPlayerCombatant } from '../src/monsterCombatantAdapter.js';
 
 const serverDir = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const bestiary = JSON.parse(readFileSync(resolve(serverDir, 'data/forgotten_lands.json'), 'utf8'));
@@ -742,4 +743,88 @@ test('combat speed ignores invalid or negative dexterity inputs', () => {
   assert.equal(calculateCombatSpeed(-5, 4), 4);
   assert.equal(calculateCombatSpeed(10, -3), 10);
   assert.equal(calculateCombatSpeed(Number.NaN, Number.POSITIVE_INFINITY), 0);
+});
+
+
+test('player combatant adapter maps resolved stats and equipment dexterity into shared combatant', () => {
+  const combatant = adaptPlayerCombatant({
+    id: 'player-adapter',
+    profession: 'Ассасин',
+    hp: 720,
+    maxHp: 900,
+    attack: 245,
+    defense: 118,
+    dexterity: 34,
+    equipmentDexterityBonus: 12,
+    damageType: 'physical',
+    buff: 'attack',
+    buffValue: 0.15,
+    buffSecondaryEffect: 'defense',
+    buffSecondaryValue: 0.05,
+    buffUntil: 123456,
+  });
+
+  assert.deepEqual(combatant, {
+    id: 'player-adapter',
+    profession: 'Ассасин',
+    hp: 720,
+    maxHp: 900,
+    attack: 245,
+    defense: 118,
+    speed: 46,
+    damageType: 'physical',
+    buff: 'attack',
+    buffValue: 0.15,
+    buffSecondaryEffect: 'defense',
+    buffSecondaryValue: 0.05,
+    buffUntil: 123456,
+  });
+});
+
+test('player combatant adapter supports an unequipped character and omits unresolved combat chances', () => {
+  const combatant = adaptPlayerCombatant({
+    id: 'player-no-gear',
+    profession: 'Воин',
+    hp: 100,
+    maxHp: 100,
+    attack: 12,
+    defense: 8,
+    dexterity: 10,
+  });
+
+  assert.equal(combatant.speed, 10);
+  assert.equal(combatant.critChance, undefined);
+  assert.equal(combatant.critMultiplier, undefined);
+  assert.equal(combatant.accuracy, undefined);
+  assert.equal(combatant.damageType, undefined);
+});
+
+test('player combatant adapter normalizes invalid stats and clamps optional combat values', () => {
+  const combatant = adaptPlayerCombatant({
+    id: 'player-invalid',
+    profession: '',
+    hp: Number.POSITIVE_INFINITY,
+    maxHp: Number.NaN,
+    attack: -10,
+    defense: Number.NaN,
+    dexterity: Number.NaN,
+    equipmentDexterityBonus: -4,
+    critChance: 4,
+    critMultiplier: 0.5,
+    accuracy: -10,
+    buffValue: Number.NaN,
+    buffUntil: Number.POSITIVE_INFINITY,
+  });
+
+  assert.equal(combatant.profession, 'Без профессии');
+  assert.equal(combatant.hp, 0);
+  assert.equal(combatant.maxHp, 1);
+  assert.equal(combatant.attack, 0);
+  assert.equal(combatant.defense, 0);
+  assert.equal(combatant.speed, 0);
+  assert.equal(combatant.critChance, 1);
+  assert.equal(combatant.critMultiplier, 1);
+  assert.equal(combatant.accuracy, 0);
+  assert.equal(combatant.buffValue, undefined);
+  assert.equal(combatant.buffUntil, undefined);
 });
