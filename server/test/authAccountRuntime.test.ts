@@ -71,16 +71,22 @@ test('account registration securely links a guest save, revokes the guest token 
     });
     await waitForServer(port, child);
 
-    const playerId = 'runtime_auth_link_01';
-    const guestResponse = await post(port, '/auth/guest', { playerId });
+    const guestResponse = await post(port, '/auth/guest', {});
     assert.equal(guestResponse.status, 200);
-    const guest = await guestResponse.json() as { token: string };
-    const secondGuestResponse = await post(port, '/auth/guest', { playerId });
+    const guest = await guestResponse.json() as { playerId: string; token: string; guestProof: string };
+    const playerId = guest.playerId;
+    assert.match(playerId, /^guest_[a-f0-9]{32}$/);
+    assert.equal(guest.guestProof.length, 64);
+
+    const forgedGuest = await post(port, '/auth/guest', { playerId });
+    assert.equal(forgedGuest.status, 401, 'knowing a player ID must not be enough to take over a guest');
+    const secondGuestResponse = await post(port, '/auth/guest', { playerId, guestProof: guest.guestProof });
     assert.equal(secondGuestResponse.status, 200);
-    const secondGuest = await secondGuestResponse.json() as { token: string };
+    const secondGuest = await secondGuestResponse.json() as { token: string; guestProof: string };
+    assert.equal(secondGuest.guestProof, guest.guestProof);
 
     const registration = await post(port, '/auth/register', {
-      username: 'MistyTester', password: 'StrongPass123', playerId, guestToken: guest.token,
+      username: 'MistyTester', password: 'StrongPass123', playerId, guestProof: guest.guestProof,
     });
     assert.equal(registration.status, 201);
     const account = await registration.json() as { playerId: string; token: string; username: string };
@@ -110,11 +116,12 @@ test('account registration securely links a guest save, revokes the guest token 
     assert.equal((await post(port, '/auth/login', { username: 'MistyTester', password: 'wrong-password' })).status, 401);
     assert.equal((await post(port, '/auth/register', { username: 'MISTYTESTER', password: 'AnotherPass123' })).status, 409);
 
-    const secondGuest = await post(port, '/auth/guest', { playerId: 'runtime_auth_unlinked_02' });
-    assert.equal(secondGuest.status, 200);
+    const unlinkedGuest = await post(port, '/auth/guest', {});
+    assert.equal(unlinkedGuest.status, 200);
+    const unlinked = await unlinkedGuest.json() as { playerId: string; token: string; guestProof: string };
     assert.equal((await post(port, '/auth/register', {
-      username: 'UnverifiedGuest', password: 'StrongPass123', playerId: 'runtime_auth_unlinked_02',
-    })).status, 401);
+      username: 'UnverifiedGuest', password: 'StrongPass123', playerId: unlinked.playerId,
+    })).status, 401, 'guest save linking must require the persistent recovery proof');
   } finally {
     if (child) await stopServer(child);
     rmSync(dataDir, { recursive: true, force: true });
