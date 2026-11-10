@@ -7,7 +7,7 @@ import { WebSocketTransport } from '@colyseus/ws-transport';
 import { Schema, type } from '@colyseus/schema';
 import { Player } from './PlayerSchema.js';
 import { calculateCombatSpeed } from './monsterBattle.js';
-import { calculatePlayerMonsterCombatStats, parseMonsterCombatEffectClauses, resolveEquipmentSetTierDescriptions, resolveMonsterCombatProperty, resolveMonsterPendantCombatEffect } from './monsterCombatStats.js';
+import { calculatePlayerMonsterCombatStats, parseMonsterCombatEffectClauses, resolveEquipmentSetCombatEffects, resolveEquipmentSetTierDescriptions, resolveMonsterCombatProperty, resolveMonsterPendantCombatEffect } from './monsterCombatStats.js';
 import { applyPlayerSave, createPlayerSaveStore } from './playerSaves.js';
 import { readJsonFile as readPersistentJson } from './jsonPersistence.js';
 import { filterAvailableUniqueItems, isLastEquippedCopy, ownsItemCopy, removeInventoryCopy } from './inventoryOperations.js';
@@ -801,6 +801,18 @@ function resolvePlayerMonsterStats(p:Player,monster:any,options:{applyFivePieceS
   .filter((item:any)=>item&&typeof item.effects==='string')
   .flatMap((item:any)=>parseMonsterCombatEffectClauses(String(item.effects)));
  const mastery=collections.setMastery||{};
+ // Legacy sets are excluded from legacy multiplier processing, but their explicit
+ // tier descriptions still contribute typed modifiers to the new combat engine.
+ const legacySetCombatEffects=EQUIPMENT_SETS.filter((set:any)=>set.legacy).flatMap((set:any)=>{
+  const itemCount=set.items.filter((id:string)=>Object.values(eq).includes(id)).length;
+  return resolveEquipmentSetCombatEffects({
+   itemCount,
+   two:typeof set.two==='string'?set.two:undefined,
+   three:typeof set.three==='string'?set.three:undefined,
+   four:typeof set.four==='string'?set.four:undefined,
+   full:typeof set.full==='string'?set.full:undefined,
+  });
+ });
  const setBonuses=EQUIPMENT_SETS.filter((set:any)=>!set.legacy).map((set:any)=>{
   const itemCount=set.items.filter((id:string)=>Object.values(eq).includes(id)).length;
   const descriptions=resolveEquipmentSetTierDescriptions({
@@ -828,7 +840,7 @@ function resolvePlayerMonsterStats(p:Player,monster:any,options:{applyFivePieceS
   weaponDexterityBonus:wp.dexterity,weaponProfileBonus:wp.profileBonus,weaponLootBonus:wp.lootBonus,
   pendantEffect:pendant?.effect,pendantValue:pendantEffectValue(pendant,Number(collections.pendantLevels?.[pendant?.id||'']||1)),isBoss:options.isBoss??['boss','finalBoss'].includes(String(monster?.rank||'')),setBonuses,
   buffs:{attack:activeBuffValue(p,'attack',now),crit:activeBuffValue(p,'crit',now),defense:activeBuffValue(p,'defense',now),loot:activeBuffValue(p,'loot',now),lifesteal:options.includeLifestealBuff?activeBuffValue(p,'lifesteal',now):0},
-  equipmentEffects:[...equipmentEffects,...catalogArmorEffects],pendantCombatEffect,
+  equipmentEffects:[...equipmentEffects,...catalogArmorEffects,...legacySetCombatEffects],pendantCombatEffect,
   now,buffUntil:Number(p.buffUntil||0),applyFivePieceSetBonus:options.applyFivePieceSetBonus});
 }
 function rand(a:number,b:number){return Math.floor(Math.random()*(b-a+1))+a;}
