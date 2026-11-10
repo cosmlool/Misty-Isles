@@ -558,13 +558,13 @@ test('attack bonus after a monster critical hit is consumed by the next attack o
 test('physical, magic and fire resistance use the matching incoming damage type', () => {
   const run = (passiveDescription: string, damageType: 'physical' | 'magic' | 'fire') => resolveMonsterBattle({
     monster: { id: 'm-resistance-matrix', name: 'Resistance tester', hp: 10000, attack: 100, defense: 0, speed: 20, passiveDescription },
-    party: [{ id: `p-${damageType}`, profession: 'Воин', hp: 1000, maxHp: 1000, attack: 1, defense: 0, speed: 10, damageType }],
+    party: [{ id: `p-${damageType}`, profession: 'Воин', hp: 1000, maxHp: 1000, attack: 100, defense: 0, speed: 10, damageType }],
     maxRounds: 1,
     random: () => 0.5,
   });
-  assert.equal(run('На 20% меньше физического урона', 'physical').totalDamageToParty, 80);
-  assert.equal(run('Магический урон −15%', 'magic').totalDamageToParty, 85);
-  assert.equal(run('Магический урон −15%', 'fire').totalDamageToParty, 85);
+  assert.equal(run('На 20% меньше физического урона', 'physical').totalDamageToMonster, 80);
+  assert.equal(run('Магический урон −15%', 'magic').totalDamageToMonster, 85);
+  assert.equal(run('Магический урон −15%', 'fire').totalDamageToMonster, 85);
 });
 
 test('negative magic resistance increases incoming magic damage', () => {
@@ -574,5 +574,5 @@ test('negative magic resistance increases incoming magic damage', () => {
     maxRounds: 1,
     random: () => 0.5,
   });
-  assert.equal(result.totalDamageToParty, 120);
+  assert.equal(result.totalDamageToMonster, 120);
 });
