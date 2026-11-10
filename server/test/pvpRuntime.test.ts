@@ -130,6 +130,10 @@ test('PvP offers four saved real characters, steals 20 percent gold, persists co
     attackerRoom.onMessage('pvpResult', payload => results.push(payload));
     attackerRoom.onMessage('notice', payload => notices.push(String(payload?.text || '')));
 
+    attackerRoom.send('pvpChallenge', { targetId: 'bot_ember' });
+    await waitFor(() => notices.find(message => message === 'Выбери другого соперника.'), 'reject unregistered training-bot IDs');
+    assert.equal(readJson(join(dataDir, 'players.json'))[attackerId].lastPvpAt || 0, 0, 'invalid bot target must not consume a PvP turn');
+
     attackerRoom.send('pvpList');
     const firstOffer = await waitFor(() => offers[0], 'four real opponents');
     assert.equal(firstOffer.players.length, 4);
