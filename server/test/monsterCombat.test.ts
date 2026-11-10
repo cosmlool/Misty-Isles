@@ -648,13 +648,13 @@ test('damage bonus against a profession affects incoming damage only for that pr
 
 test('monster defense bonus activates below its low-HP threshold', () => {
   const result = resolveMonsterBattle({
-    monster: { id: 'm-defense-low-hp', name: 'Last stand', hp: 100, attack: 100, defense: 0, speed: 10, passiveDescription: 'Защита +25% ниже 25% HP' },
-    party: [{ id: 'p-defense-low-hp', profession: 'Воин', hp: 1000, maxHp: 1000, attack: 80, defense: 0, speed: 20 }],
+    monster: { id: 'm-defense-low-hp', name: 'Last stand', hp: 100, attack: 100, defense: 100, speed: 10, passiveDescription: 'Защита +25% ниже 25% HP' },
+    party: [{ id: 'p-defense-low-hp', profession: 'Воин', hp: 1000, maxHp: 1000, attack: 160, defense: 0, speed: 20 }],
     maxRounds: 1,
     random: () => 0.5,
   });
   assert.equal(result.monsterHp, 20);
-  assert.equal(result.totalDamageToParty, 80);
+  assert.equal(result.totalDamageToParty, 44);
 });
 
 test('compound passive applies attack, defense and physical resistance together', () => {
@@ -664,6 +664,6 @@ test('compound passive applies attack, defense and physical resistance together'
     maxRounds: 1,
     random: () => 0.5,
   });
-  assert.equal(result.totalDamageToMonster, 46);
+  assert.equal(result.totalDamageToMonster, 34);
   assert.equal(result.totalDamageToParty, 115);
 });
