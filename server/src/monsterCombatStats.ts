@@ -33,8 +33,10 @@ export type ParsedMonsterCombatEffect = {
  */
 export function parseMonsterCombatEffect(description: string): ParsedMonsterCombatEffect | undefined {
   const text = String(description || '').trim().toLocaleLowerCase('ru');
-  const match = /([+-]?\d+(?:[.,]\d+)?)\s*%/.exec(text);
-  if (!match) return undefined;
+  if (/[;；]/.test(text)) return undefined;
+  const matches = [...text.matchAll(/([+-]?\d+(?:[.,]\d+)?)\s*%/g)];
+  if (matches.length !== 1) return undefined;
+  const match = matches[0];
   const amount = Number(match[1].replace(',', '.')) / 100;
   if (!Number.isFinite(amount)) return undefined;
 
