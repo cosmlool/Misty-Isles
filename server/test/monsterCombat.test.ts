@@ -1102,6 +1102,13 @@ test('typed combat modifier aggregation keeps each effect in its own stat channe
   assert.equal(modifiers.bossDamageBonus, 0);
 });
 
+test('control resistance is not treated as incoming damage resistance', () => {
+  assert.deepEqual(parseMonsterCombatEffect('+8% к сопротивлению контролю'), { target: 'controlResistance', value: 0.08 });
+  assert.deepEqual(parseMonsterCombatEffect('+8% к сопротивлению отрицательным эффектам'), { target: 'controlResistance', value: 0.08 });
+  assert.deepEqual(parseMonsterCombatEffect('+8% к сопротивлению входящему урону'), { target: 'resistance', value: 0.08 });
+  assert.equal(parseMonsterCombatEffect('+1% сопротивления'), undefined);
+});
+
 test('catalog set tiers parse HP, defense and resistance independently', () => {
   assert.deepEqual(parseMonsterCombatEffect('2/5: +1% HP'), { target: 'health', value: 0.01 });
   assert.deepEqual(parseMonsterCombatEffect('3/5: +1% защиты'), { target: 'defense', value: 0.01 });
