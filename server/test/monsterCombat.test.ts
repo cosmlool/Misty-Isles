@@ -513,6 +513,21 @@ test('monster evasion passive avoids incoming player attacks, not monster attack
   assert.ok(result.events.some(event => event.actor === 'Evasive monster' && event.target === 'p-evasion' && event.action === 'dodge'));
 });
 
+test('accuracy gear does not also inflate the base hit chance', () => {
+  const result = resolveMonsterBattle({
+    monster: { id: 'm-accuracy-base', name: 'Target', hp: 10000, attack: 1, defense: 0, speed: 0 },
+    party: [{
+      id: 'p-accuracy-base', profession: 'Лучник', hp: 100, maxHp: 100,
+      attack: 100, defense: 0, speed: 10, accuracy: 50,
+      combatModifiers: { accuracyBonus: 0.10 },
+    }],
+    maxRounds: 1,
+    random: () => 0.52,
+  });
+  assert.ok(result.events.some(event => event.actor === 'p-accuracy-base' && event.action === 'miss'));
+  assert.equal(result.monsterHp, 10000);
+});
+
 test('player accuracy reduces monster evasion by percentage points', () => {
   const result = resolveMonsterBattle({
     monster: { id: 'm-accuracy-counter', name: 'Evasive target', hp: 10000, attack: 100, defense: 0, speed: 0, passiveDescription: 'Уклонение +15%' },
