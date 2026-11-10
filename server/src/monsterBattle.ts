@@ -133,19 +133,6 @@ export function resolveMonsterBattle(input: MonsterBattleInput): MonsterBattleRe
       if (monsterHp <= 0) break;
       const fighterHpRatio = fighter.hp / fighter.maxHp;
       let attack = fighter.attack * (1 - partyAttackReduction);
-      if (effect.attackVsProfession && professionMatches(effect.attackVsProfession.profession, fighter.profession)) {
-        // This effect belongs to the monster's attack, not the player's outgoing damage.
-      }
-      if (effect.attackVsWeakened && (monsterPoisoned || partyAttackReduction > 0 || partyDefenseReduction > 0)) {
-        attack *= 1 + effect.attackVsWeakened;
-      }
-      if (effect.damageVsFastTargets && fighter.speed > safeStat(input.monster.speed)) attack *= 1 + effect.damageVsFastTargets;
-      if (effect.damageVsSlowTargets && fighter.speed < safeStat(input.monster.speed)) attack *= 1 + effect.damageVsSlowTargets;
-      if (effect.damageVsArmoredTargets && fighter.defense >= safeStat(input.monster.attack)) attack *= 1 + effect.damageVsArmoredTargets;
-      if (effect.damageVsLowDefenseTargets && fighter.defense < safeStat(input.monster.attack) * 0.5) attack *= 1 + effect.damageVsLowDefenseTargets;
-      if (effect.damageVsLowHpTargets && fighterHpRatio < effect.damageVsLowHpTargets.threshold) attack *= 1 + effect.damageVsLowHpTargets.multiplier - 1;
-      if (effect.damageVsProfession && professionMatches(effect.damageVsProfession.profession, fighter.profession)) attack *= effect.damageVsProfession.multiplier;
-      if (effect.attackVsProfession && professionMatches(effect.attackVsProfession.profession, fighter.profession)) attack *= effect.attackVsProfession.multiplier;
       if (round === 1 && effect.enemySpeedReductionFirstRound) partySpeedReduction = effect.enemySpeedReductionFirstRound;
 
       const hitChance = clamp((safeStat(fighter.accuracy, 100) / 100) * (fighter.blind ? (effect.ignoresBlindAccuracyPenalty ? 1 : 0.65) : 1), 0.05, 1);
@@ -176,8 +163,19 @@ export function resolveMonsterBattle(input: MonsterBattleInput): MonsterBattleRe
     if (!target) break;
     const targetProfessionBonus = effect.damageVsProfession && professionMatches(effect.damageVsProfession.profession, target.profession)
       ? effect.damageVsProfession.multiplier : 1;
+    const targetHpRatio = target.hp / target.maxHp;
+    const targetIsFast = target.speed * (round === 1 ? 1 - partySpeedReduction : 1) > safeStat(input.monster.speed);
+    const targetIsSlow = target.speed * (round === 1 ? 1 - partySpeedReduction : 1) < safeStat(input.monster.speed);
+    let monsterDamageMultiplier = monsterAttackMultiplier * targetProfessionBonus;
+    if (effect.attackVsProfession && professionMatches(effect.attackVsProfession.profession, target.profession)) monsterDamageMultiplier *= effect.attackVsProfession.multiplier;
+    if (effect.damageVsFastTargets && targetIsFast) monsterDamageMultiplier *= 1 + effect.damageVsFastTargets;
+    if (effect.damageVsSlowTargets && targetIsSlow) monsterDamageMultiplier *= 1 + effect.damageVsSlowTargets;
+    if (effect.damageVsArmoredTargets && target.defense >= safeStat(input.monster.attack)) monsterDamageMultiplier *= 1 + effect.damageVsArmoredTargets;
+    if (effect.damageVsLowDefenseTargets && target.defense < safeStat(input.monster.attack) * 0.5) monsterDamageMultiplier *= 1 + effect.damageVsLowDefenseTargets;
+    if (effect.damageVsLowHpTargets && targetHpRatio < effect.damageVsLowHpTargets.threshold) monsterDamageMultiplier *= effect.damageVsLowHpTargets.multiplier;
+    if (effect.attackVsWeakened && (partyAttackReduction > 0 || partyDefenseReduction > 0 || partySpeedReduction > 0)) monsterDamageMultiplier *= 1 + effect.attackVsWeakened;
     const targetDefense = target.defense * (1 - partyDefenseReduction);
-    const incoming = damageThroughDefense(safeStat(input.monster.attack) * monsterAttackMultiplier * targetProfessionBonus, targetDefense);
+    const incoming = damageThroughDefense(safeStat(input.monster.attack) * monsterDamageMultiplier, targetDefense);
     const dodgeChance = clamp(effect.evasion || 0, 0, 0.75);
     if (random() < dodgeChance) {
       events.push({ round, actor: input.monster.name, action: 'dodge', target: target.id });
