@@ -83,7 +83,7 @@ function publicCode(id: string): string {
 test('PvP offers four saved real characters, steals 20 percent gold, persists cooldown and grants one-hour victim immunity', { timeout: 60_000 }, async () => {
   const dataDir = mkdtempSync(join(tmpdir(), 'misty-pvp-runtime-'));
   const attackerId = 'pvp_runtime_attacker';
-  const targetIds = Array.from({ length: 5 }, (_, index) => `pvp_runtime_target_${index + 1}`);
+  const targetIds = Array.from({ length: 8 }, (_, index) => `pvp_runtime_target_${index + 1}`);
   const port = await unusedPort();
   let child: ChildProcess | undefined;
   let attackerRoom: Room | undefined;
@@ -99,7 +99,7 @@ test('PvP offers four saved real characters, steals 20 percent gold, persists co
     };
     for (const [index, id] of targetIds.entries()) {
       players[id] = {
-        id, name: `Offline Target ${index + 1}`, race: 'Собака', level: 20,
+        id, name: `Offline Target ${index + 1}`, race: 'Собака', level: [20, 23, 10, 40, 15, 55, 8, 32][index],
         strength: 1, dexterity: 1, defense: 1, vitality: 1,
         gold: 1_000 + index * 100, inventory: '[]', equipment: '{}', quests: '{}',
       };
@@ -138,7 +138,7 @@ test('PvP offers four saved real characters, steals 20 percent gold, persists co
     assert.equal(firstOffer.players.length, 4);
     assert.equal(new Set(firstOffer.players.map((player: any) => player.id)).size, 4);
     assert.ok(firstOffer.players.every((player: any) => player.isBot === false));
-    assert.ok(firstOffer.players.every((player: any) => player.level >= 18 && player.level <= 22));
+    assert.ok(firstOffer.players.some((player: any) => player.level > 22 || player.level < 18), 'matchmaking must not restrict level difference');
     assert.ok(!firstOffer.players.some((player: any) => player.id === publicCode('pvp_runtime_protected')));
     const chosen = firstOffer.players[0];
     const targetId = targetIds.find(id => publicCode(id) === chosen.id);
@@ -156,30 +156,39 @@ test('PvP offers four saved real characters, steals 20 percent gold, persists co
     assert.equal(saved[attackerId].lastPvpAt > 0, true);
     const victimPvp = JSON.parse(saved[targetId].quests).pvp;
     assert.ok(victimPvp.immunityUntil >= Date.now() + 59 * 60 * 1000);
-    assert.deepEqual(JSON.parse(saved[attackerId].quests).pvp.offeredIds, []);
+    const attackerPvp = JSON.parse(saved[attackerId].quests).pvp;
+    assert.deepEqual(attackerPvp.offeredIds, []);
+    assert.deepEqual(new Set(attackerPvp.previousOfferedIds), new Set(firstOffer.players.map((player: any) => targetIds.find(id => publicCode(id) === player.id) || '')));
 
     const cooldownOffer = await waitFor(() => offers.find(payload => Number(payload.cooldownUntil) > Date.now()), 'attacker cooldown refresh');
     assert.equal(cooldownOffer.players.length, 0);
     attackerRoom.send('pvpChallenge', { targetId: chosen.id });
     await waitFor(() => notices.find(message => message.startsWith('Следующая атака через')), 'server-side fifteen-minute cooldown');
 
-    // Add a second real character after the first fight. The server reads the saved roster,
-    // so this player can see the protected offline victim excluded from matchmaking.
-    const secondId = 'pvp_runtime_second_attacker';
-    const updatedPlayers = readJson(join(dataDir, 'players.json'));
-    updatedPlayers[secondId] = {
-      id: secondId, name: 'Second Attacker', race: 'Кот', level: 20,
-      strength: 10, defense: 10, gold: 100, inventory: '[]', equipment: '{}', quests: '{}',
-    };
-    writeFileSync(join(dataDir, 'players.json'), JSON.stringify(updatedPlayers, null, 2));
-    const secondToken = await guestToken(port, secondId);
-    secondRoom = await client.joinOrCreate('my_room', { playerId: secondId, sessionToken: secondToken });
-    const secondOffers: any[] = [];
-    secondRoom.onMessage('pvpList', payload => secondOffers.push(payload));
-    secondRoom.send('pvpList');
-    const secondOffer = await waitFor(() => secondOffers[0], 'second attacker matchmaking');
-    assert.equal(secondOffer.players.length, 4);
-    assert.ok(!secondOffer.players.some((player: any) => player.id === chosen.id), 'a victim must not appear in matchmaking during the one-hour immunity');
+    // Restart the isolated server with the persisted attacker session after advancing
+    // only the test fixture's attack timestamp beyond the fifteen-minute cooldown.
+    const previousOfferIds = firstOffer.players.map((player: any) => player.id);
+    await attackerRoom.leave();
+    attackerRoom = undefined;
+    await stopServer(child);
+    const afterCooldown = readJson(join(dataDir, 'players.json'));
+    afterCooldown[attackerId].lastPvpAt = Date.now() - 15 * 60 * 1000 - 1;
+    writeFileSync(join(dataDir, 'players.json'), JSON.stringify(afterCooldown, null, 2));
+    child = spawn(process.execPath, ['--import', 'tsx', 'src/index.ts'], {
+      cwd: serverDir,
+      env: { ...process.env, MISTY_DATA_DIR: dataDir, MISTY_PORT: String(port) },
+      stdio: 'ignore',
+    });
+    await waitForServer(port, child);
+    attackerRoom = await client.joinOrCreate('my_room', { playerId: attackerId, sessionToken: token });
+    const rotatedOffers: any[] = [];
+    attackerRoom.onMessage('pvpList', payload => rotatedOffers.push(payload));
+    attackerRoom.send('pvpList');
+    const rotated = await waitFor(() => rotatedOffers[0], 'new opponents after cooldown');
+    assert.equal(rotated.players.length, 4);
+    assert.ok(rotated.players.every((player: any) => !previousOfferIds.includes(player.id)), 'the next list must use different characters when at least four alternatives exist');
+    assert.ok(rotated.players.some((player: any) => player.level > 22 || player.level < 18), 'the next list still includes all level ranges');
+    assert.equal(rotated.cooldownUntil, 0);
 
   } finally {
     if (attackerRoom) await attackerRoom.leave().catch(() => undefined);
