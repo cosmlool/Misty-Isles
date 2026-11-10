@@ -5,6 +5,7 @@ import { fileURLToPath } from 'node:url';
 import test from 'node:test';
 
 import { getMonsterPassiveDescriptions, parseMonsterWeakness, resolveMonsterPassive } from '../src/monsterCombat.js';
+import { resolveMonsterBattle } from '../src/monsterBattle.js';
 
 const serverDir = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const bestiary = JSON.parse(readFileSync(resolve(serverDir, 'data/forgotten_lands.json'), 'utf8'));
@@ -38,4 +39,31 @@ test('passive registry keeps compound effects instead of dropping secondary clau
     healEveryRounds: { rounds: 3, maxHpRatio: 0.10 },
     professionResistance: { 'Лучник': 0.20 },
   });
+});
+
+
+test('monster battle resolves profession and fire weaknesses deterministically', () => {
+  const base = {
+    monster: { id: 'm1', name: 'Test monster', hp: 50, attack: 1, defense: 0, speed: 5, weakness: 'Огненный урон +25%' },
+    party: [{ id: 'p1', profession: 'Боевой маг', hp: 500, maxHp: 500, attack: 100, defense: 0, speed: 10, damageType: 'fire' as const }],
+    random: () => 0.5,
+  };
+  const first = resolveMonsterBattle(base);
+  const second = resolveMonsterBattle(base);
+  assert.equal(first.winner, 'party');
+  assert.equal(first.totalDamageToMonster, 125);
+  assert.deepEqual(first, second);
+});
+
+test('monster profession damage bonus affects incoming damage, not player outgoing damage', () => {
+  const run = (profession: string) => resolveMonsterBattle({
+    monster: { id: 'm2', name: 'Archer hunter', hp: 10000, attack: 100, defense: 0, speed: 5, passiveDescription: 'Урон по лучникам +20%' },
+    party: [{ id: 'p2', profession, hp: 1000, maxHp: 1000, attack: 10, defense: 0, speed: 5 }],
+    random: () => 0.5,
+  });
+  const archer = run('Лучник');
+  const warrior = run('Воин');
+  assert.equal(archer.totalDamageToMonster, warrior.totalDamageToMonster);
+  assert.equal(archer.totalDamageToParty, 120);
+  assert.equal(warrior.totalDamageToParty, 100);
 });
