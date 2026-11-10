@@ -7,7 +7,7 @@ import { WebSocketTransport } from '@colyseus/ws-transport';
 import { Schema, type } from '@colyseus/schema';
 import { Player } from './PlayerSchema.js';
 import { calculateCombatSpeed } from './monsterBattle.js';
-import { calculatePlayerMonsterCombatStats } from './monsterCombatStats.js';
+import { calculatePlayerMonsterCombatStats, resolveMonsterCombatProperty, resolveMonsterPendantCombatEffect } from './monsterCombatStats.js';
 import { applyPlayerSave, createPlayerSaveStore } from './playerSaves.js';
 import { readJsonFile as readPersistentJson } from './jsonPersistence.js';
 import { filterAvailableUniqueItems, isLastEquippedCopy, ownsItemCopy, removeInventoryCopy } from './inventoryOperations.js';
@@ -807,12 +807,22 @@ function resolvePlayerMonsterStats(p:Player,monster:any,options:{applyFivePieceS
   return {effect:String(set.effect||''),itemCount,mastery:Number(mastery[set.id]||0),descriptions};
 });
  const pendant=NEW_EQUIPMENT_ITEMS.find(item=>item.id===eq.amulet),now=Date.now();
+ const equipmentProperties=collections.equipmentProperties||{};
+ const equipmentEffects=Array.from(new Set(Object.values(eq).filter((id:any)=>typeof id==='string'&&id)))
+  .map((id:any)=>equipmentProperties[id])
+  .filter((property:any)=>property&&typeof property.effect==='string')
+  .map((property:any)=>resolveMonsterCombatProperty(String(property.effect),Number(property.value)))
+  .filter((effect:any)=>Boolean(effect));
+ const pendantCombatEffect=pendant
+  ?resolveMonsterPendantCombatEffect(String(pendant.effect||''),pendantEffectValue(pendant,Number(collections.pendantLevels?.[pendant.id||'']||1)))
+  :undefined;
  return calculatePlayerMonsterCombatStats({profession:p.profession,strength:p.strength,dexterity:p.dexterity,intelligence:p.intelligence,vitality:p.vitality,stamina:p.stamina,baseDefense:p.defense,
   weaponStrength:wp.strength,weaponDexterity:wp.dexterity,weaponIntelligence:wp.intelligence,weaponVitality:wp.vitality,weaponStamina:wp.stamina,
   weaponAttack:Number(weapon?.attack||0),weaponEnhancementLevel:Number(up[`weapon:${eq.weapon}`]||0),armorItems,
   weaponDexterityBonus:wp.dexterity,weaponProfileBonus:wp.profileBonus,weaponLootBonus:wp.lootBonus,
   pendantEffect:pendant?.effect,pendantValue:pendantEffectValue(pendant,Number(collections.pendantLevels?.[pendant?.id||'']||1)),isBoss:options.isBoss??['boss','finalBoss'].includes(String(monster?.rank||'')),setBonuses,
   buffs:{attack:activeBuffValue(p,'attack',now),crit:activeBuffValue(p,'crit',now),defense:activeBuffValue(p,'defense',now),loot:activeBuffValue(p,'loot',now),lifesteal:options.includeLifestealBuff?activeBuffValue(p,'lifesteal',now):0},
+  equipmentEffects,pendantCombatEffect,
   now,buffUntil:Number(p.buffUntil||0),applyFivePieceSetBonus:options.applyFivePieceSetBonus});
 }
 function rand(a:number,b:number){return Math.floor(Math.random()*(b-a+1))+a;}
