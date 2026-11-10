@@ -1035,10 +1035,17 @@ test('shared player combat stats route profile bonuses to the profession-specifi
 
   assert.ok(Math.abs(buffer.defense - 18.84) < 0.000001);
   assert.equal(buffer.attack, 18);
+  assert.equal(buffer.baseAttack, 18);
+  assert.equal(buffer.baseDefense, 15.7);
+  assert.equal(buffer.combatModifiers.defenseBonus, 0.2);
   assert.ok(Math.abs(warrior.attack - 21.6) < 0.000001);
   assert.equal(warrior.defense, 15.7);
+  assert.equal(warrior.baseAttack, 18);
+  assert.equal(warrior.combatModifiers.attackBonus, 0.2);
   assert.equal(gatherer.lootBonus, 0.25);
   assert.equal(gatherer.attack, 18);
+  assert.equal(gatherer.combatModifiers.attackBonus, 0);
+  assert.equal(gatherer.baseAttack, 18);
 });
 
 
@@ -1103,6 +1110,7 @@ test('catalog combat effects map to typed modifiers without collapsing into atta
 test('equipped rare properties resolve to their declared typed combat channels', () => {
   const effects = [
     resolveMonsterCombatProperty('crit', 0.05),
+    resolveMonsterCombatProperty('critical', 0.04),
     resolveMonsterCombatProperty('lifesteal', 0.03),
     resolveMonsterCombatProperty('loot', 0.12),
     resolveMonsterCombatProperty('defense', 0.08),
@@ -1110,7 +1118,7 @@ test('equipped rare properties resolve to their declared typed combat channels',
     resolveMonsterCombatProperty('unknown', 0.50),
   ];
   const modifiers = aggregateMonsterCombatModifiers(effects);
-  assert.equal(modifiers.critChanceBonus, 0.05);
+  assert.equal(modifiers.critChanceBonus, 0.09);
   assert.equal(modifiers.lifestealBonus, 0.03);
   assert.equal(modifiers.lootBonus, 0.12);
   assert.equal(modifiers.defenseBonus, 0.08);
@@ -1137,6 +1145,7 @@ test('pendant effects preserve relative crit scaling and stay separate from lega
   assert.equal(equipped.combatModifiers.lifestealBonus, 0.03);
   assert.equal(equipped.attack, baseline.attack);
   assert.equal(equipped.defense, baseline.defense);
+  assert.deepEqual(resolveMonsterPendantCombatEffect('lifesteal', 0.04), { target: 'lifesteal', value: 0.04 });
   assert.deepEqual(resolveMonsterPendantCombatEffect('crystalChance', 0.20), undefined);
 });
 
