@@ -125,8 +125,10 @@ test('group expedition travel start and claim persist every member together', { 
 
     const invitations: any[] = [];
     const groupStates: any[] = [];
+    const leaderNotices: string[] = [];
     connected[memberId].onMessage('huntGroupInvite', payload => invitations.push(payload));
     connected[leaderId].onMessage('huntGroupState', payload => groupStates.push(payload));
+    connected[leaderId].onMessage('notice', payload => leaderNotices.push(String(payload?.text || '')));
     connected[leaderId].send('huntGroupInvite', { targetId: publicCode(memberId) });
     const invite = await waitFor(() => invitations[0], 'group invitation');
     connected[memberId].send('huntGroupAccept', { groupId: invite.groupId });
@@ -141,6 +143,13 @@ test('group expedition travel start and claim persist every member together', { 
         leader.targetZoneId === 'el2' && member.targetZoneId === 'el2' ? true : undefined;
     }, 'both travel-start states persisted');
 
+    connected[leaderId].send('huntGroupLeave');
+    await waitFor(() => leaderNotices.find(message => message === 'Нельзя покидать группу во время поиска или перехода.'), 'block group leave during travel');
+    assert.equal(groupStates[groupStates.length - 1]?.group?.members?.length, 2);
+    const afterBlockedTravelLeave = readPlayers(join(dataDir, 'players.json'));
+    assert.equal(JSON.parse(afterBlockedTravelLeave[leaderId].quests).expedition.state, 'moving');
+    assert.equal(JSON.parse(afterBlockedTravelLeave[memberId].quests).expedition.state, 'moving');
+
     connected[leaderId].send('expeditionTravelClaim');
     await waitFor(() => {
       const players = readPlayers(join(dataDir, 'players.json'));
@@ -150,12 +159,26 @@ test('group expedition travel start and claim persist every member together', { 
         leader.currentZoneId === 'el2' && member.currentZoneId === 'el2' ? true : undefined;
     }, 'both travel-claim states persisted');
 
+    connected[leaderId].send('expeditionSearchStart');
+    await waitFor(() => {
+      const players = readPlayers(join(dataDir, 'players.json'));
+      const leader = JSON.parse(players[leaderId].quests).expedition;
+      const member = JSON.parse(players[memberId].quests).expedition;
+      return leader?.state === 'searching' && member?.state === 'searching' ? true : undefined;
+    }, 'both group search states persisted');
+    connected[leaderId].send('huntGroupLeave');
+    await waitFor(() => leaderNotices.filter(message => message === 'Нельзя покидать группу во время поиска или перехода.').length > 1 ? true : undefined, 'block group leave during search');
+    assert.equal(groupStates[groupStates.length - 1]?.group?.members?.length, 2);
+    const afterBlockedSearchLeave = readPlayers(join(dataDir, 'players.json'));
+    assert.equal(JSON.parse(afterBlockedSearchLeave[leaderId].quests).expedition.state, 'searching');
+    assert.equal(JSON.parse(afterBlockedSearchLeave[memberId].quests).expedition.state, 'searching');
+
     const saved = readPlayers(join(dataDir, 'players.json'));
     for (const id of [leaderId, memberId]) {
       const state = JSON.parse(saved[id].quests).expedition;
       assert.equal(state.currentZoneId, 'el2');
-      assert.equal(state.state, 'idle');
-      assert.equal(state.endsAt, 0);
+      assert.equal(state.state, 'searching');
+      assert.ok(state.endsAt > Date.now());
       assert.equal(state.targetZoneId, undefined);
     }
   } finally {
