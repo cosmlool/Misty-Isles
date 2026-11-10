@@ -85,6 +85,8 @@ test('clan war attacks enforce per-player cooldown and accumulate real damage', 
   const playerA = 'runtime_war_player_a';
   const playerB = 'runtime_war_player_b';
   const playerC = 'runtime_war_nonmember';
+  const yesterday = Math.floor(Date.now() / (24 * 60 * 60 * 1000)) - 1;
+  const today = yesterday + 1;
   const port = await unusedPort();
   let child: ChildProcess | undefined;
   let roomA: Room | undefined;
@@ -107,7 +109,7 @@ test('clan war attacks enforce per-player cooldown and accumulate real damage', 
       },
     }, null, 2));
     writeFileSync(join(dataDir, 'clans.json'), JSON.stringify({
-      'clan-a': { id: 'clan-a', name: 'Клан А', level: 2, vault: 0, seasonPoints: 0, members: [{ id: playerA, name: 'War Attacker A' }], upgrades: { barracks: 0 } },
+      'clan-a': { id: 'clan-a', name: 'Клан А', level: 2, vault: 0, seasonPoints: 0, members: [{ id: playerA, name: 'War Attacker A' }], upgrades: { barracks: 0 }, questDay: yesterday, questProgress: { donate: 1900, raid: 2, war: 3, territory: 1 } },
       'clan-b': { id: 'clan-b', name: 'Клан Б', level: 2, vault: 0, seasonPoints: 0, members: [{ id: playerB, name: 'War Attacker B' }], upgrades: { barracks: 0 } },
     }, null, 2));
     writeFileSync(join(dataDir, 'clan_wars.json'), JSON.stringify([{
@@ -185,6 +187,9 @@ test('clan war attacks enforce per-player cooldown and accumulate real damage', 
     assert.equal(afterDonationPlayers[playerA].gold, 150);
     assert.equal(afterDonationPlayers[playerA].goldSpent, 100);
     assert.equal(afterDonationClans['clan-a'].vault, 100);
+    assert.equal(afterDonationClans['clan-a'].questDay, today);
+    assert.equal(afterDonationClans['clan-a'].questProgress.donate, 100, 'first donation after daily reset must count');
+    assert.equal(afterDonationClans['clan-a'].questProgress.raid, 0);
 
     roomA.send('clanWarAttack', { id: 'war-runtime' });
     await waitFor(() => noticesA.find(text => text.startsWith('Атака нанесла')), 'first clan A attack');
@@ -216,6 +221,10 @@ test('clan war attacks enforce per-player cooldown and accumulate real damage', 
     writeFileSync(join(dataDir, 'clan_wars.json'), JSON.stringify([{
       ...afterSecond, aDamage: 1_000, bDamage: 1, endsAt: Date.now() - 1,
     }], null, 2));
+    const staleClanQuest = readJson(join(dataDir, 'clans.json'));
+    staleClanQuest['clan-a'].questDay = yesterday;
+    staleClanQuest['clan-a'].questProgress = { donate: 900, raid: 1, war: 2, territory: 1 };
+    writeFileSync(join(dataDir, 'clans.json'), JSON.stringify(staleClanQuest, null, 2));
     roomA.send('clanWarList');
     await waitFor(() => clanListsB.find(payload => payload.clans?.some((clan:any) =>
       clan.id === 'clan-a' && clan.vault === 300 && clan.seasonPoints === 20)),
@@ -229,6 +238,9 @@ test('clan war attacks enforce per-player cooldown and accumulate real damage', 
     assert.equal(finished.reward, 200);
     assert.equal(savedClans['clan-a'].vault, 300);
     assert.equal(savedClans['clan-a'].seasonPoints, 20);
+    assert.equal(savedClans['clan-a'].questDay, today);
+    assert.equal(savedClans['clan-a'].questProgress.war, 1, 'war reward after daily reset must count');
+    assert.equal(savedClans['clan-a'].questProgress.donate, 0);
 
     roomB.send('clanWarList');
     await delay(100);
