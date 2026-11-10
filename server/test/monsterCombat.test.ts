@@ -1149,6 +1149,24 @@ test('pendant effects preserve relative crit scaling and stay separate from lega
   assert.deepEqual(resolveMonsterPendantCombatEffect('crystalChance', 0.20), undefined);
 });
 
+test('clean base stats exclude typed gear and set bonuses while legacy totals remain stable', () => {
+  const baseline = calculatePlayerMonsterCombatStats({
+    profession: 'Воин', strength: 10, dexterity: 10, intelligence: 10,
+    vitality: 10, stamina: 10, baseDefense: 10,
+  });
+  const equipped = calculatePlayerMonsterCombatStats({
+    profession: 'Воин', strength: 10, dexterity: 10, intelligence: 10,
+    vitality: 10, stamina: 10, baseDefense: 10,
+    equipmentEffects: [resolveMonsterCombatProperty('attack', 0.08)!],
+    setBonuses: [{ effect: 'attack', itemCount: 2, mastery: 0 }],
+  });
+
+  assert.equal(equipped.attack, baseline.attack * 1.02);
+  assert.equal(equipped.baseAttack, baseline.baseAttack);
+  assert.equal(equipped.baseDefense, baseline.baseDefense);
+  assert.equal(equipped.combatModifiers.attackBonus, 0.10);
+});
+
 test('player combatant adapter forwards typed modifiers without folding them into base stats', () => {
   const combatant = adaptPlayerCombatant({
     id: 'player-typed-modifiers', profession: 'Ассасин',
