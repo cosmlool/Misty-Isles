@@ -298,7 +298,7 @@ function applyGoldEquipmentStatProfile(item:Item){
  }
  const q=Math.round((0.004+0.016*(level/100))*1000)/1000,q2=Math.round(q*0.55*1000)/1000;
  if(item.kind==='weapon'){
-  const damage=profession==='Боевой маг'?'magicDamage':['Ассасин','Лучник','Воин','Вампир','Добытчик'].includes(profession)?'physicalDamage':'healing';
+  const damage=profession==='Боевой маг'?'magicDamage':profession==='Баффер'?'healing':'physicalDamage';
   combatStats[damage]=Math.round(q*1.5*1000)/1000;
   if(profession==='Ассасин'||profession==='Лучник')combatStats.critChance=q2;
   else if(profession==='Воин')combatStats.critDamage=q2;
