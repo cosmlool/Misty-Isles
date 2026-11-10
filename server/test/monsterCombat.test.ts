@@ -546,10 +546,10 @@ test('monster critical damage reduction lowers party critical multiplier', () =>
 
 test('attack bonus after a monster critical hit is consumed by the next attack only', () => {
   const result = resolveMonsterBattle({
-    monster: { id: 'm-after-crit', name: 'Critical chain', hp: 10000, attack: 100, defense: 0, speed: 20, critChance: 1, critMultiplier: 1, passiveDescription: 'После критического удара атака +15%' },
+    monster: { id: 'm-after-crit', name: 'Critical chain', hp: 10000, attack: 100, defense: 0, speed: 20, critChance: 0.5, critMultiplier: 1, passiveDescription: 'После критического удара атака +15%' },
     party: [{ id: 'p-after-crit', profession: 'Воин', hp: 1000, maxHp: 1000, attack: 1, defense: 0, speed: 10 }],
     maxRounds: 3,
-    random: () => 0.5,
+    random: (() => { const values = [0.5, 0.1, 0.5, 0.5, 0.5, 0.5, 0.9, 0.5, 0.5, 0.5, 0.5, 0.5, 0.9, 0.5, 0.5]; let index = 0; return () => values[index++] ?? 0.5; })(),
   });
   assert.deepEqual(result.events.filter(event => event.actor === 'Critical chain' && event.action === 'attack').map(event => event.damage), [100, 115, 100]);
 });
