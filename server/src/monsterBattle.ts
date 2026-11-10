@@ -283,7 +283,7 @@ export function resolveMonsterBattle(input: MonsterBattleInput): MonsterBattleRe
         events.push({ round, actor: fighter.id, action: 'attack', target: input.monster.name, damage: dealt, critical: crit });
         const lifesteal = clamp(safeStat(modifiers.lifestealBonus), 0, 1);
         const healingBonus = clamp(safeStat(modifiers.healingBonus), 0, 5);
-        const healed = Math.min(fighter.maxHp - fighter.hp, Math.floor(dealt * lifesteal * (1 + healingBonus)));
+        const healed = Math.min(fighter.maxHp - fighter.hp, Math.floor(dealt * lifesteal * (1 + healingBonus) * (1 - clamp(effect.healReduction || 0, 0, 1))));
         if (healed > 0) {
           fighter.hp += healed;
           events.push({ round, actor: fighter.id, action: 'heal', target: fighter.id, healing: healed });
