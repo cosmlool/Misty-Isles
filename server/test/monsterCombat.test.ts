@@ -1070,6 +1070,17 @@ test('set tier descriptions preserve separate bonuses for each unlocked threshol
   assert.equal(stats.combatModifiers.attackBonus, 0);
 });
 
+test('set effect identifiers do not invent typed bonuses without an explicit tier description', () => {
+  const stats = calculatePlayerMonsterCombatStats({
+    profession: 'Воин', strength: 10, dexterity: 10, intelligence: 10,
+    vitality: 10, stamina: 10, baseDefense: 10,
+    setBonuses: [{ effect: 'attack', itemCount: 5, mastery: 10 }],
+  });
+
+  assert.equal(stats.combatModifiers.attackBonus, 0);
+  assert.equal(stats.combatModifiers.defenseBonus, 0);
+});
+
 test('typed combat modifier aggregation keeps each effect in its own stat channel', () => {
   const modifiers = aggregateMonsterCombatModifiers([
     parseMonsterCombatEffect('+5% к критическому шансу'),
@@ -1158,13 +1169,13 @@ test('clean base stats exclude typed gear and set bonuses while legacy totals re
     profession: 'Воин', strength: 10, dexterity: 10, intelligence: 10,
     vitality: 10, stamina: 10, baseDefense: 10,
     equipmentEffects: [resolveMonsterCombatProperty('attack', 0.08)!],
-    setBonuses: [{ effect: 'attack', itemCount: 2, mastery: 0 }],
+    setBonuses: [{ effect: 'attack', itemCount: 2, mastery: 0, descriptions: ['2 предмета: +8% к атаке'] }],
   });
 
   assert.equal(equipped.attack, baseline.attack * 1.02);
   assert.equal(equipped.baseAttack, baseline.baseAttack);
   assert.equal(equipped.baseDefense, baseline.baseDefense);
-  assert.equal(equipped.combatModifiers.attackBonus, 0.10);
+  assert.equal(equipped.combatModifiers.attackBonus, 0.18);
 });
 
 test('player combatant adapter forwards typed modifiers without folding them into base stats', () => {
