@@ -127,7 +127,7 @@ export function parseMonsterCombatEffect(description: string): ParsedMonsterComb
     /производств/i.test(text) ? 'production' :
     /опыт/i.test(text) ? 'experience' :
     /золот/i.test(text) ? 'gold' :
-    /максимальн\w*\s+hp|здоровь/i.test(text) ? 'health' :
+    /\bhp\b|максимальн\w*\s+hp|здоровь/i.test(text) ? 'health' :
     /защит/i.test(text) ? 'defense' :
     /атак/i.test(text) ? 'attack' :
     /сопротивлен/i.test(text) ? 'resistance' :
