@@ -1140,6 +1140,19 @@ test('legendary armor catalog effects retain their declared typed channels', () 
   assert.deepEqual(parseMonsterCombatEffect('+8% к урону по боссам'), { target: 'bossDamage', value: 0.08 });
 });
 
+test('legendary accuracy and evasion gear effects remain separate typed modifiers', () => {
+  const accuracy = parseMonsterCombatEffect('+6% к точности');
+  const evasion = parseMonsterCombatEffect('+5% к уклонению');
+  assert.deepEqual(accuracy, { target: 'accuracy', value: 0.06 });
+  assert.deepEqual(evasion, { target: 'evasion', value: 0.05 });
+
+  const modifiers = aggregateMonsterCombatModifiers([accuracy, evasion]);
+  assert.equal(modifiers.accuracyBonus, 0.06);
+  assert.equal(modifiers.evasionBonus, 0.05);
+  assert.equal(modifiers.attackBonus, 0);
+  assert.equal(modifiers.defenseBonus, 0);
+});
+
 test('control resistance is not treated as incoming damage resistance', () => {
   assert.deepEqual(parseMonsterCombatEffect('+8% к сопротивлению контролю'), { target: 'controlResistance', value: 0.08 });
   assert.deepEqual(parseMonsterCombatEffect('+8% к сопротивлению отрицательным эффектам'), { target: 'controlResistance', value: 0.08 });
