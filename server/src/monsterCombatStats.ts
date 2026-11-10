@@ -159,6 +159,25 @@ export function resolveMonsterPendantCombatEffect(effect: string, amount: number
   return target ? { target, value: amount } : undefined;
 }
 
+export type EquipmentSetTierDescriptions = {
+  itemCount: number;
+  two?: string;
+  three?: string;
+  four?: string;
+  full?: string;
+};
+
+/** Return only the exact set tiers the equipped item count has unlocked. */
+export function resolveEquipmentSetTierDescriptions(input: EquipmentSetTierDescriptions): string[] {
+  const count = Math.max(0, Math.floor(Number.isFinite(input.itemCount) ? input.itemCount : 0));
+  const descriptions: string[] = [];
+  if (count >= 2 && input.two) descriptions.push(input.two);
+  if (count >= 3 && input.three) descriptions.push(input.three);
+  if (count >= 4 && input.four) descriptions.push(input.four);
+  if (count >= 5 && input.full) descriptions.push(input.full);
+  return descriptions;
+}
+
 export type MonsterCombatSetBonusInput = {
   effect: string;
   itemCount: number;
