@@ -1102,6 +1102,19 @@ test('typed combat modifier aggregation keeps each effect in its own stat channe
   assert.equal(modifiers.bossDamageBonus, 0);
 });
 
+test('legendary armor catalog effects retain their declared typed channels', () => {
+  assert.deepEqual(parseMonsterCombatEffect('+8% к магическому урону'), { target: 'magicDamage', value: 0.08 });
+  assert.deepEqual(parseMonsterCombatEffect('+5% к критическому шансу'), { target: 'critChance', value: 0.05 });
+  assert.deepEqual(parseMonsterCombatEffect('+8% к критическому урону'), { target: 'critDamage', value: 0.08 });
+  assert.deepEqual(parseMonsterCombatEffect('+10% к максимальному HP'), { target: 'health', value: 0.10 });
+  assert.deepEqual(parseMonsterCombatEffect('+8% к эффективности лечения'), { target: 'healing', value: 0.08 });
+  assert.deepEqual(parseMonsterCombatEffect('+6% к точности'), { target: 'accuracy', value: 0.06 });
+  assert.deepEqual(parseMonsterCombatEffect('+5% к количеству обычных ресурсов'), { target: 'loot', value: 0.05 });
+  assert.deepEqual(parseMonsterCombatEffect('+8% к скорости производства'), { target: 'production', value: 0.08 });
+  assert.deepEqual(parseMonsterCombatEffect('+5% к золоту с региональной добычи'), { target: 'gold', value: 0.05 });
+  assert.deepEqual(parseMonsterCombatEffect('+8% к урону по боссам'), { target: 'bossDamage', value: 0.08 });
+});
+
 test('control resistance is not treated as incoming damage resistance', () => {
   assert.deepEqual(parseMonsterCombatEffect('+8% к сопротивлению контролю'), { target: 'controlResistance', value: 0.08 });
   assert.deepEqual(parseMonsterCombatEffect('+8% к сопротивлению отрицательным эффектам'), { target: 'controlResistance', value: 0.08 });
