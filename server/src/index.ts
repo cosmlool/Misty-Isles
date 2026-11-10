@@ -797,7 +797,15 @@ function resolvePlayerMonsterStats(p:Player,monster:any,options:{applyFivePieceS
  const weapon=ITEMS.find(item=>item.id===eq.weapon),wp=weaponProfile(p,weapon);
  const armorItems=['armor','helmet','gloves','boots','cloak'].map(slot=>({slot,item:ITEMS.find(item=>item.id===eq[slot])})).filter(entry=>entry.item).map(entry=>({attack:Number(entry.item?.attack||0),defense:Number(entry.item?.defense||0),enhancementLevel:Number(up[`${entry.slot}:${eq[entry.slot]}`]||0)}));
  const mastery=collections.setMastery||{};
- const setBonuses=EQUIPMENT_SETS.filter((set:any)=>!set.legacy).map((set:any)=>({effect:String(set.effect||''),itemCount:set.items.filter((id:string)=>Object.values(eq).includes(id)).length,mastery:Number(mastery[set.id]||0)}));
+ const setBonuses=EQUIPMENT_SETS.filter((set:any)=>!set.legacy).map((set:any)=>{
+  const itemCount=set.items.filter((id:string)=>Object.values(eq).includes(id)).length;
+  const descriptions:string[]=[];
+  if(itemCount>=2&&set.two)descriptions.push(String(set.two));
+  if(itemCount>=3&&(set.three||set.full))descriptions.push(String(set.three||set.full));
+  if(itemCount>=4&&set.four)descriptions.push(String(set.four));
+  if(itemCount>=5&&set.full&&set.three)descriptions.push(String(set.full));
+  return {effect:String(set.effect||''),itemCount,mastery:Number(mastery[set.id]||0),descriptions};
+});
  const pendant=NEW_EQUIPMENT_ITEMS.find(item=>item.id===eq.amulet),now=Date.now();
  return calculatePlayerMonsterCombatStats({profession:p.profession,strength:p.strength,dexterity:p.dexterity,intelligence:p.intelligence,vitality:p.vitality,stamina:p.stamina,baseDefense:p.defense,
   weaponStrength:wp.strength,weaponDexterity:wp.dexterity,weaponIntelligence:wp.intelligence,weaponVitality:wp.vitality,weaponStamina:wp.stamina,
