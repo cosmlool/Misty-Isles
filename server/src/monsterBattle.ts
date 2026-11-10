@@ -233,8 +233,6 @@ export function resolveMonsterBattle(input: MonsterBattleInput): MonsterBattleRe
         if (effect.enemyDefenseReduction) partyDefenseReduction = clamp(partyDefenseReduction + effect.enemyDefenseReduction, 0, 0.75);
         if (effect.enemyAttackReduction) partyAttackReduction = clamp(partyAttackReduction + effect.enemyAttackReduction, 0, 0.75);
       }
-      // The bonus from a critical hit starts with the next monster attack.
-      if (monsterCrit && effect.attackAfterCritical) attackAfterCritical = true;
     }
 
     // End-of-round effects resolve only after every surviving actor has had its turn.
