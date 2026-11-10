@@ -96,7 +96,8 @@ test('PvP offers four saved real characters, steals 20 percent gold, persists co
       [attackerId]: {
         id: attackerId, name: 'PvP Attacker', race: 'Кот', level: 20,
         strength: 100_000, dexterity: 100_000, defense: 100_000, vitality: 100_000,
-        gold: 250, inventory: '[]', equipment: '{}', quests: '{}',
+        gold: 250, buff: 'attack', buffValue: 0.15, buffUntil: Date.now() + 5 * 60 * 1000,
+        inventory: '[]', equipment: '{}', quests: '{}',
       },
     };
     for (const [index, id] of targetIds.entries()) {
@@ -164,6 +165,7 @@ test('PvP offers four saved real characters, steals 20 percent gold, persists co
     attackerRoom.send('pvpChallenge', { targetId: chosen.id });
     const result = await waitFor(() => results[0], 'PvP combat result');
     assert.equal(result.report.result, 'win', 'the synthetic high-stat attacker should win');
+    assert.ok(result.report.attack >= 184_002, 'active +15% attack buff must affect the PvP combat calculation');
     const saved = readJson(join(dataDir, 'players.json'));
     assert.ok(saved[bystanderId].health > 50, 'PvP persistence must include unsaved health regeneration from every online character');
     const stolen = Math.floor(targetBefore.gold * 0.2);
