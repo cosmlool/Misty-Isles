@@ -96,7 +96,7 @@ export function resolveMonsterBattle(input: MonsterBattleInput): MonsterBattleRe
   let monsterHp = monsterMaxHp;
   let totalDamageToMonster = 0;
   let totalDamageToParty = 0;
-  let monsterPoisoned = false;
+  const poisonedParty = new Map<string, number>();
   let partyAttackReduction = 0;
   let partyDefenseReduction = 0;
   let partySpeedReduction = 0;
@@ -152,7 +152,7 @@ export function resolveMonsterBattle(input: MonsterBattleInput): MonsterBattleRe
       monsterHp = Math.max(0, monsterHp - dealt);
       fighter.damageDealt += dealt;
       totalDamageToMonster += dealt;
-      if (effect.poisonOnHit) monsterPoisoned = true;
+
       events.push({ round, actor: fighter.id, action: 'attack', target: input.monster.name, damage: dealt, critical: crit });
     }
 
@@ -188,6 +188,7 @@ export function resolveMonsterBattle(input: MonsterBattleInput): MonsterBattleRe
       totalDamageToParty += incoming;
       events.push({ round, actor: input.monster.name, action: 'attack', target: target.id, damage: incoming, critical: monsterCrit });
       if (monsterCrit && effect.attackAfterCritical) attackAfterCritical = true;
+      if (effect.poisonOnHit && !poisonedParty.has(target.id)) poisonedParty.set(target.id, round);
       if (effect.lifesteal) {
         const healed = Math.min(monsterMaxHp - monsterHp, Math.floor(incoming * effect.lifesteal));
         if (healed > 0) {
@@ -205,11 +206,15 @@ export function resolveMonsterBattle(input: MonsterBattleInput): MonsterBattleRe
         events.push({ round, actor: input.monster.name, action: 'heal', target: input.monster.name, healing: healed });
       }
     }
-    if (monsterPoisoned && monsterHp > 0) {
-      const poisonDamage = Math.max(1, Math.floor(monsterMaxHp * 0.03));
-      monsterHp = Math.max(0, monsterHp - poisonDamage);
-      totalDamageToMonster += poisonDamage;
-      events.push({ round, actor: 'poison', action: 'poison', target: input.monster.name, damage: poisonDamage });
+    for (const [poisonedId, appliedRound] of poisonedParty) {
+      if (appliedRound >= round) continue;
+      const poisonedTarget = party.find(member => member.id === poisonedId);
+      if (!poisonedTarget || poisonedTarget.hp <= 0) continue;
+      const poisonDamage = Math.max(1, Math.floor(poisonedTarget.maxHp * 0.03));
+      poisonedTarget.hp = Math.max(0, poisonedTarget.hp - poisonDamage);
+      poisonedTarget.damageTaken += poisonDamage;
+      totalDamageToParty += poisonDamage;
+      events.push({ round, actor: 'poison', action: 'poison', target: poisonedId, damage: poisonDamage });
     }
   }
 
