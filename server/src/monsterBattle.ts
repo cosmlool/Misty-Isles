@@ -230,7 +230,12 @@ export function resolveMonsterBattle(input: MonsterBattleInput): MonsterBattleRe
         const activeSecondaryAttackBuff = fighter.buffSecondaryEffect === 'attack' && safeStat(fighter.buffUntil) > now ? safeStat(fighter.buffSecondaryValue) : 0;
         const modifiers = fighter.combatModifiers || {};
         const attack = fighter.attack * (1 + activeAttackBuff + activeSecondaryAttackBuff) * (1 + clamp(safeStat(modifiers.attackBonus), 0, 5)) * (1 - (partyAttackReduction.get(fighter.id) || 0));
-        const hitChance = clamp((safeStat(fighter.accuracy, 100) * (1 + clamp(safeStat(modifiers.accuracyBonus), 0, 5)) / 100) * (fighter.blind ? 0.65 : 1), 0.05, 1);
+        const hitChance = clamp(
+          (safeStat(fighter.accuracy, 100) * (1 + clamp(safeStat(modifiers.accuracyBonus), 0, 5)) / 100) *
+          (fighter.blind ? 0.65 : 1) * (1 - clamp(effect.evasion || 0, 0, 0.75)),
+          0.05,
+          1,
+        );
         if (random() > hitChance) {
           events.push({ round, actor: fighter.id, action: 'miss', target: input.monster.name });
           continue;
@@ -314,6 +319,11 @@ export function resolveMonsterBattle(input: MonsterBattleInput): MonsterBattleRe
         events.push({ round, actor: input.monster.name, action: 'miss', target: target.id });
         continue;
       }
+      const playerEvasionChance = clamp(safeStat(target.combatModifiers?.evasionBonus), 0, 0.75);
+      if (playerEvasionChance > 0 && random() < playerEvasionChance) {
+        events.push({ round, actor: input.monster.name, action: 'dodge', target: target.id });
+        continue;
+      }
 
       const activeDefenseBuff = target.buff === 'defense' && safeStat(target.buffUntil) > now ? safeStat(target.buffValue) : 0;
       const activeSecondaryDefenseBuff = target.buffSecondaryEffect === 'defense' && safeStat(target.buffUntil) > now ? safeStat(target.buffSecondaryValue) : 0;
@@ -327,11 +337,7 @@ export function resolveMonsterBattle(input: MonsterBattleInput): MonsterBattleRe
         damageThroughDefense(safeStat(input.monster.attack) * monsterDamageMultiplier, targetDefense) * monsterCritMultiplier *
         (1 - clamp(safeStat(targetModifiers.resistanceBonus), 0, 0.75)),
       ));
-      const dodgeChance = clamp((effect.evasion || 0) + safeStat(targetModifiers.evasionBonus), 0, 0.75);
-      const dodged = random() < dodgeChance;
-      if (dodged) {
-        events.push({ round, actor: input.monster.name, action: 'dodge', target: target.id });
-      } else {
+      {
         target.hp = Math.max(0, target.hp - incoming);
         target.damageTaken += incoming;
         totalDamageToParty += incoming;
