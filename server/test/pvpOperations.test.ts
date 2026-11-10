@@ -30,7 +30,7 @@ test('PvP rules use a fifteen-minute attacker cooldown and one-hour victim immun
   assert.equal(pvpImmunityRemaining({ quests: '{}' }, 4_000), 0);
 });
 
-test('matchmaking selects at most four registered characters within plus or minus two levels', () => {
+test('matchmaking includes registered characters at every level and excludes invalid or protected profiles', () => {
   const players = {
     self: { id: 'self', race: 'Кот', level: 20 },
     low: { id: 'low', race: 'Собака', level: 18 },
@@ -41,10 +41,10 @@ test('matchmaking selects at most four registered characters within plus or minu
     protected: { id: 'protected', race: 'Собака', level: 20, quests: JSON.stringify({ pvp: { immunityUntil: 9_000 } }) },
   };
   const selected = selectPvpOpponents(players, 'self', 20, 8_000, () => 0);
-  assert.deepEqual(selected.map(player => player.id).sort(), ['high', 'low']);
+  assert.deepEqual(selected.map(player => player.id).sort(), ['high', 'low', 'tooHigh', 'tooLow']);
 });
 
-test('matchmaking randomly samples four from all eligible saved players', () => {
+test('matchmaking rotates to four different opponents when enough alternatives exist', () => {
   const players = Object.fromEntries(Array.from({ length: 8 }, (_, index) => {
     const id = 'player-' + index;
     return [id, { id, race: 'Кот', level: 30 }];
@@ -52,6 +52,10 @@ test('matchmaking randomly samples four from all eligible saved players', () => 
   const selected = selectPvpOpponents(players, 'attacker', 30, 0, () => 0.5);
   assert.equal(selected.length, 4);
   assert.equal(new Set(selected.map(player => player.id)).size, 4);
+  const next = selectPvpOpponents(players, 'attacker', 30, 0, () => 0.5, selected.map(player => player.id));
+  assert.equal(next.length, 4);
+  assert.equal(new Set(next.map(player => player.id)).size, 4);
+  assert.ok(next.every(player => !selected.some(previous => previous.id === player.id)));
 });
 
 test('only targets in the server-issued four-player offer can be attacked', () => {
