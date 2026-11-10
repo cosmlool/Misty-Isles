@@ -21,6 +21,7 @@ import { checkExpeditionTravelConsistency, checkExpeditionTravelReadiness, check
 
 const ONLINE_PLAYERS = new Map<string, Player>();
 const ONLINE_CLIENTS = new Map<string, Client>();
+const ONLINE_SESSION_HASHES = new Map<string, string>();
 const HUNT_GROUPS = new Map<string, { id:string; leader:string; members:string[] }>();
 const PLAYER_GROUP = new Map<string,string>();
 const GROUP_INVITES = new Map<string,string>();
@@ -458,7 +459,7 @@ function authHttpHandler(req:IncomingMessage,res:ServerResponse) {
         const session=verifySession(String(d.token||''));if(!session){sendJson(res,401,{error:'Сессия истекла. Войди снова.'});return;}sendJson(res,200,{ok:true,playerId:session.playerId});return;
       }
       if(path==='/auth/logout'){
-        const token=String(d.token||'');const session=verifySession(token);if(!session){sendJson(res,401,{error:'Сессия не найдена или истекла.'});return;}const hash=tokenDigest(token);saveSessions(loadSessions().filter(x=>x.tokenHash!==hash));ONLINE_CLIENTS.get(session.playerId)?.leave(4021);sendJson(res,200,{ok:true});return;
+        const token=String(d.token||'');const session=verifySession(token);if(!session){sendJson(res,401,{error:'Сессия не найдена или истекла.'});return;}const hash=tokenDigest(token);saveSessions(loadSessions().filter(x=>x.tokenHash!==hash));if(ONLINE_SESSION_HASHES.get(session.playerId)===hash)ONLINE_CLIENTS.get(session.playerId)?.leave(4021);sendJson(res,200,{ok:true});return;
       }
       sendJson(res,404,{error:'Неизвестный запрос.'});
     } catch { sendJson(res,400,{error:'Не удалось обработать запрос.'}); }
@@ -482,6 +483,7 @@ class GameRoom extends Room<RoomState> {
     const player=this.state.player; normalizePlayerCityData(player); applyHealthRegeneration(player); const regenState=readObject(player.quests); if(!regenState.hpRegenAt){regenState.hpRegenAt=Date.now();player.quests=JSON.stringify(regenState);} const now=Date.now(); if(player.lastSeenAt>0 && now-player.lastSeenAt>=3*24*60*60*1000) player.returnBonusAvailable=1; player.lastSeenAt=now;
     ONLINE_PLAYERS.set(this.playerId, this.state.player);
     ONLINE_CLIENTS.set(this.playerId, client);
+    ONLINE_SESSION_HASHES.set(this.playerId, tokenDigest(this.sessionToken));
     const initialQuests=readObject(player.quests); if(!initialQuests.expedition) initialQuests.expedition={branchId:'forgotten_lands',currentZoneId:'el1',opened:1,cleared:[],seen:{},state:'idle'};if(initialQuests.expedition.groupId&&!HUNT_GROUPS.has(initialQuests.expedition.groupId)){initialQuests.expedition.groupId='';if(['searching','moving'].includes(initialQuests.expedition.state)){initialQuests.expedition.state='idle';initialQuests.expedition.endsAt=0;delete initialQuests.expedition.targetZoneId;}} player.quests=JSON.stringify(initialQuests); const normalizedEquipment=readObject(player.equipment); for(const slot of ['weapon','helmet','armor','gloves','boots','cloak','amulet']) if(normalizedEquipment[slot]===undefined) normalizedEquipment[slot]=''; player.equipment=JSON.stringify(normalizedEquipment);
     client.send('hello', { message: 'Соединение установлено.' });
     client.send('combatHistory', { history: (readObject(player.quests).combatHistory || []).slice(0, 20) });
@@ -491,7 +493,7 @@ class GameRoom extends Room<RoomState> {
     client.send('catalog', { items: ITEMS, shopItems:shopCatalogForPlayer(player), zones: EXPEDITION_DATA.zones, expedition:EXPEDITION_DATA, neutralCities: NEUTRAL_CITIES, professions: PROFESSIONS, recipes: RECIPES, guildSkills: GUILD_SKILLS, cityLocations: CITY_LOCS, cityNpcs:CITY_NPCS, bossCatalog: EXPEDITION_BESTIARY, raceCityInfo: RACE_CITY_INFO, raceDailyQuests: RACE_DAILY_QUESTS });
     client.send('notice', { text: this.state.player.race ? `С возвращением, ${this.state.player.name}!` : 'Выбери расу, чтобы начать приключение.' });
   }
-  onLeave() { ONLINE_PLAYERS.delete(this.playerId); ONLINE_CLIENTS.delete(this.playerId); const q=readObject(this.state.player.quests);if(q.expedition){q.expedition.groupId='';if(['searching','moving'].includes(q.expedition.state)){q.expedition.state='idle';q.expedition.endsAt=0;delete q.expedition.targetZoneId;}this.state.player.quests=JSON.stringify(q);}const gid=PLAYER_GROUP.get(this.playerId),g=gid?HUNT_GROUPS.get(gid):undefined;if(g){g.members=g.members.filter(id=>id!==this.playerId);PLAYER_GROUP.delete(this.playerId);if(g.leader===this.playerId&&g.members.length)g.leader=g.members[0];if(!g.members.length)HUNT_GROUPS.delete(g.id);else for(const id of g.members)ONLINE_CLIENTS.get(id)?.send('huntGroupState',{group:groupSnapshot(id)});} this.save(); }
+  onLeave() { ONLINE_PLAYERS.delete(this.playerId); ONLINE_CLIENTS.delete(this.playerId); ONLINE_SESSION_HASHES.delete(this.playerId); const q=readObject(this.state.player.quests);if(q.expedition){q.expedition.groupId='';if(['searching','moving'].includes(q.expedition.state)){q.expedition.state='idle';q.expedition.endsAt=0;delete q.expedition.targetZoneId;}this.state.player.quests=JSON.stringify(q);}const gid=PLAYER_GROUP.get(this.playerId),g=gid?HUNT_GROUPS.get(gid):undefined;if(g){g.members=g.members.filter(id=>id!==this.playerId);PLAYER_GROUP.delete(this.playerId);if(g.leader===this.playerId&&g.members.length)g.leader=g.members[0];if(!g.members.length)HUNT_GROUPS.delete(g.id);else for(const id of g.members)ONLINE_CLIENTS.get(id)?.send('huntGroupState',{group:groupSnapshot(id)});} this.save(); }
   onDispose() { this.save(); }
   private save() { if (!this.playerId) return; this.state.player.lastSeenAt=Date.now(); const all = loadPlayersWithOnline(); all[this.playerId] = this.state.player.toJSON(); savePlayers(all); }
   private notice(c: Client, text: string) { c.send('notice', { text }); this.save(); }
