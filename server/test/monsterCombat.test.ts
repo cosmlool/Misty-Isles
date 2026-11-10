@@ -392,3 +392,23 @@ test('monster attack reduction is scoped to the struck party member', () => {
   assert.equal(result.party.find(member => member.id === 'a-target')?.damageDealt, 180);
   assert.equal(result.party.find(member => member.id === 'b-other')?.damageDealt, 190);
 });
+
+
+test('monster deals bonus damage to a blinded weakened target', () => {
+  const run = (blind: boolean) => resolveMonsterBattle({
+    monster: {
+      id: 'm-weakened-target',
+      name: 'Weakness hunter',
+      hp: 10000,
+      attack: 100,
+      defense: 0,
+      speed: 20,
+      passiveDescription: 'Атака +15% против ослабленной цели',
+    },
+    party: [{ id: 'target', profession: 'Воин', hp: 1000, maxHp: 1000, attack: 1, defense: 0, speed: 10, blind }],
+    maxRounds: 1,
+    random: () => 0.5,
+  });
+  assert.equal(run(true).totalDamageToParty, 115);
+  assert.equal(run(false).totalDamageToParty, 100);
+});
