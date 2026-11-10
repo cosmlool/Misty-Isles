@@ -6,7 +6,7 @@ import { Server, Room, Client } from '@colyseus/core';
 import { WebSocketTransport } from '@colyseus/ws-transport';
 import { Schema, type } from '@colyseus/schema';
 import { Player } from './PlayerSchema.js';
-import { createPlayerSaveStore } from './playerSaves.js';
+import { applyPlayerSave, createPlayerSaveStore } from './playerSaves.js';
 import { readJsonFile as readPersistentJson } from './jsonPersistence.js';
 import { filterAvailableUniqueItems, isLastEquippedCopy, ownsItemCopy, removeInventoryCopy } from './inventoryOperations.js';
 import { readPlayerArray as readArray, readPlayerObject as readObject } from './playerJson.js';
@@ -772,7 +772,7 @@ function broadcastClanWarList(wars:any[],clans:Record<string,any>){
   return payload;
 }
 
-function applySaved(p:Player,s:any){for(const [key,value] of Object.entries(s||{})){if(key in p && value!==undefined)(p as any)[key]=value;}if(!p.experienceToNext)p.experienceToNext=xpNeed(p.level||1);}
+function applySaved(p:Player,s:any){applyPlayerSave(p as any,s);if(!p.experienceToNext)p.experienceToNext=xpNeed(p.level||1);}
 
 
 function recordActivity(p:Player,entry:Record<string,any>){const q=readObject(p.quests);const now=Date.now();const day=new Date(now).toISOString().slice(0,10);if(q.activityDay!==day){q.activityDay=day;q.activityToday={hunts:0,wins:0,losses:0,gold:0,xp:0,dungeons:0,crafts:0};}const stats=q.activityToday||{hunts:0,wins:0,losses:0,gold:0,xp:0,dungeons:0,crafts:0};if(entry.type==='hunt'){stats.hunts++;if(entry.outcome==='win'){stats.wins++;if(q.challengeDay!==day){q.challengeDay=day;q.dailyHunts=0;}q.dailyHunts=Number(q.dailyHunts||0)+1;resetWeeklyHuntProgress(q,utcIsoWeekKey(new Date(now)));q.weeklyHunts=Number(q.weeklyHunts||0)+1;}else stats.losses++;stats.gold+=Number(entry.gold||0);stats.xp+=Number(entry.xp||0);}if(entry.type==='dungeon')stats.dungeons++;if(entry.type==='craft')stats.crafts++;q.activityToday=stats;q.activityLog=Array.isArray(q.activityLog)?q.activityLog:[];q.activityLog.unshift({at:now,...entry});q.activityLog=q.activityLog.slice(0,30);p.quests=JSON.stringify(q);}
