@@ -232,12 +232,17 @@ export function resolveMonsterBattle(input: MonsterBattleInput): MonsterBattleRe
         const attack = fighter.attack * (1 + activeAttackBuff + activeSecondaryAttackBuff) * (1 + clamp(safeStat(modifiers.attackBonus), 0, 5)) * (1 - (partyAttackReduction.get(fighter.id) || 0));
         const hitChance = clamp(
           (safeStat(fighter.accuracy, 100) * (1 + clamp(safeStat(modifiers.accuracyBonus), 0, 5)) / 100) *
-          (fighter.blind ? 0.65 : 1) * (1 - clamp(effect.evasion || 0, 0, 0.75)),
+          (fighter.blind ? 0.65 : 1),
           0.05,
           1,
         );
         if (random() > hitChance) {
           events.push({ round, actor: fighter.id, action: 'miss', target: input.monster.name });
+          continue;
+        }
+        const monsterEvasionChance = clamp(effect.evasion || 0, 0, 0.75);
+        if (monsterEvasionChance > 0 && random() < monsterEvasionChance) {
+          events.push({ round, actor: input.monster.name, action: 'dodge', target: fighter.id });
           continue;
         }
         const activeCritBuff = fighter.buff === 'crit' && safeStat(fighter.buffUntil) > now ? safeStat(fighter.buffValue) : 0;
