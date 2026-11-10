@@ -7,7 +7,7 @@ import test from 'node:test';
 import { getMonsterPassiveDescriptions, parseMonsterWeakness, resolveMonsterPassive } from '../src/monsterCombat.js';
 import { calculateCombatSpeed, resolveMonsterBattle } from '../src/monsterBattle.js';
 import { adaptPlayerCombatant } from '../src/monsterCombatantAdapter.js';
-import { aggregateMonsterCombatModifiers, calculatePlayerMonsterCombatStats, parseMonsterCombatEffect } from '../src/monsterCombatStats.js';
+import { aggregateMonsterCombatModifiers, calculatePlayerMonsterCombatStats, parseMonsterCombatEffect, parseMonsterCombatEffectClauses } from '../src/monsterCombatStats.js';
 
 const serverDir = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const bestiary = JSON.parse(readFileSync(resolve(serverDir, 'data/forgotten_lands.json'), 'utf8'));
@@ -1041,6 +1041,27 @@ test('shared player combat stats route profile bonuses to the profession-specifi
   assert.equal(gatherer.attack, 18);
 });
 
+
+test('set tier descriptions preserve separate bonuses for each unlocked threshold', () => {
+  assert.deepEqual(parseMonsterCombatEffectClauses('2 предмета: +6% к критическому шансу'), [
+    { target: 'critChance', value: 0.06 },
+  ]);
+  assert.deepEqual(parseMonsterCombatEffectClauses('3 предмета: +12% к защите и +5% к здоровью'), [
+    { target: 'defense', value: 0.12 },
+    { target: 'health', value: 0.05 },
+  ]);
+  const stats = calculatePlayerMonsterCombatStats({
+    profession: 'Воин', strength: 10, dexterity: 10, intelligence: 10,
+    vitality: 10, stamina: 10, baseDefense: 10,
+    setBonuses: [{ effect: 'crit', itemCount: 3, mastery: 0, descriptions: [
+      '2 предмета: +6% к критическому шансу',
+      '3 предмета: +12% к критическому урону',
+    ] }],
+  });
+  assert.equal(stats.combatModifiers.critChanceBonus, 0.06);
+  assert.equal(stats.combatModifiers.critDamageBonus, 0.12);
+  assert.equal(stats.combatModifiers.attackBonus, 0);
+});
 
 test('typed combat modifier aggregation keeps each effect in its own stat channel', () => {
   const modifiers = aggregateMonsterCombatModifiers([
