@@ -1139,3 +1139,63 @@ test('pendant effects preserve relative crit scaling and stay separate from lega
   assert.equal(equipped.defense, baseline.defense);
   assert.deepEqual(resolveMonsterPendantCombatEffect('crystalChance', 0.20), undefined);
 });
+
+test('player combatant adapter forwards typed modifiers without folding them into base stats', () => {
+  const combatant = adaptPlayerCombatant({
+    id: 'player-typed-modifiers', profession: 'Ассасин',
+    hp: 80, maxHp: 100, attack: 100, defense: 30, dexterity: 20,
+    combatModifiers: {
+      attackBonus: 0.10,
+      defenseBonus: 0.08,
+      critChanceBonus: 0.05,
+      critChanceMultiplierBonus: 0.20,
+      critDamageBonus: 0.15,
+      lifestealBonus: 0.03,
+      physicalDamageBonus: 0.12,
+      bossDamageBonus: 0.10,
+    },
+  });
+  assert.equal(combatant.attack, 100);
+  assert.equal(combatant.defense, 30);
+  assert.deepEqual(combatant.combatModifiers, {
+    attackBonus: 0.10,
+    defenseBonus: 0.08,
+    critChanceBonus: 0.05,
+    critChanceMultiplierBonus: 0.20,
+    critDamageBonus: 0.15,
+    lifestealBonus: 0.03,
+    physicalDamageBonus: 0.12,
+    bossDamageBonus: 0.10,
+  });
+});
+
+test('monster battle applies typed attack, damage-type and lifesteal modifiers', () => {
+  const result = resolveMonsterBattle({
+    monster: { id: 'training-dummy', name: 'Манекен', hp: 1000, attack: 1, defense: 0, speed: 0 },
+    party: [{
+      id: 'fighter', profession: 'Воин', hp: 50, maxHp: 100,
+      attack: 100, defense: 0, speed: 10, damageType: 'physical',
+      combatModifiers: { attackBonus: 0.10, physicalDamageBonus: 0.20, lifestealBonus: 0.50 },
+    }],
+    maxRounds: 1,
+    random: (() => { const values = [0, 0.99, 0.99, 0.99]; let i = 0; return () => values[i++] ?? 0.99; })(),
+  });
+  assert.equal(result.party[0].damageDealt, 132);
+  assert.equal(result.party[0].remainingHp, 100);
+  assert.ok(result.events.some(event => event.action === 'heal' && event.actor === 'fighter' && event.healing === 50));
+});
+
+test('monster battle applies crit chance and critical damage modifiers independently', () => {
+  const result = resolveMonsterBattle({
+    monster: { id: 'training-dummy', name: 'Манекен', hp: 1000, attack: 1, defense: 0, speed: 0 },
+    party: [{
+      id: 'critical-fighter', profession: 'Ассасин', hp: 100, maxHp: 100,
+      attack: 100, defense: 0, speed: 10, critChance: 0.10, critMultiplier: 1.5,
+      combatModifiers: { critChanceBonus: 0.10, critChanceMultiplierBonus: 0.50, critDamageBonus: 0.25 },
+    }],
+    maxRounds: 1,
+    random: (() => { const values = [0, 0.15, 0.99, 0.99]; let i = 0; return () => values[i++] ?? 0.99; })(),
+  });
+  assert.equal(result.party[0].damageDealt, 175);
+  assert.equal(result.events.find(event => event.action === 'attack' && event.actor === 'critical-fighter')?.critical, true);
+});
