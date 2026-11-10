@@ -925,3 +925,27 @@ test('player monster combat stats can preserve the dungeon five-piece set rule',
   assert.ok(Math.abs(expedition.defense - 25.103925) < 0.000001);
   assert.ok(Math.abs(dungeon.defense - 23.9085) < 0.000001);
 });
+
+
+test('player monster combat stats apply each equipment enhancement to that item exactly once', () => {
+  const stats = calculatePlayerMonsterCombatStats({
+    profession: 'Воин',
+    strength: 10,
+    dexterity: 10,
+    intelligence: 10,
+    vitality: 10,
+    stamina: 10,
+    baseDefense: 10,
+    weaponAttack: 100,
+    weaponEnhancementLevel: 2,
+    weaponDexterityBonus: 2,
+    armorItems: [
+      { attack: 10, defense: 20, enhancementLevel: 1 },
+      { attack: 30, defense: 40, enhancementLevel: 3 },
+    ],
+  });
+
+  assert.equal(stats.attack, 170);
+  assert.equal(stats.defense, 89.43);
+  assert.equal(stats.speed, 12);
+});
