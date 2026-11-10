@@ -265,6 +265,13 @@ export type PlayerMonsterCombatHealthInput = {
 
 export type PlayerMonsterCombatHealth = { hp: number; maxHp: number };
 
+/** Combines the Vampire profession baseline with already-aggregated gear, set and active-buff lifesteal once. */
+export function resolvePlayerMonsterLifestealRate(profession: string, aggregatedBonus: number): number {
+  const professionBonus = profession === 'Вампир' ? 0.08 : 0;
+  const bonus = Number.isFinite(aggregatedBonus) ? Math.max(0, aggregatedBonus) : 0;
+  return Math.min(0.75, professionBonus + bonus);
+}
+
 export function resolvePlayerMonsterCombatHealth(
   input: PlayerMonsterCombatHealthInput,
 ): PlayerMonsterCombatHealth {
