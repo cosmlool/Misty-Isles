@@ -7,7 +7,7 @@ import test from 'node:test';
 import { getMonsterPassiveDescriptions, parseMonsterWeakness, resolveMonsterPassive } from '../src/monsterCombat.js';
 import { calculateCombatSpeed, resolveMonsterBattle } from '../src/monsterBattle.js';
 import { adaptPlayerCombatant } from '../src/monsterCombatantAdapter.js';
-import { resolveEquipmentSetTierDescriptions, aggregateMonsterCombatModifiers, calculatePlayerMonsterCombatStats, parseMonsterCombatEffect, parseMonsterCombatEffectClauses, resolveMonsterCombatProperty, resolveMonsterPendantCombatEffect } from '../src/monsterCombatStats.js';
+import { resolveEquipmentSetTierDescriptions, aggregateMonsterCombatModifiers, calculatePlayerMonsterCombatStats, parseMonsterCombatEffect, parseMonsterCombatEffectClauses, resolveMonsterCombatProperty, resolveMonsterPendantCombatEffect, resolvePlayerMonsterCombatHealth } from '../src/monsterCombatStats.js';
 
 const serverDir = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const bestiary = JSON.parse(readFileSync(resolve(serverDir, 'data/forgotten_lands.json'), 'utf8'));
@@ -1348,4 +1348,26 @@ test('monster battle applies crit chance and critical damage modifiers independe
   });
   assert.equal(result.party[0].damageDealt, 175);
   assert.equal(result.events.find(event => event.action === 'attack' && event.actor === 'critical-fighter')?.critical, true);
+});
+
+
+test('combat HP normalization preserves the legacy health ratio before typed health bonuses', () => {
+  assert.deepEqual(resolvePlayerMonsterCombatHealth({
+    currentHp: 75, legacyEffectiveMaxHp: 150, baseMaxHp: 120,
+  }), { hp: 60, maxHp: 120 });
+  assert.deepEqual(resolvePlayerMonsterCombatHealth({
+    currentHp: 150, legacyEffectiveMaxHp: 150, baseMaxHp: 120,
+  }), { hp: 120, maxHp: 120 });
+  assert.deepEqual(resolvePlayerMonsterCombatHealth({
+    currentHp: 200, legacyEffectiveMaxHp: 150, baseMaxHp: 120,
+  }), { hp: 120, maxHp: 120 });
+});
+
+test('combat HP normalization safely handles invalid and non-positive inputs', () => {
+  assert.deepEqual(resolvePlayerMonsterCombatHealth({
+    currentHp: Number.NaN, legacyEffectiveMaxHp: 0, baseMaxHp: Number.NaN,
+  }), { hp: 0, maxHp: 1 });
+  assert.deepEqual(resolvePlayerMonsterCombatHealth({
+    currentHp: -10, legacyEffectiveMaxHp: 100, baseMaxHp: 80,
+  }), { hp: 0, maxHp: 80 });
 });
