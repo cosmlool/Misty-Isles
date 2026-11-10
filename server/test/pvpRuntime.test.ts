@@ -103,7 +103,8 @@ test('PvP offers four saved real characters, steals 20 percent gold, persists co
     for (const [index, id] of targetIds.entries()) {
       players[id] = {
         id, name: `Offline Target ${index + 1}`, race: 'Собака', level: [20, 23, 10, 40, 15, 55, 8, 32, 60][index],
-        strength: 1, dexterity: 1, defense: 1, vitality: 1,
+        strength: 1, dexterity: 1, defense: 100_000, vitality: 100_000,
+        buff: 'defense', buffValue: 0.20, buffUntil: Date.now() + 5 * 60 * 1000,
         gold: 1_000 + index * 100, inventory: '[]', equipment: '{}', quests: '{}',
       };
     }
@@ -166,6 +167,7 @@ test('PvP offers four saved real characters, steals 20 percent gold, persists co
     const result = await waitFor(() => results[0], 'PvP combat result');
     assert.equal(result.report.result, 'win', 'the synthetic high-stat attacker should win');
     assert.ok(result.report.attack >= 184_002, 'active +15% attack buff must affect the PvP combat calculation');
+    assert.ok(result.report.scores.opponent >= 69_600, 'the target\'s active +20% defense buff must affect its PvP score');
     const saved = readJson(join(dataDir, 'players.json'));
     assert.ok(saved[bystanderId].health > 50, 'PvP persistence must include unsaved health regeneration from every online character');
     const stolen = Math.floor(targetBefore.gold * 0.2);
