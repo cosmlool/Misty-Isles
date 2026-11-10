@@ -747,3 +747,12 @@ No gameplay code was changed. These are source-level findings; tests were not ex
 - The cross-mode comparison reinforces existing findings: combat stats/equipment effects are not centralized, set bonus descriptions and implementations diverge, and active buffs are not applied consistently to solo/group dungeons, PvP, and clan wars. Treat these as a combat-system consolidation/design task rather than patching individual formulas independently.
 
 Source-level review only; no gameplay code changed and no tests were executed.
+
+
+### Weapon-profile attributes and PvP/clan-war parity — 2026-11-10
+
+- **Confirmed weapon primary-attribute bonuses are omitted from PvP and clan-war calculations:** all 50 non-legacy weapon records in equipment_catalog.json define primaryAttribute. Ordinary hunt and group expedition dungeon call weaponProfile() and add its attribute bonuses before calculating combat stats. PvP and clan-war formulas use base strength/dexterity/intelligence plus weapon attack only; they do not call weaponProfile(). Consequently the weapon's advertised +attribute bonus is absent from both PvP and clan-war ratings. This also omits weapon-granted stamina/vitality from defensive calculations in those modes.
+- **Confirmed high-tier profile-efficiency effects are also omitted from PvP/clan wars:** the catalog contains 21 high-tier weapons with +4% to +6% profile-efficiency text. weaponProfile() parses this effect; group dungeon uses its loot/profile bonuses, while PvP and clan-war formulas do not. These weapon effects therefore have no impact in those modes.
+- These findings strengthen the existing requirement for a shared combat-stat calculation or explicit per-mode rules. Do not fix by copying the hunt formula blindly: PvP, clan war, solo dungeon, group dungeon, and hunt currently use different combat models and need a deliberate shared-stat contract plus mode-specific modifiers.
+
+Source-level catalog and handler comparison only; no gameplay code changed and no tests were executed.
