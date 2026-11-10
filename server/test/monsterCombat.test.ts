@@ -5,7 +5,7 @@ import { fileURLToPath } from 'node:url';
 import test from 'node:test';
 
 import { getMonsterPassiveDescriptions, parseMonsterWeakness, resolveMonsterPassive } from '../src/monsterCombat.js';
-import { resolveMonsterBattle } from '../src/monsterBattle.js';
+import { calculateCombatSpeed, resolveMonsterBattle } from '../src/monsterBattle.js';
 
 const serverDir = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const bestiary = JSON.parse(readFileSync(resolve(serverDir, 'data/forgotten_lands.json'), 'utf8'));
@@ -729,4 +729,17 @@ test('compound physical and magic resistance passive uses the matching damage ty
   });
   assert.equal(run('physical').totalDamageToMonster, 80);
   assert.equal(run('magic').totalDamageToMonster, 85);
+});
+
+
+test('combat speed equals dexterity plus explicit equipment dexterity bonus', () => {
+  assert.equal(calculateCombatSpeed(10, 0), 10);
+  assert.equal(calculateCombatSpeed(25, 8), 33);
+  assert.equal(calculateCombatSpeed(0, 12), 12);
+});
+
+test('combat speed ignores invalid or negative dexterity inputs', () => {
+  assert.equal(calculateCombatSpeed(-5, 4), 4);
+  assert.equal(calculateCombatSpeed(10, -3), 10);
+  assert.equal(calculateCombatSpeed(Number.NaN, Number.POSITIVE_INFINITY), 0);
 });
