@@ -115,7 +115,8 @@ export function buildPlayerCombatantForMonsterBattle(input: BuildPlayerCombatant
   });
   const modifiers: Partial<MonsterCombatModifiers> = {
     ...input.stats.combatModifiers,
-    lifestealBonus: input.stats.combatModifiers.lifestealBonus + input.stats.lifestealBonus,
+    // stats.lifestealBonus already includes typed gear/set effects and active buffs.
+    lifestealBonus: input.stats.lifestealBonus,
   };
   return adaptPlayerCombatant({
     id: input.id,
