@@ -146,6 +146,17 @@ test('expedition reports capture pre/post health and disconnect cancels stale gr
     assert.equal(persistedOrphan.state, 'idle');
     assert.equal(persistedOrphan.groupId, '');
 
+    const beforeLegacyHunt = readPlayers(join(dataDir, 'players.json'))[soloId];
+    const legacyHuntReports: any[] = [];
+    connected[soloId].onMessage('combatResult', payload => legacyHuntReports.push(payload));
+    connected[soloId].send('hunt', { zone: 'mistwood' });
+    await delay(250);
+    const afterLegacyHunt = readPlayers(join(dataDir, 'players.json'))[soloId];
+    assert.equal(afterLegacyHunt.gold, beforeLegacyHunt.gold, 'legacy TOWNS hunt must not award gold');
+    assert.equal(afterLegacyHunt.experience, beforeLegacyHunt.experience, 'legacy TOWNS hunt must not award XP');
+    assert.equal(afterLegacyHunt.battles, beforeLegacyHunt.battles, 'legacy TOWNS hunt must not count a battle');
+    assert.equal(legacyHuntReports.length, 0, 'legacy TOWNS hunt must not start combat');
+
     const combatResults: any[] = [];
     connected[soloId].onMessage('combatResult', payload => combatResults.push(payload));
     connected[soloId].send('expeditionSearchClaim');
