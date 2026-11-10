@@ -206,8 +206,8 @@ test('a completed current-week challenge pays once and records the ISO-week clai
     for (const file of staticDataFiles) copyFileSync(join(serverDir, 'data', file), join(dataDir, file));
     writeFileSync(savePath, JSON.stringify({
       [playerId]: {
-        id: playerId, name: 'Weekly Claim Tester', race: 'Кот', profession: '', level: 10,
-        gold: 1_000, experience: 0, inventory: '[]', equipment: '{}',
+        id: playerId, name: 'Weekly Claim Tester', race: 'Кот', profession: '', level: 100,
+        gold: 1_000, experience: Math.floor(100 * Math.pow(100, 1.85)) - 100, inventory: '[]', equipment: '{}',
         quests: JSON.stringify({ challengeWeek: currentWeek, weeklyHunts: 15 }),
       },
     }, null, 2));
@@ -232,7 +232,10 @@ test('a completed current-week challenge pays once and records the ISO-week clai
     const saved = readPlayer(savePath, playerId);
     const quests = JSON.parse(saved.quests);
     assert.equal(saved.gold, 1_700);
-    assert.equal(saved.experience, 300);
+    assert.equal(saved.level, 101, 'experience must advance beyond character level 100');
+    assert.equal(saved.experience, 200, 'overflow experience must carry into the next level');
+    assert.equal(saved.experienceToNext, Math.floor(100 * Math.pow(101, 1.85)));
+    assert.equal(saved.statPoints, 3);
     assert.equal(quests[`challenge_week_${currentWeek}`], true);
     assert.equal(await claim('duplicate current-week weekly challenge claim'), 'Награда за это испытание уже получена.');
     assert.equal(readPlayer(savePath, playerId).gold, 1_700);
