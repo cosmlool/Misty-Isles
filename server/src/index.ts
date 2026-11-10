@@ -279,8 +279,26 @@ ITEMS.push(...NEW_EQUIPMENT_ITEMS, ...EXPEDITION_DROP_ITEMS);
 function pendantEffectValue(item:Item|undefined,level:number):number { if(!item)return 0;const rates:Record<string,number>={xp:.005,defense:.0005,crit:.0005,health:.001,loot:.001,gold:.001,production:.001,regen:.001,reputation:.001,bossDamage:.001,crystalChance:.001};const caps:Record<string,number>={xp:.5,defense:.1,crit:.1,health:.2,loot:.2,gold:.2,production:.2,regen:.2,reputation:.2,bossDamage:.2,crystalChance:.2};const lv=Math.max(1,Math.min(100,level));return lv>=100?(caps[item.effect||'']||0):(rates[item.effect||'']||0)*lv;}
 function shopCatalogForPlayer(p:Player){const activeProfession=String((p as any).activeSubclass|| (p as any).subclassProfession || p.profession || '');return ITEMS.filter(i=>i.price>0&&!i.legacy&&(!i.race||i.race===p.race)&&(!i.profession||i.profession===p.profession||i.profession===activeProfession)).sort((a,b)=>Number(a.level||1)-Number(b.level||1)||String(a.name).localeCompare(String(b.name),'ru'));}
 function ownsPendant(p:Player,id:string){return readArray(p.inventory).includes(id)||Object.values(readObject(p.equipment)).includes(id);}
-function effectiveMaxHealth(p:Player):number { const eq=readObject(p.equipment),collections=readObject(p.collections),pendant=ITEMS.find(x=>x.id===eq.amulet);const bonus=pendant?.effect==='health'?(pendant.legacy?Number(pendant.value||0):pendantEffectValue(pendant,Number(collections.pendantLevels?.[pendant.id]||1))):0;const armorHealth=['armor','helmet','gloves','boots','cloak'].reduce((sum,slot)=>{const item=ITEMS.find(x=>x.id===eq[slot]);return sum+(item&&item.kind==='armor'&&String(item.slot||item.kind)===slot?Number(item.health||0):0);},0);return Math.floor((p.maxHealth+armorHealth)*(1+bonus)); }
-function weaponProfile(p:Player,weapon:Item|undefined){const raw=String(weapon?.primaryAttribute||''),match=/\+(\d+)\s+к\s+(.+)/i.exec(raw);const bonus=Number(match?.[1]||0),attr=String(match?.[2]||'').toLowerCase();let target=attr;if(attr.includes('выбранному'))target=p.profession==='Боевой маг'||p.profession==='Баффер'?'интеллект':p.profession==='Ассасин'||p.profession==='Лучник'?'ловкость':p.profession==='Воин'?'сила':p.profession==='Вампир'?'выносливость':'мудрость';const out:any={strength:0,dexterity:0,intelligence:0,vitality:0,stamina:0,profileBonus:0,lootBonus:0};if(target.includes('сил'))out.strength=bonus;else if(target.includes('лов'))out.dexterity=bonus;else if(target.includes('интел')||target.includes('мудр'))out.intelligence=bonus;else if(target.includes('выносл'))out.stamina=bonus;else if(target.includes('живуч'))out.vitality=bonus;const effect=String(weapon?.effects||'');const profile=/(\d+(?:[.,]\d+)?)%\s*к профильной эффективности/i.exec(effect);if(profile){const v=Number(profile[1].replace(',','.'))/100;if(p.profession==='Добытчик')out.lootBonus=v;else if(p.profession==='Баффер')out.profileBonus=v;else out.profileBonus=v;}return out;}
+function effectiveMaxHealth(p:Player):number {
+ const eq=readObject(p.equipment),collections=readObject(p.collections),pendant=ITEMS.find(x=>x.id===eq.amulet);
+ const bonus=pendant?.effect==='health'?(pendant.legacy?Number(pendant.value||0):pendantEffectValue(pendant,Number(collections.pendantLevels?.[pendant.id]||1))):0;
+ const armorHealth=['armor','helmet','gloves','boots','cloak'].reduce((sum,slot)=>{const item=ITEMS.find(x=>x.id===eq[slot]);return sum+(item&&item.kind==='armor'&&String(item.slot||item.kind)===slot?Number(item.health||0):0);},0);
+ const gearHealthBonus=Object.values(eq).reduce((sum,id)=>{const item=ITEMS.find(x=>x.id===id);const value=Number(item?.combatStats?.health||0);return sum+(Number.isFinite(value)?Math.max(0,value):0);},0);
+ return Math.floor((p.maxHealth+armorHealth)*(1+bonus+gearHealthBonus));
+}
+function weaponProfile(p:Player,weapon:Item|undefined){
+ const raw=String(weapon?.primaryAttribute||''),match=/\+(\d+)\s+к\s+(.+)/i.exec(raw);
+ const bonus=Number(match?.[1]||0),attr=String(match?.[2]||'').toLowerCase();
+ let target=attr;
+ if(attr.includes('выбранному'))target=p.profession==='Боевой маг'||p.profession==='Баффер'?'интеллект':p.profession==='Ассасин'||p.profession==='Лучник'?'ловкость':p.profession==='Воин'?'сила':p.profession==='Вампир'?'выносливость':'мудрость';
+ const out:any={strength:0,dexterity:0,intelligence:0,vitality:0,stamina:0,profileBonus:0,lootBonus:0};
+ if(target.includes('сил'))out.strength=bonus;else if(target.includes('лов'))out.dexterity=bonus;else if(target.includes('интел')||target.includes('мудр'))out.intelligence=bonus;else if(target.includes('выносл'))out.stamina=bonus;else if(target.includes('живуч'))out.vitality=bonus;
+ const attributes=weapon?.attributes&&typeof weapon.attributes==='object'?weapon.attributes:{};
+ for(const key of ['strength','dexterity','intelligence','vitality','stamina']){const value=Number(attributes[key]||0);if(Number.isFinite(value))out[key]+=Math.max(0,value);}
+ const effect=String(weapon?.effects||''),profile=/(\d+(?:[.,]\d+)?)%\s*к профильной эффективности/i.exec(effect);
+ if(profile){const v=Number(profile[1].replace(',','.'))/100;if(p.profession==='Добытчик')out.lootBonus=v;else out.profileBonus=v;}
+ return out;
+}
 
 
 
@@ -795,11 +813,13 @@ function activeBuffValue(player:any,effect:string,now=Date.now()):number{if(!pla
 function resolvePlayerMonsterStats(p:Player,monster:any,options:{applyFivePieceSetBonus:boolean;includeLifestealBuff:boolean;isBoss?:boolean}){
  const eq=readObject(p.equipment),up=readObject(p.equipmentEnhancements),collections=readObject(p.collections);
  const weapon=ITEMS.find(item=>item.id===eq.weapon),wp=weaponProfile(p,weapon);
- const armorItems=['armor','helmet','gloves','boots','cloak'].map(slot=>({slot,item:ITEMS.find(item=>item.id===eq[slot])})).filter(entry=>entry.item).map(entry=>({attack:Number(entry.item?.attack||0),defense:Number(entry.item?.defense||0),enhancementLevel:Number(up[`${entry.slot}:${eq[entry.slot]}`]||0)}));
+ const armorItems=['armor','helmet','gloves','boots','cloak'].map(slot=>({slot,item:ITEMS.find(item=>item.id===eq[slot])})).filter(entry=>entry.item).map(entry=>{const attributes=entry.item?.attributes&&typeof entry.item.attributes==='object'?entry.item.attributes:{};return {attack:Number(entry.item?.attack||0),defense:Number(entry.item?.defense||0),strength:Number(attributes.strength||0),dexterity:Number(attributes.dexterity||0),intelligence:Number(attributes.intelligence||0),vitality:Number(attributes.vitality||0),stamina:Number(attributes.stamina||0),enhancementLevel:Number(up[`${entry.slot}:${eq[entry.slot]}`]||0)};});
  const catalogArmorEffects=['armor','helmet','gloves','boots','cloak']
   .map(slot=>ITEMS.find(item=>item.id===eq[slot]))
   .filter((item:any)=>item&&typeof item.effects==='string')
   .flatMap((item:any)=>parseMonsterCombatEffectClauses(String(item.effects)));
+ const catalogCombatTargets:Record<string,string>={accuracy:'accuracy',evasion:'evasion',critChance:'critChance',critDamage:'critDamage',resistance:'resistance',controlResistance:'controlResistance',attackSpeed:'attackSpeed',physicalDamage:'physicalDamage',magicDamage:'magicDamage',bossDamage:'bossDamage',lifesteal:'lifesteal',healing:'healing',health:'health',loot:'loot'};
+ const catalogCombatEffects:any[]=[weapon,...armorItems.map((entry:any)=>entry.item)].filter(Boolean).flatMap((item:any)=>Object.entries(item.combatStats&&typeof item.combatStats==='object'?item.combatStats:{}).flatMap(([key,raw])=>{const target=catalogCombatTargets[key],value=Number(raw);return target&&Number.isFinite(value)&&value>0?[{target,value}]:[];}));
  const mastery=collections.setMastery||{};
  // Legacy sets are excluded from legacy multiplier processing, but their explicit
  // tier descriptions still contribute typed modifiers to the new combat engine.
@@ -840,7 +860,7 @@ function resolvePlayerMonsterStats(p:Player,monster:any,options:{applyFivePieceS
   weaponDexterityBonus:wp.dexterity,weaponProfileBonus:wp.profileBonus,weaponLootBonus:wp.lootBonus,
   pendantEffect:pendant?.effect,pendantValue:pendantEffectValue(pendant,Number(collections.pendantLevels?.[pendant?.id||'']||1)),isBoss:options.isBoss??['boss','finalBoss'].includes(String(monster?.rank||'')),setBonuses,
   buffs:{attack:activeBuffValue(p,'attack',now),crit:activeBuffValue(p,'crit',now),defense:activeBuffValue(p,'defense',now),loot:activeBuffValue(p,'loot',now),lifesteal:options.includeLifestealBuff?activeBuffValue(p,'lifesteal',now):0},
-  equipmentEffects:[...equipmentEffects,...catalogArmorEffects,...legacySetCombatEffects],pendantCombatEffect,
+  equipmentEffects:[...equipmentEffects,...catalogArmorEffects,...catalogCombatEffects,...legacySetCombatEffects],pendantCombatEffect,
   now,buffUntil:Number(p.buffUntil||0),applyFivePieceSetBonus:options.applyFivePieceSetBonus});
 }
 function rand(a:number,b:number){return Math.floor(Math.random()*(b-a+1))+a;}
