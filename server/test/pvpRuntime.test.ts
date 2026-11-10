@@ -99,7 +99,7 @@ test('PvP offers four saved real characters, steals 20 percent gold, persists co
     };
     for (const [index, id] of targetIds.entries()) {
       players[id] = {
-        id, name: `Offline Target ${index + 1}`, race: 'Собака', level: [20, 23, 10, 40, 15, 55, 8, 32][index],
+        id, name: `Offline Target ${index + 1}`, race: 'Собака', level: [20, 23, 10, 40, 15, 55, 8, 32, 60][index],
         strength: 1, dexterity: 1, defense: 1, vitality: 1,
         gold: 1_000 + index * 100, inventory: '[]', equipment: '{}', quests: '{}',
       };
