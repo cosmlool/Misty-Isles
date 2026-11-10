@@ -28,6 +28,8 @@ export type MonsterBattleInput = {
     passiveDescription?: string;
     weakness?: string;
     allies?: number;
+    critChance?: number;
+    critMultiplier?: number;
   };
   party: MonsterBattleCombatant[];
   maxRounds?: number;
@@ -126,7 +128,7 @@ export function resolveMonsterBattle(input: MonsterBattleInput): MonsterBattleRe
       (effect.attackAfterRound && round > effect.attackAfterRound.round ? effect.attackAfterRound.multiplier : 1) *
       (round === 1 ? effect.firstAttackMultiplier || 1 : 1) *
       (attackAfterCritical ? 1 + (effect.attackAfterCritical || 0) : 1) *
-      (living.length > 1 ? 1 + (effect.attackWhenAllies || 0) : 1);
+      (safeStat(input.monster.allies) > 0 ? 1 + (effect.attackWhenAllies || 0) : 1);
 
     const orderedParty = [...living].sort((a, b) => b.speed - a.speed || a.id.localeCompare(b.id));
     for (const fighter of orderedParty) {
@@ -146,11 +148,10 @@ export function resolveMonsterBattle(input: MonsterBattleInput): MonsterBattleRe
         : 1;
       const resistance = resistanceFor(effect, fighter);
       const weakness = weaknessBonus(parseMonsterWeakness(input.monster.weakness || ''), fighter);
-      const dealt = Math.max(1, Math.floor(damageThroughDefense(attack, safeStat(input.monster.defense) * (effect.defenseMultiplier || 1)) * critMultiplier * (1 - resistance) * (1 + weakness)));
+      const monsterDefenseMultiplier = (effect.defenseMultiplier || 1) * (safeStat(input.monster.allies) > 0 ? 1 + (effect.defenseWhenAllies || 0) : 1) * (effect.defenseBelowHpRatio && monsterHpRatio < effect.defenseBelowHpRatio.threshold ? effect.defenseBelowHpRatio.multiplier : 1);\n      const dealt = Math.max(1, Math.floor(damageThroughDefense(attack, safeStat(input.monster.defense) * monsterDefenseMultiplier) * critMultiplier * (1 - resistance) * (1 + weakness)));
       monsterHp = Math.max(0, monsterHp - dealt);
       fighter.damageDealt += dealt;
       totalDamageToMonster += dealt;
-      if (crit && effect.attackAfterCritical) attackAfterCritical = true;
       if (effect.poisonOnHit) monsterPoisoned = true;
       if (effect.enemyDefenseReduction) partyDefenseReduction = clamp(partyDefenseReduction + effect.enemyDefenseReduction, 0, 0.75);
       if (effect.enemyAttackReduction) partyAttackReduction = clamp(partyAttackReduction + effect.enemyAttackReduction, 0, 0.75);
@@ -175,7 +176,11 @@ export function resolveMonsterBattle(input: MonsterBattleInput): MonsterBattleRe
     if (effect.damageVsLowHpTargets && targetHpRatio < effect.damageVsLowHpTargets.threshold) monsterDamageMultiplier *= effect.damageVsLowHpTargets.multiplier;
     if (effect.attackVsWeakened && (partyAttackReduction > 0 || partyDefenseReduction > 0 || partySpeedReduction > 0)) monsterDamageMultiplier *= 1 + effect.attackVsWeakened;
     const targetDefense = target.defense * (1 - partyDefenseReduction);
-    const incoming = damageThroughDefense(safeStat(input.monster.attack) * monsterDamageMultiplier, targetDefense);
+    const monsterCrit = random() < clamp(safeStat(input.monster.critChance), 0, 0.75);
+    const monsterCritMultiplier = monsterCrit
+      ? Math.max(1, safeStat(input.monster.critMultiplier, 1.5) + (effect.critDamage || 0))
+      : 1;
+    const incoming = Math.max(1, Math.floor(damageThroughDefense(safeStat(input.monster.attack) * monsterDamageMultiplier, targetDefense) * monsterCritMultiplier));
     const dodgeChance = clamp(effect.evasion || 0, 0, 0.75);
     if (random() < dodgeChance) {
       events.push({ round, actor: input.monster.name, action: 'dodge', target: target.id });
@@ -183,7 +188,8 @@ export function resolveMonsterBattle(input: MonsterBattleInput): MonsterBattleRe
       target.hp = Math.max(0, target.hp - incoming);
       target.damageTaken += incoming;
       totalDamageToParty += incoming;
-      events.push({ round, actor: input.monster.name, action: 'attack', target: target.id, damage: incoming });
+      events.push({ round, actor: input.monster.name, action: 'attack', target: target.id, damage: incoming, critical: monsterCrit });
+      if (monsterCrit && effect.attackAfterCritical) attackAfterCritical = true;
       if (effect.lifesteal) {
         const healed = Math.min(monsterMaxHp - monsterHp, Math.floor(incoming * effect.lifesteal));
         if (healed > 0) {
@@ -193,7 +199,7 @@ export function resolveMonsterBattle(input: MonsterBattleInput): MonsterBattleRe
       }
     }
     if (effect.healEveryRounds && round % effect.healEveryRounds.rounds === 0) {
-      const healed = Math.min(monsterMaxHp - monsterHp, Math.floor(monsterMaxHp * effect.healEveryRounds.maxHpRatio * (1 - (effect.healReduction || 0))));
+      const healed = Math.min(monsterMaxHp - monsterHp, Math.floor(monsterMaxHp * effect.healEveryRounds.maxHpRatio));
       if (healed > 0) {
         monsterHp += healed;
         events.push({ round, actor: input.monster.name, action: 'heal', target: input.monster.name, healing: healed });
