@@ -350,7 +350,6 @@ export function resolveGoldEquipmentStatProfile(input: GoldEquipmentStatProfileI
     combatStats[damage] = Math.round(q * 1.5 * 1000) / 1000;
     if (profession === 'Ассасин' || profession === 'Лучник') combatStats.critChance = q2;
     else if (profession === 'Воин') combatStats.critDamage = q2;
-    else if (profession === 'Баффер') combatStats.healing = q;
     else if (profession === 'Вампир') combatStats.lifesteal = q2;
     else if (profession === 'Добытчик') combatStats.loot = Math.round(q * 2 * 1000) / 1000;
     else if (!profession) combatStats.accuracy = q2;
