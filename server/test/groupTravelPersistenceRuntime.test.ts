@@ -1,0 +1,189 @@
+import assert from 'node:assert/strict';
+import { createHash } from 'node:crypto';
+import { spawn, type ChildProcess } from 'node:child_process';
+import { copyFileSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
+import { createServer } from 'node:net';
+import { tmpdir } from 'node:os';
+import { dirname, join, resolve } from 'node:path';
+import { fileURLToPath } from 'node:url';
+import { setTimeout as delay } from 'node:timers/promises';
+import { Client, type Room } from 'colyseus.js';
+import test from 'node:test';
+
+import { seedGuestCredentials, testGuestProof } from './guestAuthTestHelpers.js';
+
+const serverDir = resolve(dirname(fileURLToPath(import.meta.url)), '..');
+const staticDataFiles = ['city_npcs.json', 'equipment_catalog.json'];
+
+async function unusedPort(): Promise<number> {
+  const probe = createServer();
+  await new Promise<void>((resolve, reject) => {
+    probe.once('error', reject);
+    probe.listen(0, '127.0.0.1', resolve);
+  });
+  const address = probe.address();
+  assert.ok(address && typeof address !== 'string');
+  const port = address.port;
+  await new Promise<void>((resolve, reject) => probe.close(error => error ? reject(error) : resolve()));
+  return port;
+}
+
+async function waitForServer(port: number, child: ChildProcess): Promise<void> {
+  const deadline = Date.now() + 15_000;
+  while (Date.now() < deadline) {
+    if (child.exitCode !== null) throw new Error('Isolated test server exited during startup.');
+    try {
+      const response = await fetch(`http://127.0.0.1:${port}/auth/check`, {
+        method: 'POST', headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({ token: 'not-a-real-token' }),
+      });
+      if (response.status === 401) return;
+    } catch {}
+    await delay(100);
+  }
+  throw new Error('Isolated test server did not become ready.');
+}
+
+async function guestToken(port: number, playerId: string): Promise<string> {
+  const response = await fetch(`http://127.0.0.1:${port}/auth/guest`, {
+    method: 'POST', headers: { 'content-type': 'application/json' },
+    body: JSON.stringify({ playerId, guestProof: testGuestProof(playerId) }),
+  });
+  assert.equal(response.status, 200);
+  return (await response.json() as { token: string }).token;
+}
+
+async function stopServer(child: ChildProcess): Promise<void> {
+  if (child.exitCode !== null || child.signalCode !== null) return;
+  const exited = new Promise<void>(resolve => child.once('exit', () => resolve()));
+  child.kill('SIGTERM');
+  await Promise.race([exited, delay(5_000)]);
+  if (child.exitCode === null && child.signalCode === null) {
+    child.kill('SIGKILL');
+    await Promise.race([exited, delay(5_000)]);
+  }
+}
+
+async function waitFor<T>(read: () => T | undefined, label: string): Promise<T> {
+  const deadline = Date.now() + 10_000;
+  while (Date.now() < deadline) {
+    const value = read();
+    if (value !== undefined) return value;
+    await delay(25);
+  }
+  throw new Error(label + ' timed out.');
+}
+
+function readPlayers(path: string): any {
+  return JSON.parse(readFileSync(path, 'utf8'));
+}
+
+function publicCode(id: string): string {
+  return createHash('sha256').update(`MistyIslesPublic:${id}`).digest('hex').slice(0, 24);
+}
+
+test('group expedition travel start and claim persist every member together', { timeout: 45_000 }, async () => {
+  const dataDir = mkdtempSync(join(tmpdir(), 'misty-group-travel-'));
+  const leaderId = 'runtime_group_travel_leader';
+  const memberId = 'runtime_group_travel_member';
+  const port = await unusedPort();
+  let child: ChildProcess | undefined;
+  const rooms: Room[] = [];
+  try {
+    for (const file of staticDataFiles) copyFileSync(join(serverDir, 'data', file), join(dataDir, file));
+    const expeditionData = JSON.parse(readFileSync(join(serverDir, 'data', 'forgotten_lands.json'), 'utf8'));
+    expeditionData.travelSeconds = 0;
+    writeFileSync(join(dataDir, 'forgotten_lands.json'), JSON.stringify(expeditionData, null, 2));
+    const makePlayer = (id: string, name: string, friend: string) => ({
+      id, name, race: 'Кот', level: 3, gold: 500, inventory: '[]', equipment: '{}',
+      collections: JSON.stringify({ friends: [friend] }),
+      quests: JSON.stringify({
+        expedition: { branchId: 'forgotten_lands', currentZoneId: 'el1', opened: 2, cleared: [], seen: {}, state: 'idle', endsAt: 0, groupId: '' },
+      }),
+    });
+    writeFileSync(join(dataDir, 'players.json'), JSON.stringify({
+      [leaderId]: makePlayer(leaderId, 'Travel Leader', memberId),
+      [memberId]: makePlayer(memberId, 'Travel Member', leaderId),
+    }, null, 2));
+
+    seedGuestCredentials(dataDir);
+
+
+    child = spawn(process.execPath, ['--import', 'tsx', 'src/index.ts'], {
+      cwd: serverDir,
+      env: { ...process.env, MISTY_DATA_DIR: dataDir, MISTY_PORT: String(port) },
+      stdio: 'ignore',
+    });
+    await waitForServer(port, child);
+    const client = new Client(`ws://127.0.0.1:${port}`);
+    const connected: Record<string, Room> = {};
+    for (const id of [leaderId, memberId]) {
+      const token = await guestToken(port, id);
+      connected[id] = await client.joinOrCreate('my_room', { playerId: id, sessionToken: token });
+      rooms.push(connected[id]);
+    }
+
+    const invitations: any[] = [];
+    const groupStates: any[] = [];
+    const leaderNotices: string[] = [];
+    connected[memberId].onMessage('huntGroupInvite', payload => invitations.push(payload));
+    connected[leaderId].onMessage('huntGroupState', payload => groupStates.push(payload));
+    connected[leaderId].onMessage('notice', payload => leaderNotices.push(String(payload?.text || '')));
+    connected[leaderId].send('huntGroupInvite', { targetId: publicCode(memberId) });
+    const invite = await waitFor(() => invitations[0], 'group invitation');
+    connected[memberId].send('huntGroupAccept', { groupId: invite.groupId });
+    await waitFor(() => groupStates.find(payload => payload.group?.members?.length === 2), 'two-member group acceptance');
+
+    connected[leaderId].send('expeditionTravelStart', { zoneId: 'el2' });
+    await waitFor(() => {
+      const players = readPlayers(join(dataDir, 'players.json'));
+      const leader = JSON.parse(players[leaderId].quests).expedition;
+      const member = JSON.parse(players[memberId].quests).expedition;
+      return leader?.state === 'moving' && member?.state === 'moving' &&
+        leader.targetZoneId === 'el2' && member.targetZoneId === 'el2' ? true : undefined;
+    }, 'both travel-start states persisted');
+
+    connected[leaderId].send('huntGroupLeave');
+    await waitFor(() => leaderNotices.find(message => message === 'Нельзя покидать группу во время поиска или перехода.'), 'block group leave during travel');
+    assert.equal(groupStates[groupStates.length - 1]?.group?.members?.length, 2);
+    const afterBlockedTravelLeave = readPlayers(join(dataDir, 'players.json'));
+    assert.equal(JSON.parse(afterBlockedTravelLeave[leaderId].quests).expedition.state, 'moving');
+    assert.equal(JSON.parse(afterBlockedTravelLeave[memberId].quests).expedition.state, 'moving');
+
+    connected[leaderId].send('expeditionTravelClaim');
+    await waitFor(() => {
+      const players = readPlayers(join(dataDir, 'players.json'));
+      const leader = JSON.parse(players[leaderId].quests).expedition;
+      const member = JSON.parse(players[memberId].quests).expedition;
+      return leader?.state === 'idle' && member?.state === 'idle' &&
+        leader.currentZoneId === 'el2' && member.currentZoneId === 'el2' ? true : undefined;
+    }, 'both travel-claim states persisted');
+
+    connected[leaderId].send('expeditionSearchStart');
+    await waitFor(() => {
+      const players = readPlayers(join(dataDir, 'players.json'));
+      const leader = JSON.parse(players[leaderId].quests).expedition;
+      const member = JSON.parse(players[memberId].quests).expedition;
+      return leader?.state === 'searching' && member?.state === 'searching' ? true : undefined;
+    }, 'both group search states persisted');
+    connected[leaderId].send('huntGroupLeave');
+    await waitFor(() => leaderNotices.filter(message => message === 'Нельзя покидать группу во время поиска или перехода.').length > 1 ? true : undefined, 'block group leave during search');
+    assert.equal(groupStates[groupStates.length - 1]?.group?.members?.length, 2);
+    const afterBlockedSearchLeave = readPlayers(join(dataDir, 'players.json'));
+    assert.equal(JSON.parse(afterBlockedSearchLeave[leaderId].quests).expedition.state, 'searching');
+    assert.equal(JSON.parse(afterBlockedSearchLeave[memberId].quests).expedition.state, 'searching');
+
+    const saved = readPlayers(join(dataDir, 'players.json'));
+    for (const id of [leaderId, memberId]) {
+      const state = JSON.parse(saved[id].quests).expedition;
+      assert.equal(state.currentZoneId, 'el2');
+      assert.equal(state.state, 'idle');
+      assert.equal(state.endsAt, 0);
+      assert.equal(state.targetZoneId, undefined);
+    }
+  } finally {
+    for (const room of rooms) await room.leave().catch(() => undefined);
+    if (child) await stopServer(child);
+    rmSync(dataDir, { recursive: true, force: true });
+  }
+});
