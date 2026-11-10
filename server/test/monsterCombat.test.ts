@@ -949,3 +949,41 @@ test('player monster combat stats apply each equipment enhancement to that item 
   assert.ok(Math.abs(stats.defense - 89.43) < 0.000001);
   assert.equal(stats.speed, 12);
 });
+
+
+test('shared player combat stats preserve active lifesteal buffs and ignore expired ones', () => {
+  const common = {
+    profession: 'Воин',
+    strength: 10,
+    dexterity: 10,
+    intelligence: 10,
+    vitality: 10,
+    stamina: 10,
+    baseDefense: 10,
+    buffs: { attack: 0, crit: 0, defense: 0, loot: 0, lifesteal: 0.08 },
+    now: 1000,
+  };
+  const active = calculatePlayerMonsterCombatStats({ ...common, buffUntil: 2000 });
+  const expired = calculatePlayerMonsterCombatStats({ ...common, buffUntil: 999 });
+
+  assert.equal(active.lifestealBonus, 0.08);
+  assert.equal(expired.lifestealBonus, 0);
+});
+
+test('shared player combat stats do not apply attack, defense or crit buffs after expiration', () => {
+  const common = {
+    profession: 'Воин',
+    strength: 10,
+    dexterity: 10,
+    intelligence: 10,
+    vitality: 10,
+    stamina: 10,
+    baseDefense: 10,
+    buffs: { attack: 0.5, crit: 0.2, defense: 0.5, loot: 0.1, lifesteal: 0.1 },
+    now: 1000,
+  };
+  const expired = calculatePlayerMonsterCombatStats({ ...common, buffUntil: 1000 });
+  const baseline = calculatePlayerMonsterCombatStats({ ...common, buffs: {}, buffUntil: 2000 });
+
+  assert.deepEqual(expired, baseline);
+});
