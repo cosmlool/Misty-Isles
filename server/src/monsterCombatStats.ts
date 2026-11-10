@@ -6,6 +6,12 @@ export type MonsterCombatSetBonusInput = {
   mastery: number;
 };
 
+export type MonsterCombatArmorItemInput = {
+  attack?: number;
+  defense?: number;
+  enhancementLevel?: number;
+};
+
 export type MonsterCombatBuffInput = {
   attack: number;
   crit: number;
@@ -27,7 +33,12 @@ export type PlayerMonsterStatsInput = {
   weaponIntelligence?: number;
   weaponVitality?: number;
   weaponStamina?: number;
+  /** Base weapon attack; weapon enhancement is applied here when supplied. */
   weaponAttack?: number;
+  weaponEnhancementLevel?: number;
+  /** Per-piece armor values; each piece receives its own legacy enhancement multiplier. */
+  armorItems?: MonsterCombatArmorItemInput[];
+  /** Pre-resolved legacy aggregates, used only when armorItems is omitted. */
   armorAttack?: number;
   armorDefense?: number;
   weaponDexterityBonus?: number;
@@ -68,19 +79,27 @@ export function calculatePlayerMonsterCombatStats(
   const profession = String(input.profession || '');
   const magic = profession === 'Боевой маг';
   const agile = ['Ассасин', 'Лучник', 'Вампир'].includes(profession);
+  const weaponEnhancement = Math.max(0, value(input.weaponEnhancementLevel));
+  const enhancedWeaponAttack = value(input.weaponAttack) * (1 + weaponEnhancement * 0.04);
+  const armorAttack = input.armorItems
+    ? input.armorItems.reduce((sum, item) => sum + value(item.attack) * (1 + Math.max(0, value(item.enhancementLevel)) * 0.04), 0)
+    : value(input.armorAttack);
+  const armorDefense = input.armorItems
+    ? input.armorItems.reduce((sum, item) => sum + value(item.defense) * (1 + Math.max(0, value(item.enhancementLevel)) * 0.04), 0)
+    : value(input.armorDefense);
 
   let attack =
     (value(input.strength) + value(input.weaponStrength)) * (magic ? 0.35 : 1.25) +
     (value(input.dexterity) + value(input.weaponDexterity)) * (agile ? 0.65 : 0.35) +
     (value(input.intelligence) + value(input.weaponIntelligence)) * (magic ? 0.85 : 0.2) +
-    value(input.weaponAttack) +
-    value(input.armorAttack);
+    enhancedWeaponAttack +
+    armorAttack;
 
   let defense =
     value(input.baseDefense) +
     (value(input.vitality) + value(input.weaponVitality)) * 0.45 +
     (value(input.stamina) + value(input.weaponStamina)) * 0.12 +
-    value(input.armorDefense);
+    armorDefense;
 
   if (profession === 'Боевой маг') attack *= 1.10;
   if (profession === 'Ассасин') attack *= 1.08;
