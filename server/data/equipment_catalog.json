@@ -4668,8 +4668,7 @@
       "intelligence": 1
     },
     "combatStats": {
-      "physicalDamage": 0.008,
-      "healing": 0.004
+      "healing": 0.008
     }
   },
   {
@@ -4693,8 +4692,7 @@
       "intelligence": 1
     },
     "combatStats": {
-      "physicalDamage": 0.01,
-      "healing": 0.006
+      "healing": 0.01
     }
   },
   {
@@ -4718,8 +4716,7 @@
       "intelligence": 1
     },
     "combatStats": {
-      "physicalDamage": 0.013,
-      "healing": 0.007
+      "healing": 0.013
     }
   },
   {
@@ -4743,8 +4740,7 @@
       "intelligence": 2
     },
     "combatStats": {
-      "physicalDamage": 0.015,
-      "healing": 0.008
+      "healing": 0.015
     }
   },
   {
@@ -4768,8 +4764,7 @@
       "intelligence": 2
     },
     "combatStats": {
-      "physicalDamage": 0.018,
-      "healing": 0.01
+      "healing": 0.018
     }
   },
   {
@@ -4793,8 +4788,7 @@
       "intelligence": 2
     },
     "combatStats": {
-      "physicalDamage": 0.02,
-      "healing": 0.011
+      "healing": 0.02
     }
   },
   {
