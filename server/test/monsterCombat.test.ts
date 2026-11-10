@@ -1171,7 +1171,7 @@ test('player combatant adapter forwards typed modifiers without folding them int
 
 test('monster battle applies typed attack, damage-type and lifesteal modifiers', () => {
   const result = resolveMonsterBattle({
-    monster: { id: 'training-dummy', name: 'Манекен', hp: 1000, attack: 1, defense: 0, speed: 0 },
+    monster: { id: 'training-dummy', name: 'Манекен', hp: 132, attack: 1, defense: 0, speed: 0 },
     party: [{
       id: 'fighter', profession: 'Воин', hp: 50, maxHp: 100,
       attack: 100, defense: 0, speed: 10, damageType: 'physical',
