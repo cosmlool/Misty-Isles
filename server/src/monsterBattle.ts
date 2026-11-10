@@ -37,6 +37,8 @@ export type MonsterBattleInput = {
     attack: number;
     defense: number;
     speed: number;
+    accuracy?: number;
+    blind?: boolean;
     passiveDescription?: string;
     weakness?: string;
     allies?: number;
@@ -193,7 +195,7 @@ export function resolveMonsterBattle(input: MonsterBattleInput): MonsterBattleRe
         const activeAttackBuff = fighter.buff === 'attack' && safeStat(fighter.buffUntil) > now ? safeStat(fighter.buffValue) : 0;
         const activeSecondaryAttackBuff = fighter.buffSecondaryEffect === 'attack' && safeStat(fighter.buffUntil) > now ? safeStat(fighter.buffSecondaryValue) : 0;
         const attack = fighter.attack * (1 + activeAttackBuff + activeSecondaryAttackBuff) * (1 - (partyAttackReduction.get(fighter.id) || 0));
-        const hitChance = clamp((safeStat(fighter.accuracy, 100) / 100) * (fighter.blind ? (effect.ignoresBlindAccuracyPenalty ? 1 : 0.65) : 1), 0.05, 1);
+        const hitChance = clamp((safeStat(fighter.accuracy, 100) / 100) * (fighter.blind ? 0.65 : 1), 0.05, 1);
         if (random() > hitChance) {
           events.push({ round, actor: fighter.id, action: 'miss', target: input.monster.name });
           continue;
@@ -251,6 +253,13 @@ export function resolveMonsterBattle(input: MonsterBattleInput): MonsterBattleRe
       if (effect.damageVsLowHpTargets && targetHpRatio < effect.damageVsLowHpTargets.threshold) monsterDamageMultiplier *= effect.damageVsLowHpTargets.multiplier;
       if (effect.attackVsWeakened && (target.blind || (partyAttackReduction.get(target.id) || 0) > 0 || (partyDefenseReduction.get(target.id) || 0) > 0 || (round === 1 && partySpeedReduction > 0))) monsterDamageMultiplier *= 1 + effect.attackVsWeakened;
 
+      const monsterHitChance = clamp((safeStat(input.monster.accuracy, 100) / 100) * (input.monster.blind ? (effect.ignoresBlindAccuracyPenalty ? 1 : 0.65) : 1), 0.05, 1);
+      monsterHasAttacked = true;
+      if (random() > monsterHitChance) {
+        events.push({ round, actor: input.monster.name, action: 'miss', target: target.id });
+        continue;
+      }
+
       const activeDefenseBuff = target.buff === 'defense' && safeStat(target.buffUntil) > now ? safeStat(target.buffValue) : 0;
       const activeSecondaryDefenseBuff = target.buffSecondaryEffect === 'defense' && safeStat(target.buffUntil) > now ? safeStat(target.buffSecondaryValue) : 0;
       const targetDefense = target.defense * (1 + activeDefenseBuff + activeSecondaryDefenseBuff) * (1 - (partyDefenseReduction.get(target.id) || 0));
@@ -263,7 +272,6 @@ export function resolveMonsterBattle(input: MonsterBattleInput): MonsterBattleRe
       ));
       const dodgeChance = clamp(effect.evasion || 0, 0, 0.75);
       const dodged = random() < dodgeChance;
-      monsterHasAttacked = true;
       if (dodged) {
         events.push({ round, actor: input.monster.name, action: 'dodge', target: target.id });
       } else {
