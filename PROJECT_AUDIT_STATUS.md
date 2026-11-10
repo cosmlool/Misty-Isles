@@ -726,3 +726,14 @@ No gameplay code was changed. These findings are added to the persistence/crafti
 - The audit re-confirmed two previously recorded accepted defects still present in the source: weekly challenge rollover is only performed on successful hunt, not at claim time; and clanSeasonReward calculates rank from the top-ten display board, so clans outside the displayed ten receive rank 0 and are assigned the top-three fallback reward tier. These remain queued for the post-audit fix pass.
 
 No gameplay code was changed.
+
+
+### Clan-war timing and identifier review — 2026-11-10
+
+- **Configuration requiring product confirmation:** clan-war attack cooldown is hard-coded to 1,000 ms in CLAN_WAR_ATTACK_COOLDOWN_MS. The handler enforces it per player, and the timestamp is stored in the war record. Unlike the mining cooldown, no approved production timing for clan-war attacks is present in the audit requirements reviewed so far. Do not classify this as a confirmed defect or change it until the intended live interval is specified.
+- **Low-probability war ID collision:** clanWarChallenge generates IDs from the current millisecond and a random integer from 100–999. The handler does not check the generated ID against existing war IDs before appending. A collision could make a later attack/list lookup resolve the wrong war record. Use a collision-resistant identifier and enforce uniqueness before persisting.
+- Inventory removal, salvage, chest opening, and potion use validate the requested item/index against the current server-side inventory before mutation. Salvage and discard additionally support expected item ID and stack-count checks; chest opening supports expected chest count. No item duplication or free-consumption path was confirmed in these reviewed handlers.
+- Daily reward and race-daily state use UTC date keys. The race-daily helper resets progress and claim IDs when the UTC day or character race changes. Weekly challenge rollover remains the previously recorded exception: the claim handler still uses stored weeklyHunts/challengeWeek and does not independently roll the week before granting.
+- Clan-season reward still computes rank using the already-truncated top-ten board, confirming the previously recorded rank-0 reward issue for clans outside the top ten.
+
+No gameplay code was changed. These are source-level findings; tests were not executed.
