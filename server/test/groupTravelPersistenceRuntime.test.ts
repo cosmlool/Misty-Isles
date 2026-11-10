@@ -93,9 +93,12 @@ test('group expedition travel start and claim persist every member together', { 
     for (const file of staticDataFiles) copyFileSync(join(serverDir, 'data', file), join(dataDir, file));
     const expeditionData = JSON.parse(readFileSync(join(serverDir, 'data', 'forgotten_lands.json'), 'utf8'));
     expeditionData.travelSeconds = 0;
+    expeditionData.searchSeconds = 0;
     writeFileSync(join(dataDir, 'forgotten_lands.json'), JSON.stringify(expeditionData, null, 2));
     const makePlayer = (id: string, name: string, friend: string) => ({
-      id, name, race: 'Кот', level: 3, gold: 500, inventory: '[]', equipment: '{}',
+      id, name, race: 'Кот', level: 3, gold: 500, buff: id === leaderId ? 'xp' : '',
+      buffValue: id === leaderId ? 0.12 : 0, buffUntil: id === leaderId ? Date.now() + 60 * 60 * 1000 : 0,
+      inventory: '[]', equipment: '{}',
       collections: JSON.stringify({ friends: [friend] }),
       quests: JSON.stringify({
         expedition: { branchId: 'forgotten_lands', currentZoneId: 'el1', opened: 2, cleared: [], seen: {}, state: 'idle', endsAt: 0, groupId: '' },
@@ -126,9 +129,13 @@ test('group expedition travel start and claim persist every member together', { 
     const invitations: any[] = [];
     const groupStates: any[] = [];
     const leaderNotices: string[] = [];
+    const leaderCombatResults: any[] = [];
+    const memberCombatResults: any[] = [];
     connected[memberId].onMessage('huntGroupInvite', payload => invitations.push(payload));
     connected[leaderId].onMessage('huntGroupState', payload => groupStates.push(payload));
     connected[leaderId].onMessage('notice', payload => leaderNotices.push(String(payload?.text || '')));
+    connected[leaderId].onMessage('combatResult', payload => leaderCombatResults.push(payload));
+    connected[memberId].onMessage('combatResult', payload => memberCombatResults.push(payload));
     connected[leaderId].send('huntGroupInvite', { targetId: publicCode(memberId) });
     const invite = await waitFor(() => invitations[0], 'group invitation');
     connected[memberId].send('huntGroupAccept', { groupId: invite.groupId });
@@ -173,12 +180,20 @@ test('group expedition travel start and claim persist every member together', { 
     assert.equal(JSON.parse(afterBlockedSearchLeave[leaderId].quests).expedition.state, 'searching');
     assert.equal(JSON.parse(afterBlockedSearchLeave[memberId].quests).expedition.state, 'searching');
 
+    connected[leaderId].send('expeditionSearchClaim');
+    const leaderCombat = await waitFor(() => leaderCombatResults[0], 'leader expedition combat result');
+    const memberCombat = await waitFor(() => memberCombatResults[0], 'member expedition combat result');
+    assert.equal(leaderCombat.report.result, 'win');
+    assert.equal(memberCombat.report.result, 'win');
     const saved = readPlayers(join(dataDir, 'players.json'));
+    const baseXp = Number(leaderCombat.report.rewards.xp);
+    assert.equal(saved[leaderId].experience, Math.floor(baseXp * 1.12), 'leader XP buff must increase expedition experience');
+    assert.equal(saved[memberId].experience, baseXp, 'unbuffed group member must receive base expedition experience');
     for (const id of [leaderId, memberId]) {
       const state = JSON.parse(saved[id].quests).expedition;
       assert.equal(state.currentZoneId, 'el2');
-      assert.equal(state.state, 'searching');
-      assert.ok(state.endsAt > Date.now());
+      assert.equal(state.state, 'idle');
+      assert.equal(state.endsAt, 0);
       assert.equal(state.targetZoneId, undefined);
     }
   } finally {
