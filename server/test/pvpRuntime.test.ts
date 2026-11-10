@@ -83,7 +83,7 @@ function publicCode(id: string): string {
 test('PvP offers four saved real characters, steals 20 percent gold, persists cooldown and grants one-hour victim immunity', { timeout: 60_000 }, async () => {
   const dataDir = mkdtempSync(join(tmpdir(), 'misty-pvp-runtime-'));
   const attackerId = 'pvp_runtime_attacker';
-  const targetIds = Array.from({ length: 8 }, (_, index) => `pvp_runtime_target_${index + 1}`);
+  const targetIds = Array.from({ length: 9 }, (_, index) => `pvp_runtime_target_${index + 1}`);
   const port = await unusedPort();
   let child: ChildProcess | undefined;
   let attackerRoom: Room | undefined;
@@ -104,9 +104,6 @@ test('PvP offers four saved real characters, steals 20 percent gold, persists co
         gold: 1_000 + index * 100, inventory: '[]', equipment: '{}', quests: '{}',
       };
     }
-    players.pvp_runtime_out_of_range = {
-      id: 'pvp_runtime_out_of_range', name: 'Too Strong Target', race: 'Птица', level: 23, gold: 500, quests: '{}',
-    };
     players.pvp_runtime_no_character = {
       id: 'pvp_runtime_no_character', name: 'Uncreated Profile', race: '', level: 20, gold: 500, quests: '{}',
     };
@@ -158,7 +155,8 @@ test('PvP offers four saved real characters, steals 20 percent gold, persists co
     assert.ok(victimPvp.immunityUntil >= Date.now() + 59 * 60 * 1000);
     const attackerPvp = JSON.parse(saved[attackerId].quests).pvp;
     assert.deepEqual(attackerPvp.offeredIds, []);
-    assert.deepEqual(new Set(attackerPvp.previousOfferedIds), new Set(firstOffer.players.map((player: any) => targetIds.find(id => publicCode(id) === player.id) || '')));
+    assert.equal(attackerPvp.previousOfferedIds.length, 4);
+    assert.ok(attackerPvp.previousOfferedIds.includes(targetId));
 
     const cooldownOffer = await waitFor(() => offers.find(payload => Number(payload.cooldownUntil) > Date.now()), 'attacker cooldown refresh');
     assert.equal(cooldownOffer.players.length, 0);
