@@ -2138,3 +2138,9 @@ PEN-009 стоит 100 кристаллов и при максимальном �
 - `identifyEquipment` разрешает идентифицировать helmet, gloves, boots и cloak так же, как weapon/armor.
 - Во всех проверенных боевых формулах rare property читается только для `eq.weapon` и `eq.armor`; дополнительные четыре слота не читаются. В expedition search/group boss rare properties не применяются вообще.
 - Поэтому игрок может потратить кристаллы и материалы на идентификацию шлема/перчаток/сапог/плаща, но полученное свойство не повлияет ни на один из проверенных режимов. Нужно либо подключить свойства всех пяти armor slots в общей системе, либо запретить идентификацию неработающих слотов до исправления.
+
+
+### WebSocket message rate limiting and write amplification
+- HTTP auth endpoints have a process-local rate limiter, but no general per-connection/per-player rate limiter was found around gameplay `this.onMessage` handlers.
+- Several message paths can cause disk writes: `notice()` calls the player save path; `tavernGame` has no cooldown and calls `notice` for every bet; `clanQuests` writes clan state on each request; `pvpList` can persist merged online players. Client-side `guardedActions` is not a security boundary because a custom client can send messages directly.
+- This creates a write-amplification/availability risk if a connected client floods these messages, even where economic validation prevents duplication. Add server-side per-action and global message throttles, avoid saving on read-only requests, and batch/debounce non-transactional saves without weakening transactional persistence.
