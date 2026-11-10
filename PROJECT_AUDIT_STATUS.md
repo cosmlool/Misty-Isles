@@ -529,3 +529,10 @@ Reviewed the current auth/account runtime tests and test command for server rest
 3. Add a separate abrupt-stop case that documents which unsaved in-memory changes are expected to be lost; do not conflate it with a graceful-shutdown guarantee.
 
 No code changed; this entry records an audit finding only.
+### Ring terminology follow-up — 2026-11-10
+
+A further source scan found two grammatical leftovers in player-facing strings after the approved pendant-to-ring terminology change: «Старое кольцо наконец-то вспомнил» and «Такой кольцо». Corrected them to «Старое кольцо наконец-то вспомнило» and «Такое кольцо». This is a terminology/grammar-only correction within the user's explicit request; no gameplay behavior or persisted identifiers changed.
+
+During the same scan, timer state was reviewed: craft finishAt, lastMineAt, buffUntil, guild-skill cooldown timestamps, PvP timestamps/immunity, and solo expedition endsAt are persisted as player data and use wall-clock timestamps. They therefore continue to elapse while a character is offline. Group expedition actions are cleared on reconnect when their in-memory group no longer exists; solo expedition actions are not cleared by that branch. Whether solo actions should resume after restart remains a design decision, not a confirmed defect.
+
+No tests executed.
