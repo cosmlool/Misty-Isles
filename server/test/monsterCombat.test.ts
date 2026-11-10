@@ -1139,6 +1139,19 @@ test('gold-purchasable weapons and armor define level-scaled attributes and comb
   assert.equal(catalog.filter((item: any) => Number(item.price) <= 0 && ['weapon', 'armor'].includes(item.kind) && item.attributes).length, 0);
 });
 
+test('equipped gear loot and lifesteal bonuses reach expedition stat outputs', () => {
+  const stats = calculatePlayerMonsterCombatStats({
+    profession: 'Добытчик', strength: 10, dexterity: 10, intelligence: 10,
+    vitality: 10, stamina: 10, baseDefense: 10,
+    equipmentEffects: [
+      { target: 'loot', value: 0.08 },
+      { target: 'lifesteal', value: 0.04 },
+    ],
+  });
+  assert.equal(stats.lootBonus, 0.08);
+  assert.equal(stats.lifestealBonus, 0.04);
+});
+
 test('armor attribute bonuses contribute to attack, defense and combat speed', () => {
   const base = calculatePlayerMonsterCombatStats({
     profession: 'Воин', strength: 10, dexterity: 10, intelligence: 10,
