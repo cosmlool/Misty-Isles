@@ -96,8 +96,9 @@ test('group expedition travel start and claim persist every member together', { 
     expeditionData.searchSeconds = 0;
     writeFileSync(join(dataDir, 'forgotten_lands.json'), JSON.stringify(expeditionData, null, 2));
     const makePlayer = (id: string, name: string, friend: string) => ({
-      id, name, race: 'Кот', level: 3, gold: 500, buff: id === leaderId ? 'xp' : '',
-      buffValue: id === leaderId ? 0.12 : 0, buffUntil: id === leaderId ? Date.now() + 60 * 60 * 1000 : 0,
+      id, name, race: 'Кот', level: 3, gold: 500,
+      buff: id === leaderId ? 'xp' : 'gold', buffValue: id === leaderId ? 0.12 : 0.15,
+      buffUntil: Date.now() + 60 * 60 * 1000,
       inventory: '[]', equipment: '{}',
       collections: JSON.stringify({ friends: [friend] }),
       quests: JSON.stringify({
@@ -189,6 +190,8 @@ test('group expedition travel start and claim persist every member together', { 
     const baseXp = Number(leaderCombat.report.rewards.xp);
     assert.equal(saved[leaderId].experience, Math.floor(baseXp * 1.12), 'leader XP buff must increase expedition experience');
     assert.equal(saved[memberId].experience, baseXp, 'unbuffed group member must receive base expedition experience');
+    const baseGold = Number(memberCombat.report.rewards.gold);
+    assert.equal(saved[memberId].gold, 500 + Math.floor(baseGold * 1.15), 'member gold buff must increase expedition gold');
     for (const id of [leaderId, memberId]) {
       const state = JSON.parse(saved[id].quests).expedition;
       assert.equal(state.currentZoneId, 'el2');
