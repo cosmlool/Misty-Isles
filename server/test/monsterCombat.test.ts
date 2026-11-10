@@ -467,3 +467,89 @@ test('every weakness value used by the bestiary is supported by the parser', () 
     assert.ok(parseMonsterWeakness(weakness), `Unsupported bestiary weakness: ${weakness}`);
   }
 });
+
+
+test('first attack bonus applies once and then returns to normal damage', () => {
+  const result = resolveMonsterBattle({
+    monster: { id: 'm-first-hit', name: 'First striker', hp: 10000, attack: 100, defense: 0, speed: 20, passiveDescription: 'Первая атака +20%' },
+    party: [{ id: 'p-first-hit', profession: 'Воин', hp: 1000, maxHp: 1000, attack: 1, defense: 0, speed: 10 }],
+    maxRounds: 2,
+    random: () => 0.5,
+  });
+  assert.deepEqual(result.events.filter(event => event.actor === 'First striker' && event.action === 'attack').map(event => event.damage), [120, 100]);
+});
+
+test('attack after first round bonus starts on round two', () => {
+  const result = resolveMonsterBattle({
+    monster: { id: 'm-after-round', name: 'Scaling striker', hp: 10000, attack: 100, defense: 0, speed: 20, passiveDescription: 'Атака +15% после первого раунда' },
+    party: [{ id: 'p-after-round', profession: 'Воин', hp: 1000, maxHp: 1000, attack: 1, defense: 0, speed: 10 }],
+    maxRounds: 2,
+    random: () => 0.5,
+  });
+  assert.deepEqual(result.events.filter(event => event.actor === 'Scaling striker' && event.action === 'attack').map(event => event.damage), [100, 115]);
+});
+
+test('low-health attack bonus activates only below its HP threshold', () => {
+  const result = resolveMonsterBattle({
+    monster: { id: 'm-low-hp', name: 'Desperate striker', hp: 100, attack: 100, defense: 0, speed: 10, passiveDescription: 'Атака +20% ниже 50% HP' },
+    party: [{ id: 'p-low-hp', profession: 'Воин', hp: 1000, maxHp: 1000, attack: 60, defense: 0, speed: 20 }],
+    maxRounds: 1,
+    random: () => 0.5,
+  });
+  assert.equal(result.monsterHp, 40);
+  assert.equal(result.events.find(event => event.actor === 'Desperate striker' && event.action === 'attack')?.damage, 120);
+});
+
+test('evasion passive can completely avoid a monster hit', () => {
+  const result = resolveMonsterBattle({
+    monster: { id: 'm-evasion', name: 'Dodged attacker', hp: 10000, attack: 100, defense: 0, speed: 20, passiveDescription: 'Уклонение +15%' },
+    party: [{ id: 'p-evasion', profession: 'Воин', hp: 1000, maxHp: 1000, attack: 1, defense: 0, speed: 10 }],
+    maxRounds: 1,
+    random: () => 0.1,
+  });
+  assert.equal(result.totalDamageToParty, 0);
+  assert.ok(result.events.some(event => event.actor === 'Dodged attacker' && event.action === 'dodge'));
+});
+
+test('monster lifesteal restores a percentage of damage actually dealt', () => {
+  const result = resolveMonsterBattle({
+    monster: { id: 'm-lifesteal', name: 'Leech monster', hp: 1000, attack: 100, defense: 0, speed: 10, passiveDescription: 'Восстанавливает 10% нанесённого урона' },
+    party: [{ id: 'p-lifesteal', profession: 'Воин', hp: 1000, maxHp: 1000, attack: 500, defense: 0, speed: 20 }],
+    maxRounds: 1,
+    random: () => 0.5,
+  });
+  assert.equal(result.monsterHp, 510);
+  assert.ok(result.events.some(event => event.actor === 'Leech monster' && event.action === 'heal' && event.healing === 10));
+});
+
+test('monster critical damage bonus increases only critical hits', () => {
+  const result = resolveMonsterBattle({
+    monster: { id: 'm-crit-bonus', name: 'Critical striker', hp: 10000, attack: 100, defense: 0, speed: 20, critChance: 1, critMultiplier: 1.5, passiveDescription: 'Критический урон +10%' },
+    party: [{ id: 'p-crit-bonus', profession: 'Воин', hp: 1000, maxHp: 1000, attack: 1, defense: 0, speed: 10 }],
+    maxRounds: 1,
+    random: () => 0.5,
+  });
+  assert.equal(result.totalDamageToParty, 160);
+  assert.equal(result.events.find(event => event.actor === 'Critical striker' && event.action === 'attack')?.critical, true);
+});
+
+test('monster critical damage reduction lowers party critical multiplier', () => {
+  const result = resolveMonsterBattle({
+    monster: { id: 'm-crit-reduce', name: 'Critical ward', hp: 10000, attack: 1, defense: 0, speed: 10, passiveDescription: 'Критический урон −20%' },
+    party: [{ id: 'p-crit-reduce', profession: 'Воин', hp: 1000, maxHp: 1000, attack: 100, defense: 0, speed: 20, critChance: 1, critMultiplier: 1.5 }],
+    maxRounds: 1,
+    random: () => 0.5,
+  });
+  assert.equal(result.totalDamageToMonster, 130);
+  assert.equal(result.events.find(event => event.actor === 'p-crit-reduce' && event.action === 'attack')?.critical, true);
+});
+
+test('attack bonus after a monster critical hit is consumed by the next attack only', () => {
+  const result = resolveMonsterBattle({
+    monster: { id: 'm-after-crit', name: 'Critical chain', hp: 10000, attack: 100, defense: 0, speed: 20, critChance: 1, critMultiplier: 1, passiveDescription: 'После критического удара атака +15%' },
+    party: [{ id: 'p-after-crit', profession: 'Воин', hp: 1000, maxHp: 1000, attack: 1, defense: 0, speed: 10 }],
+    maxRounds: 3,
+    random: () => 0.5,
+  });
+  assert.deepEqual(result.events.filter(event => event.actor === 'Critical chain' && event.action === 'attack').map(event => event.damage), [100, 115, 100]);
+});
