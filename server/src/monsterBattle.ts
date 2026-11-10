@@ -20,6 +20,21 @@ export type MonsterBattleCombatant = {
   buffSecondaryEffect?: string;
   buffSecondaryValue?: number;
   buffUntil?: number;
+  /** Typed effects supplied separately from base attack/defense values. */
+  combatModifiers?: {
+    attackBonus?: number;
+    defenseBonus?: number;
+    critChanceBonus?: number;
+    critChanceMultiplierBonus?: number;
+    critDamageBonus?: number;
+    lifestealBonus?: number;
+    accuracyBonus?: number;
+    evasionBonus?: number;
+    magicDamageBonus?: number;
+    physicalDamageBonus?: number;
+    bossDamageBonus?: number;
+    resistanceBonus?: number;
+  };
 };
 
 export type MonsterBattleHealingAction = {
@@ -44,6 +59,7 @@ export type MonsterBattleInput = {
     allies?: number;
     critChance?: number;
     critMultiplier?: number;
+    isBoss?: boolean;
   };
   party: MonsterBattleCombatant[];
   /** Pre-resolved party healing actions; each actor may perform at most one per round. */
@@ -194,17 +210,20 @@ export function resolveMonsterBattle(input: MonsterBattleInput): MonsterBattleRe
         const monsterHpRatio = monsterHp / monsterMaxHp;
         const activeAttackBuff = fighter.buff === 'attack' && safeStat(fighter.buffUntil) > now ? safeStat(fighter.buffValue) : 0;
         const activeSecondaryAttackBuff = fighter.buffSecondaryEffect === 'attack' && safeStat(fighter.buffUntil) > now ? safeStat(fighter.buffSecondaryValue) : 0;
-        const attack = fighter.attack * (1 + activeAttackBuff + activeSecondaryAttackBuff) * (1 - (partyAttackReduction.get(fighter.id) || 0));
-        const hitChance = clamp((safeStat(fighter.accuracy, 100) / 100) * (fighter.blind ? 0.65 : 1), 0.05, 1);
+        const modifiers = fighter.combatModifiers || {};
+        const attack = fighter.attack * (1 + activeAttackBuff + activeSecondaryAttackBuff) * (1 + clamp(safeStat(modifiers.attackBonus), 0, 5)) * (1 - (partyAttackReduction.get(fighter.id) || 0));
+        const hitChance = clamp((safeStat(fighter.accuracy, 100) * (1 + clamp(safeStat(modifiers.accuracyBonus), 0, 5)) / 100) * (fighter.blind ? 0.65 : 1), 0.05, 1);
         if (random() > hitChance) {
           events.push({ round, actor: fighter.id, action: 'miss', target: input.monster.name });
           continue;
         }
         const activeCritBuff = fighter.buff === 'crit' && safeStat(fighter.buffUntil) > now ? safeStat(fighter.buffValue) : 0;
         const activeSecondaryCritBuff = fighter.buffSecondaryEffect === 'crit' && safeStat(fighter.buffUntil) > now ? safeStat(fighter.buffSecondaryValue) : 0;
-        const crit = random() < clamp(safeStat(fighter.critChance) + activeCritBuff + activeSecondaryCritBuff, 0, 0.75);
+        const baseCritChance = safeStat(fighter.critChance);
+        const critChance = baseCritChance * (1 + clamp(safeStat(modifiers.critChanceMultiplierBonus), 0, 5)) + safeStat(modifiers.critChanceBonus) + activeCritBuff + activeSecondaryCritBuff;
+        const crit = random() < clamp(critChance, 0, 0.75);
         const critMultiplier = crit
-          ? Math.max(1, safeStat(fighter.critMultiplier, 1.5) + (effect.critDamageTaken ? -effect.critDamageTaken : 0))
+          ? Math.max(1, safeStat(fighter.critMultiplier, 1.5) + safeStat(modifiers.critDamageBonus) + (effect.critDamageTaken ? -effect.critDamageTaken : 0))
           : 1;
         const resistance = resistanceFor(effect, fighter, monsterHpRatio);
         const weaknessDamageBonus = weaknessBonus(weakness, fighter);
@@ -212,14 +231,25 @@ export function resolveMonsterBattle(input: MonsterBattleInput): MonsterBattleRe
           (effect.defenseMultiplier || 1) *
           (safeStat(input.monster.allies) > 0 ? 1 + (effect.defenseWhenAllies || 0) : 1) *
           (effect.defenseBelowHpRatio && monsterHpRatio < effect.defenseBelowHpRatio.threshold ? effect.defenseBelowHpRatio.multiplier : 1);
+        const damageTypeBonus = fighter.damageType === 'magic' || fighter.damageType === 'fire'
+          ? safeStat(modifiers.magicDamageBonus)
+          : safeStat(modifiers.physicalDamageBonus);
+        const bossDamageBonus = input.monster.isBoss ? safeStat(modifiers.bossDamageBonus) : 0;
         const dealt = Math.max(1, Math.floor(
           damageThroughDefense(attack, safeStat(input.monster.defense) * monsterDefenseMultiplier) *
-          critMultiplier * (1 - resistance) * (1 + weaknessDamageBonus),
+          critMultiplier * (1 - resistance) * (1 + weaknessDamageBonus) *
+          (1 + clamp(damageTypeBonus, 0, 5)) * (1 + clamp(bossDamageBonus, 0, 5)),
         ));
         monsterHp = Math.max(0, monsterHp - dealt);
         fighter.damageDealt += dealt;
         totalDamageToMonster += dealt;
         events.push({ round, actor: fighter.id, action: 'attack', target: input.monster.name, damage: dealt, critical: crit });
+        const lifesteal = clamp(safeStat(modifiers.lifestealBonus), 0, 1);
+        const healed = Math.min(fighter.maxHp - fighter.hp, Math.floor(dealt * lifesteal));
+        if (healed > 0) {
+          fighter.hp += healed;
+          events.push({ round, actor: fighter.id, action: 'heal', target: fighter.id, healing: healed });
+        }
         continue;
       }
 
@@ -264,15 +294,17 @@ export function resolveMonsterBattle(input: MonsterBattleInput): MonsterBattleRe
 
       const activeDefenseBuff = target.buff === 'defense' && safeStat(target.buffUntil) > now ? safeStat(target.buffValue) : 0;
       const activeSecondaryDefenseBuff = target.buffSecondaryEffect === 'defense' && safeStat(target.buffUntil) > now ? safeStat(target.buffSecondaryValue) : 0;
-      const targetDefense = target.defense * (1 + activeDefenseBuff + activeSecondaryDefenseBuff) * (1 - (partyDefenseReduction.get(target.id) || 0));
+      const targetModifiers = target.combatModifiers || {};
+      const targetDefense = target.defense * (1 + activeDefenseBuff + activeSecondaryDefenseBuff) * (1 + clamp(safeStat(targetModifiers.defenseBonus), 0, 5)) * (1 - (partyDefenseReduction.get(target.id) || 0));
       const monsterCrit = random() < clamp(safeStat(input.monster.critChance), 0, 0.75);
       const monsterCritMultiplier = monsterCrit
         ? Math.max(1, safeStat(input.monster.critMultiplier, 1.5) + (effect.critDamage || 0))
         : 1;
       const incoming = Math.max(1, Math.floor(
-        damageThroughDefense(safeStat(input.monster.attack) * monsterDamageMultiplier, targetDefense) * monsterCritMultiplier,
+        damageThroughDefense(safeStat(input.monster.attack) * monsterDamageMultiplier, targetDefense) * monsterCritMultiplier *
+        (1 - clamp(safeStat(targetModifiers.resistanceBonus), 0, 0.75)),
       ));
-      const dodgeChance = clamp(effect.evasion || 0, 0, 0.75);
+      const dodgeChance = clamp((effect.evasion || 0) + safeStat(targetModifiers.evasionBonus), 0, 0.75);
       const dodged = random() < dodgeChance;
       if (dodged) {
         events.push({ round, actor: input.monster.name, action: 'dodge', target: target.id });
