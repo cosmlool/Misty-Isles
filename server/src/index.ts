@@ -458,7 +458,7 @@ function authHttpHandler(req:IncomingMessage,res:ServerResponse) {
         const session=verifySession(String(d.token||''));if(!session){sendJson(res,401,{error:'Сессия истекла. Войди снова.'});return;}sendJson(res,200,{ok:true,playerId:session.playerId});return;
       }
       if(path==='/auth/logout'){
-        const token=String(d.token||'');const session=verifySession(token);if(!session){sendJson(res,401,{error:'Сессия не найдена или истекла.'});return;}const hash=tokenDigest(token);saveSessions(loadSessions().filter(x=>x.tokenHash!==hash));sendJson(res,200,{ok:true});return;
+        const token=String(d.token||'');const session=verifySession(token);if(!session){sendJson(res,401,{error:'Сессия не найдена или истекла.'});return;}const hash=tokenDigest(token);saveSessions(loadSessions().filter(x=>x.tokenHash!==hash));ONLINE_CLIENTS.get(session.playerId)?.leave(4001,'Session revoked');sendJson(res,200,{ok:true});return;
       }
       sendJson(res,404,{error:'Неизвестный запрос.'});
     } catch { sendJson(res,400,{error:'Не удалось обработать запрос.'}); }
@@ -468,12 +468,14 @@ function authHttpHandler(req:IncomingMessage,res:ServerResponse) {
 class RoomState extends Schema { @type(Player) player = new Player(); }
 class GameRoom extends Room<RoomState> {
   private playerId = '';
+  private sessionToken = '';
   onCreate() { (this as any).maxClients = 1; this.setState(new RoomState()); this.registerHandlers(); this.clock.setInterval(() => applyHealthRegeneration(this.state.player), 1000); }
   onJoin(client: Client, options?: any) {
     const requestedPlayerId=safeId(options?.playerId);const session=verifySession(String(options?.sessionToken||''));
     if(!session||session.playerId!==requestedPlayerId) throw new Error('Требуется войти в аккаунт.');
     if (ONLINE_PLAYERS.has(session.playerId)) throw new Error('Этот персонаж уже находится в игре.');
     this.playerId = session.playerId;
+    this.sessionToken = String(options?.sessionToken||'');
     const saved = loadPlayers()[this.playerId];
     if (saved) { applySaved(this.state.player, saved); this.state.player.id = this.playerId; }
     else { this.state.player.id = this.playerId; this.state.player.name = 'Путник'; }
@@ -507,6 +509,7 @@ class GameRoom extends Room<RoomState> {
     c.send('huntGroupPlayers',{players}); c.send('huntGroupState',{group:groupSnapshot(this.playerId)});
   }
   private registerHandlers() {
+    this.onMessage('*',(c)=>{const session=verifySession(this.sessionToken);if(!session||session.playerId!==this.playerId||ONLINE_CLIENTS.get(this.playerId)!==c)c.leave(4001,'Session revoked');});
     this.onMessage('huntGroupList',(c)=>this.sendHuntGroupPlayers(c,this.state.player));
     this.onMessage('friendRequest',(c,d:any)=>{if(!this.requireCharacter(c))return;const targetId=resolvePublicPlayerCode(String(d?.targetId||''));if(!targetId||targetId===this.playerId)return this.notice(c,'Укажи другого игрока.');const target=ONLINE_CLIENTS.get(targetId);if(!target)return this.notice(c,'Игрок должен быть в сети, чтобы принять запрос.');const requests=FRIEND_REQUESTS.get(targetId)||new Set<string>();requests.add(this.playerId);FRIEND_REQUESTS.set(targetId,requests);target.send('friendInvite',{fromId:publicPlayerCode(this.playerId),fromName:this.state.player.name||'Путник'});this.notice(c,'Запрос в друзья отправлен.');});
     this.onMessage('friendAccept',(c,d:any)=>{if(!this.requireCharacter(c))return;const fromId=resolvePublicPlayerCode(String(d?.fromId||''));const requests=FRIEND_REQUESTS.get(this.playerId);if(!requests?.has(fromId))return this.notice(c,'Запрос в друзья не найден.');const own=readObject(this.state.player.collections),other=ONLINE_PLAYERS.get(fromId);if(!other)return this.notice(c,'Игрок уже не в сети.');const theirs=readObject(other.collections);own.friends=Array.from(new Set([...(own.friends||[]),fromId]));theirs.friends=Array.from(new Set([...(theirs.friends||[]),this.playerId]));this.state.player.collections=JSON.stringify(own);other.collections=JSON.stringify(theirs);persistPlayer(other);requests.delete(fromId);FRIEND_REQUESTS.set(this.playerId,requests);ONLINE_CLIENTS.get(fromId)?.send('friendAccepted',{id:publicPlayerCode(this.playerId),name:this.state.player.name});this.notice(c,`Вы с ${other.name} теперь друзья.`);this.sendHuntGroupPlayers(c,this.state.player);});
