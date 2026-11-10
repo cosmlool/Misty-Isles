@@ -2634,3 +2634,5 @@ PEN-009 стоит 100 кристаллов и при максимальном �
 - The handler now checks every online participant is idle before mutating any member. The check is factored into checkExpeditionTravelStartReadiness and covered by expeditionOperations.test.ts for empty, idle, searching and moving participant sets.
 - This does not yet resolve the separate mixed expedition-progression issue: group search still derives encounter progression from the leader and writes it to all members. A policy is still needed (require matching progress or calculate progression independently per member).
 - Tests/builds have not been executed.
+
+- Client fallback for legacy browser data: if a browser has only an old player ID and no recovery proof or valid session, the guest button now asks for explicit confirmation before creating a fresh server-issued guest ID. It does not silently overwrite or claim the old save.
