@@ -737,3 +737,13 @@ No gameplay code was changed.
 - Clan-season reward still computes rank using the already-truncated top-ten board, confirming the previously recorded rank-0 reward issue for clans outside the top ten.
 
 No gameplay code was changed. These are source-level findings; tests were not executed.
+
+
+### Combat formula cross-mode verification — 2026-11-10
+
+- **Confirmed five-piece armor-set activation defect across combat modes:** new armor sets are generated from five armor slots (armor, helmet, gloves, boots, cloak). Ordinary hunt, PvP, and clan-war calculations count set pieces only among weapon, armor, and amulet. A five-piece armor set can therefore contribute at most one counted piece in those modes and cannot reach the two-piece activation threshold. Group expedition dungeon instead counts all equipped values and applies a different generic count-based bonus. The same set consequently behaves differently by mode; in three modes its advertised set bonus never activates.
+- **Confirmed solo-dungeon ring-effect omission:** the solo dungeonRun calculation resolves weapon and armor and applies their enhancement/property modifiers, but does not resolve the equipped ring or apply its attack/defense/crit/XP/gold/lifesteal effects. The ring can still affect effective maximum health through shared health calculation, but its combat and reward effects are absent from this mode.
+- **Confirmed profession-skill dead effect for Vampire blood_burst:** the skill is defined with effect lifesteal and value 0.08 and is activated by storing that effect in p.buff. Ordinary hunt's active-buff calculation handles attack/blood, defense, crit, gold, XP, and loot, but has no lifesteal branch. The Vampire's ordinary post-victory healing is already applied independently of this buff, so the skill's stored effect/value does not add the advertised 8% lifesteal. It is not a one-battle effect either: all profession buffs remain active for five minutes, as previously recorded.
+- The cross-mode comparison reinforces existing findings: combat stats/equipment effects are not centralized, set bonus descriptions and implementations diverge, and active buffs are not applied consistently to solo/group dungeons, PvP, and clan wars. Treat these as a combat-system consolidation/design task rather than patching individual formulas independently.
+
+Source-level review only; no gameplay code changed and no tests were executed.
