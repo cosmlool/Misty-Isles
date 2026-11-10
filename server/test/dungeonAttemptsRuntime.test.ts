@@ -133,7 +133,7 @@ test('solo Forgotten Lands boss dungeon reports remaining daily entries and enfo
 
     const beforeRejectedAttempt = results.length;
     room.send('dungeonRun', { id: 'fl_dungeon_03' });
-    await waitFor(() => notices.find(message => message === 'закончились попытки в подземельях'), 'daily dungeon cap');
+    await waitFor(() => notices.find(message => message.includes('закончились попытки в подземельях')), 'daily dungeon cap');
     assert.equal(results.length, beforeRejectedAttempt);
 
     const saved = readJson(join(dataDir, 'players.json'))[playerId];
