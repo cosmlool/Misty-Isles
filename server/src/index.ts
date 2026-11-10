@@ -7,7 +7,7 @@ import { WebSocketTransport } from '@colyseus/ws-transport';
 import { Schema, type } from '@colyseus/schema';
 import { Player } from './PlayerSchema.js';
 import { calculateCombatSpeed } from './monsterBattle.js';
-import { calculatePlayerMonsterCombatStats, parseMonsterCombatEffectClauses, resolveEquipmentSetCombatEffects, resolveEquipmentSetTierDescriptions, resolveMonsterCombatProperty, resolveMonsterPendantCombatEffect } from './monsterCombatStats.js';
+import { calculatePlayerMonsterCombatStats, parseMonsterCombatEffectClauses, resolveEquipmentSetCombatEffects, resolveEquipmentSetTierDescriptions, resolveGoldEquipmentStatProfile, resolveMonsterCombatProperty, resolveMonsterPendantCombatEffect } from './monsterCombatStats.js';
 import { applyPlayerSave, createPlayerSaveStore } from './playerSaves.js';
 import { readJsonFile as readPersistentJson } from './jsonPersistence.js';
 import { filterAvailableUniqueItems, isLastEquippedCopy, ownsItemCopy, removeInventoryCopy } from './inventoryOperations.js';
@@ -276,47 +276,13 @@ const EXPEDITION_DROP_ITEMS:Item[] = EXPEDITION_DATA.dropItems || [];
 for (const item of ITEMS) { if (['weapon','armor','amulet'].includes(item.kind)) item.legacy = true; }
 for (const item of NEW_EQUIPMENT_ITEMS) { if (item.price > 0 && item.kind !== 'amulet' && item.kind !== 'material') item.price = Math.ceil(item.price * 1.3); }
 ITEMS.push(...NEW_EQUIPMENT_ITEMS, ...EXPEDITION_DROP_ITEMS);
-function applyGoldEquipmentStatProfile(item:Item){
- if(!(Number(item.price)>0&&['weapon','armor'].includes(item.kind)))return;
- if(item.attributes&&item.combatStats)return;
- const profession=String(item.profession||''),level=Math.max(1,Number(item.level)||1);
- const mainStat:Record<string,string>={'Боевой маг':'intelligence','Ассасин':'dexterity','Воин':'strength','Баффер':'intelligence','Лучник':'dexterity','Вампир':'stamina','Добытчик':'intelligence'};
- const secondaryStat:Record<string,string>={'Боевой маг':'stamina','Ассасин':'strength','Воин':'stamina','Баффер':'vitality','Лучник':'stamina','Вампир':'vitality','Добытчик':'dexterity'};
- const unit=profession?Math.max(1,Math.round(level/20)):Math.max(1,Math.round(level/10));
- const attributes:Record<string,number>={},combatStats:Record<string,number>={};
- const add=(target:Record<string,number>,key:string,value:number)=>{target[key]=Math.max(1,Math.round(value));};
- if(item.kind==='weapon'){
-  add(attributes,secondaryStat[profession]||'stamina',unit*(profession?0.55:0.35));
-  if(profession==='Воин'||profession==='Вампир')add(attributes,'vitality',unit*0.25);
- }else{
-  const slot=String(item.slot||'armor'),primary=mainStat[profession]||'strength';
-  if(slot==='helmet'){add(attributes,primary,unit*0.35);if(profession==='Боевой маг'||profession==='Баффер')add(attributes,'stamina',unit*0.2);}
-  else if(slot==='armor'){add(attributes,'vitality',unit*0.8);add(attributes,'stamina',unit*0.45);}
-  else if(slot==='gloves'){add(attributes,primary,unit*0.45);if(profession==='Ассасин'||profession==='Лучник')add(attributes,'dexterity',unit*0.25);}
-  else if(slot==='boots'){add(attributes,'dexterity',unit*0.65);if(profession==='Воин'||profession==='Вампир')add(attributes,'vitality',unit*0.2);}
-  else if(slot==='cloak'){add(attributes,'stamina',unit*0.55);add(attributes,'vitality',unit*0.35);}
- }
- const q=Math.round((0.004+0.016*(level/100))*1000)/1000,q2=Math.round(q*0.55*1000)/1000;
- if(item.kind==='weapon'){
-  const damage=profession==='Боевой маг'?'magicDamage':profession==='Баффер'?'healing':'physicalDamage';
-  combatStats[damage]=Math.round(q*1.5*1000)/1000;
-  if(profession==='Ассасин'||profession==='Лучник')combatStats.critChance=q2;
-  else if(profession==='Воин')combatStats.critDamage=q2;
-  else if(profession==='Баффер')combatStats.healing=q;
-  else if(profession==='Вампир')combatStats.lifesteal=q2;
-  else if(profession==='Добытчик')combatStats.loot=Math.round(q*2*1000)/1000;
-  else if(!profession)combatStats.accuracy=q2;
- }else{
-  const slot=String(item.slot||'armor');
-  if(slot==='helmet'){if(['Боевой маг','Ассасин','Лучник'].includes(profession))combatStats.accuracy=q;else combatStats.controlResistance=q;if(profession==='Ассасин'||profession==='Лучник')combatStats.critChance=q2;}
-  else if(slot==='armor'){combatStats.resistance=q;combatStats.health=q2;}
-  else if(slot==='gloves'){combatStats[profession==='Боевой маг'?'magicDamage':'physicalDamage']=q;if(profession==='Ассасин'||profession==='Лучник')combatStats.critDamage=q2;else if(profession==='Баффер')combatStats.healing=q2;else if(profession==='Вампир')combatStats.lifesteal=q2;else if(profession==='Добытчик')combatStats.loot=q2;}
-  else if(slot==='boots'){combatStats.evasion=q;combatStats.attackSpeed=q2;}
-  else if(slot==='cloak'){if(profession==='Баффер')combatStats.healing=q2;else if(profession==='Вампир')combatStats.lifesteal=q2;else if(profession==='Добытчик')combatStats.loot=q2;else combatStats.controlResistance=q2;}
- }
- item.attributes=attributes;item.combatStats=combatStats;
+for(const item of ITEMS){
+ if(!(Number(item.price)>0&&['weapon','armor'].includes(item.kind)))continue;
+ if(item.attributes&&item.combatStats)continue;
+ const profile=resolveGoldEquipmentStatProfile({kind:item.kind as 'weapon'|'armor',level:Number(item.level||1),profession:item.profession,slot:item.slot});
+ item.attributes=item.attributes||profile.attributes;
+ item.combatStats=item.combatStats||profile.combatStats;
 }
-for(const item of ITEMS)applyGoldEquipmentStatProfile(item);
 function pendantEffectValue(item:Item|undefined,level:number):number { if(!item)return 0;const rates:Record<string,number>={xp:.005,defense:.0005,crit:.0005,health:.001,loot:.001,gold:.001,production:.001,regen:.001,reputation:.001,bossDamage:.001,crystalChance:.001};const caps:Record<string,number>={xp:.5,defense:.1,crit:.1,health:.2,loot:.2,gold:.2,production:.2,regen:.2,reputation:.2,bossDamage:.2,crystalChance:.2};const lv=Math.max(1,Math.min(100,level));return lv>=100?(caps[item.effect||'']||0):(rates[item.effect||'']||0)*lv;}
 function shopCatalogForPlayer(p:Player){const activeProfession=String((p as any).activeSubclass|| (p as any).subclassProfession || p.profession || '');return ITEMS.filter(i=>i.price>0&&!i.legacy&&(!i.race||i.race===p.race)&&(!i.profession||i.profession===p.profession||i.profession===activeProfession)).sort((a,b)=>Number(a.level||1)-Number(b.level||1)||String(a.name).localeCompare(String(b.name),'ru'));}
 function ownsPendant(p:Player,id:string){return readArray(p.inventory).includes(id)||Object.values(readObject(p.equipment)).includes(id);}
