@@ -667,3 +667,10 @@ Recommended fix after the audit: introduce a single, carefully ordered player-sn
 
 
 The same full-snapshot omission also exists in the real-player `pvpChallenge` save path: it starts from `loadPlayers()` and replaces only the attacker and target records before `savePlayers(all)`, without merging unrelated online players. By contrast, `pvpList` explicitly merges all entries from `ONLINE_PLAYERS` before its save. The recommended snapshot coordinator must cover `GameRoom.save`, `persistPlayers`, auction transactions, and PvP challenge commits; fixing only auction handlers would leave the underlying cross-player persistence defect active.
+
+
+#### Multi-client test coverage gap
+
+- The reviewed auction unit tests prove that a second sequential purchase fails after the lot has been removed, and the transaction-store tests prove journal recovery after a simulated process crash. They do not create two live buyer clients and race two `auctionBuy` messages against the same lot.
+- The server's current auction message handlers are synchronous and contain no `await`, so Node processes each handler callback to completion before the next callback; this reduces the risk of an in-process interleaving race. Still, a two-client runtime test is needed to verify the real Colyseus path: exactly one buyer succeeds, the other receives “lot is no longer available”, one item is delivered, one payment is charged, and both clients eventually see the same listing state.
+- The reviewed PvP runtime test uses one online attacker and offline saved targets. A two-online-player PvP test is still needed to verify the victim's live Schema, result notification, persisted gold/stat changes, immunity, and reconnect hydration.
