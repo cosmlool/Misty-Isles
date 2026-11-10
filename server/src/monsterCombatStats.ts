@@ -197,6 +197,11 @@ export type MonsterCombatSetBonusInput = {
 export type MonsterCombatArmorItemInput = {
   attack?: number;
   defense?: number;
+  strength?: number;
+  dexterity?: number;
+  intelligence?: number;
+  vitality?: number;
+  stamina?: number;
   enhancementLevel?: number;
 };
 
@@ -309,18 +314,25 @@ export function calculatePlayerMonsterCombatStats(
   const armorDefense = input.armorItems
     ? input.armorItems.reduce((sum, item) => sum + value(item.defense) * (1 + Math.max(0, value(item.enhancementLevel)) * 0.04), 0)
     : value(input.armorDefense);
+  const armorAttributes = (key: 'strength' | 'dexterity' | 'intelligence' | 'vitality' | 'stamina') =>
+    (input.armorItems || []).reduce((sum, item) => sum + value(item[key]), 0);
+  const totalStrength = value(input.strength) + value(input.weaponStrength) + armorAttributes('strength');
+  const totalDexterity = value(input.dexterity) + value(input.weaponDexterity) + armorAttributes('dexterity');
+  const totalIntelligence = value(input.intelligence) + value(input.weaponIntelligence) + armorAttributes('intelligence');
+  const totalVitality = value(input.vitality) + value(input.weaponVitality) + armorAttributes('vitality');
+  const totalStamina = value(input.stamina) + value(input.weaponStamina) + armorAttributes('stamina');
 
   let attack =
-    (value(input.strength) + value(input.weaponStrength)) * (magic ? 0.35 : 1.25) +
-    (value(input.dexterity) + value(input.weaponDexterity)) * (agile ? 0.65 : 0.35) +
-    (value(input.intelligence) + value(input.weaponIntelligence)) * (magic ? 0.85 : 0.2) +
+    totalStrength * (magic ? 0.35 : 1.25) +
+    totalDexterity * (agile ? 0.65 : 0.35) +
+    totalIntelligence * (magic ? 0.85 : 0.2) +
     enhancedWeaponAttack +
     armorAttack;
 
   let defense =
     value(input.baseDefense) +
-    (value(input.vitality) + value(input.weaponVitality)) * 0.45 +
-    (value(input.stamina) + value(input.weaponStamina)) * 0.12 +
+    totalVitality * 0.45 +
+    totalStamina * 0.12 +
     armorDefense;
 
   if (profession === 'Боевой маг') attack *= 1.10;
@@ -393,7 +405,7 @@ export function calculatePlayerMonsterCombatStats(
     defense: Math.max(1, Number.isFinite(defense) ? defense : 1),
     baseAttack: Math.max(1, Number.isFinite(baseAttack) ? baseAttack : 1),
     baseDefense: Math.max(1, Number.isFinite(baseDefense) ? baseDefense : 1),
-    speed: calculateCombatSpeed(value(input.dexterity), value(input.weaponDexterityBonus)),
+    speed: calculateCombatSpeed(totalDexterity, 0),
     profession,
     lootBonus: value(input.weaponLootBonus) + (buffActive ? value(buffs.loot) : 0),
     lifestealBonus: buffActive ? value(buffs.lifesteal) : 0,
