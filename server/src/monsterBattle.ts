@@ -249,9 +249,12 @@ export function resolveMonsterBattle(input: MonsterBattleInput): MonsterBattleRe
           (effect.defenseMultiplier || 1) *
           (safeStat(input.monster.allies) > 0 ? 1 + (effect.defenseWhenAllies || 0) : 1) *
           (effect.defenseBelowHpRatio && monsterHpRatio < effect.defenseBelowHpRatio.threshold ? effect.defenseBelowHpRatio.multiplier : 1);
+        // Unknown damage type must not silently inherit physical damage bonuses.
         const damageTypeBonus = fighter.damageType === 'magic' || fighter.damageType === 'fire'
           ? safeStat(modifiers.magicDamageBonus)
-          : safeStat(modifiers.physicalDamageBonus);
+          : fighter.damageType === 'physical'
+            ? safeStat(modifiers.physicalDamageBonus)
+            : 0;
         const bossDamageBonus = input.monster.isBoss ? safeStat(modifiers.bossDamageBonus) : 0;
         const dealt = Math.max(1, Math.floor(
           damageThroughDefense(attack, safeStat(input.monster.defense) * monsterDefenseMultiplier) *
