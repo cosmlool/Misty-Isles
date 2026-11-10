@@ -407,7 +407,7 @@ function authHttpHandler(req:IncomingMessage,res:ServerResponse) {
   if(req.method==='OPTIONS'){res.writeHead(204);res.end();return;}
   const path=String(req.url||'').split('?')[0];if(!path?.startsWith('/auth/')){res.writeHead(404);res.end('Not found');return;}
   if(req.method!=='POST'){sendJson(res,405,{error:'Используй POST.'});return;}
-  if(path==='/auth/login'||path==='/auth/register'||path==='/auth/guest'||path==='/auth/logout'){const ip=req.socket.remoteAddress||'unknown';if(!allowAuthAttempt(ip)){sendJson(res,429,{error:'Слишком много попыток. Попробуй позже.'});return;}}
+  if(path==='/auth/login'||path==='/auth/register'||path==='/auth/guest'){const ip=req.socket.remoteAddress||'unknown';if(!allowAuthAttempt(ip)){sendJson(res,429,{error:'Слишком много попыток. Попробуй позже.'});return;}}
   let body='';req.on('data',chunk=>{body+=String(chunk);if(body.length>8192){sendJson(res,413,{error:'Слишком большой запрос.'});req.destroy();}});
   req.on('end',()=>{
     try {
