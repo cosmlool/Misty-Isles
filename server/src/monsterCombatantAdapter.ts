@@ -11,7 +11,9 @@ export type PlayerCombatantAdapterInput = {
   profession: string;
   hp: number;
   maxHp: number;
+  /** Base attack before active buff modifiers; the battle engine applies buff fields below. */
   attack: number;
+  /** Base defense before active buff modifiers; the battle engine applies buff fields below. */
   defense: number;
   dexterity: number;
   equipmentDexterityBonus?: number;
