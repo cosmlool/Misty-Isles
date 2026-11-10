@@ -106,6 +106,13 @@ test('PvP offers four saved real characters, steals 20 percent gold, persists co
         gold: 1_000 + index * 100, inventory: '[]', equipment: '{}', quests: '{}',
       };
     }
+    const bystanderId = 'pvp_runtime_online_bystander';
+    players[bystanderId] = {
+      id: bystanderId, name: 'Online Bystander', race: 'Кот', level: 20,
+      strength: 1, dexterity: 1, defense: 1, vitality: 1,
+      health: 50, maxHealth: 100, gold: 500, inventory: '[]', equipment: '{}',
+      quests: JSON.stringify({ hpRegenAt: Date.now() - 5 * 60 * 1000, pvp: { immunityUntil: Date.now() + 60 * 60 * 1000 } }),
+    };
     players.pvp_runtime_no_character = {
       id: 'pvp_runtime_no_character', name: 'Uncreated Profile', race: '', level: 20, gold: 500, quests: '{}',
     };
@@ -127,6 +134,8 @@ test('PvP offers four saved real characters, steals 20 percent gold, persists co
     const client = new Client(`ws://127.0.0.1:${port}`);
     const token = await guestToken(port, attackerId);
     attackerRoom = await client.joinOrCreate('my_room', { playerId: attackerId, sessionToken: token });
+    const bystanderToken = await guestToken(port, bystanderId);
+    secondRoom = await client.joinOrCreate('my_room', { playerId: bystanderId, sessionToken: bystanderToken });
 
     const offers: any[] = [];
     const results: any[] = [];
@@ -146,6 +155,7 @@ test('PvP offers four saved real characters, steals 20 percent gold, persists co
     assert.ok(firstOffer.players.every((player: any) => player.isBot === false));
     assert.ok(firstOffer.players.some((player: any) => player.level > 22 || player.level < 18), 'matchmaking must not restrict level difference');
     assert.ok(!firstOffer.players.some((player: any) => player.id === publicCode('pvp_runtime_protected')));
+    assert.ok(!firstOffer.players.some((player: any) => player.id === publicCode(bystanderId)), 'protected online bystander must not enter the opponent list');
     const chosen = firstOffer.players[0];
     const targetId = targetIds.find(id => publicCode(id) === chosen.id);
     assert.ok(targetId, 'the offered target must be one of the offline saved characters');
@@ -155,6 +165,7 @@ test('PvP offers four saved real characters, steals 20 percent gold, persists co
     const result = await waitFor(() => results[0], 'PvP combat result');
     assert.equal(result.report.result, 'win', 'the synthetic high-stat attacker should win');
     const saved = readJson(join(dataDir, 'players.json'));
+    assert.ok(saved[bystanderId].health > 50, 'PvP persistence must include unsaved health regeneration from every online character');
     const stolen = Math.floor(targetBefore.gold * 0.2);
     assert.equal(saved[attackerId].gold, 250 + stolen);
     assert.equal(saved[targetId].gold, targetBefore.gold - stolen);
