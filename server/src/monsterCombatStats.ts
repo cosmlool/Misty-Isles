@@ -364,11 +364,20 @@ export function calculatePlayerMonsterCombatStats(
   const profileEffects: ParsedMonsterCombatEffect[] = profileBonus > 0
     ? [{ target: profession === 'Баффер' ? 'defense' : 'attack', value: profileBonus }]
     : [];
+  const activeBuffEffects: ParsedMonsterCombatEffect[] = buffActive
+    ? [
+        { target: 'attack', value: value(buffs.attack) },
+        { target: 'defense', value: value(buffs.defense) },
+        // In the typed engine crit buffs increase critical chance, not base attack.
+        { target: 'critChance', value: value(buffs.crit) },
+      ]
+    : [];
   const combatModifiers = aggregateMonsterCombatModifiers([
     ...(input.equipmentEffects || []),
     ...(input.pendantCombatEffect ? [input.pendantCombatEffect] : []),
     ...setEffects,
     ...profileEffects,
+    ...activeBuffEffects,
   ]);
 
   return {
