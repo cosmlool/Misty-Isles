@@ -269,7 +269,7 @@ export type PlayerMonsterCombatHealth = { hp: number; maxHp: number };
 export function resolvePlayerMonsterLifestealRate(profession: string, aggregatedBonus: number): number {
   const professionBonus = profession === 'Вампир' ? 0.08 : 0;
   const bonus = Number.isFinite(aggregatedBonus) ? Math.max(0, aggregatedBonus) : 0;
-  return Math.min(0.75, professionBonus + bonus);
+  return Math.min(1, professionBonus + bonus);
 }
 
 export function resolvePlayerMonsterCombatHealth(
