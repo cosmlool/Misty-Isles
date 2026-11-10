@@ -102,11 +102,13 @@ test('account registration securely links a guest save, revokes the guest token 
     assert.equal((await post(port, '/auth/check', { token: account.token })).status, 200);
     assert.equal((await post(port, '/auth/check', { token: guest.token })).status, 401);
     assert.equal((await post(port, '/auth/check', { token: secondGuest.token })).status, 401, 'linking an account must revoke every guest session for that player');
+    assert.equal((await post(port, '/auth/check', { token: migrated.token })).status, 401, 'the migrated legacy session must also be revoked');
+    assert.equal((await post(port, '/auth/guest', { playerId, guestProof: migrated.guestProof })).status, 409, 'a linked account must not be reopened through guest recovery');
 
     // Simulate a crash after the account record was written but before stale guest sessions were removed.
     const sessionsPath = join(dataDir, 'sessions.json');
     const sessions = JSON.parse(readFileSync(sessionsPath, 'utf8'));
-    for (const token of [guest.token, secondGuest.token]) {
+    for (const token of [guest.token, secondGuest.token, migrated.token]) {
       sessions.push({ tokenHash: createHash('sha256').update(token).digest('hex'), playerId, accountKey: null, expiresAt: Date.now() + 60_000 });
     }
     writeFileSync(sessionsPath, JSON.stringify(sessions, null, 2));
