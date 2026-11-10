@@ -50,3 +50,15 @@ export function checkExpeditionTravelConsistency(
   }
   return { consistent: true };
 }
+
+export type ExpeditionTravelStartReadiness =
+  | { ready: true }
+  | { ready: false; reason: 'empty' | 'busy' };
+
+export function checkExpeditionTravelStartReadiness(states: ExpeditionTravelState[]): ExpeditionTravelStartReadiness {
+  if (!states.length) return { ready: false, reason: 'empty' };
+  if (states.some(state => state.state === 'searching' || state.state === 'moving')) {
+    return { ready: false, reason: 'busy' };
+  }
+  return { ready: true };
+}
