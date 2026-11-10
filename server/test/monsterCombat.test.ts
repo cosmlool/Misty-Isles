@@ -1325,14 +1325,14 @@ test('monster battle applies typed attack, damage-type and lifesteal modifiers',
     party: [{
       id: 'fighter', profession: 'Воин', hp: 50, maxHp: 100,
       attack: 100, defense: 0, speed: 10, damageType: 'physical',
-      combatModifiers: { attackBonus: 0.10, physicalDamageBonus: 0.20, lifestealBonus: 0.50 },
+      combatModifiers: { attackBonus: 0.10, physicalDamageBonus: 0.20, lifestealBonus: 0.20, healingBonus: 0.50 },
     }],
     maxRounds: 1,
     random: (() => { const values = [0, 0.99, 0.99, 0.99]; let i = 0; return () => values[i++] ?? 0.99; })(),
   });
   assert.equal(result.party[0].damageDealt, 132);
-  assert.equal(result.party[0].remainingHp, 100);
-  assert.ok(result.events.some(event => event.action === 'heal' && event.actor === 'fighter' && event.healing === 50));
+  assert.equal(result.party[0].remainingHp, 89);
+  assert.ok(result.events.some(event => event.action === 'heal' && event.actor === 'fighter' && event.healing === 39));
 });
 
 test('monster battle applies crit chance and critical damage modifiers independently', () => {
