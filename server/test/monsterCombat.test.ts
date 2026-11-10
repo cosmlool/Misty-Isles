@@ -1467,6 +1467,24 @@ test('monster battle applies typed attack, damage-type and lifesteal modifiers',
   assert.ok(result.events.some(event => event.action === 'heal' && event.actor === 'fighter' && event.healing === 39));
 });
 
+test('monster healing reduction also reduces player lifesteal', () => {
+  const result = resolveMonsterBattle({
+    monster: {
+      id: 'healing-reducer', name: 'Лишатель лечения', hp: 10000,
+      attack: 1, defense: 0, speed: 0,
+      passiveDescription: 'Лечение противника −10%',
+    },
+    party: [{
+      id: 'lifesteal-fighter', profession: 'Вампир', hp: 50, maxHp: 100,
+      attack: 100, defense: 0, speed: 10,
+      combatModifiers: { lifestealBonus: 0.50 },
+    }],
+    maxRounds: 1,
+    random: () => 0.99,
+  });
+  assert.ok(result.events.some(event => event.action === 'heal' && event.actor === 'lifesteal-fighter' && event.healing === 45));
+});
+
 test('monster battle applies crit chance and critical damage modifiers independently', () => {
   const result = resolveMonsterBattle({
     monster: { id: 'training-dummy', name: 'Манекен', hp: 1000, attack: 1, defense: 0, speed: 0 },
