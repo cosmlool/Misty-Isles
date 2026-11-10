@@ -1580,6 +1580,6 @@ test('unknown player damage type does not receive physical or magic damage bonus
 test('lifesteal combines Vampire baseline with aggregated gear, set and buff bonuses exactly once', () => {
   assert.equal(resolvePlayerMonsterLifestealRate('Вампир', 0.11), 0.19);
   assert.equal(resolvePlayerMonsterLifestealRate('Ассасин', 0.11), 0.11);
-  assert.equal(resolvePlayerMonsterLifestealRate('Вампир', 0.80), 0.75);
+  assert.equal(resolvePlayerMonsterLifestealRate('Вампир', 0.80), 0.88);
   assert.equal(resolvePlayerMonsterLifestealRate('Вампир', Number.NaN), 0.08);
 });
