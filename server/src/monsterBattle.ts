@@ -201,7 +201,7 @@ export function resolveMonsterBattle(input: MonsterBattleInput): MonsterBattleRe
       if (effect.damageVsArmoredTargets && target.defense >= safeStat(input.monster.attack)) monsterDamageMultiplier *= 1 + effect.damageVsArmoredTargets;
       if (effect.damageVsLowDefenseTargets && target.defense < safeStat(input.monster.attack) * 0.5) monsterDamageMultiplier *= 1 + effect.damageVsLowDefenseTargets;
       if (effect.damageVsLowHpTargets && targetHpRatio < effect.damageVsLowHpTargets.threshold) monsterDamageMultiplier *= effect.damageVsLowHpTargets.multiplier;
-      if (effect.attackVsWeakened && (partyAttackReduction > 0 || partyDefenseReduction > 0 || partySpeedReduction > 0)) monsterDamageMultiplier *= 1 + effect.attackVsWeakened;
+      if (effect.attackVsWeakened && (partyAttackReduction > 0 || partyDefenseReduction > 0 || (round === 1 && partySpeedReduction > 0))) monsterDamageMultiplier *= 1 + effect.attackVsWeakened;
 
       const targetDefense = target.defense * (1 - partyDefenseReduction);
       const monsterCrit = random() < clamp(safeStat(input.monster.critChance), 0, 0.75);
