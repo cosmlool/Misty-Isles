@@ -1468,3 +1468,9 @@ clanTerritoryCapture не проверяет, что инициатор — ли
 - Не найдено специализированных runtime tests для mining cooldown 30m/15m, ring progression cap/level100, house migration, equipmentProperties, profession/guild buff effects, clan leadership transfer, duplicate rename и group loot distribution.
 
 Статус: тесты по транзакциям/сохранению существуют, но до массового изменения баланса нужен отдельный слой unit/runtime tests для боевых формул и прогрессии; иначе нельзя подтвердить, что цифры работают одинаково во всех режимах.
+
+
+### Клиент: сравнение экипировки не учитывает все характеристики и дубли
+В character gearGrid сравнение предметов показывает только разницу attack и defense. Оно не сравнивает health, primaryAttribute/profile efficiency, заточку, редкое свойство и изменение активного set bonus. При одинаковых attack/defense UI пишет «Боевые показатели не изменятся», даже если различается HP или комплект.
+Кроме того, gearItems строится по каждой записи inventory, а equippedIds проверяется по itemId. Если в инвентаре несколько копий одного itemId и одна экипирована, все копии отображаются как «Надето» и получают кнопку снятия.
+Статус: UI accuracy issue; не меняет серверные данные, но может вводить игрока в заблуждение при выборе/разборе экипировки.
