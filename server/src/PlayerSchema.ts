@@ -64,10 +64,11 @@ export class Player extends Schema {
   @type('number') battles = 0;
   @type('number') victories = 0;
   @type('number') lastHuntAt = 0;
-  @type('number') lastDailyAt = 0;
+  // Server-only cooldown bookkeeping stays outside synchronized Colyseus fields.
+  lastDailyAt = 0;
   @type('number') lastFountainAt = 0;
-  @type('number') lastMineAt = 0;
-  @type('number') lastWorkAt = 0;
+  lastMineAt = 0;
+  lastWorkAt = 0;
   // Legacy coordinates are kept as ordinary properties, not synchronized Schema fields.
   // This keeps Player within Colyseus Schema's 64-field limit.
   x = 0;
