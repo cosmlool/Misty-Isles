@@ -78,3 +78,29 @@ export function calculatePvpGoldTransfer(loserGold: number): number {
   if (!Number.isFinite(balance) || balance <= 0) return 0;
   return Math.floor(balance * PVP_GOLD_STEAL_RATE);
 }
+
+export type PvpOutcomeResult = {
+  attackerGold: number;
+  targetGold: number;
+  stolenGold: number;
+  immunityRecipient: 'attacker' | 'target';
+  immunityUntil: number;
+};
+
+export function resolvePvpOutcome(
+  attackerGold: number,
+  targetGold: number,
+  attackerWon: boolean,
+  now: number,
+): PvpOutcomeResult {
+  const attackerBalance = Math.max(0, Number(attackerGold) || 0);
+  const targetBalance = Math.max(0, Number(targetGold) || 0);
+  const stolenGold = calculatePvpGoldTransfer(attackerWon ? targetBalance : attackerBalance);
+  return {
+    attackerGold: attackerWon ? attackerBalance + stolenGold : attackerBalance - stolenGold,
+    targetGold: attackerWon ? targetBalance - stolenGold : targetBalance + stolenGold,
+    stolenGold,
+    immunityRecipient: attackerWon ? 'target' : 'attacker',
+    immunityUntil: now + PVP_IMMUNITY_MS,
+  };
+}
