@@ -34,6 +34,10 @@ export type MonsterBattleCombatant = {
     physicalDamageBonus?: number;
     bossDamageBonus?: number;
     resistanceBonus?: number;
+    healthBonus?: number;
+    attackSpeedBonus?: number;
+    healingBonus?: number;
+    controlResistance?: number;
   };
 };
 
@@ -137,22 +141,29 @@ export function resolveMonsterBattle(input: MonsterBattleInput): MonsterBattleRe
   const poisonedParty = new Map<string, number>();
   const partyAttackReduction = new Map<string, number>();
   const partyDefenseReduction = new Map<string, number>();
-  let partySpeedReduction = 0;
+  const partySpeedReduction = new Map<string, number>();
   let attackAfterCritical = false;
   let monsterHasAttacked = false;
   const buffSuppressionApplied = new Set<string>();
   const healingActionsApplied = new Set<string>();
   const events: MonsterBattleEvent[] = [];
-  const party = input.party.map(member => ({
-    ...member,
-    hp: clamp(safeStat(member.hp), 0, Math.max(1, safeStat(member.maxHp, 1))),
-    maxHp: Math.max(1, safeStat(member.maxHp, 1)),
-    attack: Math.max(1, safeStat(member.attack, 1)),
-    defense: safeStat(member.defense),
-    speed: safeStat(member.speed),
-    damageDealt: 0,
-    damageTaken: 0,
-  }));
+  const party = input.party.map(member => {
+    const baseMaxHp = Math.max(1, safeStat(member.maxHp, 1));
+    const baseHp = clamp(safeStat(member.hp), 0, baseMaxHp);
+    const modifiers = member.combatModifiers || {};
+    const maxHp = Math.max(1, Math.floor(baseMaxHp * (1 + clamp(safeStat(modifiers.healthBonus), 0, 5))));
+    const hp = Math.min(maxHp, Math.floor((baseHp / baseMaxHp) * maxHp));
+    return {
+      ...member,
+      hp,
+      maxHp,
+      attack: Math.max(1, safeStat(member.attack, 1)),
+      defense: safeStat(member.defense),
+      speed: safeStat(member.speed),
+      damageDealt: 0,
+      damageTaken: 0,
+    };
+  });
   if (!party.length || party.every(member => member.hp <= 0)) {
     return { winner: 'monster', rounds: 0, monsterHp, party: party.map(x => ({ ...x, remainingHp: x.hp })), events, totalDamageToMonster, totalDamageToParty, passiveDescription: input.monster.passiveDescription || '' };
   }
@@ -160,14 +171,21 @@ export function resolveMonsterBattle(input: MonsterBattleInput): MonsterBattleRe
   let rounds = 0;
   for (let round = 1; round <= maxRounds && monsterHp > 0 && party.some(member => member.hp > 0); round++) {
     rounds = round;
-    if (round === 1) partySpeedReduction = clamp(effect.enemySpeedReductionFirstRound || 0, 0, 0.95);
+    if (round === 1 && effect.enemySpeedReductionFirstRound) {
+      for (const member of party.filter(member => member.hp > 0)) {
+        const resistance = clamp(safeStat(member.combatModifiers?.controlResistance), 0, 0.75);
+        if (resistance === 0 || random() >= resistance) {
+          partySpeedReduction.set(member.id, clamp(effect.enemySpeedReductionFirstRound, 0, 0.95));
+        }
+      }
+    }
 
     type InitiativeEntry = { kind: 'monster'; speed: number } | { kind: 'party'; speed: number; id: string };
     const initiative: InitiativeEntry[] = [
       ...party.filter(member => member.hp > 0).map(member => ({
         kind: 'party' as const,
         id: member.id,
-        speed: member.speed * (1 - (round === 1 ? partySpeedReduction : 0)),
+        speed: member.speed * (1 + clamp(safeStat(member.combatModifiers?.attackSpeedBonus), 0, 5)) * (1 - (round === 1 ? (partySpeedReduction.get(member.id) || 0) : 0)),
       })),
       { kind: 'monster', speed: safeStat(input.monster.speed) },
     ];
@@ -194,7 +212,7 @@ export function resolveMonsterBattle(input: MonsterBattleInput): MonsterBattleRe
             const target = party.find(member => member.id === healingAction.targetId);
             const baseHealing = safeStat(healingAction.amount);
             if (target && target.hp > 0 && baseHealing > 0) {
-              const healingMultiplier = 1 - clamp(effect.healReduction || 0, 0, 1);
+              const healingMultiplier = (1 - clamp(effect.healReduction || 0, 0, 1)) * (1 + clamp(safeStat(fighter.combatModifiers?.healingBonus), 0, 5));
               const effectiveHealing = Math.floor(baseHealing * healingMultiplier);
               const healed = Math.min(target.maxHp - target.hp, effectiveHealing);
               if (healed > 0) {
@@ -245,7 +263,8 @@ export function resolveMonsterBattle(input: MonsterBattleInput): MonsterBattleRe
         totalDamageToMonster += dealt;
         events.push({ round, actor: fighter.id, action: 'attack', target: input.monster.name, damage: dealt, critical: crit });
         const lifesteal = clamp(safeStat(modifiers.lifestealBonus), 0, 1);
-        const healed = Math.min(fighter.maxHp - fighter.hp, Math.floor(dealt * lifesteal));
+        const healingBonus = clamp(safeStat(modifiers.healingBonus), 0, 5);
+        const healed = Math.min(fighter.maxHp - fighter.hp, Math.floor(dealt * lifesteal * (1 + healingBonus)));
         if (healed > 0) {
           fighter.hp += healed;
           events.push({ round, actor: fighter.id, action: 'heal', target: fighter.id, healing: healed });
@@ -264,8 +283,9 @@ export function resolveMonsterBattle(input: MonsterBattleInput): MonsterBattleRe
       const targetProfessionBonus = effect.damageVsProfession && professionMatches(effect.damageVsProfession.profession, target.profession)
         ? effect.damageVsProfession.multiplier : 1;
       const targetHpRatio = target.hp / target.maxHp;
-      const targetIsFast = target.speed * (1 - (round === 1 ? partySpeedReduction : 0)) > safeStat(input.monster.speed);
-      const targetIsSlow = target.speed * (1 - (round === 1 ? partySpeedReduction : 0)) < safeStat(input.monster.speed);
+      const targetEffectiveSpeed = target.speed * (1 + clamp(safeStat(target.combatModifiers?.attackSpeedBonus), 0, 5)) * (1 - (round === 1 ? (partySpeedReduction.get(target.id) || 0) : 0));
+      const targetIsFast = targetEffectiveSpeed > safeStat(input.monster.speed);
+      const targetIsSlow = targetEffectiveSpeed < safeStat(input.monster.speed);
       const bonusAfterCritical = attackAfterCritical;
       attackAfterCritical = false;
       let monsterDamageMultiplier =
@@ -283,7 +303,7 @@ export function resolveMonsterBattle(input: MonsterBattleInput): MonsterBattleRe
       if (effect.damageVsArmoredTargets && target.defense >= safeStat(input.monster.attack)) monsterDamageMultiplier *= 1 + effect.damageVsArmoredTargets;
       if (effect.damageVsLowDefenseTargets && target.defense < safeStat(input.monster.attack) * 0.5) monsterDamageMultiplier *= 1 + effect.damageVsLowDefenseTargets;
       if (effect.damageVsLowHpTargets && targetHpRatio < effect.damageVsLowHpTargets.threshold) monsterDamageMultiplier *= effect.damageVsLowHpTargets.multiplier;
-      if (effect.attackVsWeakened && (target.blind || (partyAttackReduction.get(target.id) || 0) > 0 || (partyDefenseReduction.get(target.id) || 0) > 0 || (round === 1 && partySpeedReduction > 0))) monsterDamageMultiplier *= 1 + effect.attackVsWeakened;
+      if (effect.attackVsWeakened && (target.blind || (partyAttackReduction.get(target.id) || 0) > 0 || (partyDefenseReduction.get(target.id) || 0) > 0 || (round === 1 && (partySpeedReduction.get(target.id) || 0) > 0))) monsterDamageMultiplier *= 1 + effect.attackVsWeakened;
 
       const monsterHitChance = clamp((safeStat(input.monster.accuracy, 100) / 100) * (input.monster.blind ? (effect.ignoresBlindAccuracyPenalty ? 1 : 0.65) : 1), 0.05, 1);
       monsterHasAttacked = true;
@@ -314,7 +334,10 @@ export function resolveMonsterBattle(input: MonsterBattleInput): MonsterBattleRe
         totalDamageToParty += incoming;
         events.push({ round, actor: input.monster.name, action: 'attack', target: target.id, damage: incoming, critical: monsterCrit });
         if (monsterCrit && effect.attackAfterCritical) attackAfterCritical = true;
-        if (effect.poisonOnHit && !poisonedParty.has(target.id)) poisonedParty.set(target.id, round);
+        if (effect.poisonOnHit && !poisonedParty.has(target.id)) {
+          const controlResistance = clamp(safeStat(target.combatModifiers?.controlResistance), 0, 0.75);
+          if (controlResistance === 0 || random() >= controlResistance) poisonedParty.set(target.id, round);
+        }
         if (effect.lifesteal) {
           const healed = Math.min(monsterMaxHp - monsterHp, Math.floor(incoming * effect.lifesteal));
           if (healed > 0) {
@@ -322,7 +345,9 @@ export function resolveMonsterBattle(input: MonsterBattleInput): MonsterBattleRe
             events.push({ round, actor: input.monster.name, action: 'heal', target: input.monster.name, healing: healed });
           }
         }
-        if (effect.enemyBuffSuppression && !buffSuppressionApplied.has(target.id)) {
+        const controlResistance = clamp(safeStat(targetModifiers.controlResistance), 0, 0.75);
+        const resistsBuffSuppression = controlResistance > 0 && random() < controlResistance;
+        if (effect.enemyBuffSuppression && !resistsBuffSuppression && !buffSuppressionApplied.has(target.id)) {
           const candidates = [
             { slot: 'primary' as const, effect: target.buff || '', value: safeStat(target.buffValue) },
             { slot: 'secondary' as const, effect: target.buffSecondaryEffect || '', value: safeStat(target.buffSecondaryValue) },
@@ -337,8 +362,14 @@ export function resolveMonsterBattle(input: MonsterBattleInput): MonsterBattleRe
             events.push({ round, actor: input.monster.name, action: 'suppress', target: target.id, effect: selected.effect, value: reducedValue });
           }
         }
-        if (effect.enemyDefenseReduction) partyDefenseReduction.set(target.id, clamp((partyDefenseReduction.get(target.id) || 0) + effect.enemyDefenseReduction, 0, 0.75));
-        if (effect.enemyAttackReduction) partyAttackReduction.set(target.id, clamp((partyAttackReduction.get(target.id) || 0) + effect.enemyAttackReduction, 0, 0.75));
+        if (effect.enemyDefenseReduction) {
+          const resistance = clamp(safeStat(targetModifiers.controlResistance), 0, 0.75);
+          if (resistance === 0 || random() >= resistance) partyDefenseReduction.set(target.id, clamp((partyDefenseReduction.get(target.id) || 0) + effect.enemyDefenseReduction, 0, 0.75));
+        }
+        if (effect.enemyAttackReduction) {
+          const resistance = clamp(safeStat(targetModifiers.controlResistance), 0, 0.75);
+          if (resistance === 0 || random() >= resistance) partyAttackReduction.set(target.id, clamp((partyAttackReduction.get(target.id) || 0) + effect.enemyAttackReduction, 0, 0.75));
+        }
       }
     }
 
