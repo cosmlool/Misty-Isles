@@ -19,6 +19,7 @@ export type MonsterCombatEffectTarget =
   | 'gold'
   | 'production'
   | 'resistance'
+  | 'controlResistance'
   | 'healing'
   | 'support'
   | 'unknown';
@@ -121,7 +122,8 @@ export function parseMonsterCombatEffect(description: string): ParsedMonsterComb
     /скорост\w*\s+атак/i.test(text) ? 'attackSpeed' :
     /точност|меткост/i.test(text) ? 'accuracy' :
     /уклонен|уклонени/i.test(text) ? 'evasion' :
-    /сопротивлен/i.test(text) ? 'resistance' :
+    /сопротивлен\w*\s+(?:контрол|отрицательн\w*\s+эффект)/i.test(text) ? 'controlResistance' :
+    /сопротивлен\w*\s+(?:входящ\w*\s+)?(?:урон|поврежден)/i.test(text) ? 'resistance' :
     /лечени|восстановлени\w*\s+hp/i.test(text) ? 'healing' :
     /поддержк|положительн\w*\s+эффект/i.test(text) ? 'support' :
     /производств/i.test(text) ? 'production' :
@@ -130,7 +132,6 @@ export function parseMonsterCombatEffect(description: string): ParsedMonsterComb
     /\bhp\b|максимальн\w*\s+hp|здоровь/i.test(text) ? 'health' :
     /защит/i.test(text) ? 'defense' :
     /атак/i.test(text) ? 'attack' :
-    /сопротивлен/i.test(text) ? 'resistance' :
     undefined;
 
   return target ? { target, value: amount } : undefined;
