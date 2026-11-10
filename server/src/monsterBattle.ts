@@ -236,13 +236,15 @@ export function resolveMonsterBattle(input: MonsterBattleInput): MonsterBattleRe
       const targetHpRatio = target.hp / target.maxHp;
       const targetIsFast = target.speed * (1 - (round === 1 ? partySpeedReduction : 0)) > safeStat(input.monster.speed);
       const targetIsSlow = target.speed * (1 - (round === 1 ? partySpeedReduction : 0)) < safeStat(input.monster.speed);
+      const bonusAfterCritical = attackAfterCritical;
+      attackAfterCritical = false;
       let monsterDamageMultiplier =
         (effect.attackMultiplier || 1) *
         (effect.attackBelowHpRatio && monsterHpRatio < effect.attackBelowHpRatio.threshold ? effect.attackBelowHpRatio.multiplier : 1) *
         (effect.attackAboveHpRatio && monsterHpRatio > effect.attackAboveHpRatio.threshold ? effect.attackAboveHpRatio.multiplier : 1) *
         (effect.attackAfterRound && round > effect.attackAfterRound.round ? effect.attackAfterRound.multiplier : 1) *
         (!monsterHasAttacked ? effect.firstAttackMultiplier || 1 : 1) *
-        (attackAfterCritical ? 1 + (effect.attackAfterCritical || 0) : 1) *
+        (bonusAfterCritical ? 1 + (effect.attackAfterCritical || 0) : 1) *
         (safeStat(input.monster.allies) > 0 ? 1 + (effect.attackWhenAllies || 0) : 1);
       monsterDamageMultiplier *= targetProfessionBonus;
       if (effect.attackVsProfession && professionMatches(effect.attackVsProfession.profession, target.profession)) monsterDamageMultiplier *= effect.attackVsProfession.multiplier;
