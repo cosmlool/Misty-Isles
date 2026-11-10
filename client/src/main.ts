@@ -67,6 +67,11 @@ function renderAuth(){
 async function submitAuth(mode:'login'|'register'|'guest'){
  if(authBusy)return;const username=(document.querySelector<HTMLInputElement>('#accountUsername')?.value||'').trim();const password=document.querySelector<HTMLInputElement>('#accountPassword')?.value||'';authBusy=true;renderAuth();
  try{
+  if(mode==='guest'&&playerId&&!guestProof&&!authToken){
+   const createNew=window.confirm('Старый гостевой профиль не имеет секрета восстановления, поэтому подтвердить его нельзя. Старое сохранение останется на сервере, но доступ к нему не восстановится. Создать нового гостевого персонажа?');
+   if(!createNew){authBusy=false;renderAuth();return;}
+   playerId='';localStorage.removeItem(playerIdKey);
+  }
   const endpoint=mode==='guest'?'/auth/guest':mode==='register'?'/auth/register':'/auth/login';
   let payload:any=mode==='guest'?(playerId?{playerId,guestProof,sessionToken:guestProof?'':authToken}:{}):{username,password};
   if(mode==='register'){
