@@ -1157,16 +1157,18 @@ test('equipped gear loot and lifesteal bonuses reach expedition stat outputs', (
 
 test('legacy gold-priced weapons and armor receive the shared stat profile at runtime', () => {
   const source = readFileSync(resolve(serverDir, 'src/index.ts'), 'utf8');
-  const itemBlock = source.split('const ITEMS: Item[] = [')[1]?.split('\\n];')[0] || '';
+  const start = source.indexOf('const ITEMS: Item[] = [');
+  const end = source.indexOf('\\n];', start);
+  const itemBlock = source.slice(start, end);
   const legacyGoldGear = itemBlock.split('\\n').filter((line: string) => {
-    if (!/kind:'(?:weapon|armor)'/.test(line)) return false;
-    const price = /price:(\\d+)/.exec(line);
-    return Boolean(price && Number(price[1]) > 0);
+    const isGear = line.includes("kind:'weapon'") || line.includes("kind:'armor'");
+    const priceToken = line.match(/price:[0-9]+/);
+    return isGear && Boolean(priceToken) && Number(priceToken?.[0].slice(6)) > 0;
   });
   assert.equal(legacyGoldGear.length, 60);
-  assert.match(source, /for\\s*\\(const item of ITEMS\\)[\\s\\S]*resolveGoldEquipmentStatProfile/);
+  assert.ok(source.includes('for(const item of ITEMS)'));
+  assert.ok(source.includes('resolveGoldEquipmentStatProfile({kind:item.kind'));
 });
-
 test('armor attribute bonuses contribute to attack, defense and combat speed', () => {
   const base = calculatePlayerMonsterCombatStats({
     profession: 'Воин', strength: 10, dexterity: 10, intelligence: 10,
