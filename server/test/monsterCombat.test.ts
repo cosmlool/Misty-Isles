@@ -329,3 +329,17 @@ test('monster periodic healing remains independent from party healing actions', 
   });
   assert.ok(result.events.some(event => event.actor === 'Regenerating monster' && event.target === 'Regenerating monster' && event.healing === 8));
 });
+
+
+test('a party healing action consumes the actor turn instead of also attacking', () => {
+  const result = resolveMonsterBattle({
+    monster: { id: 'm-heal-turn', name: 'Training monster', hp: 10000, attack: 1, defense: 0, speed: 1 },
+    party: [{ id: 'healer', profession: 'Баффер', hp: 50, maxHp: 100, attack: 100, defense: 0, speed: 20 }],
+    healingActions: [{ round: 1, actorId: 'healer', targetId: 'healer', amount: 20 }],
+    maxRounds: 1,
+    random: () => 0.5,
+  });
+  assert.equal(result.totalDamageToMonster, 0);
+  assert.equal(result.events.some(event => event.actor === 'healer' && event.action === 'attack'), false);
+  assert.equal(result.events.find(event => event.actor === 'healer' && event.action === 'heal')?.healing, 20);
+});
