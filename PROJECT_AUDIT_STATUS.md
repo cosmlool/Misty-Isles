@@ -2636,3 +2636,12 @@ PEN-009 стоит 100 кристаллов и при максимальном �
 - Tests/builds have not been executed.
 
 - Client fallback for legacy browser data: if a browser has only an old player ID and no recovery proof or valid session, the guest button now asks for explicit confirmation before creating a fresh server-issued guest ID. It does not silently overwrite or claim the old save.
+
+
+## Player save hydration hardening — 2026-11-10
+
+- Player saves were structurally validated as JSON objects, but applySaved previously copied any persisted value into a matching Player field. A malformed string/null/object in a numeric field could therefore poison combat/economy calculations, and inherited names such as __proto__ were not excluded by the old `key in player` check.
+- Added applyPlayerSave() to accept only own Player fields and only values matching the field's existing primitive/container type. Numeric fields accept finite numbers only; malformed values leave the schema default intact. Inherited/prototype keys are ignored.
+- applySaved() now delegates to the validated hydrator. Added unit coverage for malformed numeric values, mismatched string/object values, valid numeric updates, and prototype keys.
+- This protects hydration from malformed data; it does not yet replace the broader persistence write-coordination/WAL review.
+- Tests/builds remain unexecuted.
