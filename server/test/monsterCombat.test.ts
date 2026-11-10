@@ -101,3 +101,51 @@ test('monster poison is applied to the struck player and ticks on following roun
   assert.equal(result.totalDamageToParty, 50);
   assert.ok(result.events.some(event => event.action === 'poison' && event.target === 'p5' && event.damage === 30));
 });
+
+test('faster player can kill the monster before its initiative turn', () => {
+  const result = resolveMonsterBattle({
+    monster: { id: 'm-fast-kill', name: 'Slow monster', hp: 10, attack: 100, defense: 0, speed: 5 },
+    party: [{ id: 'p-fast', profession: 'Воин', hp: 500, maxHp: 500, attack: 20, defense: 0, speed: 20 }],
+    random: () => 0.5,
+  });
+  assert.equal(result.winner, 'party');
+  assert.equal(result.totalDamageToParty, 0);
+  assert.equal(result.events.some(event => event.actor === 'Slow monster'), false);
+});
+
+test('faster monster attacks before the player turn', () => {
+  const result = resolveMonsterBattle({
+    monster: { id: 'm-fast', name: 'Fast monster', hp: 10000, attack: 100, defense: 0, speed: 20 },
+    party: [{ id: 'p-slow', profession: 'Воин', hp: 50, maxHp: 50, attack: 100, defense: 0, speed: 10 }],
+    random: () => 0.5,
+  });
+  assert.equal(result.winner, 'monster');
+  assert.equal(result.totalDamageToMonster, 0);
+  assert.equal(result.events[0]?.actor, 'Fast monster');
+});
+
+test('first-round enemy speed reduction can change initiative order', () => {
+  const make = (passiveDescription?: string) => resolveMonsterBattle({
+    monster: { id: 'm-speed-check', name: 'Speed check', hp: 10000, attack: 1, defense: 0, speed: 10, passiveDescription },
+    party: [{ id: 'p-speed-check', profession: 'Воин', hp: 1000, maxHp: 1000, attack: 1, defense: 0, speed: 11 }],
+    random: () => 0.5,
+  });
+  assert.equal(make().events[0]?.actor, 'p-speed-check');
+  assert.equal(make('Снижает скорость противника на 20% в первом раунде').events[0]?.actor, 'Speed check');
+});
+
+test('equal-speed initiative uses a stable monster-first tie-break', () => {
+  const input = {
+    monster: { id: 'm-tie', name: 'Tie monster', hp: 10000, attack: 1, defense: 0, speed: 10 },
+    party: [
+      { id: 'p-z', profession: 'Воин', hp: 1000, maxHp: 1000, attack: 1, defense: 0, speed: 10 },
+      { id: 'p-a', profession: 'Воин', hp: 1000, maxHp: 1000, attack: 1, defense: 0, speed: 10 },
+    ],
+    random: () => 0.5,
+  };
+  const first = resolveMonsterBattle(input);
+  const second = resolveMonsterBattle(input);
+  assert.deepEqual(first, second);
+  assert.deepEqual(first.events.slice(0, 3).map(event => event.actor), ['Tie monster', 'p-a', 'p-z']);
+});
+
