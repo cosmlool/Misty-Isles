@@ -1169,6 +1169,13 @@ test('legendary accuracy and evasion gear effects remain separate typed modifier
   assert.equal(modifiers.defenseBonus, 0);
 });
 
+test('unquantified accuracy and evasion catalog text is not converted into combat percentages', () => {
+  assert.equal(parseMonsterCombatEffect('+ к атаке и точности'), undefined);
+  assert.equal(parseMonsterCombatEffect('+ к ловкости и уклонению'), undefined);
+  assert.equal(parseMonsterCombatEffect('Точность; обнаружение скрытых целей'), undefined);
+  assert.equal(parseMonsterCombatEffect('Уклонение; снижение заметности в охотничьих зонах'), undefined);
+});
+
 test('control resistance is not treated as incoming damage resistance', () => {
   assert.deepEqual(parseMonsterCombatEffect('+8% к сопротивлению контролю'), { target: 'controlResistance', value: 0.08 });
   assert.deepEqual(parseMonsterCombatEffect('+8% к сопротивлению отрицательным эффектам'), { target: 'controlResistance', value: 0.08 });
