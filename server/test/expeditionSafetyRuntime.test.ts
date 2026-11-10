@@ -9,6 +9,7 @@ import { fileURLToPath } from 'node:url';
 import { setTimeout as delay } from 'node:timers/promises';
 import { Client, type Room } from 'colyseus.js';
 import test from 'node:test';
+import { utcIsoWeekKey } from '../src/calendarOperations.js';
 
 import { seedGuestCredentials, testGuestProof } from './guestAuthTestHelpers.js';
 
@@ -185,6 +186,10 @@ test('expedition reports capture pre/post health and disconnect cancels stale gr
     assert.equal(combat.report.result, 'win');
     assert.equal(combat.report.hpBefore, 1_000);
     assert.ok(combat.report.hpAfter < combat.report.hpBefore, 'combat report must show actual health loss');
+    const soloProgress = JSON.parse(readPlayers(join(dataDir, 'players.json'))[soloId].quests);
+    assert.equal(soloProgress.dailyHunts, 1, 'an expedition victory must count toward the daily monster-win challenge');
+    assert.equal(soloProgress.weeklyHunts, 1, 'an expedition victory must count toward the weekly monster-win challenge');
+    assert.equal(soloProgress.challengeWeek, utcIsoWeekKey());
 
     const invitations: any[] = [];
     connected[memberId].onMessage('huntGroupInvite', payload => invitations.push(payload));
