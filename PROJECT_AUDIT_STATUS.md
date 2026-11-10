@@ -616,3 +616,25 @@ Implementation commits:
 - `bd5dd5cea81f593d661b761bb54ba507714fb181` — PvP operation tests
 - `55e363d79b6e04d25f024050fc783738121219fa` and `9288d0db1882efb28906c7a1385b79712941f799` — PvP runtime test
 - `aed23b1d7aa15aee87fc49b942ffc416dc10ce16` — UI copy
+
+
+### Multi-player auction and clan synchronization audit — 2026-11-10
+
+Reviewed auction transaction snapshots, auction handlers, online-player state, clan transaction commits, and clan broadcasts. Source inspection only; no two-client runtime test was executed.
+
+- **Confirmed persistence snapshot consistency gap in auction transactions:** `auctionSell`, `auctionCancel`, and `auctionBuy` build a complete players snapshot from `loadPlayers()`, then merge only the current player and (for a buy) the online seller. Unlike `commitClanState`, these handlers do not merge every entry in `ONLINE_PLAYERS` before calling `auctionTransactions.commit`. The transaction store atomically replaces the entire `players.json` with that snapshot. Any other connected character whose in-memory state is newer than its last persisted save can therefore have that newer state overwritten on disk by an older snapshot. The live Schema object is not immediately replaced, so this is a persistence regression/lost-update window rather than an immediate visible rollback; a crash before that player's next save/leave can make the stale disk copy authoritative after restart. Recommended fix after audit: merge every online Player.toJSON() into the auction snapshot before every auction transaction commit, then apply the committed snapshot only to the transaction participants (or consistently reconcile all online players).
+- Auction list changes are sent only to the player who performed the action. An online seller does receive the updated Player Schema after a purchase, but their cached auction list is not refreshed; other online clients also retain stale lot lists until manual refresh/reconnect. Server-side transaction validation still rejects a purchase of a lot that has already sold, so this is a stale-view UX issue, not a confirmed double-sale.
+- Auction history is fetched per-player and is not pushed to other clients; this is expected for personal history.
+- Clan transactions use a safer persistence pattern: `commitClanState` merges all online players into the full players snapshot before writing the clan transaction journal. Clan overview, quests, territories, and active wars are broadcast to online clan members after the corresponding mutations. No equivalent all-online-player snapshot omission was found in the reviewed clan commit helper.
+- **Confirmed clan-leave side-channel stale view:** when a player leaves a clan that still has other members, the server sends the leaver an updated `clanList`, but does not send an empty `clanQuests` payload or refreshed `clanWarList` to that leaver. Their client can continue displaying the former clan's quest/upgrades and war list until a manual refresh or reconnect. Server checks still reject clan actions because the authoritative player no longer has a clan; this is a stale UI cache, not an authorization bypass.
+- Clan join/create and the major clan mutation paths broadcast overview and quest data to current members. Territory capture broadcasts territory changes to all current clan members; the list request itself remains available to any client.
+- PvP state changes for an online victim are applied to the victim's live Player Schema and persisted with the attacker's transaction save; the victim also receives a notice. The attacker's cooldown and offer state are persisted in the attacker's player save.
+
+#### Follow-up
+
+1. Merge all online player snapshots into auction transaction inputs before committing, and add a runtime test where a third online character has unsaved in-memory state while another player lists, buys, or cancels a lot; assert that the third player's newest state survives in `players.json`.
+2. Push updated auction listings to all connected clients (or explicitly label the view as refresh-based and refresh it on tab entry); test two buyers attempting the same lot and both clients receiving the final list.
+3. On clan leave, send the departing client empty `clanQuests` and the current `clanWarList` (and any other clan-scoped side-channel state), then add a two-client leave test.
+4. Test online PvP victim Schema, saved gold, losses/wins, immunity and reconnect state against the same transaction result.
+
+No gameplay code changed during this audit step. No tests were executed.
