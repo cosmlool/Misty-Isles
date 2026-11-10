@@ -146,6 +146,22 @@ test('expedition reports capture pre/post health and disconnect cancels stale gr
     assert.equal(persistedOrphan.state, 'idle');
     assert.equal(persistedOrphan.groupId, '');
 
+    const dungeonLists: any[] = [];
+    connected[soloId].onMessage('dungeonList', payload => dungeonLists.push(payload));
+    connected[soloId].send('dungeonList', {});
+    await delay(100);
+    assert.equal(dungeonLists.length > 0, true, 'dungeon list must be returned');
+    const currentDungeonIds = dungeonLists[dungeonLists.length - 1].dungeons.map((entry: any) => entry.id);
+    assert.deepEqual(currentDungeonIds.sort(), ['fl_dungeon_03','fl_dungeon_06','fl_dungeon_09','fl_dungeon_10'].sort(), 'only Forgotten Lands dungeons may be listed');
+    const beforeLegacyDungeon = readPlayers(join(dataDir, 'players.json'))[soloId];
+    connected[soloId].send('dungeonRun', { id: 'root_vault' });
+    await delay(100);
+    const afterLegacyDungeon = readPlayers(join(dataDir, 'players.json'))[soloId];
+    assert.equal(afterLegacyDungeon.gold, beforeLegacyDungeon.gold, 'legacy dungeon must not award gold');
+    assert.equal(afterLegacyDungeon.experience, beforeLegacyDungeon.experience, 'legacy dungeon must not award XP');
+    assert.equal(afterLegacyDungeon.battles, beforeLegacyDungeon.battles, 'legacy dungeon must not start a battle');
+    assert.equal(afterLegacyDungeon.quests, beforeLegacyDungeon.quests, 'legacy dungeon must not consume a daily attempt');
+
     const beforeLegacyHunt = readPlayers(join(dataDir, 'players.json'))[soloId];
     const legacyHuntReports: any[] = [];
     connected[soloId].onMessage('combatResult', payload => legacyHuntReports.push(payload));
