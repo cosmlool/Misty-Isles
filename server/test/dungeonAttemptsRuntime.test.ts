@@ -96,7 +96,7 @@ test('solo Forgotten Lands boss dungeon reports remaining daily entries and enfo
       },
       [lossPlayerId]: {
         id: lossPlayerId, name: 'Weak Dungeon Tester', race: 'Кот', profession: '', level: 8,
-        strength: 1, dexterity: 1, intelligence: 1, defense: 1, vitality: 1, stamina: 1,
+        strength: 0, dexterity: 0, intelligence: 0, defense: 0, vitality: 0, stamina: 0,
         health: 1_000, maxHealth: 1_000, gold: 500,
         inventory: '[]', equipment: '{}', quests: JSON.stringify({ dungeonDay: today, dungeonRuns: 0 }),
       },
