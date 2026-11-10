@@ -7,7 +7,7 @@ import test from 'node:test';
 import { getMonsterPassiveDescriptions, parseMonsterWeakness, resolveMonsterPassive } from '../src/monsterCombat.js';
 import { calculateCombatSpeed, resolveMonsterBattle } from '../src/monsterBattle.js';
 import { adaptPlayerCombatant, buildPlayerCombatantForMonsterBattle } from '../src/monsterCombatantAdapter.js';
-import { resolveEquipmentSetTierDescriptions, aggregateMonsterCombatModifiers, calculatePlayerMonsterCombatStats, parseMonsterCombatEffect, parseMonsterCombatEffectClauses, resolveMonsterCombatProperty, resolveMonsterPendantCombatEffect, resolvePlayerMonsterCombatHealth } from '../src/monsterCombatStats.js';
+import { resolveEquipmentSetTierDescriptions, aggregateMonsterCombatModifiers, calculatePlayerMonsterCombatStats, parseMonsterCombatEffect, parseMonsterCombatEffectClauses, resolveMonsterCombatProperty, resolveMonsterPendantCombatEffect, resolvePlayerMonsterCombatHealth, resolveEquipmentSetCombatEffects } from '../src/monsterCombatStats.js';
 
 const serverDir = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const bestiary = JSON.parse(readFileSync(resolve(serverDir, 'data/forgotten_lands.json'), 'utf8'));
@@ -1410,4 +1410,33 @@ test('normalized combatant builder preserves HP ratio and merges active lifestea
   assert.equal(combatant.combatModifiers?.lifestealBonus, 0.11);
   assert.equal(combatant.critChance, undefined);
   assert.equal(combatant.accuracy, undefined);
+});
+
+
+test('legacy Shadowstalker set tiers contribute explicit typed crit effects to the new engine', () => {
+  const twoPieces = resolveEquipmentSetCombatEffects({
+    itemCount: 2,
+    two: '2 предмета: +6% к критическому шансу',
+    full: '3 предмета: +12% к критическому урону',
+  });
+  const threePieces = resolveEquipmentSetCombatEffects({
+    itemCount: 3,
+    two: '2 предмета: +6% к критическому шансу',
+    full: '3 предмета: +12% к критическому урону',
+  });
+
+  assert.deepEqual(twoPieces, [{ target: 'critChance', value: 0.06 }]);
+  assert.deepEqual(threePieces, [
+    { target: 'critChance', value: 0.06 },
+    { target: 'critDamage', value: 0.12 },
+  ]);
+  assert.deepEqual(aggregateMonsterCombatModifiers(threePieces), {
+    attackBonus: 0, defenseBonus: 0, critChanceBonus: 0.06,
+    critChanceMultiplierBonus: 0, critDamageBonus: 0.12,
+    lifestealBonus: 0, lootBonus: 0, healthBonus: 0, accuracyBonus: 0,
+    evasionBonus: 0, attackSpeedBonus: 0, magicDamageBonus: 0,
+    physicalDamageBonus: 0, bossDamageBonus: 0, experienceBonus: 0,
+    goldBonus: 0, productionBonus: 0, resistanceBonus: 0,
+    controlResistance: 0, healingBonus: 0,
+  });
 });
