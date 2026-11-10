@@ -8,6 +8,7 @@ import { fileURLToPath } from 'node:url';
 import { setTimeout as delay } from 'node:timers/promises';
 import { Client, type Room } from 'colyseus.js';
 import test from 'node:test';
+import { utcIsoWeekKey } from '../src/calendarOperations.js';
 
 import { seedGuestCredentials, testGuestProof } from './guestAuthTestHelpers.js';
 
@@ -95,7 +96,7 @@ test('story, faction, daily challenge and achievement rewards cannot be claimed 
         inventory: '[]', equipment: '{}', collections: '{}', achievements: '{}',
         cityReputation: JSON.stringify({ faction_dawn: 100 }),
         quests: JSON.stringify({
-          factionDawnKills: 5, challengeDay: today, dailyHunts: 3,
+          factionDawnKills: 5, challengeDay: today, dailyHunts: 3, challengeWeek: '1999-W01', weeklyHunts: 15,
         }),
       },
     }, null, 2));
@@ -164,6 +165,19 @@ test('story, faction, daily challenge and achievement rewards cannot be claimed 
     const duplicateDaily = await sendAndWait('quest', { id: 'daily_challenge' }, 'duplicate daily challenge');
     assert.equal(duplicateDaily, 'Награда за это испытание уже получена.');
     assert.equal(readPlayer(savePath, playerId).gold, dailyGold);
+
+    const goldBeforeWeeklyRollover = readPlayer(savePath, playerId).gold;
+    const xpBeforeWeeklyRollover = readPlayer(savePath, playerId).experience;
+    const rolloverNotice = await sendAndWait('quest', { id: 'weekly_challenge' }, 'weekly challenge rollover before claim');
+    assert.equal(rolloverNotice, 'Началась новая неделя: прогресс еженедельного испытания сброшен до 0/15.');
+    const afterWeeklyRollover = readPlayer(savePath, playerId);
+    const weeklyState = JSON.parse(afterWeeklyRollover.quests);
+    assert.equal(weeklyState.challengeWeek, utcIsoWeekKey());
+    assert.equal(weeklyState.weeklyHunts, 0);
+    assert.equal(afterWeeklyRollover.gold, goldBeforeWeeklyRollover, 'old-week progress must not award gold');
+    assert.equal(afterWeeklyRollover.experience, xpBeforeWeeklyRollover, 'old-week progress must not award XP');
+    const prematureWeeklyClaim = await sendAndWait('quest', { id: 'weekly_challenge' }, 'weekly challenge before new-week progress');
+    assert.equal(prematureWeeklyClaim, 'Еженедельное испытание: охоты 0/15.');
 
     await sendAndWait('achievements', {}, 'achievement rewards');
     const afterAchievements = readPlayer(savePath, playerId);
