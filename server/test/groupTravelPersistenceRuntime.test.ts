@@ -96,11 +96,12 @@ test('group expedition travel start and claim persist every member together', { 
     expeditionData.searchSeconds = 0;
     writeFileSync(join(dataDir, 'forgotten_lands.json'), JSON.stringify(expeditionData, null, 2));
     const makePlayer = (id: string, name: string, friend: string) => ({
-      id, name, race: 'Кот', level: 3, gold: 500,
+      id, name, race: id === leaderId ? 'Грызун' : 'Кот', profession: id === leaderId ? 'Вампир' : '',
+      level: id === leaderId ? 20 : 3, gold: id === leaderId ? 5_000 : 500,
       health: id === leaderId ? 50 : 100, maxHealth: 100,
-      buff: id === leaderId ? 'attack' : 'xp', buffValue: id === leaderId ? 0.18 : 0.12,
-      buffSecondaryEffect: id === leaderId ? 'lifesteal' : 'gold',
-      buffSecondaryValue: id === leaderId ? 0.08 : 0.15, buffUntil: Date.now() + 60 * 60 * 1000,
+      buff: id === memberId ? 'xp' : '', buffValue: id === memberId ? 0.12 : 0,
+      buffSecondaryEffect: id === memberId ? 'gold' : '',
+      buffSecondaryValue: id === memberId ? 0.15 : 0, buffUntil: id === memberId ? Date.now() + 60 * 60 * 1000 : 0,
       inventory: '[]', equipment: '{}',
       collections: JSON.stringify({ friends: [friend] }),
       quests: JSON.stringify({
@@ -139,6 +140,10 @@ test('group expedition travel start and claim persist every member together', { 
     connected[leaderId].onMessage('notice', payload => leaderNotices.push(String(payload?.text || '')));
     connected[leaderId].onMessage('combatResult', payload => leaderCombatResults.push(payload));
     connected[memberId].onMessage('combatResult', payload => memberCombatResults.push(payload));
+    connected[leaderId].send('professionSkill', { id: 'blood_burst' });
+    await waitFor(() => leaderNotices.find(message => message.includes('Навык «Кровавый всплеск» изучен')), 'learn compound vampire skill');
+    connected[leaderId].send('professionSkill', { id: 'blood_burst' });
+    await waitFor(() => leaderNotices.find(message => message.includes('Применён навык «Кровавый всплеск»')), 'apply compound vampire skill');
     connected[leaderId].send('huntGroupInvite', { targetId: publicCode(memberId) });
     const invite = await waitFor(() => invitations[0], 'group invitation');
     connected[memberId].send('huntGroupAccept', { groupId: invite.groupId });
@@ -191,7 +196,8 @@ test('group expedition travel start and claim persist every member together', { 
     const saved = readPlayers(join(dataDir, 'players.json'));
     const baseXp = Number(leaderCombat.report.rewards.xp);
     assert.equal(saved[leaderId].experience, baseXp, 'leader without an XP buff must receive base expedition experience');
-    assert.equal(saved[memberId].experience, Math.floor(baseXp * 1.12), 'secondary XP buff must increase expedition experience');
+    assert.equal(saved[memberId].experience, Math.floor(baseXp * 1.12), 'XP buff must increase expedition experience');
+    assert.equal(saved[leaderId].buffSecondaryEffect, 'lifesteal', 'profession skill must persist its secondary effect');
     const baseGold = Number(memberCombat.report.rewards.gold);
     assert.equal(saved[memberId].gold, 500 + Math.floor(baseGold * 1.15), 'secondary gold buff must increase expedition gold');
     assert.ok(leaderCombat.report.hpAfter > Math.max(1, leaderCombat.report.hpBefore - leaderCombat.report.received), 'secondary lifesteal buff must heal after a successful fight');
