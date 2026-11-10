@@ -1169,6 +1169,11 @@ test('legacy gold-priced weapons and armor receive the shared stat profile at ru
   assert.ok(source.includes('for(const item of ITEMS)'));
   assert.ok(source.includes('resolveGoldEquipmentStatProfile({kind:item.kind'));
 });
+test('level 100 buffer weapon preserves the full healing specialization bonus', () => {
+  const profile = resolveGoldEquipmentStatProfile({ kind: 'weapon', level: 100, profession: 'Баффер', slot: 'weapon' });
+  assert.equal(profile.combatStats.healing, 0.03);
+});
+
 test('armor attribute bonuses contribute to attack, defense and combat speed', () => {
   const base = calculatePlayerMonsterCombatStats({
     profession: 'Воин', strength: 10, dexterity: 10, intelligence: 10,
