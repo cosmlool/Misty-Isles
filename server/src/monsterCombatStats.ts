@@ -28,6 +28,61 @@ export type ParsedMonsterCombatEffect = {
 };
 
 /**
+ * Additive, typed modifiers kept separate from legacy attack/defense totals.
+ * Values are decimal fractions (0.05 = +5%). Unknown/support clauses are ignored.
+ */
+export type MonsterCombatModifiers = {
+  attackBonus: number;
+  defenseBonus: number;
+  critChanceBonus: number;
+  critDamageBonus: number;
+  lifestealBonus: number;
+  lootBonus: number;
+  healthBonus: number;
+  accuracyBonus: number;
+  evasionBonus: number;
+  attackSpeedBonus: number;
+  magicDamageBonus: number;
+  physicalDamageBonus: number;
+  bossDamageBonus: number;
+  experienceBonus: number;
+  goldBonus: number;
+  productionBonus: number;
+  resistanceBonus: number;
+  healingBonus: number;
+};
+
+/** Aggregate already-resolved effect clauses without converting one stat into another. */
+export function aggregateMonsterCombatModifiers(
+  effects: readonly (ParsedMonsterCombatEffect | undefined)[],
+): MonsterCombatModifiers {
+  const result: MonsterCombatModifiers = {
+    attackBonus: 0, defenseBonus: 0, critChanceBonus: 0, critDamageBonus: 0,
+    lifestealBonus: 0, lootBonus: 0, healthBonus: 0, accuracyBonus: 0,
+    evasionBonus: 0, attackSpeedBonus: 0, magicDamageBonus: 0,
+    physicalDamageBonus: 0, bossDamageBonus: 0, experienceBonus: 0,
+    goldBonus: 0, productionBonus: 0, resistanceBonus: 0, healingBonus: 0,
+  };
+  const targets: Partial<Record<MonsterCombatEffectTarget, keyof MonsterCombatModifiers>> = {
+    attack: 'attackBonus', defense: 'defenseBonus',
+    critChance: 'critChanceBonus', critDamage: 'critDamageBonus',
+    lifesteal: 'lifestealBonus', loot: 'lootBonus', health: 'healthBonus',
+    accuracy: 'accuracyBonus', evasion: 'evasionBonus',
+    attackSpeed: 'attackSpeedBonus', magicDamage: 'magicDamageBonus',
+    physicalDamage: 'physicalDamageBonus', bossDamage: 'bossDamageBonus',
+    experience: 'experienceBonus', gold: 'goldBonus',
+    production: 'productionBonus', resistance: 'resistanceBonus',
+    healing: 'healingBonus',
+  };
+  for (const effect of effects) {
+    if (!effect || !Number.isFinite(effect.value)) continue;
+    const key = targets[effect.target];
+    if (key) result[key] += effect.value;
+  }
+  return result;
+}
+
+/**
  * Parses one catalog effect clause into a typed modifier.
  * Unknown or compound descriptions are deliberately not guessed or converted to attack.
  */
