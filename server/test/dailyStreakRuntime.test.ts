@@ -9,6 +9,8 @@ import { setTimeout as delay } from 'node:timers/promises';
 import { Client, type Room } from 'colyseus.js';
 import test from 'node:test';
 
+import { seedGuestCredentials, testGuestProof } from './guestAuthTestHelpers.js';
+
 const serverDir = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const staticDataFiles = ['city_npcs.json', 'equipment_catalog.json', 'forgotten_lands.json'];
 
@@ -44,7 +46,7 @@ async function waitForServer(port: number, child: ChildProcess): Promise<void> {
 async function guestToken(port: number, playerId: string): Promise<string> {
   const response = await fetch(`http://127.0.0.1:${port}/auth/guest`, {
     method: 'POST', headers: { 'content-type': 'application/json' },
-    body: JSON.stringify({ playerId }),
+    body: JSON.stringify({ playerId, guestProof: testGuestProof(playerId) }),
   });
   assert.equal(response.status, 200);
   return (await response.json() as { token: string }).token;
@@ -99,6 +101,9 @@ test('daily reward streak increments only on consecutive UTC days and resets aft
         daily: JSON.stringify({ day: threeDaysAgo, streak: 7 }),
       },
     }, null, 2));
+
+    seedGuestCredentials(dataDir);
+
 
     child = spawn(process.execPath, ['--import', 'tsx', 'src/index.ts'], {
       cwd: serverDir,
