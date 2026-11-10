@@ -1155,6 +1155,18 @@ test('equipped gear loot and lifesteal bonuses reach expedition stat outputs', (
   assert.equal(stats.lifestealBonus, 0.04);
 });
 
+test('legacy gold-priced weapons and armor receive the shared stat profile at runtime', () => {
+  const source = readFileSync(resolve(serverDir, 'src/index.ts'), 'utf8');
+  const itemBlock = source.split('const ITEMS: Item[] = [')[1]?.split('\\n];')[0] || '';
+  const legacyGoldGear = itemBlock.split('\\n').filter((line: string) => {
+    if (!/kind:'(?:weapon|armor)'/.test(line)) return false;
+    const price = /price:(\\d+)/.exec(line);
+    return Boolean(price && Number(price[1]) > 0);
+  });
+  assert.equal(legacyGoldGear.length, 60);
+  assert.match(source, /for\\s*\\(const item of ITEMS\\)[\\s\\S]*resolveGoldEquipmentStatProfile/);
+});
+
 test('armor attribute bonuses contribute to attack, defense and combat speed', () => {
   const base = calculatePlayerMonsterCombatStats({
     profession: 'Воин', strength: 10, dexterity: 10, intelligence: 10,
