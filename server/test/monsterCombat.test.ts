@@ -6,7 +6,7 @@ import test from 'node:test';
 
 import { getMonsterPassiveDescriptions, parseMonsterWeakness, resolveMonsterPassive } from '../src/monsterCombat.js';
 import { calculateCombatSpeed, resolveMonsterBattle } from '../src/monsterBattle.js';
-import { adaptPlayerCombatant } from '../src/monsterCombatantAdapter.js';
+import { adaptPlayerCombatant, buildPlayerCombatantForMonsterBattle } from '../src/monsterCombatantAdapter.js';
 import { resolveEquipmentSetTierDescriptions, aggregateMonsterCombatModifiers, calculatePlayerMonsterCombatStats, parseMonsterCombatEffect, parseMonsterCombatEffectClauses, resolveMonsterCombatProperty, resolveMonsterPendantCombatEffect, resolvePlayerMonsterCombatHealth } from '../src/monsterCombatStats.js';
 
 const serverDir = resolve(dirname(fileURLToPath(import.meta.url)), '..');
@@ -1370,4 +1370,44 @@ test('combat HP normalization safely handles invalid and non-positive inputs', (
   assert.deepEqual(resolvePlayerMonsterCombatHealth({
     currentHp: -10, legacyEffectiveMaxHp: 100, baseMaxHp: 80,
   }), { hp: 0, maxHp: 80 });
+});
+
+
+test('active attack, defense and crit buffs map to typed channels without changing clean base stats', () => {
+  const stats = calculatePlayerMonsterCombatStats({
+    profession: 'Воин', strength: 10, dexterity: 10, intelligence: 10,
+    vitality: 10, stamina: 10, baseDefense: 10,
+    buffs: { attack: 0.20, defense: 0.10, crit: 0.12 },
+    buffUntil: 200, now: 100,
+  });
+
+  assert.equal(stats.baseAttack, 18);
+  assert.equal(stats.baseDefense, 15.7);
+  assert.equal(stats.combatModifiers.attackBonus, 0.20);
+  assert.equal(stats.combatModifiers.defenseBonus, 0.10);
+  assert.equal(stats.combatModifiers.critChanceBonus, 0.12);
+});
+
+test('normalized combatant builder preserves HP ratio and merges active lifesteal once', () => {
+  const stats = calculatePlayerMonsterCombatStats({
+    profession: 'Ассасин', strength: 10, dexterity: 20, intelligence: 10,
+    vitality: 10, stamina: 10, baseDefense: 10,
+    equipmentEffects: [resolveMonsterCombatProperty('lifesteal', 0.03)!],
+    pendantCombatEffect: resolveMonsterPendantCombatEffect('health', 0.20),
+    buffs: { lifesteal: 0.08 }, buffUntil: 200, now: 100,
+  });
+  const combatant = buildPlayerCombatantForMonsterBattle({
+    id: 'normalized-player', currentHp: 75, legacyEffectiveMaxHp: 150, baseMaxHp: 120,
+    stats,
+  });
+
+  assert.equal(combatant.hp, 60);
+  assert.equal(combatant.maxHp, 120);
+  assert.equal(combatant.attack, stats.baseAttack);
+  assert.equal(combatant.defense, stats.baseDefense);
+  assert.equal(combatant.speed, stats.speed);
+  assert.equal(combatant.combatModifiers?.healthBonus, 0.20);
+  assert.equal(combatant.combatModifiers?.lifestealBonus, 0.11);
+  assert.equal(combatant.critChance, undefined);
+  assert.equal(combatant.accuracy, undefined);
 });
