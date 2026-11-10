@@ -184,6 +184,8 @@ export function resolveMonsterBattle(input: MonsterBattleInput): MonsterBattleRe
                 events.push({ round, actor: fighter.id, action: 'heal', target: target.id, healing: healed });
               }
             }
+            // A submitted healing action consumes this actor's turn, even if its target is invalid or full.
+            continue;
           }
         }
 
