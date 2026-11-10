@@ -140,7 +140,7 @@ export function parseMonsterCombatEffect(description: string): ParsedMonsterComb
 export function resolveMonsterCombatProperty(effect: string, amount: number): ParsedMonsterCombatEffect | undefined {
   if (!Number.isFinite(amount) || amount <= 0) return undefined;
   const targets: Record<string, MonsterCombatEffectTarget> = {
-    attack: 'attack', defense: 'defense', crit: 'critChance',
+    attack: 'attack', defense: 'defense', crit: 'critChance', critical: 'critChance',
     lifesteal: 'lifesteal', loot: 'loot', bossDamage: 'bossDamage',
   };
   const target = targets[String(effect || '')];
@@ -151,7 +151,7 @@ export function resolveMonsterCombatProperty(effect: string, amount: number): Pa
 export function resolveMonsterPendantCombatEffect(effect: string, amount: number): ParsedMonsterCombatEffect | undefined {
   if (!Number.isFinite(amount) || amount <= 0) return undefined;
   const targets: Record<string, MonsterCombatEffectTarget> = {
-    defense: 'defense', crit: 'critChanceMultiplier', bossDamage: 'bossDamage',
+    defense: 'defense', crit: 'critChanceMultiplier', bossDamage: 'bossDamage', lifesteal: 'lifesteal',
     health: 'health', loot: 'loot', xp: 'experience', gold: 'gold', production: 'production',
   };
   const target = targets[String(effect || '')];
@@ -217,8 +217,12 @@ export type PlayerMonsterStatsInput = {
 };
 
 export type PlayerMonsterCombatStats = {
+  /** Legacy totals retained for existing expedition/dungeon callers. */
   attack: number;
   defense: number;
+  /** Clean inputs for the typed combat engine; percentage modifiers are not folded in. */
+  baseAttack: number;
+  baseDefense: number;
   speed: number;
   profession: string;
   lootBonus: number;
@@ -268,6 +272,10 @@ export function calculatePlayerMonsterCombatStats(
   if (profession === 'Лучник') attack *= 1.06;
   if (profession === 'Воин') defense *= 1.10;
 
+  // These are the new engine's clean stat inputs. Legacy totals continue below unchanged.
+  const baseAttack = attack;
+  const baseDefense = defense;
+
   const profileBonus = value(input.weaponProfileBonus);
   if (profileBonus) {
     if (profession === 'Баффер') defense *= 1 + profileBonus;
@@ -305,15 +313,30 @@ export function calculatePlayerMonsterCombatStats(
   }
 
   const setEffects = (input.setBonuses || []).flatMap(set => (set.descriptions || []).flatMap(parseMonsterCombatEffectClauses));
+  const setIdEffects: ParsedMonsterCombatEffect[] = [];
+  for (const set of input.setBonuses || []) {
+    const count = Math.max(0, value(set.itemCount));
+    if (count < 2) continue;
+    const bonus = count * 0.01 + value(set.mastery) * 0.01;
+    if (set.effect === 'attack') setIdEffects.push({ target: 'attack', value: bonus + (input.applyFivePieceSetBonus !== false && count >= 5 ? 0.05 : 0) });
+    if (set.effect === 'defense') setIdEffects.push({ target: 'defense', value: bonus + (input.applyFivePieceSetBonus !== false && count >= 5 ? 0.05 : 0) });
+  }
+  const profileEffects: ParsedMonsterCombatEffect[] = profileBonus > 0
+    ? [{ target: profession === 'Баффер' ? 'defense' : 'attack', value: profileBonus }]
+    : [];
   const combatModifiers = aggregateMonsterCombatModifiers([
     ...(input.equipmentEffects || []),
     ...(input.pendantCombatEffect ? [input.pendantCombatEffect] : []),
     ...setEffects,
+    ...setIdEffects,
+    ...profileEffects,
   ]);
 
   return {
     attack: Math.max(1, Number.isFinite(attack) ? attack : 1),
     defense: Math.max(1, Number.isFinite(defense) ? defense : 1),
+    baseAttack: Math.max(1, Number.isFinite(baseAttack) ? baseAttack : 1),
+    baseDefense: Math.max(1, Number.isFinite(baseDefense) ? baseDefense : 1),
     speed: calculateCombatSpeed(value(input.dexterity), value(input.weaponDexterityBonus)),
     profession,
     lootBonus: value(input.weaponLootBonus) + (buffActive ? value(buffs.loot) : 0),
