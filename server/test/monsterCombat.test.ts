@@ -7,7 +7,7 @@ import test from 'node:test';
 import { getMonsterPassiveDescriptions, parseMonsterWeakness, resolveMonsterPassive } from '../src/monsterCombat.js';
 import { calculateCombatSpeed, resolveMonsterBattle } from '../src/monsterBattle.js';
 import { adaptPlayerCombatant } from '../src/monsterCombatantAdapter.js';
-import { aggregateMonsterCombatModifiers, calculatePlayerMonsterCombatStats, parseMonsterCombatEffect, parseMonsterCombatEffectClauses, resolveMonsterCombatProperty, resolveMonsterPendantCombatEffect } from '../src/monsterCombatStats.js';
+import { resolveEquipmentSetTierDescriptions, aggregateMonsterCombatModifiers, calculatePlayerMonsterCombatStats, parseMonsterCombatEffect, parseMonsterCombatEffectClauses, resolveMonsterCombatProperty, resolveMonsterPendantCombatEffect } from '../src/monsterCombatStats.js';
 
 const serverDir = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const bestiary = JSON.parse(readFileSync(resolve(serverDir, 'data/forgotten_lands.json'), 'utf8'));
@@ -1048,6 +1048,17 @@ test('shared player combat stats route profile bonuses to the profession-specifi
   assert.equal(gatherer.baseAttack, 18);
 });
 
+
+test('equipment set descriptions unlock only at their exact piece thresholds', () => {
+  const tiers = { two: 'two', three: 'three', four: 'four', full: 'full' };
+  assert.deepEqual(resolveEquipmentSetTierDescriptions({ itemCount: 1, ...tiers }), []);
+  assert.deepEqual(resolveEquipmentSetTierDescriptions({ itemCount: 2, ...tiers }), ['two']);
+  assert.deepEqual(resolveEquipmentSetTierDescriptions({ itemCount: 3, ...tiers }), ['two', 'three']);
+  assert.deepEqual(resolveEquipmentSetTierDescriptions({ itemCount: 4, ...tiers }), ['two', 'three', 'four']);
+  assert.deepEqual(resolveEquipmentSetTierDescriptions({ itemCount: 5, ...tiers }), ['two', 'three', 'four', 'full']);
+  assert.deepEqual(resolveEquipmentSetTierDescriptions({ itemCount: 3, two: 'two', full: 'full' }), ['two']);
+  assert.deepEqual(resolveEquipmentSetTierDescriptions({ itemCount: 5, two: 'two', full: 'full' }), ['two', 'full']);
+});
 
 test('set tier descriptions preserve separate bonuses for each unlocked threshold', () => {
   assert.deepEqual(parseMonsterCombatEffectClauses('2 предмета: +6% к критическому шансу'), [
