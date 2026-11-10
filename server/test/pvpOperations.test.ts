@@ -2,6 +2,7 @@ import assert from 'node:assert/strict';
 import test from 'node:test';
 import {
   calculatePvpGoldTransfer,
+  resolvePvpOutcome,
   isKnownPvpBotId,
   isPvpTargetOffered,
   pvpCooldownRemaining,
@@ -71,4 +72,24 @@ test('a winner receives exactly twenty percent of the loser current gold', () =>
   assert.equal(calculatePvpGoldTransfer(4), 0);
   assert.equal(calculatePvpGoldTransfer(-50), 0);
   assert.equal(calculatePvpGoldTransfer(Number.NaN), 0);
+});
+
+test('both PvP outcomes transfer gold to the winner and protect the loser', () => {
+  const attackerWin = resolvePvpOutcome(250, 1_000, true, 10_000);
+  assert.deepEqual(attackerWin, {
+    attackerGold: 450,
+    targetGold: 800,
+    stolenGold: 200,
+    immunityRecipient: 'target',
+    immunityUntil: 10_000 + PVP_IMMUNITY_MS,
+  });
+
+  const targetWin = resolvePvpOutcome(1_000, 250, false, 20_000);
+  assert.deepEqual(targetWin, {
+    attackerGold: 800,
+    targetGold: 450,
+    stolenGold: 200,
+    immunityRecipient: 'attacker',
+    immunityUntil: 20_000 + PVP_IMMUNITY_MS,
+  });
 });
