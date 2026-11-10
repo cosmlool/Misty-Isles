@@ -67,3 +67,24 @@ test('monster profession damage bonus affects incoming damage, not player outgoi
   assert.equal(archer.totalDamageToParty, 120);
   assert.equal(warrior.totalDamageToParty, 100);
 });
+
+
+test('monster ally bonuses depend on monster allies, not party size', () => {
+  const run = (allies: number) => resolveMonsterBattle({
+    monster: { id: 'm3', name: 'Pack hunter', hp: 10000, attack: 100, defense: 0, speed: 5, allies, passiveDescription: 'Атака +10% при союзниках' },
+    party: [{ id: 'p3', profession: 'Воин', hp: 1000, maxHp: 1000, attack: 10, defense: 0, speed: 5 }],
+    random: () => 0.5,
+  });
+  assert.equal(run(0).totalDamageToParty, 100);
+  assert.equal(run(1).totalDamageToParty, 110);
+});
+
+test('monster defense ally bonus applies to incoming player damage', () => {
+  const run = (allies: number) => resolveMonsterBattle({
+    monster: { id: 'm4', name: 'Guarded monster', hp: 10000, attack: 1, defense: 100, speed: 5, allies, passiveDescription: 'Атака и защита +15% при союзниках' },
+    party: [{ id: 'p4', profession: 'Воин', hp: 1000, maxHp: 1000, attack: 100, defense: 0, speed: 5 }],
+    random: () => 0.5,
+  });
+  assert.equal(run(0).totalDamageToMonster, 50);
+  assert.equal(run(1).totalDamageToMonster, 46);
+});
