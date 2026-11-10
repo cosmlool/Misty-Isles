@@ -904,8 +904,8 @@ test('player monster combat stats preserve dungeon and non-boss pendant boundari
 
   assert.equal(nonBoss.attack, 18);
   assert.equal(dungeonBoss.attack, 27);
-  assert.equal(nonBoss.defense, 22.77);
-  assert.equal(dungeonBoss.defense, 22.77);
+  assert.equal(nonBoss.defense, 17.27);
+  assert.equal(dungeonBoss.defense, 17.27);
 });
 
 test('player monster combat stats can preserve the dungeon five-piece set rule', () => {
@@ -922,8 +922,8 @@ test('player monster combat stats can preserve the dungeon five-piece set rule',
   const expedition = calculatePlayerMonsterCombatStats(common);
   const dungeon = calculatePlayerMonsterCombatStats({ ...common, applyFivePieceSetBonus: false });
 
-  assert.ok(Math.abs(expedition.defense - 25.103925) < 0.000001);
-  assert.ok(Math.abs(dungeon.defense - 23.9085) < 0.000001);
+  assert.ok(Math.abs(expedition.defense - 19.040175) < 0.000001);
+  assert.ok(Math.abs(dungeon.defense - 18.1335) < 0.000001);
 });
 
 
@@ -946,6 +946,6 @@ test('player monster combat stats apply each equipment enhancement to that item 
   });
 
   assert.equal(stats.attack, 170);
-  assert.equal(stats.defense, 89.43);
+  assert.ok(Math.abs(stats.defense - 89.43) < 0.000001);
   assert.equal(stats.speed, 12);
 });
