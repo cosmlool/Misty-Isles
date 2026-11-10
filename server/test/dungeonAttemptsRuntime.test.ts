@@ -75,7 +75,7 @@ function readJson(path: string): any {
   return JSON.parse(readFileSync(path, 'utf8'));
 }
 
-test('solo dungeon reports remaining daily entries accurately and enforces the three-entry cap', { timeout: 45_000 }, async () => {
+test('solo Forgotten Lands boss dungeon reports remaining daily entries and enforces the three-entry cap', { timeout: 45_000 }, async () => {
   const dataDir = mkdtempSync(join(tmpdir(), 'misty-dungeon-attempts-'));
   const playerId = 'runtime_dungeon_attempts_01';
   const lossPlayerId = 'runtime_dungeon_loss_01';
@@ -123,7 +123,7 @@ test('solo dungeon reports remaining daily entries accurately and enforces the t
 
     for (let attempt = 1; attempt <= 3; attempt++) {
       const before = results.length;
-      room.send('dungeonRun', { id: 'root_vault' });
+      room.send('dungeonRun', { id: 'fl_dungeon_03' });
       const result = await waitFor(() => results[before], `dungeon attempt ${attempt}`);
       assert.equal(result.report.result, 'win');
       assert.equal(result.report.maxHealth, 1_089, 'legacy health amulet must contribute its listed +8% maximum health');
@@ -132,8 +132,8 @@ test('solo dungeon reports remaining daily entries accurately and enforces the t
     }
 
     const beforeRejectedAttempt = results.length;
-    room.send('dungeonRun', { id: 'root_vault' });
-    await waitFor(() => notices.find(message => message === 'На сегодня использованы все 3 входа в подземелья.'), 'daily dungeon cap');
+    room.send('dungeonRun', { id: 'fl_dungeon_03' });
+    await waitFor(() => notices.find(message => message === 'закончились попытки в подземельях'), 'daily dungeon cap');
     assert.equal(results.length, beforeRejectedAttempt);
 
     const saved = readJson(join(dataDir, 'players.json'))[playerId];
@@ -141,11 +141,11 @@ test('solo dungeon reports remaining daily entries accurately and enforces the t
     assert.equal(quests.dungeonRuns, 3);
     assert.equal(saved.battles, 3, 'each successful solo dungeon attempt must count as a battle');
     assert.equal(quests.dungeonDay, today);
-    assert.equal(saved.gold, 1_250);
+    assert.equal(saved.gold, 1_160);
     assert.equal(saved.experience, 1_260);
     assert.equal(saved.health, 1_089, 'saved health must remain within the effective maximum, not the legacy base maximum');
 
-    lossRoom.send('dungeonRun', { id: 'root_vault' });
+    lossRoom.send('dungeonRun', { id: 'fl_dungeon_03' });
     const loss = await waitFor(() => lossResults[0], 'solo dungeon loss');
     assert.equal(loss.report.result, 'loss');
     assert.equal(loss.report.hpBefore, 1_000);
