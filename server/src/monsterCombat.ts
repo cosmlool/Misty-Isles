@@ -109,8 +109,19 @@ export function getMonsterPassiveDescriptions(): string[] {
   return Object.keys(passiveEffects);
 }
 
-export function parseMonsterWeakness(value: string): { profession: string; bonus: number } | undefined {
-  const match = /^(.+?)\s*\+(\d+)%$/.exec(value.trim());
+export type MonsterWeakness =
+  | { kind: 'profession'; profession: string; bonus: number }
+  | { kind: 'damageType'; damageType: 'fire'; bonus: number };
+
+export function parseMonsterWeakness(value: string): MonsterWeakness | undefined {
+  const match = /^(.+?)\\s*\\+(\\d+)%$/.exec(value.trim());
   if (!match) return undefined;
-  return { profession: match[1].trim(), bonus: Number(match[2]) / 100 };
+  const target = match[1].trim();
+  const bonus = Number(match[2]) / 100;
+  if (!Number.isFinite(bonus) || bonus <= 0) return undefined;
+  if (target === 'Огненный урон') return { kind: 'damageType', damageType: 'fire', bonus };
+  if (['Маг', 'Лучник', 'Воин', 'Ассасин'].includes(target)) {
+    return { kind: 'profession', profession: target, bonus };
+  }
+  return undefined;
 }
