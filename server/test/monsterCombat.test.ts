@@ -667,3 +667,66 @@ test('compound passive applies attack, defense and physical resistance together'
   assert.equal(result.totalDamageToMonster, 34);
   assert.equal(result.totalDamageToParty, 115);
 });
+
+test('HP-threshold passives do not activate at the exact threshold', () => {
+  const belowThreshold = resolveMonsterBattle({
+    monster: { id: 'm-threshold-50', name: 'Threshold guardian', hp: 1000, attack: 100, defense: 0, speed: 10, passiveDescription: 'Атака +20% ниже 50% HP' },
+    party: [{ id: 'p-threshold-50', profession: 'Воин', hp: 1000, maxHp: 1000, attack: 500, defense: 0, speed: 20 }],
+    maxRounds: 1,
+    random: () => 0.5,
+  });
+  const aboveThreshold = resolveMonsterBattle({
+    monster: { id: 'm-threshold-75', name: 'Threshold sentinel', hp: 1000, attack: 100, defense: 0, speed: 10, passiveDescription: 'Атака +10% при HP выше 75%' },
+    party: [{ id: 'p-threshold-75', profession: 'Воин', hp: 1000, maxHp: 1000, attack: 250, defense: 0, speed: 20 }],
+    maxRounds: 1,
+    random: () => 0.5,
+  });
+  assert.equal(belowThreshold.monsterHp, 500);
+  assert.equal(belowThreshold.totalDamageToParty, 100);
+  assert.equal(aboveThreshold.monsterHp, 750);
+  assert.equal(aboveThreshold.totalDamageToParty, 100);
+});
+
+test('equal initiative speed is neither a fast nor a slow target', () => {
+  const run = (passiveDescription: string) => resolveMonsterBattle({
+    monster: { id: 'm-equal-speed', name: 'Equal-speed hunter', hp: 10000, attack: 100, defense: 0, speed: 10, passiveDescription },
+    party: [{ id: 'p-equal-speed', profession: 'Воин', hp: 1000, maxHp: 1000, attack: 1, defense: 0, speed: 10 }],
+    maxRounds: 1,
+    random: () => 0.5,
+  });
+  assert.equal(run('Урон +20% по быстрым целям').totalDamageToParty, 100);
+  assert.equal(run('Урон +20% по медленным целям').totalDamageToParty, 100);
+});
+
+test('zero player critical chance never produces a critical hit', () => {
+  const result = resolveMonsterBattle({
+    monster: { id: 'm-zero-crit', name: 'Crit tester', hp: 10000, attack: 1, defense: 0, speed: 10 },
+    party: [{ id: 'p-zero-crit', profession: 'Воин', hp: 1000, maxHp: 1000, attack: 100, defense: 0, speed: 20, critChance: 0, critMultiplier: 2 }],
+    maxRounds: 1,
+    random: () => 0,
+  });
+  const attack = result.events.find(event => event.actor === 'p-zero-crit' && event.action === 'attack');
+  assert.equal(attack?.critical, false);
+  assert.equal(attack?.damage, 100);
+});
+
+test('damage formula preserves minimum one damage against extreme defense', () => {
+  const result = resolveMonsterBattle({
+    monster: { id: 'm-extreme-defense', name: 'Immovable target', hp: 10000, attack: 1, defense: 1_000_000_000, speed: 10 },
+    party: [{ id: 'p-min-damage', profession: 'Воин', hp: 1000, maxHp: 1000, attack: 1, defense: 0, speed: 20 }],
+    maxRounds: 1,
+    random: () => 0.5,
+  });
+  assert.equal(result.totalDamageToMonster, 1);
+});
+
+test('compound physical and magic resistance passive uses the matching damage type', () => {
+  const run = (damageType: 'physical' | 'magic') => resolveMonsterBattle({
+    monster: { id: 'm-dual-resistance', name: 'Dual ward', hp: 10000, attack: 1, defense: 0, speed: 10, passiveDescription: 'Физический урон −20%; магический урон −15%; ниже 30% HP атака +30%' },
+    party: [{ id: `p-${damageType}`, profession: 'Воин', hp: 1000, maxHp: 1000, attack: 100, defense: 0, speed: 20, damageType }],
+    maxRounds: 1,
+    random: () => 0.5,
+  });
+  assert.equal(run('physical').totalDamageToMonster, 80);
+  assert.equal(run('magic').totalDamageToMonster, 85);
+});
