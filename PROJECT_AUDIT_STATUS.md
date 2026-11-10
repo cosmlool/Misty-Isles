@@ -764,3 +764,12 @@ Source-level catalog and handler comparison only; no gameplay code changed and n
 - **Confirmed ring loot effect missing from ordinary hunt:** the non-legacy PEN-003 ring advertises an increased chance of additional resources. Ordinary hunt's loot probability includes profession, active loot buff, weapon rare property, armor rare property, and encounter modifiers, but does not include the equipped amulet's loot effect/value. Group expedition dungeon separately reads ring loot effect for drop bonus. The ring therefore does not provide its advertised hunt loot chance in the ordinary hunt mode.
 
 Source-level call-site and catalog comparison only; no gameplay code changed and no tests were executed.
+
+
+### New armor-set description versus runtime implementation — 2026-11-10
+
+- **Confirmed set-tier descriptions are not implemented as written:** equipment_catalog.json defines tier-specific 2/5, 3/5, 4/5 and 5/5 bonuses for new five-piece armor sets. Runtime generation extracts those strings into set metadata, but group-dungeon combat does not interpret the tier text. It maps each set to one generic effect by profession and applies a generic bonus of equippedPieceCount * 1% plus mastery * 1%, starting at two pieces. For generic sets with no profession, the default mapping is defense; their advertised HP, resistance, and final HP tiers are not implemented. Other profession sets likewise do not implement their distinct 2/3/4/5-tier descriptions or unique 5/5 passive effects.
+- This is in addition to the already recorded issue that ordinary hunt, PvP, and clan wars cannot count the five armor slots toward these sets at all. The only mode that counts all five slots (group expedition dungeon) still applies a different generic formula from the catalog descriptions.
+- Required later decision: either implement the documented tier effects consistently in the relevant modes, or revise catalog/UI descriptions to match the chosen shared set-bonus contract. Do not infer the intended balance from the current generic formula.
+
+Source-level catalog/runtime comparison only; no gameplay code changed and no tests were executed.
