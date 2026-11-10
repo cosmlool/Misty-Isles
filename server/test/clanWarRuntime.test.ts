@@ -9,6 +9,8 @@ import { setTimeout as delay } from 'node:timers/promises';
 import { Client, type Room } from 'colyseus.js';
 import test from 'node:test';
 
+import { seedGuestCredentials, testGuestProof } from './guestAuthTestHelpers.js';
+
 const serverDir = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const staticDataFiles = ['city_npcs.json', 'equipment_catalog.json', 'forgotten_lands.json'];
 
@@ -46,7 +48,7 @@ async function guestToken(port: number, playerId: string): Promise<string> {
   const response = await fetch(`http://127.0.0.1:${port}/auth/guest`, {
     method: 'POST',
     headers: { 'content-type': 'application/json' },
-    body: JSON.stringify({ playerId }),
+    body: JSON.stringify({ playerId, guestProof: testGuestProof(playerId) }),
   });
   assert.equal(response.status, 200);
   const payload = await response.json() as { token: string };
@@ -110,6 +112,9 @@ test('clan war attacks enforce per-player cooldown and accumulate real damage', 
     writeFileSync(join(dataDir, 'clan_territories.json'), JSON.stringify([
       { id: 'territory-runtime', owner: 'clan-a', ownerName: 'Клан А', capturedAt: 1, defense: 10 },
     ], null, 2));
+
+    seedGuestCredentials(dataDir);
+
 
     child = spawn(process.execPath, ['--import', 'tsx', 'src/index.ts'], {
       cwd: serverDir,
