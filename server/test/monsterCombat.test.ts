@@ -88,3 +88,16 @@ test('monster defense ally bonus applies to incoming player damage', () => {
   assert.equal(run(0).totalDamageToMonster, 50);
   assert.equal(run(1).totalDamageToMonster, 46);
 });
+
+
+test('monster poison is applied to the struck player and ticks on following rounds', () => {
+  const result = resolveMonsterBattle({
+    monster: { id: 'm5', name: 'Venom beast', hp: 10000, attack: 10, defense: 0, speed: 5, passiveDescription: 'Атака накладывает яд' },
+    party: [{ id: 'p5', profession: 'Воин', hp: 1000, maxHp: 1000, attack: 1, defense: 0, speed: 5 }],
+    maxRounds: 2,
+    random: () => 0.5,
+  });
+  assert.equal(result.totalDamageToMonster, 2);
+  assert.equal(result.totalDamageToParty, 50);
+  assert.ok(result.events.some(event => event.action === 'poison' && event.target === 'p5' && event.damage === 30));
+});
