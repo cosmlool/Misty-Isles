@@ -502,15 +502,29 @@ test('low-health attack bonus activates only below its HP threshold', () => {
   assert.equal(result.events.find(event => event.actor === 'Desperate striker' && event.action === 'attack')?.damage, 120);
 });
 
-test('evasion passive can completely avoid a monster hit', () => {
+test('monster evasion passive avoids incoming player attacks, not monster attacks', () => {
   const result = resolveMonsterBattle({
-    monster: { id: 'm-evasion', name: 'Dodged attacker', hp: 10000, attack: 100, defense: 0, speed: 20, passiveDescription: 'Уклонение +15%' },
+    monster: { id: 'm-evasion', name: 'Evasive monster', hp: 10000, attack: 100, defense: 0, speed: 0, passiveDescription: 'Уклонение +15%' },
     party: [{ id: 'p-evasion', profession: 'Воин', hp: 1000, maxHp: 1000, attack: 1, defense: 0, speed: 10 }],
     maxRounds: 1,
     random: () => 0.1,
   });
+  assert.equal(result.monsterHp, 10000);
+  assert.ok(result.events.some(event => event.actor === 'Evasive monster' && event.target === 'p-evasion' && event.action === 'dodge'));
+});
+
+test('player evasion modifier avoids incoming monster attacks', () => {
+  const result = resolveMonsterBattle({
+    monster: { id: 'm-player-evasion', name: 'Attacker', hp: 10000, attack: 100, defense: 0, speed: 20 },
+    party: [{
+      id: 'p-player-evasion', profession: 'Ассасин', hp: 1000, maxHp: 1000,
+      attack: 1, defense: 0, speed: 10, combatModifiers: { evasionBonus: 0.25 },
+    }],
+    maxRounds: 1,
+    random: () => 0.1,
+  });
   assert.equal(result.totalDamageToParty, 0);
-  assert.ok(result.events.some(event => event.actor === 'Dodged attacker' && event.action === 'dodge'));
+  assert.ok(result.events.some(event => event.actor === 'Attacker' && event.target === 'p-player-evasion' && event.action === 'dodge'));
 });
 
 test('monster lifesteal restores a percentage of damage actually dealt', () => {
