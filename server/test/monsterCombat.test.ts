@@ -781,6 +781,27 @@ test('player combatant adapter maps resolved stats and equipment dexterity into 
   });
 });
 
+test('player combatant adapter passes an explicit critical buff as a chance modifier', () => {
+  const combatant = adaptPlayerCombatant({
+    id: 'player-crit-buff',
+    profession: 'Ассасин',
+    hp: 100,
+    maxHp: 100,
+    attack: 50,
+    defense: 20,
+    dexterity: 30,
+    buff: 'crit',
+    buffValue: 0.12,
+    buffUntil: 5000,
+  });
+
+  assert.equal(combatant.attack, 50);
+  assert.equal(combatant.critChance, undefined);
+  assert.equal(combatant.buff, 'crit');
+  assert.equal(combatant.buffValue, 0.12);
+  assert.equal(combatant.buffUntil, 5000);
+});
+
 test('player combatant adapter supports an unequipped character and omits unresolved combat chances', () => {
   const combatant = adaptPlayerCombatant({
     id: 'player-no-gear',
