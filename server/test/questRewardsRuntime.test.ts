@@ -192,3 +192,53 @@ test('story, faction, daily challenge and achievement rewards cannot be claimed 
     rmSync(dataDir, { recursive: true, force: true });
   }
 });
+
+
+test('a completed current-week challenge pays once and records the ISO-week claim key', { timeout: 45_000 }, async () => {
+  const dataDir = mkdtempSync(join(tmpdir(), 'misty-weekly-claim-'));
+  const playerId = 'runtime_weekly_claim_01';
+  const currentWeek = utcIsoWeekKey();
+  const port = await unusedPort();
+  let child: ChildProcess | undefined;
+  let room: Room | undefined;
+  const savePath = join(dataDir, 'players.json');
+  try {
+    for (const file of staticDataFiles) copyFileSync(join(serverDir, 'data', file), join(dataDir, file));
+    writeFileSync(savePath, JSON.stringify({
+      [playerId]: {
+        id: playerId, name: 'Weekly Claim Tester', race: 'Кот', profession: '', level: 10,
+        gold: 1_000, experience: 0, inventory: '[]', equipment: '{}',
+        quests: JSON.stringify({ challengeWeek: currentWeek, weeklyHunts: 15 }),
+      },
+    }, null, 2));
+    seedGuestCredentials(dataDir);
+    child = spawn(process.execPath, ['--import', 'tsx', 'src/index.ts'], {
+      cwd: serverDir,
+      env: { ...process.env, MISTY_DATA_DIR: dataDir, MISTY_PORT: String(port) },
+      stdio: 'ignore',
+    });
+    await waitForServer(port, child);
+    const client = new Client(`ws://127.0.0.1:${port}`);
+    const token = await guestToken(port, playerId);
+    room = await client.joinOrCreate('my_room', { playerId, sessionToken: token });
+    const notices: string[] = [];
+    room.onMessage('notice', payload => notices.push(String(payload?.text || '')));
+    const claim = async (label: string) => {
+      const before = notices.length;
+      room!.send('quest', { id: 'weekly_challenge' });
+      return waitFor(() => notices.length > before ? notices[before] : undefined, label);
+    };
+    await claim('current-week weekly challenge reward');
+    const saved = readPlayer(savePath, playerId);
+    const quests = JSON.parse(saved.quests);
+    assert.equal(saved.gold, 1_700);
+    assert.equal(saved.experience, 300);
+    assert.equal(quests[`challenge_week_${currentWeek}`], true);
+    assert.equal(await claim('duplicate current-week weekly challenge claim'), 'Награда за это испытание уже получена.');
+    assert.equal(readPlayer(savePath, playerId).gold, 1_700);
+  } finally {
+    if (room) await room.leave().catch(() => undefined);
+    if (child) await stopServer(child);
+    rmSync(dataDir, { recursive: true, force: true });
+  }
+});
