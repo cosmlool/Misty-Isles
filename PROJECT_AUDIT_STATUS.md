@@ -1457,3 +1457,14 @@ clanTerritoryCapture не проверяет, что инициатор — ли
 
 ### Риск темпа прокачки из-за неограниченных характеристик
 Поскольку сервер не ограничивает `upgradeStat` уровнем персонажа, персонаж может накопить золото в безопасной зоне и повышать характеристики без роста уровня. Минимальный уровень зоны блокирует только доступ к зоне, но не рост атрибутов. Это позволяет обойти ожидаемую кривую силы персонажа и усложняет настройку мобов/экипировки по уровню. Будущая балансировка должна учитывать не только уровень, но и допустимый бюджет характеристик и экипировки.
+
+
+### Тестовое покрытие боевого баланса — недостаточно для безопасного ребаланса
+Повторная проверка ключевых runtime tests:
+- raceEquipmentRuntime проверяет только запрет экипировки предмета другой расы; в нём нет тестов колец, заточки, set mastery, rare properties или профилей оружия.
+- groupDungeonRuntime проверяет сохранение победы/поражения и расход трёх дневных попыток на одном dungeon ID; не проверяет solo entry, boss HP/DEF/passives, распределение дропа, ring/buff/equipment effects и реальные пороги сложности.
+- expeditionSafetyRuntime проверяет отчёт HP, восстановление orphan state, приглашение во время поиска и disconnect; не проверяет leave-during-action, одинаковость progression группы, боевой баланс и редкие эффекты.
+- questRewardsRuntime проверяет однократность выдачи story/faction/daily/achievement наград, но не проверяет начисление daily/weekly/race/faction progress после expeditionSearchClaim и rollover weekly challenge.
+- Не найдено специализированных runtime tests для mining cooldown 30m/15m, ring progression cap/level100, house migration, equipmentProperties, profession/guild buff effects, clan leadership transfer, duplicate rename и group loot distribution.
+
+Статус: тесты по транзакциям/сохранению существуют, но до массового изменения баланса нужен отдельный слой unit/runtime tests для боевых формул и прогрессии; иначе нельзя подтвердить, что цифры работают одинаково во всех режимах.
