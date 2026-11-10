@@ -1102,6 +1102,13 @@ test('typed combat modifier aggregation keeps each effect in its own stat channe
   assert.equal(modifiers.bossDamageBonus, 0);
 });
 
+test('catalog set tiers parse HP, defense and resistance independently', () => {
+  assert.deepEqual(parseMonsterCombatEffect('2/5: +1% HP'), { target: 'health', value: 0.01 });
+  assert.deepEqual(parseMonsterCombatEffect('3/5: +1% защиты'), { target: 'defense', value: 0.01 });
+  assert.deepEqual(parseMonsterCombatEffect('4/5: +1% сопротивления'), { target: 'resistance', value: 0.01 });
+  assert.deepEqual(parseMonsterCombatEffect('5/5: +2% HP'), { target: 'health', value: 0.02 });
+});
+
 test('catalog combat effects map to typed modifiers without collapsing into attack', () => {
   assert.deepEqual(parseMonsterCombatEffect('+5% к критическому шансу'), { target: 'critChance', value: 0.05 });
   assert.deepEqual(parseMonsterCombatEffect('+8% к критическому урону'), { target: 'critDamage', value: 0.08 });
