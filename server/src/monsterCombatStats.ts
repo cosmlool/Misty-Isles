@@ -313,14 +313,6 @@ export function calculatePlayerMonsterCombatStats(
   }
 
   const setEffects = (input.setBonuses || []).flatMap(set => (set.descriptions || []).flatMap(parseMonsterCombatEffectClauses));
-  const setIdEffects: ParsedMonsterCombatEffect[] = [];
-  for (const set of input.setBonuses || []) {
-    const count = Math.max(0, value(set.itemCount));
-    if (count < 2) continue;
-    const bonus = count * 0.01 + value(set.mastery) * 0.01;
-    if (set.effect === 'attack') setIdEffects.push({ target: 'attack', value: bonus + (input.applyFivePieceSetBonus !== false && count >= 5 ? 0.05 : 0) });
-    if (set.effect === 'defense') setIdEffects.push({ target: 'defense', value: bonus + (input.applyFivePieceSetBonus !== false && count >= 5 ? 0.05 : 0) });
-  }
   const profileEffects: ParsedMonsterCombatEffect[] = profileBonus > 0
     ? [{ target: profession === 'Баффер' ? 'defense' : 'attack', value: profileBonus }]
     : [];
@@ -328,7 +320,6 @@ export function calculatePlayerMonsterCombatStats(
     ...(input.equipmentEffects || []),
     ...(input.pendantCombatEffect ? [input.pendantCombatEffect] : []),
     ...setEffects,
-    ...setIdEffects,
     ...profileEffects,
   ]);
 
