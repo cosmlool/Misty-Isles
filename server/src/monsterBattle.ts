@@ -117,8 +117,8 @@ export function resolveMonsterBattle(input: MonsterBattleInput): MonsterBattleRe
   let totalDamageToMonster = 0;
   let totalDamageToParty = 0;
   const poisonedParty = new Map<string, number>();
-  let partyAttackReduction = 0;
-  let partyDefenseReduction = 0;
+  const partyAttackReduction = new Map<string, number>();
+  const partyDefenseReduction = new Map<string, number>();
   let partySpeedReduction = 0;
   let attackAfterCritical = false;
   let monsterHasAttacked = false;
@@ -192,7 +192,7 @@ export function resolveMonsterBattle(input: MonsterBattleInput): MonsterBattleRe
         const monsterHpRatio = monsterHp / monsterMaxHp;
         const activeAttackBuff = fighter.buff === 'attack' && safeStat(fighter.buffUntil) > now ? safeStat(fighter.buffValue) : 0;
         const activeSecondaryAttackBuff = fighter.buffSecondaryEffect === 'attack' && safeStat(fighter.buffUntil) > now ? safeStat(fighter.buffSecondaryValue) : 0;
-        const attack = fighter.attack * (1 + activeAttackBuff + activeSecondaryAttackBuff) * (1 - partyAttackReduction);
+        const attack = fighter.attack * (1 + activeAttackBuff + activeSecondaryAttackBuff) * (1 - (partyAttackReduction.get(fighter.id) || 0));
         const hitChance = clamp((safeStat(fighter.accuracy, 100) / 100) * (fighter.blind ? (effect.ignoresBlindAccuracyPenalty ? 1 : 0.65) : 1), 0.05, 1);
         if (random() > hitChance) {
           events.push({ round, actor: fighter.id, action: 'miss', target: input.monster.name });
@@ -249,11 +249,11 @@ export function resolveMonsterBattle(input: MonsterBattleInput): MonsterBattleRe
       if (effect.damageVsArmoredTargets && target.defense >= safeStat(input.monster.attack)) monsterDamageMultiplier *= 1 + effect.damageVsArmoredTargets;
       if (effect.damageVsLowDefenseTargets && target.defense < safeStat(input.monster.attack) * 0.5) monsterDamageMultiplier *= 1 + effect.damageVsLowDefenseTargets;
       if (effect.damageVsLowHpTargets && targetHpRatio < effect.damageVsLowHpTargets.threshold) monsterDamageMultiplier *= effect.damageVsLowHpTargets.multiplier;
-      if (effect.attackVsWeakened && (partyAttackReduction > 0 || partyDefenseReduction > 0 || (round === 1 && partySpeedReduction > 0))) monsterDamageMultiplier *= 1 + effect.attackVsWeakened;
+      if (effect.attackVsWeakened && ((partyAttackReduction.get(target.id) || 0) > 0 || (partyDefenseReduction.get(target.id) || 0) > 0 || (round === 1 && partySpeedReduction > 0))) monsterDamageMultiplier *= 1 + effect.attackVsWeakened;
 
       const activeDefenseBuff = target.buff === 'defense' && safeStat(target.buffUntil) > now ? safeStat(target.buffValue) : 0;
       const activeSecondaryDefenseBuff = target.buffSecondaryEffect === 'defense' && safeStat(target.buffUntil) > now ? safeStat(target.buffSecondaryValue) : 0;
-      const targetDefense = target.defense * (1 + activeDefenseBuff + activeSecondaryDefenseBuff) * (1 - partyDefenseReduction);
+      const targetDefense = target.defense * (1 + activeDefenseBuff + activeSecondaryDefenseBuff) * (1 - (partyDefenseReduction.get(target.id) || 0));
       const monsterCrit = random() < clamp(safeStat(input.monster.critChance), 0, 0.75);
       const monsterCritMultiplier = monsterCrit
         ? Math.max(1, safeStat(input.monster.critMultiplier, 1.5) + (effect.critDamage || 0))
@@ -295,8 +295,8 @@ export function resolveMonsterBattle(input: MonsterBattleInput): MonsterBattleRe
             events.push({ round, actor: input.monster.name, action: 'suppress', target: target.id, effect: selected.effect, value: reducedValue });
           }
         }
-        if (effect.enemyDefenseReduction) partyDefenseReduction = clamp(partyDefenseReduction + effect.enemyDefenseReduction, 0, 0.75);
-        if (effect.enemyAttackReduction) partyAttackReduction = clamp(partyAttackReduction + effect.enemyAttackReduction, 0, 0.75);
+        if (effect.enemyDefenseReduction) partyDefenseReduction.set(target.id, clamp((partyDefenseReduction.get(target.id) || 0) + effect.enemyDefenseReduction, 0, 0.75));
+        if (effect.enemyAttackReduction) partyAttackReduction.set(target.id, clamp((partyAttackReduction.get(target.id) || 0) + effect.enemyAttackReduction, 0, 0.75));
       }
     }
 
