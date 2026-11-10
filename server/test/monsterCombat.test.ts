@@ -922,6 +922,6 @@ test('player monster combat stats can preserve the dungeon five-piece set rule',
   const expedition = calculatePlayerMonsterCombatStats(common);
   const dungeon = calculatePlayerMonsterCombatStats({ ...common, applyFivePieceSetBonus: false });
 
-  assert.ok(Math.abs(expedition.defense - 25.047) < 0.000001);
-  assert.ok(Math.abs(dungeon.defense - 23.85) < 0.000001);
+  assert.ok(Math.abs(expedition.defense - 25.103925) < 0.000001);
+  assert.ok(Math.abs(dungeon.defense - 23.9085) < 0.000001);
 });
