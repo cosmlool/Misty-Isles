@@ -10,6 +10,7 @@ import { calculateCombatSpeed } from './monsterBattle.js';
 export type PlayerCombatantAdapterInput = {
   id: string;
   profession: string;
+  /** Current and maximum HP before combatModifiers.healthBonus is applied by the battle engine. */
   hp: number;
   maxHp: number;
   /** Clean base attack: exclude typed equipment/set/pendant modifiers and active buffs. */
@@ -24,7 +25,7 @@ export type PlayerCombatantAdapterInput = {
   critMultiplier?: number;
   /** Normalized accuracy value expected by the battle engine; omit if unresolved. */
   accuracy?: number;
-  /** Typed equipment/set/pendant effects; must not already be folded into attack/defense. */
+  /** Typed effects stay separate from base stats; healthBonus requires hp/maxHp before that percentage. */
   combatModifiers?: Partial<MonsterCombatModifiers>;
   buff?: string;
   buffValue?: number;
