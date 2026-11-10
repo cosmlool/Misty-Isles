@@ -1182,3 +1182,14 @@ Additional design question: `seasonPoints` are accumulated in clan records and t
 
 ### Уточнение активной работы колец в экспедиции
 Проверка активного expeditionSearchClaim показала, что для XP/gold/defense/loot он уже вызывает pendantEffectValue с сохранённым уровнем кольца. Следовательно, ранее зафиксированный пропуск уровневого бонуса касается только скрытого legacy hunt, а не текущей кнопки «Охота». В активной экспедиции остаются две отдельные проблемы: формула XP-кольца должна быть приведена к согласованной модели 50% cap к 99 уровню и 100% cap на 100-м; crit ring сейчас превращается в множитель атаки, а не в шанс критического удара, потому что crit-механики в expedition battle нет.
+
+
+### Фракционные сюжетные главы заблокированы активным маршрутом
+Проверены все три factionStories:
+- Dawn I требует 5 побед в mistwood/whisper (factionDawnKills), которые обновляются только старым hunt.
+- Dawn II требует factionBoss_dawn; Dawn III требует factionEvent_dawn — оба счётчика обновляются только старым hunt.
+- Caravan I проверяет общий p.victories и может выполняться через expeditionSearchClaim. Caravan II/III требуют factionBoss_caravan/factionEvent_caravan и не обновляются экспедицией.
+- Lore I требует factionRuinsKills, Lore II factionBoss_lore, Lore III factionEvent_lore; все три счётчика обновляются только старым hunt.
+- В активной экспедиции нет faction boss encounter, faction event participation или привязки к TOWNS зонам.
+
+Итог: из 9 фракционных глав только Caravan I имеет доступное условие в текущем штатном цикле. Остальные 8 не могут быть завершены обычным игровым интерфейсом. Необходимо перенести условия на события активной экспедиции или вернуть полноценный доступный основной hunt.
