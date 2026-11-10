@@ -2144,3 +2144,9 @@ PEN-009 стоит 100 кристаллов и при максимальном �
 - HTTP auth endpoints have a process-local rate limiter, but no general per-connection/per-player rate limiter was found around gameplay `this.onMessage` handlers.
 - Several message paths can cause disk writes: `notice()` calls the player save path; `tavernGame` has no cooldown and calls `notice` for every bet; `clanQuests` writes clan state on each request; `pvpList` can persist merged online players. Client-side `guardedActions` is not a security boundary because a custom client can send messages directly.
 - This creates a write-amplification/availability risk if a connected client floods these messages, even where economic validation prevents duplication. Add server-side per-action and global message throttles, avoid saving on read-only requests, and batch/debounce non-transactional saves without weakening transactional persistence.
+
+
+### Уточнение по материалам расовых зон
+- Четыре race-home зоны гарантированно выдают за каждую успешную охоту `moon_dust`, `iron_scrap`, `wind_feather`, `glow_mushroom` соответственно.
+- Эти четыре гарантированных материала не используются ни в трёх оставшихся обычных рецептах, ни в заточке/постройках/легендарном крафте. Они отличаются от четырёх shop-only материалов `cat_mooncrystal`, `dog_ironmark`, `bird_windfeather`, `rodent_glowspore`, у которых нет источника выпадения.
+- Таким образом, race-home охота гарантированно добавляет в инвентарь предмет без текущего игрового применения. Нужно добавить расовые рецепты/обмены или заменить эти гарантированные drops на материалы, реально участвующие в раннем крафте.
