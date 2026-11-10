@@ -345,9 +345,10 @@ export function resolveMonsterBattle(input: MonsterBattleInput): MonsterBattleRe
             events.push({ round, actor: input.monster.name, action: 'heal', target: input.monster.name, healing: healed });
           }
         }
-        const controlResistance = clamp(safeStat(targetModifiers.controlResistance), 0, 0.75);
-        const resistsBuffSuppression = controlResistance > 0 && random() < controlResistance;
-        if (effect.enemyBuffSuppression && !resistsBuffSuppression && !buffSuppressionApplied.has(target.id)) {
+        if (effect.enemyBuffSuppression && !buffSuppressionApplied.has(target.id)) {
+          const controlResistance = clamp(safeStat(targetModifiers.controlResistance), 0, 0.75);
+          const resistsBuffSuppression = controlResistance > 0 && random() < controlResistance;
+          if (resistsBuffSuppression) continue;
           const candidates = [
             { slot: 'primary' as const, effect: target.buff || '', value: safeStat(target.buffValue) },
             { slot: 'secondary' as const, effect: target.buffSecondaryEffect || '', value: safeStat(target.buffSecondaryValue) },
