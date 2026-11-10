@@ -2,6 +2,7 @@ export type MonsterPassiveEffect = {
   physicalResistance?: number;
   magicResistance?: number;
   allResistance?: number;
+  allResistanceAboveHpRatio?: { threshold: number; resistance: number };
   professionResistance?: Record<string, number>;
   defenseMultiplier?: number;
   attackMultiplier?: number;
@@ -81,7 +82,7 @@ const passiveEffects: Record<string, MonsterPassiveEffect> = {
   'Восстанавливает 10% HP каждый третий раунд; урон лучника −20%': { healEveryRounds: { rounds: 3, maxHpRatio: 0.10 }, professionResistance: { 'Лучник': 0.20 } },
   'Получает на 20% больше магического урона': { magicResistance: -0.20 },
   'Снижает скорость противника на 20% в первом раунде': { enemySpeedReductionFirstRound: 0.20 },
-  'Весь урон −20% пока HP выше 50%': { allResistance: 0.20 },
+  'Весь урон −20% пока HP выше 50%': { allResistanceAboveHpRatio: { threshold: 0.50, resistance: 0.20 } },
   'Урон +20% по целям с низкой защитой': { damageVsLowDefenseTargets: 0.20 },
   'Весь урон −25%': { allResistance: 0.25 },
   'Восстанавливает 7% нанесённого урона': { lifesteal: 0.07 },
