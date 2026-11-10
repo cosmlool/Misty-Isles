@@ -1158,7 +1158,7 @@ test('equipped gear loot and lifesteal bonuses reach expedition stat outputs', (
 test('legacy gold-priced weapons and armor receive the shared stat profile at runtime', () => {
   const source = readFileSync(resolve(serverDir, 'src/index.ts'), 'utf8');
   const start = source.indexOf('const ITEMS: Item[] = [');
-  const end = source.indexOf('\\n];', start);
+  const end = source.indexOf('];', start);
   const itemBlock = source.slice(start, end);
   const legacyGoldGear = itemBlock.split('\\n').filter((line: string) => {
     const isGear = line.includes("kind:'weapon'") || line.includes("kind:'armor'");
