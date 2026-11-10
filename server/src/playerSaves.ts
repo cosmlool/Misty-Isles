@@ -58,3 +58,31 @@ export function createPlayerSaveStore(saveFile:string,dataDir:string){
 
   return {loadPlayers,savePlayers};
 }
+
+export function applyPlayerSave<T extends Record<string, any>>(player: T, saved: unknown): T {
+  if (!saved || typeof saved !== 'object' || Array.isArray(saved)) return player;
+  for (const [key, value] of Object.entries(saved)) {
+    if (!Object.prototype.hasOwnProperty.call(player, key) || value === undefined) continue;
+    const current = player[key];
+    if (typeof current === 'number') {
+      if (typeof value === 'number' && Number.isFinite(value)) player[key] = value as T[Extract<keyof T, string>];
+      continue;
+    }
+    if (typeof current === 'string') {
+      if (typeof value === 'string') player[key] = value as T[Extract<keyof T, string>];
+      continue;
+    }
+    if (typeof current === 'boolean') {
+      if (typeof value === 'boolean') player[key] = value as T[Extract<keyof T, string>];
+      continue;
+    }
+    if (Array.isArray(current)) {
+      if (Array.isArray(value)) player[key] = value as T[Extract<keyof T, string>];
+      continue;
+    }
+    if (current && typeof current === 'object' && value && typeof value === 'object' && !Array.isArray(value)) {
+      player[key] = value as T[Extract<keyof T, string>];
+    }
+  }
+  return player;
+}
