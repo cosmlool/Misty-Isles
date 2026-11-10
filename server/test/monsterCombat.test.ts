@@ -7,7 +7,7 @@ import test from 'node:test';
 import { getMonsterPassiveDescriptions, parseMonsterWeakness, resolveMonsterPassive } from '../src/monsterCombat.js';
 import { calculateCombatSpeed, resolveMonsterBattle } from '../src/monsterBattle.js';
 import { adaptPlayerCombatant, buildPlayerCombatantForMonsterBattle } from '../src/monsterCombatantAdapter.js';
-import { resolveEquipmentSetTierDescriptions, aggregateMonsterCombatModifiers, calculatePlayerMonsterCombatStats, parseMonsterCombatEffect, parseMonsterCombatEffectClauses, resolveMonsterCombatProperty, resolveMonsterPendantCombatEffect, resolvePlayerMonsterCombatHealth, resolveEquipmentSetCombatEffects, resolveGoldEquipmentStatProfile } from '../src/monsterCombatStats.js';
+import { resolveEquipmentSetTierDescriptions, aggregateMonsterCombatModifiers, calculatePlayerMonsterCombatStats, parseMonsterCombatEffect, parseMonsterCombatEffectClauses, resolveMonsterCombatProperty, resolveMonsterPendantCombatEffect, resolvePlayerMonsterCombatHealth, resolveEquipmentSetCombatEffects, resolveGoldEquipmentStatProfile, resolvePlayerMonsterLifestealRate } from '../src/monsterCombatStats.js';
 
 const serverDir = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const bestiary = JSON.parse(readFileSync(resolve(serverDir, 'data/forgotten_lands.json'), 'utf8'));
@@ -1574,4 +1574,12 @@ test('unknown player damage type does not receive physical or magic damage bonus
   assert.equal(run('physical').party[0].damageDealt, 150);
   assert.equal(run('magic').party[0].damageDealt, 180);
   assert.equal(run('fire').party[0].damageDealt, 180);
+});
+
+
+test('lifesteal combines Vampire baseline with aggregated gear, set and buff bonuses exactly once', () => {
+  assert.equal(resolvePlayerMonsterLifestealRate('Вампир', 0.11), 0.19);
+  assert.equal(resolvePlayerMonsterLifestealRate('Ассасин', 0.11), 0.11);
+  assert.equal(resolvePlayerMonsterLifestealRate('Вампир', 0.80), 0.75);
+  assert.equal(resolvePlayerMonsterLifestealRate('Вампир', Number.NaN), 0.08);
 });
