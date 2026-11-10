@@ -97,7 +97,8 @@ test('clan war attacks enforce per-player cooldown and accumulate real damage', 
     writeFileSync(join(dataDir, 'players.json'), JSON.stringify({
       [playerA]: {
         id: playerA, name: 'War Attacker A', race: 'Кот', level: 25, strength: 40, defense: 20,
-        gold: 250, clan: 'clan-a', inventory: '[]', equipment: '{}', quests: '{}',
+        gold: 250, buff: 'attack', buffValue: 0.15, buffUntil: Date.now() + 5 * 60 * 1000,
+        clan: 'clan-a', inventory: '[]', equipment: '{}', quests: '{}',
       },
       [playerB]: {
         id: playerB, name: 'War Attacker B', race: 'Собака', level: 25, strength: 35, defense: 20,
@@ -194,7 +195,7 @@ test('clan war attacks enforce per-player cooldown and accumulate real damage', 
     roomA.send('clanWarAttack', { id: 'war-runtime' });
     await waitFor(() => noticesA.find(text => text.startsWith('Атака нанесла')), 'first clan A attack');
     const afterFirst = readJson(join(dataDir, 'clan_wars.json'))[0];
-    assert.ok(afterFirst.aDamage > 0);
+    assert.ok(afterFirst.aDamage > 30, 'active attack buff must increase clan-war damage beyond the unbuffed range');
     assert.equal(afterFirst.bDamage, 0);
     await waitFor(() => warListsB.find(payload => payload.wars?.some((war:any) => war.id === 'war-runtime' && war.aDamage === afterFirst.aDamage)), 'live score broadcast to opposing clan');
 
