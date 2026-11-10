@@ -41,6 +41,7 @@ const WAR_FILE = join(DATA_DIR, 'clan_wars.json');
 const TERRITORY_FILE = join(DATA_DIR, 'clan_territories.json');
 const ACCOUNT_FILE = join(DATA_DIR, 'accounts.json');
 const SESSION_FILE = join(DATA_DIR, 'sessions.json');
+const GUEST_CREDENTIAL_FILE = join(DATA_DIR, 'guest_credentials.json');
 if (!existsSync(DATA_DIR)) mkdirSync(DATA_DIR, { recursive: true });
 const { loadPlayers, savePlayers } = createPlayerSaveStore(SAVE_FILE, DATA_DIR);
 const auctionTransactions = createAuctionTransactionStore({ dataDir: DATA_DIR, playersFile: SAVE_FILE, auctionFile: AUCTION_FILE, historyFile: AUCTION_HISTORY_FILE });
@@ -389,7 +390,12 @@ function loadAccounts():AccountRecord[] { return readPersistentJson<AccountRecor
 function saveAccounts(value:AccountRecord[]) { writeJsonAtomic(ACCOUNT_FILE,value); }
 function loadSessions():SessionRecord[] { return readPersistentJson<SessionRecord[]>(SESSION_FILE,[],value=>Array.isArray(value)&&value.every((x:any)=>isPlainObject(x)&&typeof x.tokenHash==='string'&&typeof x.playerId==='string'&&(x.accountKey===null||typeof x.accountKey==='string')&&Number.isFinite(x.expiresAt))); }
 function saveSessions(value:SessionRecord[]) { writeJsonAtomic(SESSION_FILE,value); }
+type GuestCredentialRecord = { playerId:string; tokenHash:string; createdAt:number };
+function loadGuestCredentials():GuestCredentialRecord[] { return readPersistentJson<GuestCredentialRecord[]>(GUEST_CREDENTIAL_FILE,[],value=>Array.isArray(value)&&value.every((x:any)=>isPlainObject(x)&&typeof x.playerId==='string'&&typeof x.tokenHash==='string'&&Number.isFinite(x.createdAt))); }
+function saveGuestCredentials(value:GuestCredentialRecord[]) { writeJsonAtomic(GUEST_CREDENTIAL_FILE,value); }
 function tokenDigest(token:string) { return createHash('sha256').update(token).digest('hex'); }
+function issueGuestCredential(playerId:string) { const proof=randomBytes(32).toString('hex');const records=loadGuestCredentials().filter(x=>x.playerId!==playerId);records.push({playerId,tokenHash:tokenDigest(proof),createdAt:Date.now()});saveGuestCredentials(records);return proof; }
+function verifyGuestCredential(playerId:string,proof:string) { if(!proof||proof.length>256)return false;const record=loadGuestCredentials().find(x=>x.playerId===playerId);if(!record)return false;const actual=Buffer.from(tokenDigest(proof),'hex');const expected=Buffer.from(record.tokenHash,'hex');return actual.length===expected.length&&timingSafeEqual(actual,expected); }
 function issueSession(playerId:string, accountKey:string|null) { const token=randomBytes(32).toString('hex'); const sessions=loadSessions().filter(x=>x.expiresAt>Date.now()); sessions.push({tokenHash:tokenDigest(token),playerId,accountKey,expiresAt:Date.now()+AUTH_SESSION_MS}); saveSessions(sessions); return token; }
 function verifySession(token:string):SessionRecord|null { if(!token||token.length>256)return null;const hash=tokenDigest(token);const sessions=loadSessions();const session=sessions.find(x=>x.tokenHash===hash&&x.expiresAt>Date.now());if(!session)return null;const account=loadAccounts().find(x=>x.playerId===session.playerId);if(session.accountKey===null?Boolean(account):!account||account.usernameKey!==session.accountKey)return null;return session; }
 function publicPlayerCode(id:string) { return createHash('sha256').update(`MistyIslesPublic:${id}`).digest('hex').slice(0,24); }
@@ -407,19 +413,41 @@ function authHttpHandler(req:IncomingMessage,res:ServerResponse) {
     try {
       const d=JSON.parse(body||'{}');
       if(path==='/auth/guest'){
-        const rawPlayerId=String(d.playerId||'').trim();if(!/^[A-Za-z0-9_-]{12,64}$/.test(rawPlayerId)){sendJson(res,400,{error:'Не удалось подтвердить гостевой профиль. Обнови страницу и попробуй снова.'});return;}const playerId=safeId(rawPlayerId);if(loadAccounts().some(a=>a.playerId===playerId)){sendJson(res,409,{error:'Этот персонаж привязан к аккаунту. Войди по логину и паролю.'});return;}
-        const token=issueSession(playerId,null);sendJson(res,200,{ok:true,playerId,token,guest:true});return;
+        const rawPlayerId=String(d.playerId||'').trim();
+        const suppliedProof=String(d.guestProof||'');
+        const legacySessionToken=String(d.sessionToken||'');
+        if(!rawPlayerId){
+          if(suppliedProof||legacySessionToken){sendJson(res,400,{error:'Некорректный запрос гостевого входа.'});return;}
+          let playerId='';const players=loadPlayers();const accounts=loadAccounts();
+          do { playerId=`guest_${randomBytes(16).toString('hex')}`; } while(players[playerId]||accounts.some(a=>a.playerId===playerId));
+          const guestProof=issueGuestCredential(playerId);
+          const token=issueSession(playerId,null);
+          sendJson(res,200,{ok:true,playerId,token,guestProof,guest:true});return;
+        }
+        if(!/^[A-Za-z0-9_-]{12,64}$/.test(rawPlayerId)){sendJson(res,400,{error:'Не удалось подтвердить гостевой профиль.'});return;}
+        const playerId=rawPlayerId;
+        if(loadAccounts().some(a=>a.playerId===playerId)){sendJson(res,409,{error:'Этот персонаж привязан к аккаунту. Войди по логину и паролю.'});return;}
+        let guestProof=suppliedProof;
+        if(!verifyGuestCredential(playerId,guestProof)){
+          const legacySession=legacySessionToken?verifySession(legacySessionToken):null;
+          if(!legacySession||legacySession.accountKey!==null||legacySession.playerId!==playerId){
+            sendJson(res,401,{error:'Не удалось подтвердить доступ к гостевому персонажу. Нужен действующий гостевой сеанс или секрет восстановления.'});return;
+          }
+          guestProof=issueGuestCredential(playerId);
+        }
+        const token=issueSession(playerId,null);
+        sendJson(res,200,{ok:true,playerId,token,guestProof,guest:true});return;
       }
       if(path==='/auth/register'){
         const username=String(d.username||'').trim();const usernameKey=username.toLocaleLowerCase('en-US');const password=String(d.password||'');
         if(!/^[A-Za-z0-9_-]{3,20}$/.test(username)){sendJson(res,400,{error:'Логин: 3–20 символов, латинские буквы, цифры, _ или -.'});return;}
         if(password.length<8||password.length>128){sendJson(res,400,{error:'Пароль должен содержать от 8 до 128 символов.'});return;}
         const accounts=loadAccounts();if(accounts.some(a=>a.usernameKey===usernameKey)){sendJson(res,409,{error:'Такой логин уже занят.'});return;}
-        const guestId=d.playerId?safeId(d.playerId):'';const guestToken=String(d.guestToken||'');const guestSession=guestId?verifySession(guestToken):null;
-        if(guestId&&(!guestSession||guestSession.accountKey!==null||guestSession.playerId!==guestId)){sendJson(res,401,{error:'Не удалось подтвердить доступ к гостевому персонажу. Перезайди в гостевой режим и повтори.'});return;}
+        const guestId=d.playerId?String(d.playerId):'';const guestProof=String(d.guestProof||'');
+        if(guestId&&!verifyGuestCredential(guestId,guestProof)){sendJson(res,401,{error:'Не удалось подтвердить гостевого персонажа. Войди в гостевой режим и повтори.'});return;}
         const existing=accounts.find(a=>a.playerId===guestId);if(existing){sendJson(res,409,{error:'Этот персонаж уже привязан к другому аккаунту.'});return;}
         const playerId=guestId||`acct_${randomBytes(12).toString('hex')}`;const salt=randomBytes(16).toString('hex');const passwordHash=scryptSync(password,salt,64).toString('hex');
-        accounts.push({username,usernameKey,playerId,salt,passwordHash,createdAt:Date.now()});saveAccounts(accounts);if(guestSession)saveSessions(loadSessions().filter(x=>x.playerId!==playerId));const token=issueSession(playerId,usernameKey);sendJson(res,201,{ok:true,playerId,token,username});return;
+        accounts.push({username,usernameKey,playerId,salt,passwordHash,createdAt:Date.now()});saveAccounts(accounts);if(guestId){saveGuestCredentials(loadGuestCredentials().filter(x=>x.playerId!==playerId));saveSessions(loadSessions().filter(x=>x.playerId!==playerId));}const token=issueSession(playerId,usernameKey);sendJson(res,201,{ok:true,playerId,token,username});return;
       }
       if(path==='/auth/login'){
         const usernameKey=String(d.username||'').trim().toLocaleLowerCase('en-US');const password=String(d.password||'');const account=loadAccounts().find(a=>a.usernameKey===usernameKey);
