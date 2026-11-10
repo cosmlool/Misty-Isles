@@ -1,4 +1,5 @@
 import type { MonsterBattleCombatant, MonsterDamageType } from './monsterBattle.js';
+import type { MonsterCombatModifiers } from './monsterCombatStats.js';
 import { calculateCombatSpeed } from './monsterBattle.js';
 
 /**
@@ -23,6 +24,8 @@ export type PlayerCombatantAdapterInput = {
   critMultiplier?: number;
   /** Normalized accuracy value expected by the battle engine; omit if unresolved. */
   accuracy?: number;
+  /** Typed equipment/set/pendant effects; must not already be folded into attack/defense. */
+  combatModifiers?: Partial<MonsterCombatModifiers>;
   buff?: string;
   buffValue?: number;
   buffSecondaryEffect?: string;
@@ -56,6 +59,13 @@ export function adaptPlayerCombatant(input: PlayerCombatantAdapterInput): Monste
   }
   if (input.accuracy !== undefined && Number.isFinite(input.accuracy)) {
     result.accuracy = Math.max(0, input.accuracy);
+  }
+  if (input.combatModifiers) {
+    result.combatModifiers = Object.fromEntries(
+      Object.entries(input.combatModifiers).filter((entry): entry is [string, number] =>
+        typeof entry[1] === 'number' && Number.isFinite(entry[1]),
+      ),
+    ) as MonsterBattleCombatant['combatModifiers'];
   }
   if (typeof input.buff === 'string' && input.buff) result.buff = input.buff;
   if (input.buffValue !== undefined && Number.isFinite(input.buffValue)) {
