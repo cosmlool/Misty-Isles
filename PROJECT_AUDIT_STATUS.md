@@ -717,3 +717,12 @@ Source review of transaction-store startup order, failure handling, craft operat
 - Craft claim itself is otherwise guarded by job existence and finishAt, and a successful claim removes the job before the notice/save path. A second sequential claim for the same unique ID is rejected once the first claim has been saved; request-level idempotency remains a separate broader reliability concern already recorded.
 
 No gameplay code was changed. These findings are added to the persistence/crafting correction backlog; all evidence remains source-level pending runtime tests.
+
+
+### Additional generated-identifier collision review — 2026-11-10
+
+- The same timestamp-plus-small-random-suffix ID pattern is used for auction lots: lot IDs contain seller ID, Date.now(), and rand(100,999). Auction lot validation checks that each ID is a non-empty string but does not enforce uniqueness across the active listing array. Two listings by the same seller created in the same millisecond with the same suffix can therefore share an ID. The client may render duplicate keys, and cancel/buy operations select the first matching ID. This is a low-probability collision, not a normal-path duplication exploit; generate collision-resistant IDs and validate uniqueness at the transaction boundary.
+- Craft job IDs have the more consequential collision behavior recorded above: a claim finds the first matching job but filters out all jobs with that ID, potentially discarding another job's reserved materials and output. Both auction and crafting should use cryptographically random identifiers or a monotonic per-player sequence and reject duplicates server-side.
+- The audit re-confirmed two previously recorded accepted defects still present in the source: weekly challenge rollover is only performed on successful hunt, not at claim time; and clanSeasonReward calculates rank from the top-ten display board, so clans outside the displayed ten receive rank 0 and are assigned the top-three fallback reward tier. These remain queued for the post-audit fix pass.
+
+No gameplay code was changed.
