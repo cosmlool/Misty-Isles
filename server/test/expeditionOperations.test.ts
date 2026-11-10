@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { checkExpeditionTravelConsistency, checkExpeditionTravelReadiness } from '../src/expeditionOperations.js';
+import { checkExpeditionTravelConsistency, checkExpeditionTravelReadiness, checkExpeditionTravelStartReadiness } from '../src/expeditionOperations.js';
 
 test('group travel waits for the latest participant before any transition is applied', () => {
   const states = [
@@ -59,4 +59,20 @@ test('group travel rejects missing, non-finite and invalid completion timestamps
       { state: 'moving', endsAt },
     ], 10_000), { ready: false, reason: 'not-moving', remainingMs: 0 });
   }
+});
+
+test('group travel cannot overwrite another participant search or travel action', () => {
+  assert.deepEqual(checkExpeditionTravelStartReadiness([]), { ready: false, reason: 'empty' });
+  assert.deepEqual(checkExpeditionTravelStartReadiness([
+    { state: 'idle' },
+    { state: 'searching' },
+  ]), { ready: false, reason: 'busy' });
+  assert.deepEqual(checkExpeditionTravelStartReadiness([
+    { state: 'idle' },
+    { state: 'moving' },
+  ]), { ready: false, reason: 'busy' });
+  assert.deepEqual(checkExpeditionTravelStartReadiness([
+    { state: 'idle' },
+    { state: 'idle' },
+  ]), { ready: true });
 });
