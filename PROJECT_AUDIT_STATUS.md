@@ -781,3 +781,13 @@ Source-level catalog/runtime comparison only; no gameplay code changed and no te
 - Together with the previously recorded loot-ring omission, this confirms that ring effects are implemented piecemeal by mode. The later combat refactor needs an explicit effect-by-effect applicability matrix (hunt normal/rare/boss, solo dungeon, group dungeon, PvP, clan war, mining, crafting, regeneration, reputation) and tests for each advertised effect.
 
 Source-level review only; no gameplay code changed and no tests were executed.
+
+
+### Racial and profession skill values — 2026-11-10
+
+- **Confirmed racial-skill configured values are ignored for combat buffs:** guildSkill() stores only effect name and expiry in p.buff; ordinary hunt hardcodes attack/blood +15%, defense +15%, crit +12%, XP +15%, loot +20%, and gold +15%. Catalog definitions specify Dog iron_guard +20% defense (runtime +15%), Dog pack_howl +12% XP (runtime +15%), Rodent blood_pact +10% attack (runtime +15%). The other listed racial values happen to match current hard-coded values or are not represented as a separate magnitude. Thus at least three advertised racial skill values are incorrect in live ordinary-hunt calculations.
+- **Confirmed profession-skill configured values are likewise ignored:** professionSkill() also stores only effect name and expiry, while hunt uses generic hard-coded multipliers. Examples: Mage mana_surge advertises +18% but applies +15%; Warrior shield_wall advertises +22% but applies +15%; Archer eagle_eye advertises +15% crit but applies +12%; Gatherer deep_sense advertises +25% loot but applies +20%; Gatherer orebreaker advertises +12% attack but applies +15%. Vampire blood_burst is recorded separately as an unhandled lifesteal buff; its intended +18% attack text/value also is not represented by the generic buff path.
+- **Buff state is lossy and mutually exclusive:** both racial and profession skill handlers overwrite the single p.buff/p.buffUntil pair. Activating one buff replaces a different still-active buff rather than allowing independent effects or explicitly rejecting the second activation. Chest buffs use the same fields. The UI can therefore imply that multiple timed buffs are independently active when only the most recently assigned effect remains. Decide intended stacking/overwrite policy and test it.
+- These issues are part of the wider combat-effect consolidation: persist effect type plus configured magnitude and source/expiry, apply shared effect resolution, and test exact percentages and coexistence. Avoid changing balance values until the intended contract is approved.
+
+Source-level comparison of skill definitions, activation handlers, and ordinary-hunt formula only; no gameplay code changed and no tests were executed.
