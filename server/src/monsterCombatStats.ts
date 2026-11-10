@@ -179,6 +179,14 @@ export function resolveEquipmentSetTierDescriptions(input: EquipmentSetTierDescr
   return descriptions;
 }
 
+/** Parse only the explicitly unlocked tier descriptions into typed combat effects. */
+export function resolveEquipmentSetCombatEffects(
+  input: EquipmentSetTierDescriptions,
+): ParsedMonsterCombatEffect[] {
+  return resolveEquipmentSetTierDescriptions(input)
+    .flatMap(description => parseMonsterCombatEffectClauses(description));
+}
+
 export type MonsterCombatSetBonusInput = {
   effect: string;
   itemCount: number;
