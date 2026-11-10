@@ -2589,3 +2589,14 @@ PEN-009 стоит 100 кристаллов и при максимальном �
 1. Execute server build/tests and client build on the exact current branch head.
 2. Inspect the existing passive-skill model and map all statPoints consumers before implementing the new character-specific passive trees.
 3. Continue the remaining economy, persistence, PvP, dungeon and expedition audit; do not start the full numerical rebalance until those dependencies are understood.
+
+
+## Passive skill system inventory — 2026-11-10
+
+- PlayerSchema persists statPoints as a numeric character field.
+- Server addXp() currently grants 3 statPoints for each level gained. At the level cap of 100, a character who advances from level 1 through 100 earns 297 points in total.
+- No client UI references statPoints, and no server message handler spends them or unlocks passive skills. They currently accumulate without gameplay use.
+- Existing profession skills are a separate active-skill system: learning is paid with gold and stores professionUnlocked IDs; use has a 60-second cooldown and temporary effects. Race guild skills are also active abilities with a 30-minute cooldown and temporary buff effects. These are not a passive tree and should not be conflated with statPoints.
+- User decision supersedes the earlier “allocation design undecided” note: retain statPoints for a character-specific passive-skill progression system. Primary attribute purchases remain gold-based and separate.
+- Implementation is intentionally deferred until the audit maps every combat/economy calculation that passive bonuses could affect. The later design must define per-character ownership, node/rank caps, respec policy, point budget, server-side validation, save migration, and effect coverage across expedition, solo/group dungeon, PvP and clan war. Passive effects must be calculated centrally or through shared helpers so modes do not silently disagree.
+- No passive-skill code or UI was added in this checkpoint.
