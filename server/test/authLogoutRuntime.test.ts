@@ -7,6 +7,7 @@ import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { setTimeout as delay } from 'node:timers/promises';
 import test from 'node:test';
+import { Client, type Room } from 'colyseus.js';
 
 const serverDir = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const staticDataFiles = ['city_npcs.json', 'equipment_catalog.json', 'forgotten_lands.json'];
@@ -51,16 +52,23 @@ async function stopServer(child: ChildProcess): Promise<void> {
   }
 }
 
+async function waitFor<T>(read: () => T | undefined, label: string, timeoutMs = 10_000): Promise<T> {
+  const deadline = Date.now() + timeoutMs;
+  while (Date.now() < deadline) { const value = read(); if (value !== undefined) return value; await delay(25); }
+  throw new Error(label + ' timed out.');
+}
+
 async function post(port: number, path: string, body: any) {
   return fetch(`http://127.0.0.1:${port}${path}`, {
     method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify(body),
   });
 }
 
-test('logout only revokes a valid session and invalid logout requests do not revoke other sessions', { timeout: 30_000 }, async () => {
+test('logout revokes a valid session, closes its active WebSocket and rejects further gameplay', { timeout: 30_000 }, async () => {
   const dataDir = mkdtempSync(join(tmpdir(), 'misty-auth-logout-'));
   const port = await unusedPort();
   let child: ChildProcess | undefined;
+  let room: Room | undefined;
   try {
     for (const file of staticDataFiles) copyFileSync(join(serverDir, 'data', file), join(dataDir, file));
     child = spawn(process.execPath, ['--import', 'tsx', 'src/index.ts'], {
@@ -73,6 +81,14 @@ test('logout only revokes a valid session and invalid logout requests do not rev
     const guest = await post(port, '/auth/guest', {});
     assert.equal(guest.status, 200);
     const { playerId, token, guestProof } = await guest.json() as { playerId: string; token: string; guestProof: string };
+    const client = new Client(`ws://127.0.0.1:${port}`);
+    room = await client.joinOrCreate('my_room', { playerId, sessionToken: token });
+    const notices: string[] = [];
+    room.onMessage('notice', payload => notices.push(String(payload?.text || '')));
+    room.send('createCharacter', { race: 'Кот', name: 'LogoutTestHero' });
+    await waitFor(() => notices.find(message => message.includes('Персонаж создан')), 'character creation before logout');
+    let leaveCode: number | undefined;
+    const left = new Promise<number>(resolve => room!.onLeave(code => { leaveCode = code; resolve(code); }));
 
     const invalidLogout = await post(port, '/auth/logout', { token: 'not-a-session-token' });
     assert.equal(invalidLogout.status, 401);
@@ -81,6 +97,8 @@ test('logout only revokes a valid session and invalid logout requests do not rev
 
     const validLogout = await post(port, '/auth/logout', { token });
     assert.equal(validLogout.status, 200);
+    await left;
+    assert.equal(typeof leaveCode, 'number', 'the active gameplay socket must be closed after logout');
     const revoked = await post(port, '/auth/check', { token });
     assert.equal(revoked.status, 401);
 
@@ -93,6 +111,7 @@ test('logout only revokes a valid session and invalid logout requests do not rev
     assert.equal(renewed.playerId, playerId);
     assert.equal((await post(port, '/auth/check', { token: renewed.token })).status, 200);
   } finally {
+    if (room) await room.leave().catch(() => undefined);
     if (child) await stopServer(child);
     rmSync(dataDir, { recursive: true, force: true });
   }
