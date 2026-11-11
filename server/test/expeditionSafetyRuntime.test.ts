@@ -210,6 +210,18 @@ test('expedition reports capture pre/post health and disconnect cancels stale gr
     assert.equal(soloProgress.weeklyHunts, 1, 'an expedition victory must count toward the weekly monster-win challenge');
     assert.equal(soloProgress.challengeWeek, utcIsoWeekKey());
 
+    const afterHuntSave = readPlayers(join(dataDir, 'players.json'))[soloId];
+    assert.ok(Number(afterHuntSave.lastHuntAt) > 0, 'a completed expedition hunt must update lastHuntAt');
+    assert.equal(new Date(afterHuntSave.lastHuntAt).toISOString().slice(0, 10), new Date().toISOString().slice(0, 10));
+    const goldBeforeDailyHunt = Number(afterHuntSave.gold);
+    connected[soloId].send('quest', { id: 'daily_hunt' });
+    await waitFor(() => soloNotices.find(message => message.includes('Ежедневная охота') && message.includes('+300 золота')), 'daily hunt reward after expedition');
+    const afterDailyHunt = readPlayers(join(dataDir, 'players.json'))[soloId];
+    assert.equal(afterDailyHunt.gold, goldBeforeDailyHunt + 300, 'daily hunt must award its configured gold exactly once');
+    connected[soloId].send('quest', { id: 'daily_hunt' });
+    await waitFor(() => soloNotices.find(message => message.includes('Награда за это задание уже получена.')), 'duplicate daily hunt claim');
+    assert.equal(readPlayers(join(dataDir, 'players.json'))[soloId].gold, goldBeforeDailyHunt + 300, 'daily hunt reward must not be duplicated');
+
     const invitations: any[] = [];
     connected[memberId].onMessage('huntGroupInvite', payload => invitations.push(payload));
     connected[leaderId].send('huntGroupInvite', { targetId: publicCode(memberId) });
