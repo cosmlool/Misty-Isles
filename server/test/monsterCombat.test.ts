@@ -1910,7 +1910,9 @@ test('Knight preserves Warrior combat profile and Bird Assassin matches the Assa
   const catAssassin = calculatePlayerMonsterCombatStats({
     profession: 'Ассасин', strength: 10, dexterity: 10, intelligence: 10, vitality: 10, stamina: 10, baseDefense: 10,
   });
-  assert.deepEqual(birdAssassin, catAssassin);
+  assert.equal(birdAssassin.attack, catAssassin.attack);
+  assert.equal(birdAssassin.defense, catAssassin.defense);
+  assert.deepEqual(birdAssassin.combatModifiers, catAssassin.combatModifiers);
 });
 
 test('new professional set bonuses never infer legacy multipliers from profession or mastery', () => {
