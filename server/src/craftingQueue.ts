@@ -4,7 +4,7 @@ export type CraftRefundResult = { inventory: string[]; refunded: boolean };
 
 function validMaterials(value: unknown): value is CraftMaterialMap {
   if (!value || typeof value !== 'object' || Array.isArray(value)) return false;
-  return Object.entries(value).every(([id, quantity]) =>
+  return Object.keys(value).length > 0 && Object.entries(value).every(([id, quantity]) =>
     id.length > 0 && id.length <= 128
     && Number.isSafeInteger(quantity) && Number(quantity) >= 1 && Number(quantity) <= 1000
   );
