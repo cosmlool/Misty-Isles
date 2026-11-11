@@ -654,7 +654,39 @@ class GameRoom extends Room<RoomState> {
     this.onAuthenticatedMessage('clanQuestClaim',(c,d:any)=>{if(!this.requireCharacter(c))return;const p=this.state.player;if(!p?.clan)return this.notice(c,'Сначала вступи в клан.');const clans=loadClans();const clan=clans[p.clan];if(!clan)return this.notice(c,'Клан не найден.');if(!isClanMember(clan,this.playerId))return this.notice(c,'Персонаж не состоит в этом клане.');const quests=ensureClanQuests(clan);const q=quests.find((x:any)=>x.id===String(d?.id||''));if(!q)return this.notice(c,'Задание не найдено.');if(q.claimed)return this.notice(c,'Награда за это задание уже получена.');if(q.progress<q.goal)return this.notice(c,'Общая цель клана ещё не выполнена.');const upgrades=clan.upgrades||{};const reward=Math.floor((1000+Number(clan.level||1)*250)*(1+Number(upgrades.treasury||0)*.03));q.claimed=true;clan.vault=Number(clan.vault||0)+reward;clan.xp=Number(clan.xp||0)+20;clan.seasonPoints=Number(clan.seasonPoints||0)+15;saveClans(clans);broadcastClanOverview(clans);broadcastClanQuests(clans);this.notice(c,`Клан получил ${reward} золота, 20 опыта клана и 15 сезонных очков.`);});
     this.onAuthenticatedMessage('clanSeasonReward',(c)=>{if(!this.requireCharacter(c))return;const p=this.state.player;if(!p?.clan)return this.notice(c,'Сначала вступи в клан.');const clans=loadClans();const clan=clans[p.clan];if(!clan)return this.notice(c,'Клан не найден.');if(!isClanMember(clan,this.playerId))return this.notice(c,'Персонаж не состоит в этом клане.');const week=Math.floor(Date.now()/(7*24*60*60*1000));if(clan.lastSeasonRewardWeek===week)return this.notice(c,'Недельная награда уже получена.');const rank=clanSeasonBoard(clans,Object.keys(clans).length).findIndex((x:any)=>x.id===clan.id)+1;const reward=rank===1?5000:rank<=3?2500:1000;clan.vault=Number(clan.vault||0)+reward;clan.lastSeasonRewardWeek=week;saveClans(clans);broadcastClanOverview(clans);broadcastClanQuests(clans);this.notice(c,`Клан занял ${rank||'—'} место и получил ${reward} золота в казну.`);});
     this.onAuthenticatedMessage('clanWarList',(c)=>{const wars=loadWars(),clans=loadClans();for(const clan of Object.values(clans))ensureClanQuests(clan);const settled=settleExpiredClanWars(wars,clans,Date.now());if(settled.changed){commitClanState(settled.clans,settled.wars);broadcastClanOverview(settled.clans);broadcastClanQuests(settled.clans);}const payload=broadcastClanWarList(settled.wars,settled.clans);c.send('clanWarList',payload);});
-    this.onAuthenticatedMessage('clanWarChallenge',(c,d:any)=>{if(!this.requireCharacter(c))return;const p=this.state.player;if(!p?.clan)return this.notice(c,'Сначала вступи в клан.');const clans=loadClans();const own=clans[p.clan],target=clans[String(d?.clanId||'')];if(!own||!target||own.id===target.id)return this.notice(c,'Выбери другой существующий клан.');if(!isClanMember(own,this.playerId))return this.notice(c,'Персонаж не состоит в этом клане.');if(own.leader!==this.playerId)return this.notice(c,'Объявить войну может только лидер клана.');const wars=loadWars();if(wars.some((w:any)=>w.status==='active'&&(w.a===own.id||w.b===own.id||w.a===target.id||w.b===target.id)))return this.notice(c,'Один из кланов уже участвует в активной войне.');wars.push({id:`war_${Date.now()}_${rand(100,999)}`,a:own.id,b:target.id,aName:own.name,bName:target.name,aDamage:0,bDamage:0,lastAttackAtByPlayer:{},status:'active',createdAt:Date.now(),endsAt:Date.now()+24*60*60*1000});saveWars(wars);const payload=broadcastClanWarList(wars,clans);c.send('clanWarList',payload);this.notice(c,`Клану «${target.name}» объявлена война на 24 часа.`);});
+    this.onAuthenticatedMessage('clanWarChallenge',(c,d:any)=>{
+      if(!this.requireCharacter(c))return;
+      const p=this.state.player;
+      if(!p?.clan)return this.notice(c,'Сначала вступи в клан.');
+      const clans=loadClans();
+      const own=clans[p.clan],target=clans[String(d?.clanId||'')];
+      if(!own||!target||own.id===target.id)return this.notice(c,'Выбери другой существующий клан.');
+      if(!isClanMember(own,this.playerId))return this.notice(c,'Персонаж не состоит в этом клане.');
+      if(own.leader!==this.playerId)return this.notice(c,'Объявить войну может только лидер клана.');
+
+      const wars=loadWars();
+      for(const clan of Object.values(clans))ensureClanQuests(clan);
+      const settled=settleExpiredClanWars(wars,clans,Date.now());
+      if(settled.changed){
+        commitClanState(settled.clans,settled.wars);
+        broadcastClanOverview(settled.clans);
+        broadcastClanQuests(settled.clans);
+      }
+      const activeWars=settled.wars;
+      if(activeWars.some((war:any)=>war.status==='active'&&(war.a===own.id||war.b===own.id||war.a===target.id||war.b===target.id))){
+        return this.notice(c,'Один из кланов уже участвует в активной войне.');
+      }
+      activeWars.push({
+        id:`war_${Date.now()}_${rand(100,999)}`,
+        a:own.id,b:target.id,aName:own.name,bName:target.name,
+        aDamage:0,bDamage:0,lastAttackAtByPlayer:{},status:'active',
+        createdAt:Date.now(),endsAt:Date.now()+24*60*60*1000,
+      });
+      commitClanState(settled.clans,activeWars);
+      const payload=broadcastClanWarList(activeWars,settled.clans);
+      c.send('clanWarList',payload);
+      this.notice(c,`Клану «${target.name}» объявлена война на 24 часа.`);
+    });
     this.onAuthenticatedMessage('clanWarAttack',(c,d:any)=>{
       if(!this.requireCharacter(c))return;
       const p=this.state.player;

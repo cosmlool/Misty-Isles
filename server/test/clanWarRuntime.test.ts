@@ -110,7 +110,7 @@ test('clan war attacks enforce per-player cooldown and accumulate real damage', 
       },
     }, null, 2));
     writeFileSync(join(dataDir, 'clans.json'), JSON.stringify({
-      'clan-a': { id: 'clan-a', name: 'Клан А', level: 2, vault: 0, seasonPoints: 0, members: [{ id: playerA, name: 'War Attacker A' }], upgrades: { barracks: 0 }, questDay: yesterday, questProgress: { donate: 1900, raid: 2, war: 3, territory: 1 } },
+      'clan-a': { id: 'clan-a', name: 'Клан А', leader: playerA, level: 2, vault: 0, seasonPoints: 0, members: [{ id: playerA, name: 'War Attacker A' }], upgrades: { barracks: 0 }, questDay: yesterday, questProgress: { donate: 1900, raid: 2, war: 3, territory: 1 } },
       'clan-b': { id: 'clan-b', name: 'Клан Б', level: 2, vault: 0, seasonPoints: 0, members: [{ id: playerB, name: 'War Attacker B' }], upgrades: { barracks: 0 } },
     }, null, 2));
     writeFileSync(join(dataDir, 'clan_wars.json'), JSON.stringify([{
@@ -248,6 +248,21 @@ test('clan war attacks enforce per-player cooldown and accumulate real damage', 
     const clansAfterRefresh = readJson(join(dataDir, 'clans.json'));
     assert.equal(clansAfterRefresh['clan-a'].vault, 300, 'refresh must not pay the war reward twice');
 
+    // An expired-but-unsettled war must not block a new challenge.
+    const staleWars = readJson(join(dataDir, 'clan_wars.json'));
+    staleWars.push({
+      id: 'war-expired-stale', a: 'clan-a', b: 'clan-b', aName: 'Клан А', bName: 'Клан Б',
+      aDamage: 0, bDamage: 0, lastAttackAtByPlayer: {}, status: 'active',
+      createdAt: Date.now() - 90_000_000, endsAt: Date.now() - 1,
+    });
+    writeFileSync(join(dataDir, 'clan_wars.json'), JSON.stringify(staleWars, null, 2));
+    roomA.send('clanWarChallenge', { clanId: 'clan-b' });
+    await waitFor(() => noticesA.find(text => text.includes('объявлена война на 24 часа')), 'new challenge after stale war expiry');
+    const afterNewChallenge = readJson(join(dataDir, 'clan_wars.json'));
+    assert.equal(afterNewChallenge.find((war:any) => war.id === 'war-expired-stale').status, 'finished');
+    assert.equal(afterNewChallenge.find((war:any) => war.id === 'war-expired-stale').winnerId, '');
+    assert.equal(afterNewChallenge.filter((war:any) => war.status === 'active').length, 1);
+
     roomA.send('clanLeave');
     await waitFor(() => noticesA.find(text => text === 'Ты покинул клан.'), 'atomic last-member clan disband');
     const afterDisbandPlayers = readJson(join(dataDir, 'players.json'));
@@ -257,6 +272,8 @@ test('clan war attacks enforce per-player cooldown and accumulate real damage', 
     assert.equal(afterDisbandPlayers[playerA].clan, '');
     assert.equal(afterDisbandClans['clan-a'], undefined);
     assert.equal(afterDisbandWars[0].status, 'finished', 'completed wars remain in history');
+    assert.equal(afterDisbandWars.find((war:any) => war.id === 'war-expired-stale').status, 'finished');
+    assert.equal(afterDisbandWars.filter((war:any) => war.status === 'cancelled').length, 1, 'the new active war is cancelled on disband');
     assert.equal(afterDisbandTerritories[0].owner, '', 'disband releases territory ownership');
 
   } finally {
