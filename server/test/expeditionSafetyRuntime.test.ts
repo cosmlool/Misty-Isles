@@ -182,11 +182,13 @@ test('expedition reports capture pre/post health and disconnect cancels stale gr
     assert.equal(afterLegacyHunt.battles, beforeLegacyHunt.battles, 'legacy TOWNS hunt must not count a battle');
     assert.equal(legacyHuntReports.length, 0, 'legacy TOWNS hunt must not start combat');
 
+    const soloNotices: string[] = [];
+    connected[soloId].onMessage('notice', payload => soloNotices.push(String(payload?.text || '')));
     const combatResults: any[] = [];
     connected[soloId].onMessage('combatResult', payload => combatResults.push(payload));
     connected[soloId].send('expeditionSearchClaim');
     const combat = await waitFor(() => combatResults[0], 'solo expedition combat report').catch(error => {
-      throw new Error(`${error instanceof Error ? error.message : String(error)}\nServer output:\n${serverOutput.slice(-80).join('')}`);
+      throw new Error(`${error instanceof Error ? error.message : String(error)}\nNotices: ${soloNotices.join(' | ')}\nServer output:\n${serverOutput.slice(-80).join('')}`);
     });
     assert.equal(combat.report.result, 'win');
     assert.equal(combat.report.hpBefore, 1_000);

@@ -482,6 +482,21 @@ export function calculatePlayerMonsterCombatStats(
 
   const setEffects = (input.setBonuses || []).flatMap(set => (set.descriptions || []).flatMap(parseMonsterCombatEffectClauses));
   // Only explicit tier descriptions are promoted into typed modifiers.
+  const setTierEffects: ParsedMonsterCombatEffect[] = (input.setBonuses || []).flatMap(set => {
+    const explicitTierEffects = (set.descriptions || []).flatMap(parseMonsterCombatEffectClauses);
+    if (!explicitTierEffects.length) return [];
+    const count = Math.max(0, value(set.itemCount));
+    if (count < 2) return [];
+    const effects: ParsedMonsterCombatEffect[] = [];
+    const bonus = count * 0.01 + value(set.mastery) * 0.01;
+    if (set.effect === 'attack') effects.push({ target: 'attack', value: bonus });
+    else if (set.effect === 'defense') effects.push({ target: 'defense', value: bonus });
+    if (input.applyFivePieceSetBonus !== false && count >= 5) {
+      if (set.effect === 'attack') effects.push({ target: 'attack', value: 0.05 });
+      else if (set.effect === 'defense') effects.push({ target: 'defense', value: 0.05 });
+    }
+    return effects;
+  });
   const profileEffects: ParsedMonsterCombatEffect[] = profileBonus > 0
     ? [{ target: profession === 'Баффер' ? 'defense' : 'attack', value: profileBonus }]
     : [];
@@ -497,6 +512,7 @@ export function calculatePlayerMonsterCombatStats(
     ...(input.equipmentEffects || []),
     ...(input.pendantCombatEffect ? [input.pendantCombatEffect] : []),
     ...setEffects,
+    ...setTierEffects,
     ...profileEffects,
     ...activeBuffEffects,
   ]);
