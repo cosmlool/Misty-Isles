@@ -121,3 +121,11 @@ test('cancelling an older job uses the current recipe fallback but retains unkno
   assert.throws(() => cancelCraftJob({ inventory: [], queue: unknown, jobId: 'job-unknown', now: 100 }), /retained for review/);
   assert.equal(unknown.length, 1);
 });
+
+
+test('empty stored material snapshots fall back to the recipe instead of silently refunding nothing', () => {
+  const queue = [{ id: 'job-empty-snapshot', output: 'potion', count: 1, finishAt: 500, materials: {} }];
+  const result = cancelCraftJob({ inventory: [], queue, jobId: 'job-empty-snapshot', now: 100, fallbackMaterials: { herb: 2 } });
+  assert.deepEqual(result.inventory, ['herb', 'herb']);
+  assert.deepEqual(result.queue, []);
+});
