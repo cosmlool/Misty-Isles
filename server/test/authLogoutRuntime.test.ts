@@ -69,6 +69,7 @@ test('logout revokes a valid session, closes its active WebSocket and rejects fu
   const port = await unusedPort();
   let child: ChildProcess | undefined;
   let room: Room | undefined;
+  let leaveCode: number | undefined;
   try {
     for (const file of staticDataFiles) copyFileSync(join(serverDir, 'data', file), join(dataDir, file));
     child = spawn(process.execPath, ['--import', 'tsx', 'src/index.ts'], {
@@ -89,7 +90,6 @@ test('logout revokes a valid session, closes its active WebSocket and rejects fu
     room.onMessage('huntGroupPlayers', () => { groupListResponses++; });
     room.send('createCharacter', { race: 'Кот', name: 'LogoutTestHero' });
     await waitFor(() => notices.find(message => message.includes('Персонаж создан')), 'character creation before logout');
-    let leaveCode: number | undefined;
     const left = new Promise<number>(resolve => room!.onLeave(code => { leaveCode = code; resolve(code); }));
 
     room.send('huntGroupList', {});
@@ -122,10 +122,13 @@ test('logout revokes a valid session, closes its active WebSocket and rejects fu
     assert.equal(renewed.playerId, playerId);
     assert.equal((await post(port, '/auth/check', { token: renewed.token })).status, 200);
   } finally {
-    if (room && leaveCode === undefined) {
-      await Promise.race([room.leave().catch(() => undefined), delay(1_000)]);
+    try {
+      if (room && leaveCode === undefined) {
+        await Promise.race([room.leave().catch(() => undefined), delay(1_000)]);
+      }
+    } finally {
+      if (child) await stopServer(child);
+      rmSync(dataDir, { recursive: true, force: true });
     }
-    if (child) await stopServer(child);
-    rmSync(dataDir, { recursive: true, force: true });
   }
 });
