@@ -98,8 +98,9 @@ export type MonsterBattleResult = {
 
 const clamp = (value: number, min: number, max: number) => Math.min(max, Math.max(min, value));
 const safeStat = (value: number, fallback = 0) => Number.isFinite(value) ? Math.max(0, value) : fallback;
+const floorDamage = (value: number) => Math.floor(value + 1e-9);
 const damageThroughDefense = (attack: number, defense: number) =>
-  Math.max(1, Math.floor(attack * (100 / (100 + safeStat(defense)))));
+  Math.max(1, floorDamage(attack * (100 / (100 + safeStat(defense)))));
 
 function professionMatches(left: string, right: string): boolean {
   const aliases: Record<string, string> = {
@@ -272,7 +273,7 @@ export function resolveMonsterBattle(input: MonsterBattleInput): MonsterBattleRe
             ? safeStat(modifiers.physicalDamageBonus)
             : 0;
         const bossDamageBonus = input.monster.isBoss ? safeStat(modifiers.bossDamageBonus) : 0;
-        const dealt = Math.max(1, Math.floor(
+        const dealt = Math.max(1, floorDamage(
           damageThroughDefense(attack, safeStat(input.monster.defense) * monsterDefenseMultiplier) *
           critMultiplier * (1 - resistance) * (1 + weaknessDamageBonus) *
           (1 + clamp(damageTypeBonus, 0, 5)) * (1 + clamp(bossDamageBonus, 0, 5)),
@@ -344,7 +345,7 @@ export function resolveMonsterBattle(input: MonsterBattleInput): MonsterBattleRe
       const monsterCritMultiplier = monsterCrit
         ? Math.max(1, safeStat(input.monster.critMultiplier, 1.5) + (effect.critDamage || 0))
         : 1;
-      const incoming = Math.max(1, Math.floor(
+      const incoming = Math.max(1, floorDamage(
         damageThroughDefense(safeStat(input.monster.attack) * monsterDamageMultiplier, targetDefense) * monsterCritMultiplier *
         (1 - clamp(safeStat(targetModifiers.resistanceBonus), 0, 0.75)),
       ));
@@ -375,7 +376,7 @@ export function resolveMonsterBattle(input: MonsterBattleInput): MonsterBattleRe
             .sort((a, b) => b.value - a.value || (a.slot === 'primary' ? -1 : 1));
           const selected = candidates[0];
           if (selected) {
-            const reducedValue = Math.max(0, selected.value * (1 - clamp(effect.enemyBuffSuppression, 0, 1)));
+            const reducedValue = Math.max(0, Number((selected.value * (1 - clamp(effect.enemyBuffSuppression, 0, 1))).toFixed(10)));
             if (selected.slot === 'primary') target.buffValue = reducedValue;
             else target.buffSecondaryValue = reducedValue;
             buffSuppressionApplied.add(target.id);
