@@ -1812,3 +1812,75 @@ test('monster battle rejects duplicate party IDs instead of resolving multiple t
     random: () => 0.5,
   }), /duplicate combatant IDs/);
 });
+
+
+test('deterministic typed combat matrix covers every implemented profession at solo, duo and trio sizes', () => {
+  const professions = [
+    { name: 'Боевой маг', attack: 17.05, defense: 15.7, damageType: 'fire' as const },
+    { name: 'Ассасин', attack: 22.68, defense: 15.7, damageType: 'physical' as const },
+    { name: 'Воин', attack: 18, defense: 17.27, damageType: 'physical' as const },
+    { name: 'Баффер', attack: 18, defense: 15.7, damageType: 'physical' as const },
+    { name: 'Лучник', attack: 22.26, defense: 15.7, damageType: 'physical' as const },
+    { name: 'Вампир', attack: 21, defense: 15.7, damageType: 'physical' as const },
+    { name: 'Добытчик', attack: 18, defense: 15.7, damageType: 'physical' as const },
+  ];
+  const monsters = [
+    {
+      id: 'matrix-normal', name: 'Matrix normal', hp: 2600, attack: 82, defense: 25, speed: 12,
+      weakness: 'Огненный урон +25%',
+    },
+    {
+      id: 'matrix-boss', name: 'Matrix boss', hp: 5200, attack: 115, defense: 65, speed: 18, isBoss: true,
+      passiveDescription: 'Атака и защита +15%; физический урон −25%',
+    },
+    {
+      id: 'matrix-threshold', name: 'Matrix threshold', hp: 3400, attack: 96, defense: 35, speed: 10,
+      passiveDescription: 'Атака +20% ниже 50% HP',
+    },
+  ];
+
+  let scenarios = 0;
+  for (const profession of professions) {
+    for (const partySize of [1, 2, 3]) {
+      for (const monster of monsters) {
+        const party = Array.from({ length: partySize }, (_, index) => ({
+          id: profession.name + '-' + partySize + '-' + index,
+          profession: profession.name,
+          hp: 1200,
+          maxHp: 1200,
+          attack: profession.attack * 5,
+          defense: profession.defense * 4,
+          speed: 18 + index,
+          damageType: profession.damageType,
+          critChance: 0.15,
+          critMultiplier: 1.5,
+          combatModifiers: {
+            physicalDamageBonus: profession.damageType === 'physical' ? 0.05 : 0,
+            magicDamageBonus: profession.damageType === 'fire' ? 0.08 : 0,
+            bossDamageBonus: 0.04,
+            lifestealBonus: profession.name === 'Вампир' ? 0.08 : 0,
+            attackSpeedBonus: index === 0 ? 0.02 : 0,
+          },
+        }));
+        const input = { monster, party, maxRounds: 12, random: () => 0.42, now: 1_800_000_000_000 };
+        const first = resolveMonsterBattle(input);
+        const second = resolveMonsterBattle(input);
+
+        assert.deepEqual(first, second, profession.name + ' party ' + partySize + ' vs ' + monster.id + ' must be deterministic');
+        assert.equal(first.party.length, partySize);
+        assert.ok(first.rounds >= 0 && first.rounds <= 12);
+        assert.ok(first.monsterHp >= 0 && first.monsterHp <= monster.hp);
+        assert.ok(first.totalDamageToMonster >= 0);
+        assert.ok(first.totalDamageToParty >= 0);
+        assert.ok(['party', 'monster', 'draw'].includes(first.winner));
+        assert.equal(first.totalDamageToMonster, first.party.reduce((sum, member) => sum + member.damageDealt, 0));
+        assert.equal(first.totalDamageToParty, first.party.reduce((sum, member) => sum + member.damageTaken, 0));
+        for (const member of first.party) {
+          assert.ok(member.remainingHp >= 0 && member.remainingHp <= member.maxHp);
+        }
+        scenarios++;
+      }
+    }
+  }
+  assert.equal(scenarios, 63);
+});
