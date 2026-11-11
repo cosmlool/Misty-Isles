@@ -53,8 +53,11 @@ export function recordClanWarDamage(
   if (war.status !== 'active' || ![war.a, war.b].includes(clanId)) {
     throw new Error('Clan is not participating in an active war.');
   }
-  if (!playerId || !Number.isInteger(damage) || damage < 1 || !Number.isFinite(now)) {
+  if (!playerId || !Number.isSafeInteger(damage) || damage < 1 || !Number.isFinite(now)) {
     throw new Error('Clan war attack is invalid.');
+  }
+  if (clanWarCooldownRemaining(war, playerId, now) > 0) {
+    throw new Error('Clan war attack is on cooldown.');
   }
   const lastAttackAtByPlayer = { ...(war.lastAttackAtByPlayer || {}) };
   lastAttackAtByPlayer[playerId] = now;

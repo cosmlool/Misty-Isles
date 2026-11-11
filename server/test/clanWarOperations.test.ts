@@ -34,6 +34,17 @@ test('an attack adds damage to the attacking clan and records its cooldown', () 
   assert.equal(war.lastAttackAtByPlayer?.playerB, 2_000);
 });
 
+test('recording clan war damage enforces the per-player cooldown at the operation boundary', () => {
+  const war = activeWar({ lastAttackAtByPlayer: { playerA: 5_000 } });
+  assert.throws(
+    () => recordClanWarDamage(war, 'clan-a', 'playerA', 10, 5_999),
+    /cooldown/,
+  );
+  const allowed = recordClanWarDamage(war, 'clan-a', 'playerA', 10, 6_000);
+  assert.equal(allowed.aDamage, 10);
+  assert.equal(allowed.lastAttackAtByPlayer?.playerA, 6_000);
+});
+
 test('damage is derived from combat power and never falls below one', () => {
   assert.equal(calculateClanWarDamage(40, 25, 3), 18);
   assert.equal(calculateClanWarDamage(10, 50, 0), 1);
