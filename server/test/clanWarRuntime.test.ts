@@ -291,8 +291,8 @@ test('clan war attacks enforce per-player cooldown and accumulate real damage', 
     const enemyWinnerWar = afterDisbandWars.find((war:any) => war.id === 'war-expired-enemy-winner');
     assert.equal(enemyWinnerWar.status, 'finished', 'expired war is settled before disband');
     assert.equal(enemyWinnerWar.winnerId, 'clan-b', 'opposing clan keeps its already-earned victory');
-    assert.equal(enemyWinnerWar.reward, 150);
-    assert.equal(afterDisbandClans['clan-b'].vault, 150, 'opponent receives the settled reward before clan A is deleted');
+    assert.equal(enemyWinnerWar.reward, 200);
+    assert.equal(afterDisbandClans['clan-b'].vault, 200, 'level-2 opponent receives the settled reward before clan A is deleted');
     assert.equal(afterDisbandWars.filter((war:any) => war.status === 'cancelled').length, 1, 'only the new active war is cancelled on disband');
     assert.equal(afterDisbandTerritories[0].owner, '', 'disband releases territory ownership');
 
