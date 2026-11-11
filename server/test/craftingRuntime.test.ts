@@ -136,7 +136,7 @@ test('crafting skill and daily craft progress increase only after a successful c
       await delay(50);
     }
     assert.equal(JSON.parse(saved.craftQueue).length, 1);
-    assert.deepEqual(JSON.parse(saved.inventory), ['herb_material', 'herb_material', 'herb_material', 'field_potion']);
+    assert.deepEqual(JSON.parse(saved.inventory), ['herb_material', 'herb_material', 'herb_material']);
     assert.equal(saved.crafting, 1, 'starting production must not grant crafting progression');
     assert.equal(saved.itemsCrafted, 0, 'starting production must not count a crafted item');
     const startedQuests = JSON.parse(saved.quests || '{}');
