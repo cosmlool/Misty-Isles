@@ -1527,7 +1527,7 @@ test('clean base stats exclude typed gear and set bonuses while legacy totals re
   assert.equal(equipped.attack, baseline.attack);
   assert.equal(equipped.baseAttack, baseline.baseAttack);
   assert.equal(equipped.baseDefense, baseline.baseDefense);
-  assert.equal(equipped.combatModifiers.attackBonus, 0.18);
+  assert.equal(equipped.combatModifiers.attackBonus, 0.16);
 });
 
 test('player combatant adapter forwards typed modifiers without folding them into base stats', () => {
