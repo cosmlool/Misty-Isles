@@ -129,19 +129,19 @@ export function resolveLegacyMonsterResistance(effect: MonsterPassiveEffect | un
     : finitePassiveValue(effect?.physicalResistance);
   const professionResistance = Object.entries(effect?.professionResistance || {})
     .find(([name]) => normalizePassiveProfession(name) === normalizedProfession)?.[1] || 0;
-  return Math.min(0.85, Math.max(-0.75,
+  return Number(Math.min(0.85, Math.max(-0.75,
     finitePassiveValue(effect?.allResistance) + typeResistance + finitePassiveValue(professionResistance),
-  ));
+  )).toFixed(10));
 }
 
 export function resolveLegacyMonsterAttackMultiplier(effect: MonsterPassiveEffect | undefined, monsterAllies = 0): number {
   const allyBonus = monsterAllies > 0 ? finitePassiveValue(effect?.attackWhenAllies) : 0;
-  return Math.max(0, finitePassiveValue(effect?.attackMultiplier, 1) * (1 + allyBonus));
+  return Number(Math.max(0, finitePassiveValue(effect?.attackMultiplier, 1) * (1 + allyBonus)).toFixed(10));
 }
 
 export function resolveLegacyMonsterDefenseMultiplier(effect: MonsterPassiveEffect | undefined, monsterAllies = 0): number {
   const allyBonus = monsterAllies > 0 ? finitePassiveValue(effect?.defenseWhenAllies) : 0;
-  return Math.max(0, finitePassiveValue(effect?.defenseMultiplier, 1) * (1 + allyBonus));
+  return Number(Math.max(0, finitePassiveValue(effect?.defenseMultiplier, 1) * (1 + allyBonus)).toFixed(10));
 }
 
 export function resolveLegacyMonsterProfessionDamageMultiplier(effect: MonsterPassiveEffect | undefined, profession: string): number {
@@ -152,7 +152,7 @@ export function resolveLegacyMonsterProfessionDamageMultiplier(effect: MonsterPa
   const damageBonus = effect?.damageVsProfession &&
     normalizePassiveProfession(effect.damageVsProfession.profession) === normalizedProfession
     ? finitePassiveValue(effect.damageVsProfession.multiplier, 1) : 1;
-  return Math.max(0, attackBonus * damageBonus);
+  return Number(Math.max(0, attackBonus * damageBonus).toFixed(10));
 }
 
 export function getMonsterPassiveDescriptions(): string[] {
