@@ -1871,3 +1871,13 @@ type EquipmentSetEffect = {
 - `clanSeasonReward` ограничивает получение выплаты ключом `floor(Date.now() / (7 * 24 * 60 * 60 * 1000))`, но место в таблице рассчитывается по текущим накопленным `seasonPoints`, которые не сбрасываются этим недельным ключом.
 - Следовательно, фактическая модель сейчас — недельная выплата по накопительному рейтингу, а не подтверждённый рейтинг отдельного ограниченного сезона.
 - Код не менялся: длительность сезона, судьба очков при переходе сезона, сохранение истории/архива и правила награды требуют продуктового решения. Нельзя безопасно добавлять автоматический сброс без согласования, поскольку это затронет долгосрочный прогресс кланов.
+
+ 
+### PvE combat runtime audit — equipment channels and live path — 2026-11-11
+
+- The server's active expedition hunt/dungeon path does **not** call `resolveMonsterBattle`; `index.ts` imports only `calculateCombatSpeed` from `monsterBattle.ts`. The typed battle engine exists with dedicated unit tests, but its turn-by-turn combat loop is not wired into the live expedition/dungeon handlers.
+- Live dungeon combat uses an aggregate legacy formula: seven attacks per player, defense mitigation, passive/weakness multipliers, estimated rounds, and a separate incoming-damage estimate. It does not simulate actual turn order, critical hits, poison, per-round healing, or event-by-event HP combat.
+- `resolvePlayerMonsterStats` does resolve weapon and five armor slots, attributes, enhancement, set tiers, rare properties, and pendant effects. The typed equipment channels are passed to `combatModifiers`, but the live dungeon caller currently consumes only accuracy, evasion, healing, loot and lifesteal from those modifiers/derived values.
+- Catalog scan: 387 items; 56 weapons have typed `combatStats`. Weapon typed effects are included in the typed modifier aggregation, but attack/defense legacy totals are calculated separately. The current dungeon aggregate formula does not apply typed magic/physical/boss damage, critical chance/damage, attack speed, or resistance modifiers.
+- Existing item fields `effects` for weapon profile efficiency (+4/+5/+6%) are handled by `weaponProfile`; this is not the same as arbitrary typed weapon combat effects.
+- No formula or coefficient was changed in this audit. The missing live integration is an architectural/design gap, not a safe isolated parser patch: wiring the typed engine would alter combat semantics, timing, damage, criticals, statuses and rewards. It needs a separate migration plan and regression matrix across all eight professions, solo/group, ordinary/rare/boss/dungeon encounters.
