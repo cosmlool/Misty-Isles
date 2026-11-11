@@ -9,6 +9,7 @@ import { Player } from './PlayerSchema.js';
 import { calculateCombatSpeed } from './monsterBattle.js';
 import { calculatePlayerMonsterCombatStats, parseMonsterCombatEffectClauses, resolveEquipmentSetCombatEffects, resolveEquipmentSetTierDescriptions, resolveGoldEquipmentStatProfile, resolveMonsterCombatProperty, resolvePlayerMonsterLifestealRate, resolveMonsterPendantCombatEffect } from './monsterCombatStats.js';
 import { applyPlayerSave, createPlayerSaveStore } from './playerSaves.js';
+import { startPlayerAutosave } from './playerAutosave.js';
 import { readJsonFile as readPersistentJson } from './jsonPersistence.js';
 import { filterAvailableUniqueItems, isLastEquippedCopy, ownsItemCopy, removeInventoryCopy } from './inventoryOperations.js';
 import { readPlayerArray as readArray, readPlayerObject as readObject } from './playerJson.js';
@@ -878,6 +879,13 @@ function rand(a:number,b:number){return Math.floor(Math.random()*(b-a+1))+a;}
 function statName(k:string){return ({strength:'Сила',defense:'Защита',vitality:'Живучесть',dexterity:'Ловкость',intelligence:'Интеллект',luck:'Удача',stamina:'Выносливость',accuracy:'Меткость'} as Record<string,string>)[k]||k;}
 function labelForActivity(encounter:string){return encounter==='boss'?'Победа над боссом':encounter==='rare'?'Победа над редким монстром':'Победа в охоте';}
 const httpServer=createServer(authHttpHandler);const gameServer=new Server({transport:new WebSocketTransport({server:httpServer})});gameServer.define('my_room',GameRoom);
+startPlayerAutosave({
+  intervalMs: 30_000,
+  save: () => {
+    if (ONLINE_PLAYERS.size) persistPlayers(Array.from(ONLINE_PLAYERS.values()));
+  },
+  onError: error => console.error('Periodic player autosave failed:', error),
+});
 const PORT = Number(process.env.MISTY_PORT || 2567);
 if (!Number.isInteger(PORT) || PORT < 0 || PORT > 65535) throw new Error('MISTY_PORT must be a valid TCP port.');
 gameServer.listen(PORT).then(()=>console.log('RPG server listening on :' + PORT));
