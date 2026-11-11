@@ -78,3 +78,36 @@ export function calculatePvpCombatStats(input: PvpCombatStatsInput): PvpCombatSt
   ) + defense * 0.4 + input.scoreRoll;
   return { attack, defense, score };
 }
+
+
+export interface PvpSetDefinition {
+  id: string;
+  items: readonly string[];
+  effect?: string;
+}
+
+export interface PvpSetBonuses {
+  matchedSetIds: string[];
+  hasAttackSet: boolean;
+  hasDefenseSet: boolean;
+  hasCritSet: boolean;
+}
+
+/**
+ * Preserve the arena's legacy set lookup: only weapon, armor and amulet IDs
+ * participate, and a set matches at two or more equipped IDs. Five-piece
+ * armor sets therefore cannot match through this three-slot PvP path.
+ */
+export function resolvePvpSetBonuses(
+  equippedItemIds: readonly (string | undefined)[],
+  sets: readonly PvpSetDefinition[],
+): PvpSetBonuses {
+  const equipped = new Set(equippedItemIds.filter((id): id is string => Boolean(id)));
+  const matched = sets.filter(set => set.items.filter(id => equipped.has(id)).length >= 2);
+  return {
+    matchedSetIds: matched.map(set => set.id),
+    hasAttackSet: matched.some(set => set.effect === 'attack'),
+    hasDefenseSet: matched.some(set => set.effect === 'defense'),
+    hasCritSet: matched.some(set => set.effect === 'crit'),
+  };
+}

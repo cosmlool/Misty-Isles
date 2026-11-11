@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { calculatePvpCombatStats } from '../src/pvpCombat.js';
+import { calculatePvpCombatStats, resolvePvpSetBonuses } from '../src/pvpCombat.js';
 
 const base = {
   strength: 100, dexterity: 80, intelligence: 60, defense: 90, vitality: 70,
@@ -71,4 +71,42 @@ test('PvP five-piece armor slots are intentionally outside this formula input', 
     bootsDefense: 999, cloakDefense: 999,
   } as typeof base & Record<string, number>);
   assert.deepEqual(withIgnoredSlots, baseline);
+});
+
+
+test('PvP legacy sets activate at two matching IDs among weapon, armor and amulet', () => {
+  const legacySets = [
+    { id: 'mistwarden', items: ['mistwarden_blade', 'mistwarden_mail', 'mistwarden_charm'], effect: 'defense' },
+    { id: 'shadowstalker', items: ['shadowstalker_blades', 'shadowstalker_armor', 'amulet_crit'], effect: 'crit' },
+    { id: 'arcanist', items: ['arcanist_staff', 'arcanist_robe', 'amulet_power'], effect: 'attack' },
+  ] as const;
+  const twoPiece = resolvePvpSetBonuses(
+    ['mistwarden_blade', 'mistwarden_mail', undefined], legacySets,
+  );
+  assert.deepEqual(twoPiece.matchedSetIds, ['mistwarden']);
+  assert.equal(twoPiece.hasDefenseSet, true);
+  assert.equal(twoPiece.hasAttackSet, false);
+  assert.equal(twoPiece.hasCritSet, false);
+
+  const onePiece = resolvePvpSetBonuses(
+    ['mistwarden_blade', 'WPN-C-020', 'amulet_power'], legacySets,
+  );
+  assert.deepEqual(onePiece.matchedSetIds, []);
+  assert.equal(onePiece.hasDefenseSet, false);
+  assert.equal(onePiece.hasAttackSet, false);
+  assert.equal(onePiece.hasCritSet, false);
+});
+
+test('PvP three-slot lookup cannot activate a new five-piece armor set', () => {
+  const fivePiece = {
+    id: 'armor_knight_example',
+    items: ['knight_armor', 'knight_helmet', 'knight_gloves', 'knight_boots', 'knight_cloak'],
+    effect: 'defense',
+  };
+  const result = resolvePvpSetBonuses(
+    ['knight_armor', 'WPN-C-020', 'amulet_guard'],
+    [fivePiece],
+  );
+  assert.deepEqual(result.matchedSetIds, []);
+  assert.equal(result.hasDefenseSet, false);
 });
