@@ -142,6 +142,13 @@ export function resolveLegacyMonsterHitMultiplier(effect: MonsterPassiveEffect |
 }
 
 /** Expected monster hit rate after player evasion, matching the typed engine's hit and dodge checks. */
+/** Applies monster healing reduction and player healing bonuses to legacy PvE recovery. */
+export function resolveLegacyHealingMultiplier(effect: MonsterPassiveEffect | undefined, healingBonus = 0): number {
+  const reduction = Math.min(1, Math.max(0, finitePassiveValue(effect?.healReduction)));
+  const bonus = Math.min(5, Math.max(0, finitePassiveValue(healingBonus)));
+  return Number(((1 - reduction) * (1 + bonus)).toFixed(10));
+}
+
 export function resolveLegacyPlayerHitMultiplier(evasionBonus = 0, monsterAccuracy = 100): number {
   const accuracy = Math.min(1, Math.max(0.05, finitePassiveValue(monsterAccuracy, 100) / 100));
   const evasion = Math.min(0.75, Math.max(0, finitePassiveValue(evasionBonus)));
