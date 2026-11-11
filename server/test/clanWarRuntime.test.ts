@@ -146,6 +146,7 @@ test('clan war attacks enforce per-player cooldown and accumulate real damage', 
     const warListsB: any[] = [];
     const clanListsA: any[] = [];
     const clanListsB: any[] = [];
+    const clanQuestPayloadsA: any[] = [];
     roomA.onMessage('notice', payload => noticesA.push(String(payload?.text || '')));
     roomB.onMessage('notice', payload => noticesB.push(String(payload?.text || '')));
     roomC.onMessage('notice', payload => noticesC.push(String(payload?.text || '')));
@@ -153,6 +154,11 @@ test('clan war attacks enforce per-player cooldown and accumulate real damage', 
     roomB.onMessage('clanWarList', payload => warListsB.push(payload));
     roomA.onMessage('clanList', payload => clanListsA.push(payload));
     roomB.onMessage('clanList', payload => clanListsB.push(payload));
+    roomA.onMessage('clanQuests', payload => clanQuestPayloadsA.push(payload));
+
+    roomA.send('clanQuests');
+    await waitFor(() => clanQuestPayloadsA.find(payload => payload.quests?.some((quest:any) => quest.id === 'war')), 'daily clan quest payload');
+    assert.equal(clanQuestPayloadsA.at(-1).quests.find((quest:any) => quest.id === 'war').desc, 'Выиграйте 3 клановые войны');
 
     const unauthorizedClanActions: Array<[string, any]> = [
       ['clanDonate', { amount: 100 }],
