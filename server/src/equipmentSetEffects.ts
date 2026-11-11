@@ -25,6 +25,7 @@ export type EquipmentSetEffect = {
 
 export type EquipmentSetCatalogItem = {
   id?: unknown;
+  kind?: unknown;
   set?: unknown;
   slot?: unknown;
   profession?: unknown;
@@ -134,15 +135,34 @@ export function validateEquipmentSetCatalog(input: unknown): string[] {
   const groups = new Map<string, EquipmentSetCatalogItem[]>();
   const errors: string[] = [];
 
+  const catalogIds = new Set<string>();
   input.forEach((raw, index) => {
-    if (!isRecord(raw) || typeof raw.set !== 'string' || !raw.set.trim()) return;
+    if (!isRecord(raw)) {
+      errors.push(`catalog[${index}] must be an object`);
+      return;
+    }
+
     const item = raw as EquipmentSetCatalogItem;
+    if (typeof item.id !== 'string' || !item.id.trim()) {
+      errors.push(`catalog[${index}] has no valid id`);
+    } else if (catalogIds.has(item.id)) {
+      errors.push(`catalog[${index}] duplicates item id ${item.id}`);
+    } else {
+      catalogIds.add(item.id);
+    }
+
+    const hasSet = typeof item.set === 'string' && Boolean(item.set.trim());
+    if (item.kind === 'armor' && !hasSet) {
+      errors.push(`catalog[${index}] armor item has no valid set`);
+    }
+    if (hasSet && item.kind !== 'armor') {
+      errors.push(`catalog[${index}] non-armor item cannot belong to an armor set`);
+    }
+    if (!hasSet) return;
+
     const group = groups.get(item.set as string) ?? [];
     group.push(item);
     groups.set(item.set as string, group);
-    if (typeof item.id !== 'string' || !item.id.trim()) {
-      errors.push(`catalog[${index}] in set ${item.set} has no valid id`);
-    }
   });
 
   for (const [setName, items] of groups) {
