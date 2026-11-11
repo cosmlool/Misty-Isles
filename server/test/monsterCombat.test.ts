@@ -1079,7 +1079,7 @@ test('player combatant adapter normalizes invalid stats and clamps optional comb
 });
 
 
-test('player monster combat stats preserve legacy stat, gear, set, pendant and active buff modifiers', () => {
+test('player monster combat stats preserve legacy totals while exposing the canonical Knight profile', () => {
   const stats = calculatePlayerMonsterCombatStats({
     profession: 'Воин',
     strength: 10,
@@ -1103,12 +1103,12 @@ test('player monster combat stats preserve legacy stat, gear, set, pendant and a
     buffUntil: 200,
   });
 
-  assert.ok(Math.abs(stats.attack - 66.868956) < 0.000001);
+  assert.ok(Math.abs(stats.attack - 65.5578) < 0.000001);
   assert.ok(Math.abs(stats.defense - 25.047) < 0.000001);
   assert.equal(stats.speed, 14);
   assert.equal(stats.lootBonus, 0.25);
   assert.equal(stats.lifestealBonus, 0.03);
-  assert.equal(stats.profession, 'Воин');
+  assert.equal(stats.profession, 'Рыцарь');
 });
 
 test('player monster combat stats preserve dungeon and non-boss pendant boundaries', () => {
@@ -1135,7 +1135,7 @@ test('player monster combat stats preserve dungeon and non-boss pendant boundari
   assert.equal(dungeonBoss.defense, 17.27);
 });
 
-test('player monster combat stats can preserve the dungeon five-piece set rule', () => {
+test('set metadata without explicit tier descriptions does not invent legacy combat bonuses', () => {
   const common = {
     profession: 'Воин',
     strength: 10,
@@ -1149,8 +1149,8 @@ test('player monster combat stats can preserve the dungeon five-piece set rule',
   const expedition = calculatePlayerMonsterCombatStats(common);
   const dungeon = calculatePlayerMonsterCombatStats({ ...common, applyFivePieceSetBonus: false });
 
-  assert.ok(Math.abs(expedition.defense - 19.040175) < 0.000001);
-  assert.ok(Math.abs(dungeon.defense - 18.1335) < 0.000001);
+  assert.equal(expedition.defense, 17.27);
+  assert.equal(dungeon.defense, 17.27);
 });
 
 
@@ -1322,7 +1322,7 @@ test('set effect identifiers do not invent typed bonuses without an explicit tie
 test('gold-purchasable weapons and armor define level-scaled attributes and combat stats', () => {
   const catalog = JSON.parse(readFileSync(resolve(serverDir, 'data/equipment_catalog.json'), 'utf8'));
   const gear = catalog.filter((item: any) => Number(item.price) > 0 && ['weapon', 'armor'].includes(item.kind));
-  assert.equal(gear.length, 300);
+  assert.equal(gear.length, 336);
   for (const item of gear) {
     assert.ok(item.attributes && Object.keys(item.attributes).length > 0, `Missing attributes: ${item.id}`);
     assert.ok(item.combatStats && Object.keys(item.combatStats).length > 0, `Missing combat stats: ${item.id}`);
@@ -1524,7 +1524,7 @@ test('clean base stats exclude typed gear and set bonuses while legacy totals re
     setBonuses: [{ effect: 'attack', itemCount: 2, mastery: 0, descriptions: ['2 предмета: +8% к атаке'] }],
   });
 
-  assert.equal(equipped.attack, baseline.attack * 1.02);
+  assert.equal(equipped.attack, baseline.attack);
   assert.equal(equipped.baseAttack, baseline.baseAttack);
   assert.equal(equipped.baseDefense, baseline.baseDefense);
   assert.equal(equipped.combatModifiers.attackBonus, 0.18);
