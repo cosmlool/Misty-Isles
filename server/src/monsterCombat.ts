@@ -134,6 +134,13 @@ export function resolveLegacyMonsterResistance(effect: MonsterPassiveEffect | un
   )).toFixed(10));
 }
 
+/** Expected hit multiplier for the legacy aggregate combat formulas, matching the typed engine's evasion rules. */
+export function resolveLegacyMonsterHitMultiplier(effect: MonsterPassiveEffect | undefined, accuracyBonus = 0): number {
+  const evasion = Math.min(0.75, Math.max(0, finitePassiveValue(effect?.evasion)));
+  const accuracy = Math.min(0.75, Math.max(0, finitePassiveValue(accuracyBonus)));
+  return Number((1 - Math.min(0.75, Math.max(0, evasion - accuracy))).toFixed(10));
+}
+
 export function resolveLegacyMonsterAttackMultiplier(effect: MonsterPassiveEffect | undefined, monsterAllies = 0): number {
   const allyBonus = monsterAllies > 0 ? finitePassiveValue(effect?.attackWhenAllies) : 0;
   return Number(Math.max(0, finitePassiveValue(effect?.attackMultiplier, 1) * (1 + allyBonus)).toFixed(10));
