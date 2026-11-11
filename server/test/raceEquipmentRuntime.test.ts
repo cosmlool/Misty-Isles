@@ -177,8 +177,16 @@ test('server preserves race equipment rules, migrates Warrior to Knight and enab
     birdRoom.send('chooseProfession', { profession: 'Ассасин птицы' });
     await waitFor(() => birdNotices.find(message => message.includes('Ты вступил в боевую гильдию: Ассасин птицы.')), 'Bird Assassin profession selection');
     await waitFor(() => birdCatalog?.professionSkills?.['Ассасин птицы']?.length === 2, 'Bird Assassin skill catalog');
+    const birdNoticeCountBeforePurchase = birdNotices.length;
     birdRoom.send('buyItem', { id: 'WPN-BIRD-ASS-025' });
-    await waitFor(() => birdNotices.find(message => message.includes('Куплено: Кинжал ветреной тени')), 'Bird Assassin single dagger purchase');
+    const birdPurchaseResponse = await waitFor(
+      () => birdNotices.length > birdNoticeCountBeforePurchase ? birdNotices[birdNotices.length - 1] : undefined,
+      'Bird Assassin purchase response',
+    );
+    assert.ok(
+      birdPurchaseResponse.includes('Куплено: Кинжал ветреной тени'),
+      'Bird Assassin purchase was rejected: ' + birdPurchaseResponse,
+    );
     birdRoom.send('equipItem', { id: 'WPN-BIRD-ASS-025' });
     await waitFor(() => birdNotices.find(message => message.includes('Экипировано: Кинжал ветреной тени')), 'Bird Assassin single dagger equip');
     const birdSaved = readJson(join(dataDir, 'players.json'))[birdPlayerId];
