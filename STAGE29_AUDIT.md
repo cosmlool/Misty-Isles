@@ -617,3 +617,11 @@
 - The crafting queue has no dedicated cancellation message/handler in the current client-server protocol. Material refunds are implemented for a unique-output conflict, but a player-initiated cancel action is not currently available. Do not claim cancellation support until that feature is implemented and tested.
 - Authentication/session persistence review: auth JSON reads reject malformed files rather than replacing them with defaults; writes use a sibling temporary file and atomic rename. Player saves additionally create rolling backups before replacing the save. These operations are synchronous within the single Node.js process, so their read-modify-write sections do not interleave inside that process. They do not provide cross-process locking or a distributed rate limiter; multi-process deployment remains unsupported without shared transactional storage/locking. Atomic rename also does not by itself guarantee fsync-level durability after sudden power loss.
 - No authentication storage format, player save format, gameplay combat coefficient, real save, Stage 27, admin panel, or `main` was changed.
+
+
+### Player-initiated craft cancellation
+
+- Added an explicit `craftCancel` server action and a cancel control for jobs that are still in progress. Completed jobs cannot be cancelled; they must be claimed, preventing a finished output from being exchanged for a full material refund.
+- Cancellation refunds the exact material snapshot stored on the job and removes the job in the same synchronous handler. Older queued jobs may use the current recipe as a fallback. If neither source contains a valid material map, the job remains queued for review and no speculative refund is issued.
+- A second cancellation/claim after the job has been removed is rejected as “job not found”; the same queue entry cannot be refunded twice by sequential requests.
+- Added unit tests for exact refunds, duplicate cancellation rejection, completed-job rejection, legacy recipe fallback, and unknown-material safety. Expanded the runtime scenario to complete one job, cancel another, and verify materials, skill progression, item count, daily completed-order count, and activity log.
