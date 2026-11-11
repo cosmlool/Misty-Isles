@@ -601,6 +601,65 @@ test('monster lifesteal restores a percentage of damage actually dealt', () => {
   assert.ok(result.events.some(event => event.actor === 'Leech monster' && event.action === 'heal' && event.healing === 10));
 });
 
+test('monster lifesteal uses effective damage when the target has low HP', () => {
+  const result = resolveMonsterBattle({
+    monster: {
+      id: 'm-overkill-lifesteal',
+      name: 'Leech overkiller',
+      hp: 1000,
+      attack: 100,
+      defense: 0,
+      speed: 10,
+      passiveDescription: 'Восстанавливает 10% нанесённого урона',
+    },
+    party: [{
+      id: 'p-low-hp-lifesteal',
+      profession: 'Воин',
+      hp: 20,
+      maxHp: 100,
+      attack: 100,
+      defense: 0,
+      speed: 20,
+    }],
+    maxRounds: 1,
+    random: () => 0.5,
+  });
+  assert.equal(result.totalDamageToMonster, 100);
+  assert.equal(result.totalDamageToParty, 20);
+  assert.equal(result.party[0].remainingHp, 0);
+  assert.equal(result.monsterHp, 902);
+  assert.equal(result.events.find(event => event.actor === 'Leech overkiller' && event.action === 'attack')?.damage, 20);
+  assert.equal(result.events.find(event => event.actor === 'Leech overkiller' && event.action === 'heal')?.healing, 2);
+});
+
+test('monster poison tick is capped at the target remaining HP', () => {
+  const result = resolveMonsterBattle({
+    monster: {
+      id: 'm-poison-overkill',
+      name: 'Poison overkiller',
+      hp: 1000,
+      attack: 1,
+      defense: 0,
+      speed: 20,
+      passiveDescription: 'Атака накладывает яд',
+    },
+    party: [{
+      id: 'p-poison-overkill',
+      profession: 'Воин',
+      hp: 10,
+      maxHp: 1000,
+      attack: 1,
+      defense: 0,
+      speed: 10,
+    }],
+    maxRounds: 2,
+    random: () => 0.5,
+  });
+  assert.equal(result.totalDamageToParty, 10);
+  assert.equal(result.party[0].remainingHp, 0);
+  assert.equal(result.events.find(event => event.action === 'poison')?.damage, 8);
+});
+
 test('monster critical damage bonus increases only critical hits', () => {
   const result = resolveMonsterBattle({
     monster: { id: 'm-crit-bonus', name: 'Critical striker', hp: 10000, attack: 100, defense: 0, speed: 20, critChance: 1, critMultiplier: 1.5, passiveDescription: 'Критический урон +10%' },
