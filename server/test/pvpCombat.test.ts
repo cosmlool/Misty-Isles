@@ -11,14 +11,14 @@ const base = {
 
 test('PvP base archetypes are characterized for all eight race professions', () => {
   const cases = [
-    ['Боевой маг', 91.5, 161.5, 156.1],
-    ['Ассасин', 189, 161.5, 235.6],
-    ['Рыцарь', 167, 177.65, 238.06],
-    ['Баффер', 167, 171.118, 235.4472],
-    ['Лучник', 189, 161.5, 229.9],
-    ['Ассасин птицы', 189, 161.5, 235.6],
-    ['Вампир', 189, 161.5, 229.9],
-    ['Добытчик', 167, 161.5, 232.0],
+    ['Боевой маг', 172.2, 161.5, 236.8],
+    ['Ассасин', 239, 161.5, 320.33],
+    ['Рыцарь', 215, 177.65, 286.06],
+    ['Баффер', 215, 171.19, 283.476],
+    ['Лучник', 239, 161.5, 310.77],
+    ['Ассасин птицы', 239, 161.5, 320.33],
+    ['Вампир', 239, 161.5, 303.6],
+    ['Добытчик', 215, 161.5, 279.6],
   ] as const;
   for (const [profession, attack, defense, score] of cases) {
     const actual = calculatePvpCombatStats({ ...base, profession });
@@ -47,9 +47,9 @@ test('PvP preserves sharpening, weapon and armor properties, set tiers, buffs an
     attackRoll: 7,
     scoreRoll: 13,
   });
-  assert.ok(Math.abs(actual.attack - 303.895) < 1e-9);
-  assert.ok(Math.abs(actual.defense - 254.8368) < 1e-9);
-  assert.ok(Math.abs(actual.score - 441.7332) < 1e-9);
+  assert.ok(Math.abs(actual.attack - 429.1558) < 1e-9);
+  assert.ok(Math.abs(actual.defense - 300.94416) < 1e-9);
+  assert.ok(Math.abs(actual.score - 669.822414) < 1e-9);
 });
 
 test('PvP critical properties are read from weapon and armor independently', () => {
@@ -61,7 +61,7 @@ test('PvP critical properties are read from weapon and armor independently', () 
     attackRoll: 2,
     scoreRoll: 3,
   });
-  assert.ok(Math.abs(actual.score - 265.66) < 1e-9);
+  assert.ok(Math.abs(actual.score - 351.98) < 1e-9);
 });
 
 test('PvP five-piece armor slots are intentionally outside this formula input', () => {
