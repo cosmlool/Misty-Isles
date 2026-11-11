@@ -9,7 +9,7 @@ import { setTimeout as delay } from 'node:timers/promises';
 import { Client, type Room } from 'colyseus.js';
 import test from 'node:test';
 
-import { seedGuestCredentials, testGuestProof } from './guestAuthTestHelpers.js';
+import { seedGuestCredentials, testGuestProof, leaveRoomSafely } from './guestAuthTestHelpers.js';
 
 const serverDir = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const staticDataFiles = ['city_npcs.json', 'equipment_catalog.json', 'forgotten_lands.json'];
@@ -140,7 +140,7 @@ test('guest gameplay actions cannot consume rewards or alter character state bef
     assert.equal(JSON.parse(saved.quests).story_1, undefined);
     assert.equal(JSON.parse(saved.quests).pvp, undefined, 'PvP offer generation must not mutate an uncreated guest save');
   } finally {
-    if (room) await room.leave().catch(() => undefined);
+    await leaveRoomSafely(room);
     if (child) await stopServer(child);
     rmSync(dataDir, { recursive: true, force: true });
   }

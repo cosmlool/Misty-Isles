@@ -10,7 +10,7 @@ import { setTimeout as delay } from 'node:timers/promises';
 import { Client, type Room } from 'colyseus.js';
 import test from 'node:test';
 
-import { seedGuestCredentials, testGuestProof } from './guestAuthTestHelpers.js';
+import { seedGuestCredentials, testGuestProof, leaveRoomSafely } from './guestAuthTestHelpers.js';
 
 const serverDir = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const staticDataFiles = ['city_npcs.json', 'equipment_catalog.json', 'forgotten_lands.json'];
@@ -217,8 +217,8 @@ test('PvP offers four saved real characters, steals 20 percent gold, persists co
     assert.equal(rotated.cooldownUntil, 0);
 
   } finally {
-    if (attackerRoom) await attackerRoom.leave().catch(() => undefined);
-    if (secondRoom) await secondRoom.leave().catch(() => undefined);
+    await leaveRoomSafely(attackerRoom);
+    await leaveRoomSafely(secondRoom);
     if (child) await stopServer(child);
     rmSync(dataDir, { recursive: true, force: true });
   }

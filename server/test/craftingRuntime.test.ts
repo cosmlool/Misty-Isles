@@ -9,7 +9,7 @@ import { setTimeout as delay } from 'node:timers/promises';
 import { Client, type Room } from 'colyseus.js';
 import test from 'node:test';
 
-import { seedGuestCredentials, testGuestProof } from './guestAuthTestHelpers.js';
+import { seedGuestCredentials, testGuestProof, leaveRoomSafely } from './guestAuthTestHelpers.js';
 
 const serverDir = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const staticDataFiles = ['city_npcs.json', 'equipment_catalog.json', 'forgotten_lands.json'];
@@ -139,7 +139,7 @@ test('starting a craft job sends the updated queue to the connected client', { t
     assert.deepEqual(JSON.parse(saved.inventory), []);
     assert.equal(saved.crafting, 2);
   } finally {
-    if (room) await room.leave().catch(() => undefined);
+    await leaveRoomSafely(room);
     if (child) await stopServer(child);
     rmSync(dataDir, { recursive: true, force: true });
   }

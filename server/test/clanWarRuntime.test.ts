@@ -9,7 +9,7 @@ import { setTimeout as delay } from 'node:timers/promises';
 import { Client, type Room } from 'colyseus.js';
 import test from 'node:test';
 
-import { seedGuestCredentials, testGuestProof } from './guestAuthTestHelpers.js';
+import { seedGuestCredentials, testGuestProof, leaveRoomSafely } from './guestAuthTestHelpers.js';
 
 const serverDir = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const staticDataFiles = ['city_npcs.json', 'equipment_catalog.json', 'forgotten_lands.json'];
@@ -260,9 +260,9 @@ test('clan war attacks enforce per-player cooldown and accumulate real damage', 
     assert.equal(afterDisbandTerritories[0].owner, '', 'disband releases territory ownership');
 
   } finally {
-    if (roomA) await roomA.leave().catch(() => undefined);
-    if (roomB) await roomB.leave().catch(() => undefined);
-    if (roomC) await roomC.leave().catch(() => undefined);
+    await leaveRoomSafely(roomA);
+    await leaveRoomSafely(roomB);
+    await leaveRoomSafely(roomC);
     if (child) await stopServer(child);
     rmSync(dataDir, { recursive: true, force: true });
   }

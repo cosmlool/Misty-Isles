@@ -9,7 +9,7 @@ import { setTimeout as delay } from 'node:timers/promises';
 import { Client, type Room } from 'colyseus.js';
 import test from 'node:test';
 
-import { seedGuestCredentials, testGuestProof } from './guestAuthTestHelpers.js';
+import { seedGuestCredentials, testGuestProof, leaveRoomSafely } from './guestAuthTestHelpers.js';
 
 const serverDir = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const staticDataFiles = ['city_npcs.json', 'equipment_catalog.json', 'forgotten_lands.json'];
@@ -120,7 +120,7 @@ test('server rejects equipping another race equipment even when it is in invento
     const afterAllowed = readJson(join(dataDir, 'players.json'))[playerId];
     assert.equal(JSON.parse(afterAllowed.equipment).armor, 'cat_silversilk');
   } finally {
-    if (room) await room.leave().catch(() => undefined);
+    await leaveRoomSafely(room);
     if (child) await stopServer(child);
     rmSync(dataDir, { recursive: true, force: true });
   }

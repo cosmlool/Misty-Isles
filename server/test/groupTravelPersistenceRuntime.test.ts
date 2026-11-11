@@ -10,7 +10,7 @@ import { setTimeout as delay } from 'node:timers/promises';
 import { Client, type Room } from 'colyseus.js';
 import test from 'node:test';
 
-import { seedGuestCredentials, testGuestProof } from './guestAuthTestHelpers.js';
+import { seedGuestCredentials, testGuestProof, leaveRoomSafely } from './guestAuthTestHelpers.js';
 
 const serverDir = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const staticDataFiles = ['city_npcs.json', 'equipment_catalog.json'];
@@ -209,7 +209,7 @@ test('group expedition travel start and claim persist every member together', { 
       assert.equal(state.targetZoneId, undefined);
     }
   } finally {
-    for (const room of rooms) await room.leave().catch(() => undefined);
+    for (const room of rooms) await leaveRoomSafely(room);
     if (child) await stopServer(child);
     rmSync(dataDir, { recursive: true, force: true });
   }

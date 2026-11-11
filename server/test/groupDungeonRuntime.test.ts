@@ -10,7 +10,7 @@ import { setTimeout as delay } from 'node:timers/promises';
 import { Client, type Room } from 'colyseus.js';
 import test from 'node:test';
 
-import { seedGuestCredentials, testGuestProof } from './guestAuthTestHelpers.js';
+import { seedGuestCredentials, testGuestProof, leaveRoomSafely } from './guestAuthTestHelpers.js';
 
 const serverDir = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const staticDataFiles = ['city_npcs.json', 'equipment_catalog.json', 'forgotten_lands.json'];
@@ -199,7 +199,7 @@ test('group boss dungeon persists win rewards and loss costs for every participa
     const lossLootCount = ids.slice(2).reduce((count, id) => count + JSON.parse(saved[id].inventory).filter((item: string) => item === 'FLDROP-03-10-A').length, 0);
     assert.equal(lossLootCount, 0, 'a failed group receives no dungeon loot');
   } finally {
-    for (const room of rooms) await room.leave().catch(() => undefined);
+    for (const room of rooms) await leaveRoomSafely(room);
     if (child) await stopServer(child);
     rmSync(dataDir, { recursive: true, force: true });
   }

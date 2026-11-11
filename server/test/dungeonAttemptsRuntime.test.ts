@@ -9,7 +9,7 @@ import { setTimeout as delay } from 'node:timers/promises';
 import { Client, type Room } from 'colyseus.js';
 import test from 'node:test';
 
-import { seedGuestCredentials, testGuestProof } from './guestAuthTestHelpers.js';
+import { seedGuestCredentials, testGuestProof, leaveRoomSafely } from './guestAuthTestHelpers.js';
 
 const serverDir = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const staticDataFiles = ['city_npcs.json', 'equipment_catalog.json', 'forgotten_lands.json'];
@@ -182,8 +182,8 @@ test('solo Forgotten Lands boss dungeon reports remaining daily entries and enfo
     assert.equal(afterListing.health, 1_080, 'listing equipped HP armor must not leave health above the new maximum');
     assert.equal(afterListing.gold, 1_248, 'listing fee is charged exactly once');
   } finally {
-    if (room) await room.leave().catch(() => undefined);
-    if (lossRoom) await lossRoom.leave().catch(() => undefined);
+    await leaveRoomSafely(room);
+    await leaveRoomSafely(lossRoom);
     if (child) await stopServer(child);
     rmSync(dataDir, { recursive: true, force: true });
   }

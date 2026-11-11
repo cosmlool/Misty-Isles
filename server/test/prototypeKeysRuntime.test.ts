@@ -9,7 +9,7 @@ import { setTimeout as delay } from 'node:timers/promises';
 import { Client, type Room } from 'colyseus.js';
 import test from 'node:test';
 
-import { seedGuestCredentials, testGuestProof } from './guestAuthTestHelpers.js';
+import { seedGuestCredentials, testGuestProof, leaveRoomSafely } from './guestAuthTestHelpers.js';
 
 const serverDir = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const staticDataFiles = ['city_npcs.json', 'equipment_catalog.json', 'forgotten_lands.json'];
@@ -137,7 +137,7 @@ test('prototype property names cannot bypass stat or clan upgrade validation', {
     assert.equal(clan.vault, 5_000);
     assert.deepEqual(clan.upgrades, { barracks: 0, treasury: 0, banner: 0 });
   } finally {
-    if (room) await room.leave().catch(() => undefined);
+    await leaveRoomSafely(room);
     if (child) await stopServer(child);
     rmSync(dataDir, { recursive: true, force: true });
   }

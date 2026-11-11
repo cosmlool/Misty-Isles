@@ -9,6 +9,8 @@ import { setTimeout as delay } from 'node:timers/promises';
 import { Client, type Room } from 'colyseus.js';
 import test from 'node:test';
 
+import { leaveRoomSafely } from './guestAuthTestHelpers.js';
+
 const serverDir = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const staticDataFiles = ['city_npcs.json', 'equipment_catalog.json', 'forgotten_lands.json'];
 
@@ -125,8 +127,8 @@ test('one character cannot open two concurrent gameplay sessions or overwrite it
     assert.equal(saved.strength, 12);
     assert.equal(saved.gold, 153);
   } finally {
-    if (secondRoom) await secondRoom.leave().catch(() => undefined);
-    if (firstRoom) await firstRoom.leave().catch(() => undefined);
+    await leaveRoomSafely(secondRoom);
+    await leaveRoomSafely(firstRoom);
     if (child) await stopServer(child);
     rmSync(dataDir, { recursive: true, force: true });
   }

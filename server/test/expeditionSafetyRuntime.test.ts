@@ -11,7 +11,7 @@ import { Client, type Room } from 'colyseus.js';
 import test from 'node:test';
 import { utcIsoWeekKey } from '../src/calendarOperations.js';
 
-import { seedGuestCredentials, testGuestProof } from './guestAuthTestHelpers.js';
+import { seedGuestCredentials, testGuestProof, leaveRoomSafely } from './guestAuthTestHelpers.js';
 
 const serverDir = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const staticDataFiles = ['city_npcs.json', 'equipment_catalog.json', 'forgotten_lands.json'];
@@ -276,7 +276,7 @@ test('expedition reports capture pre/post health and disconnect cancels stale gr
     assert.equal(savedAfterLeave.state, 'idle');
     assert.equal(JSON.parse(readPlayers(join(dataDir, 'players.json'))[memberId].quests).expedition.state, 'idle');
   } finally {
-    for (const room of rooms) await room.leave().catch(() => undefined);
+    for (const room of rooms) await leaveRoomSafely(room);
     if (child) await stopServer(child);
     rmSync(dataDir, { recursive: true, force: true });
   }
