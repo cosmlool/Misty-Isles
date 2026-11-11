@@ -97,7 +97,7 @@ export type MonsterBattleResult = {
 };
 
 const clamp = (value: number, min: number, max: number) => Math.min(max, Math.max(min, value));
-const safeStat = (value: number, fallback = 0) => Number.isFinite(value) ? Math.max(0, value) : fallback;
+const safeStat = (value: number | undefined, fallback = 0) => Number.isFinite(value) ? Math.max(0, value as number) : fallback;
 const floorDamage = (value: number) => Math.floor(value + 1e-9);
 const damageThroughDefense = (attack: number, defense: number) =>
   Math.max(1, floorDamage(attack * (100 / (100 + safeStat(defense)))));
