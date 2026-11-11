@@ -8,6 +8,7 @@ import {
   resolveEquipmentSetEffects,
   validateEquipmentSetCatalog,
   validateEquipmentSetEffects,
+  validateEquipmentSetDefinitions,
   type EquipmentSetEffect,
 } from '../src/equipmentSetEffects.js';
 
