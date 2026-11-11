@@ -110,3 +110,61 @@ test('PvP three-slot lookup cannot activate a new five-piece armor set', () => {
   assert.deepEqual(result.matchedSetIds, []);
   assert.equal(result.hasDefenseSet, false);
 });
+
+
+test('PvP ignores catalog attributes, combatStats and amulet effects for all eight professions', () => {
+  const professions = [
+    'Боевой маг', 'Ассасин', 'Рыцарь', 'Баффер',
+    'Лучник', 'Ассасин птицы', 'Вампир', 'Добытчик',
+  ];
+  for (const profession of professions) {
+    const baseline = calculatePvpCombatStats({ ...base, profession });
+    const withCatalogOnlyFields = calculatePvpCombatStats({
+      ...base,
+      profession,
+      weaponAttributes: { strength: 999, dexterity: 999, intelligence: 999, vitality: 999, stamina: 999 },
+      armorAttributes: { strength: 999, dexterity: 999, intelligence: 999, vitality: 999, stamina: 999 },
+      weaponCombatStats: { accuracy: 99, physicalDamage: 99, magicDamage: 99, critChance: 99, evasion: 99 },
+      armorCombatStats: { accuracy: 99, physicalDamage: 99, magicDamage: 99, critChance: 99, evasion: 99 },
+      amuletEffect: 'attack',
+      amuletValue: 99,
+      amuletProperty: { effect: 'crit', value: 99 },
+    } as typeof base & Record<string, unknown>);
+    assert.deepEqual(withCatalogOnlyFields, baseline, profession + ' must preserve the current PvP gear input contract');
+  }
+});
+
+test('PvP rare properties are slot-specific and only attack/defense/crit affect rating', () => {
+  const baseline = calculatePvpCombatStats({ ...base, profession: 'Рыцарь' });
+  const weaponAttack = calculatePvpCombatStats({
+    ...base, profession: 'Рыцарь', weaponProperty: { effect: 'attack', value: 0.08 },
+  });
+  assert.ok(weaponAttack.attack > baseline.attack);
+  const armorDefense = calculatePvpCombatStats({
+    ...base, profession: 'Рыцарь', armorProperty: { effect: 'defense', value: 0.08 },
+  });
+  assert.ok(armorDefense.defense > baseline.defense);
+  const weaponCrit = calculatePvpCombatStats({
+    ...base, profession: 'Рыцарь', weaponProperty: { effect: 'crit', value: 0.05 },
+  });
+  const armorCrit = calculatePvpCombatStats({
+    ...base, profession: 'Рыцарь', armorProperty: { effect: 'crit', value: 0.05 },
+  });
+  assert.ok(weaponCrit.score > baseline.score);
+  assert.ok(armorCrit.score > baseline.score);
+
+  for (const effect of ['lifesteal', 'loot', 'xp', 'gold']) {
+    const ignored = calculatePvpCombatStats({
+      ...base, profession: 'Рыцарь',
+      weaponProperty: { effect, value: 0.99 },
+      armorProperty: { effect, value: 0.99 },
+    });
+    assert.deepEqual(ignored, baseline, effect + ' property is outside current PvP rating policy');
+  }
+  const wrongSlots = calculatePvpCombatStats({
+    ...base, profession: 'Рыцарь',
+    weaponProperty: { effect: 'defense', value: 0.99 },
+    armorProperty: { effect: 'attack', value: 0.99 },
+  });
+  assert.deepEqual(wrongSlots, baseline);
+});
