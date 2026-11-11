@@ -22,7 +22,7 @@ const professionRuntimeProfiles = [
   { playerId: 'runtime_profession_archer', race: 'Птица', profession: 'Лучник', weaponId: 'WPN-ЛУЧ-025', weaponName: 'Дальний лук' },
   { playerId: 'runtime_profession_bird_assassin', race: 'Птица', profession: 'Ассасин птицы', weaponId: 'WPN-BIRD-ASS-025', weaponName: 'Кинжал ветреной тени' },
   { playerId: 'runtime_profession_vampire', race: 'Грызун', profession: 'Вампир', weaponId: 'WPN-ВАМ-025', weaponName: 'Алый клык' },
-  { playerId: 'runtime_profession_gatherer', race: 'Грызун', profession: 'Добытчик', weaponId: 'WPN-ДОБ-025', weaponName: 'Шахтёрский кирку' },
+  { playerId: 'runtime_profession_gatherer', race: 'Грызун', profession: 'Добытчик', weaponId: 'WPN-ДОБ-025', weaponName: 'Шахтёрская кирка' },
 ] as const;
 
 async function unusedPort(): Promise<number> {
@@ -121,6 +121,7 @@ test('server preserves race equipment rules, migrates Warrior to Knight and enab
       },
       ...Object.fromEntries(professionRuntimeProfiles.map(profile => [profile.playerId, {
         id: profile.playerId, name: profile.profession + ' Runtime Tester', race: profile.race,
+        city: ({ 'Кот': 'Сумеречный приют', 'Собака': 'Крепость стаи', 'Птица': 'Высокое гнездо', 'Грызун': 'Подземный рынок' } as Record<string, string>)[profile.race],
         profession: '', level: 30, gold: 100000, inventory: '[]',
         equipment: JSON.stringify({ weapon: '', armor: '', helmet: '', gloves: '', boots: '', cloak: '', amulet: '' }),
         quests: '{}',
@@ -215,9 +216,13 @@ test('server preserves race equipment rules, migrates Warrior to Knight and enab
         profile.profession + ' skill catalog',
       );
       profileRoom.send('buyItem', { id: profile.weaponId });
-      await waitFor(
+      const purchaseNotice = await waitFor(
         () => profileNotices.find(message => message.startsWith('Куплено:')),
         profile.profession + ' weapon purchase',
+      );
+      assert.ok(
+        purchaseNotice.includes(profile.weaponName),
+        profile.profession + ' purchased unexpected item: ' + purchaseNotice,
       );
       profileRoom.send('equipItem', { id: profile.weaponId });
       await waitFor(
