@@ -1800,3 +1800,15 @@ test('lifesteal combines Vampire baseline with aggregated gear, set and buff bon
   assert.equal(resolvePlayerMonsterLifestealRate('Вампир', 0.80), 0.88);
   assert.equal(resolvePlayerMonsterLifestealRate('Вампир', Number.NaN), 0.08);
 });
+
+
+test('monster battle rejects duplicate party IDs instead of resolving multiple turns against the first matching member', () => {
+  assert.throws(() => resolveMonsterBattle({
+    monster: { id: 'duplicate-test', name: 'Test monster', hp: 100, attack: 10, defense: 0, speed: 1 },
+    party: [
+      { id: 'same-player', profession: 'Воин', hp: 100, maxHp: 100, attack: 20, defense: 0, speed: 10 },
+      { id: 'same-player', profession: 'Лучник', hp: 100, maxHp: 100, attack: 20, defense: 0, speed: 10 },
+    ],
+    random: () => 0.5,
+  }), /duplicate combatant IDs/);
+});
