@@ -85,7 +85,7 @@ async function withTimeout<T>(promise: Promise<T>, ms: number, label: string): P
 }
 
 
-test('starting a craft job sends the updated queue to the connected client', { timeout: 45_000 }, async () => {
+test('crafting skill and daily craft progress increase only after a successful claim', { timeout: 45_000 }, async () => {
   const dataDir = mkdtempSync(join(tmpdir(), 'misty-crafting-runtime-'));
   const playerId = 'runtime_crafter_0001';
   const port = await unusedPort();
@@ -137,7 +137,30 @@ test('starting a craft job sends the updated queue to the connected client', { t
     }
     assert.equal(JSON.parse(saved.craftQueue).length, 1);
     assert.deepEqual(JSON.parse(saved.inventory), []);
-    assert.equal(saved.crafting, 2);
+    assert.equal(saved.crafting, 1, 'starting production must not grant crafting progression');
+    assert.equal(saved.itemsCrafted, 0, 'starting production must not count a crafted item');
+    const startedQuests = JSON.parse(saved.quests || '{}');
+    assert.equal(startedQuests.activityToday?.crafts || 0, 0, 'daily craft count tracks completed orders only');
+
+    const finishAt = payload.jobs[0].finishAt;
+    await delay(Math.max(0, finishAt - Date.now() + 100));
+    const claimedQueue = new Promise<any>(resolve => room!.onMessage('craftQueue', resolve));
+    room.send('craftClaim', { id: payload.jobs[0].id });
+    const claimedPayload = await withTimeout(claimedQueue, 10_000, 'craft claim response');
+    assert.equal(claimedPayload.jobs.length, 0, 'successful claim must remove the completed job');
+
+    const claimDeadline = Date.now() + 8_000;
+    while (Date.now() < claimDeadline) {
+      saved = readJson(join(dataDir, 'players.json'))[playerId];
+      if (saved.itemsCrafted === 1 && saved.crafting === 2) break;
+      await delay(50);
+    }
+    assert.equal(saved.crafting, 2, 'successful claim grants one crafting progression point');
+    assert.equal(saved.itemsCrafted, 1);
+    assert.deepEqual(JSON.parse(saved.inventory), ['field_potion']);
+    const completedQuests = JSON.parse(saved.quests || '{}');
+    assert.equal(completedQuests.activityToday?.crafts, 1, 'one completed order increments the daily craft count once');
+    assert.equal(completedQuests.activityLog.filter((entry: any) => entry.type === 'craft').length, 2, 'start and completion remain separate activity-log events');
   } finally {
     await leaveRoomSafely(room);
     if (child) await stopServer(child);
