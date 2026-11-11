@@ -113,26 +113,27 @@ export function parseMonsterCombatEffect(description: string): ParsedMonsterComb
   if (!Number.isFinite(amount)) return undefined;
 
   const target: MonsterCombatEffectTarget | undefined =
-    /критическ\w*\s+(?:шанс|вероятност)/i.test(text) ? 'critChance' :
-    /критическ\w*\s+урон/i.test(text) ? 'critDamage' :
-    /вампиризм|похищен\w*\s+здоров|восстанавлива\w*\s+\d/i.test(text) ? 'lifesteal' :
-    /добыч|ресурс|трофе|редк\w*\s+материал/i.test(text) ? 'loot' :
-    /магическ\w*\s+урон/i.test(text) ? 'magicDamage' :
-    /физическ\w*\s+урон/i.test(text) ? 'physicalDamage' :
-    /урон\s+по\s+босс|босс\w*\s+урон/i.test(text) ? 'bossDamage' :
-    /скорост\w*\s+атак/i.test(text) ? 'attackSpeed' :
-    /точност|меткост/i.test(text) ? 'accuracy' :
-    /уклонен|уклонени/i.test(text) ? 'evasion' :
-    /сопротивлен\w*\s+(?:контрол|отрицательн\w*\s+эффект)/i.test(text) ? 'controlResistance' :
-    /сопротивлен\w*\s+(?:входящ\w*\s+)?(?:урон|поврежден)/i.test(text) ? 'resistance' :
-    /лечени|восстановлени\w*\s+hp/i.test(text) ? 'healing' :
-    /поддержк|положительн\w*\s+эффект/i.test(text) ? 'support' :
-    /производств/i.test(text) ? 'production' :
-    /опыт/i.test(text) ? 'experience' :
-    /золот/i.test(text) ? 'gold' :
-    /\bhp\b|максимальн\w*\s+hp|здоровь/i.test(text) ? 'health' :
-    /защит/i.test(text) ? 'defense' :
-    /атак/i.test(text) ? 'attack' :
+    /критическ\p{L}*\s+(?:шанс|вероятност)\p{L}*/iu.test(text) ? 'critChance' :
+    /критическ\p{L}*\s+урон\p{L}*/iu.test(text) ? 'critDamage' :
+    /вампиризм|похищен\p{L}*\s+здоров\p{L}*|восстанавлива\p{L}*\s+\d/iu.test(text) ? 'lifesteal' :
+    /добыч|ресурс|трофе|редк\p{L}*\s+материал\p{L}*/iu.test(text) ? 'loot' :
+    /магическ\p{L}*\s+урон\p{L}*/iu.test(text) ? 'magicDamage' :
+    /физическ\p{L}*\s+урон\p{L}*/iu.test(text) ? 'physicalDamage' :
+    /урон\p{L}*\s+по\s+босс\p{L}*|босс\p{L}*\s+урон\p{L}*/iu.test(text) ? 'bossDamage' :
+    /скорост\p{L}*\s+атак\p{L}*/iu.test(text) ? 'attackSpeed' :
+    /точност|меткост/iu.test(text) ? 'accuracy' :
+    /уклонен|уклонени/iu.test(text) ? 'evasion' :
+    /сопротивлен\p{L}*\s+(?:контрол\p{L}*|отрицательн\p{L}*\s+эффект\p{L}*)/iu.test(text) ? 'controlResistance' :
+    /сопротивлен\p{L}*\s+(?:входящ\p{L}*\s+)?(?:урон\p{L}*|поврежден\p{L}*)/iu.test(text) ? 'resistance' :
+    /\b\d+\/\d+\s*:\s*[+-]?\d+(?:[.,]\d+)?\s*%\s+сопротивлен\p{L}*/iu.test(text) ? 'resistance' :
+    /лечени|восстановлени\p{L}*\s+hp/iu.test(text) ? 'healing' :
+    /поддержк|положительн\p{L}*\s+эффект\p{L}*/iu.test(text) ? 'support' :
+    /производств/iu.test(text) ? 'production' :
+    /опыт/iu.test(text) ? 'experience' :
+    /золот/iu.test(text) ? 'gold' :
+    /\bhp\b|максимальн\p{L}*\s+hp|здоровь/iu.test(text) ? 'health' :
+    /защит/iu.test(text) ? 'defense' :
+    /атак/iu.test(text) ? 'attack' :
     undefined;
 
   return target ? { target, value: amount } : undefined;
@@ -477,6 +478,21 @@ export function calculatePlayerMonsterCombatStats(
   }
 
   const setEffects = (input.setBonuses || []).flatMap(set => (set.descriptions || []).flatMap(parseMonsterCombatEffectClauses));
+  // The legacy set formula also grants a small per-piece and mastery bonus.
+  // Keep those generic attack/defense bonuses in the typed engine instead of losing them.
+  const setTierEffects: ParsedMonsterCombatEffect[] = (input.setBonuses || []).flatMap(set => {
+    const count = Math.max(0, value(set.itemCount));
+    if (count < 2) return [];
+    const effects: ParsedMonsterCombatEffect[] = [];
+    const bonus = count * 0.01 + value(set.mastery) * 0.01;
+    if (set.effect === 'attack') effects.push({ target: 'attack', value: bonus });
+    else if (set.effect === 'defense') effects.push({ target: 'defense', value: bonus });
+    if (input.applyFivePieceSetBonus !== false && count >= 5) {
+      if (set.effect === 'attack') effects.push({ target: 'attack', value: 0.05 });
+      else if (set.effect === 'defense') effects.push({ target: 'defense', value: 0.05 });
+    }
+    return effects;
+  });
   const profileEffects: ParsedMonsterCombatEffect[] = profileBonus > 0
     ? [{ target: profession === 'Баффер' ? 'defense' : 'attack', value: profileBonus }]
     : [];
@@ -492,6 +508,7 @@ export function calculatePlayerMonsterCombatStats(
     ...(input.equipmentEffects || []),
     ...(input.pendantCombatEffect ? [input.pendantCombatEffect] : []),
     ...setEffects,
+    ...setTierEffects,
     ...profileEffects,
     ...activeBuffEffects,
   ]);
