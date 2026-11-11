@@ -171,27 +171,23 @@ test('expedition reports capture pre/post health and disconnect cancels stale gr
     assert.equal(afterLegacyDungeon.battles, beforeLegacyDungeon.battles, 'legacy dungeon must not start a battle');
     assert.equal(afterLegacyDungeon.quests, beforeLegacyDungeon.quests, 'legacy dungeon must not consume a daily attempt');
 
-    const beforeLegacyHunt = readPlayers(join(dataDir, 'players.json'))[soloId];
-    const legacyHuntReports: any[] = [];
-    connected[soloId].onMessage('combatResult', payload => legacyHuntReports.push(payload));
-    connected[soloId].send('hunt', { zone: 'mistwood' });
-    await delay(250);
-    const afterLegacyHunt = readPlayers(join(dataDir, 'players.json'))[soloId];
-    assert.equal(afterLegacyHunt.gold, beforeLegacyHunt.gold, 'legacy TOWNS hunt must not award gold');
-    assert.equal(afterLegacyHunt.experience, beforeLegacyHunt.experience, 'legacy TOWNS hunt must not award XP');
-    assert.equal(afterLegacyHunt.battles, beforeLegacyHunt.battles, 'legacy TOWNS hunt must not count a battle');
-    assert.equal(legacyHuntReports.length, 0, 'legacy TOWNS hunt must not start combat');
-
     const soloNotices: string[] = [];
     connected[soloId].onMessage('notice', payload => soloNotices.push(String(payload?.text || '')));
     const combatResults: any[] = [];
     connected[soloId].onMessage('combatResult', payload => combatResults.push(payload));
+    const initialExpeditionStates: any[] = [];
+    connected[soloId].onMessage('expeditionState', payload => initialExpeditionStates.push(payload.state));
+    connected[soloId].send('expeditionState');
+    const initialExpeditionState = await waitFor(() => initialExpeditionStates[0], 'initial solo expedition state');
+    assert.equal(initialExpeditionState.state, 'idle');
+
     connected[soloId].send('expeditionSearchStart');
-    await waitFor(() => {
-      const saved = readPlayers(join(dataDir, 'players.json'))[soloId];
-      const state = JSON.parse(saved.quests).expedition;
-      return state?.state === 'searching' && Number(state.endsAt) <= Date.now() ? state : undefined;
-    }, 'solo expedition search start');
+    await waitFor(() => soloNotices.find(message => message.includes('Поиск монстра начался.')), 'solo expedition search start notice').catch(error => {
+      throw new Error(`${error instanceof Error ? error.message : String(error)}\nNotices: ${soloNotices.join(' | ')}\nSaved state: ${JSON.stringify(JSON.parse(readPlayers(join(dataDir, 'players.json'))[soloId].quests).expedition)}`);
+    });
+    const startedSearch = JSON.parse(readPlayers(join(dataDir, 'players.json'))[soloId].quests).expedition;
+    assert.equal(startedSearch.state, 'searching');
+    assert.ok(Number(startedSearch.endsAt) <= Date.now(), 'zero-duration test search must be immediately claimable');
     connected[soloId].send('expeditionSearchClaim');
     const combat = await waitFor(() => combatResults[0], 'solo expedition combat report').catch(error => {
       throw new Error(`${error instanceof Error ? error.message : String(error)}\nNotices: ${soloNotices.join(' | ')}\nServer output:\n${serverOutput.slice(-80).join('')}`);
@@ -288,6 +284,17 @@ test('expedition reports capture pre/post health and disconnect cancels stale gr
     rooms.push(connected[memberId]);
     assert.equal(savedAfterLeave.state, 'idle');
     assert.equal(JSON.parse(readPlayers(join(dataDir, 'players.json'))[memberId].quests).expedition.state, 'idle');
+    const beforeLegacyHunt = readPlayers(join(dataDir, 'players.json'))[soloId];
+    const legacyHuntReports: any[] = [];
+    connected[soloId].onMessage('combatResult', payload => legacyHuntReports.push(payload));
+    connected[soloId].send('hunt', { zone: 'mistwood' });
+    await delay(250);
+    const afterLegacyHunt = readPlayers(join(dataDir, 'players.json'))[soloId];
+    assert.equal(afterLegacyHunt.gold, beforeLegacyHunt.gold, 'legacy TOWNS hunt must not award gold');
+    assert.equal(afterLegacyHunt.experience, beforeLegacyHunt.experience, 'legacy TOWNS hunt must not award XP');
+    assert.equal(afterLegacyHunt.battles, beforeLegacyHunt.battles, 'legacy TOWNS hunt must not count a battle');
+    assert.equal(legacyHuntReports.length, 0, 'legacy TOWNS hunt must not start combat');
+
   } finally {
     for (const room of rooms) await leaveRoomSafely(room);
     if (child) await stopServer(child);
