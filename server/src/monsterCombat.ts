@@ -106,6 +106,55 @@ export function resolveMonsterPassive(description: string): MonsterPassiveEffect
   return passiveEffects[description];
 }
 
+function normalizePassiveProfession(profession: string): string {
+  const aliases: Record<string, string> = { 'Маг': 'Боевой маг', 'Убийца': 'Ассасин' };
+  return aliases[profession] || profession;
+}
+
+function finitePassiveValue(value: number | undefined, fallback = 0): number {
+  return Number.isFinite(value) ? value as number : fallback;
+}
+
+/**
+ * Static compatibility helpers for the legacy aggregate expedition/dungeon
+ * formulas. Dynamic HP thresholds and per-round status effects stay in the
+ * shared resolveMonsterBattle engine.
+ */
+export function resolveLegacyMonsterResistance(effect: MonsterPassiveEffect | undefined, profession: string): number {
+  const normalizedProfession = normalizePassiveProfession(profession);
+  // The legacy path has no explicit damageType mapping: preserve its existing
+  // rule that Battle Mage damage is magical and other professions are physical.
+  const typeResistance = normalizedProfession === 'Боевой маг'
+    ? finitePassiveValue(effect?.magicResistance)
+    : finitePassiveValue(effect?.physicalResistance);
+  const professionResistance = Object.entries(effect?.professionResistance || {})
+    .find(([name]) => normalizePassiveProfession(name) === normalizedProfession)?.[1] || 0;
+  return Math.min(0.85, Math.max(-0.75,
+    finitePassiveValue(effect?.allResistance) + typeResistance + finitePassiveValue(professionResistance),
+  ));
+}
+
+export function resolveLegacyMonsterAttackMultiplier(effect: MonsterPassiveEffect | undefined, monsterAllies = 0): number {
+  const allyBonus = monsterAllies > 0 ? finitePassiveValue(effect?.attackWhenAllies) : 0;
+  return Math.max(0, finitePassiveValue(effect?.attackMultiplier, 1) * (1 + allyBonus));
+}
+
+export function resolveLegacyMonsterDefenseMultiplier(effect: MonsterPassiveEffect | undefined, monsterAllies = 0): number {
+  const allyBonus = monsterAllies > 0 ? finitePassiveValue(effect?.defenseWhenAllies) : 0;
+  return Math.max(0, finitePassiveValue(effect?.defenseMultiplier, 1) * (1 + allyBonus));
+}
+
+export function resolveLegacyMonsterProfessionDamageMultiplier(effect: MonsterPassiveEffect | undefined, profession: string): number {
+  const normalizedProfession = normalizePassiveProfession(profession);
+  const attackBonus = effect?.attackVsProfession &&
+    normalizePassiveProfession(effect.attackVsProfession.profession) === normalizedProfession
+    ? finitePassiveValue(effect.attackVsProfession.multiplier, 1) : 1;
+  const damageBonus = effect?.damageVsProfession &&
+    normalizePassiveProfession(effect.damageVsProfession.profession) === normalizedProfession
+    ? finitePassiveValue(effect.damageVsProfession.multiplier, 1) : 1;
+  return Math.max(0, attackBonus * damageBonus);
+}
+
 export function getMonsterPassiveDescriptions(): string[] {
   return Object.keys(passiveEffects);
 }
