@@ -263,6 +263,15 @@ test('clan war attacks enforce per-player cooldown and accumulate real damage', 
     assert.equal(afterNewChallenge.find((war:any) => war.id === 'war-expired-stale').winnerId, '');
     assert.equal(afterNewChallenge.filter((war:any) => war.status === 'active').length, 1);
 
+    // A war that expired before the final member leaves must settle before disband cancellation.
+    const warsBeforeFinalLeave = readJson(join(dataDir, 'clan_wars.json'));
+    warsBeforeFinalLeave.push({
+      id: 'war-expired-enemy-winner', a: 'clan-a', b: 'clan-b', aName: 'Клан А', bName: 'Клан Б',
+      aDamage: 10, bDamage: 100, lastAttackAtByPlayer: {}, status: 'active',
+      createdAt: Date.now() - 90_000_000, endsAt: Date.now() - 1,
+    });
+    writeFileSync(join(dataDir, 'clan_wars.json'), JSON.stringify(warsBeforeFinalLeave, null, 2));
+
     roomA.send('clanLeave');
     await waitFor(() => noticesA.find(text => text === 'Ты покинул клан.'), 'atomic last-member clan disband');
     const afterDisbandPlayers = readJson(join(dataDir, 'players.json'));
@@ -273,7 +282,12 @@ test('clan war attacks enforce per-player cooldown and accumulate real damage', 
     assert.equal(afterDisbandClans['clan-a'], undefined);
     assert.equal(afterDisbandWars[0].status, 'finished', 'completed wars remain in history');
     assert.equal(afterDisbandWars.find((war:any) => war.id === 'war-expired-stale').status, 'finished');
-    assert.equal(afterDisbandWars.filter((war:any) => war.status === 'cancelled').length, 1, 'the new active war is cancelled on disband');
+    const enemyWinnerWar = afterDisbandWars.find((war:any) => war.id === 'war-expired-enemy-winner');
+    assert.equal(enemyWinnerWar.status, 'finished', 'expired war is settled before disband');
+    assert.equal(enemyWinnerWar.winnerId, 'clan-b', 'opposing clan keeps its already-earned victory');
+    assert.equal(enemyWinnerWar.reward, 150);
+    assert.equal(afterDisbandClans['clan-b'].vault, 150, 'opponent receives the settled reward before clan A is deleted');
+    assert.equal(afterDisbandWars.filter((war:any) => war.status === 'cancelled').length, 1, 'only the new active war is cancelled on disband');
     assert.equal(afterDisbandTerritories[0].owner, '', 'disband releases territory ownership');
 
   } finally {

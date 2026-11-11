@@ -625,7 +625,10 @@ class GameRoom extends Room<RoomState> {
         if(clan.leader===this.playerId&&clan.members.length>1)return this.notice(c,'Перед выходом передай лидерство или попроси участников выйти.');
         clan.members=clan.members.filter((member:any)=>member.id!==this.playerId);
         if(!clan.members.length){
-          const disbanded=disbandClanState(clans,loadWars(),loadTerritories(),clan.id,Date.now());
+          const now=Date.now();
+          for(const entry of Object.values(clans))ensureClanQuests(entry);
+          const settled=settleExpiredClanWars(loadWars(),clans,now);
+          const disbanded=disbandClanState(settled.clans,settled.wars,loadTerritories(),clan.id,now);
           p.clan='';
           commitClanState(disbanded.clans,disbanded.wars,disbanded.territories);
           const clanPayload=broadcastClanOverview(disbanded.clans);
