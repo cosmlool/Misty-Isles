@@ -100,6 +100,40 @@ test('catalog validator rejects non-object catalog entries instead of silently s
 });
 
 
+test('catalog profession coverage matches the seven live professions and excludes planned profiles', () => {
+  const armor = equipment.filter((item: any) => item.kind === 'armor');
+  const professionSetCounts = new Map<string, Set<string>>();
+  for (const item of armor) {
+    if (typeof item.profession !== 'string') continue;
+    const sets = professionSetCounts.get(item.profession) ?? new Set<string>();
+    sets.add(item.set);
+    professionSetCounts.set(item.profession, sets);
+  }
+
+  assert.deepEqual([...professionSetCounts.keys()].sort(), [
+    'Ассасин', 'Баффер', 'Боевой маг', 'Воин', 'Вампир', 'Добытчик', 'Лучник',
+  ].sort());
+  for (const profession of professionSetCounts.keys()) {
+    assert.equal(professionSetCounts.get(profession)?.size, 7, profession);
+  }
+  assert.equal(professionSetCounts.has('Рыцарь'), false);
+  assert.equal(professionSetCounts.has('Ассасин птицы'), false);
+});
+
+test('one catalog armor set cannot be registered by multiple structured definitions', () => {
+  const setItems = equipment.filter((item: any) => item.set === 'Маг-25');
+  const definition = {
+    id: 'armor_mag_25',
+    name: 'Маг-25',
+    profession: 'Боевой маг',
+    itemIds: setItems.map((item: any) => item.id),
+    thresholds: {},
+  };
+  const duplicate = { ...definition, id: 'duplicate_mag_25', name: 'Duplicate Mag 25' };
+  const errors = validateEquipmentSetDefinitions([definition, duplicate], equipment);
+  assert.ok(errors.some(error => error.includes('duplicates a catalog set definition')));
+});
+
 test('structured set definitions validate five catalog members and explicit threshold ownership', () => {
   const setItems = equipment.filter((item: any) => item.set === 'Маг-25');
   const definition = {
