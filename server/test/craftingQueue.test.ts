@@ -95,3 +95,29 @@ test('an in-progress craft job and its reserved materials survive save and recon
     assert.equal(claimed.queue.length, 0);
   } finally { rmSync(f, { recursive: true, force: true }); }
 });
+
+
+test('cancelling an active job refunds its exact reserved materials and removes it once', () => {
+  const queue = [{ id: 'job-cancel', output: 'potion', count: 1, finishAt: 500, materials: { herb: 2, ore: 1 } }];
+  const result = cancelCraftJob({ inventory: ['wood'], queue, jobId: 'job-cancel', now: 499 });
+  assert.deepEqual(result.inventory, ['wood', 'herb', 'herb', 'ore']);
+  assert.deepEqual(result.queue, []);
+  assert.equal(result.refunded, true);
+  assert.throws(() => cancelCraftJob({ inventory: result.inventory, queue: result.queue, jobId: 'job-cancel', now: 499 }), /not found/);
+});
+
+test('cancelling a completed job is rejected so a finished output cannot be exchanged for a material refund', () => {
+  const queue = [{ id: 'job-finished', output: 'potion', count: 1, finishAt: 500, materials: { herb: 2 } }];
+  assert.throws(() => cancelCraftJob({ inventory: [], queue, jobId: 'job-finished', now: 500 }), /cannot be cancelled/);
+  assert.equal(queue.length, 1);
+});
+
+test('cancelling an older job uses the current recipe fallback but retains unknown-material jobs', () => {
+  const legacy = [{ id: 'job-legacy', output: 'potion', count: 1, finishAt: 500 }];
+  const refunded = cancelCraftJob({ inventory: [], queue: legacy, jobId: 'job-legacy', now: 100, fallbackMaterials: { herb: 3 } });
+  assert.deepEqual(refunded.inventory, ['herb', 'herb', 'herb']);
+  assert.deepEqual(refunded.queue, []);
+  const unknown = [{ id: 'job-unknown', output: 'potion', count: 1, finishAt: 500 }];
+  assert.throws(() => cancelCraftJob({ inventory: [], queue: unknown, jobId: 'job-unknown', now: 100 }), /retained for review/);
+  assert.equal(unknown.length, 1);
+});
