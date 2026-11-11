@@ -61,6 +61,7 @@ test('monster profession damage bonus affects incoming damage, not player outgoi
   const run = (profession: string) => resolveMonsterBattle({
     monster: { id: 'm2', name: 'Archer hunter', hp: 10000, attack: 100, defense: 0, speed: 5, passiveDescription: 'Урон по лучникам +20%' },
     party: [{ id: 'p2', profession, hp: 1000, maxHp: 1000, attack: 10, defense: 0, speed: 5 }],
+    maxRounds: 1,
     random: () => 0.5,
   });
   const archer = run('Лучник');
@@ -75,6 +76,7 @@ test('monster ally bonuses depend on monster allies, not party size', () => {
   const run = (allies: number) => resolveMonsterBattle({
     monster: { id: 'm3', name: 'Pack hunter', hp: 10000, attack: 100, defense: 0, speed: 5, allies, passiveDescription: 'Атака +10% при союзниках' },
     party: [{ id: 'p3', profession: 'Воин', hp: 1000, maxHp: 1000, attack: 10, defense: 0, speed: 5 }],
+    maxRounds: 1,
     random: () => 0.5,
   });
   assert.equal(run(0).totalDamageToParty, 100);
@@ -85,6 +87,7 @@ test('monster defense ally bonus applies to incoming player damage', () => {
   const run = (allies: number) => resolveMonsterBattle({
     monster: { id: 'm4', name: 'Guarded monster', hp: 10000, attack: 1, defense: 100, speed: 5, allies, passiveDescription: 'Атака и защита +15% при союзниках' },
     party: [{ id: 'p4', profession: 'Воин', hp: 1000, maxHp: 1000, attack: 100, defense: 0, speed: 5 }],
+    maxRounds: 1,
     random: () => 0.5,
   });
   assert.equal(run(0).totalDamageToMonster, 50);
@@ -166,6 +169,7 @@ test('monster resistance above half HP ends when the monster drops below the thr
       { id: 'p-first', profession: 'Воин', hp: 1000, maxHp: 1000, attack: 70, defense: 0, speed: 20 },
       { id: 'p-second', profession: 'Воин', hp: 1000, maxHp: 1000, attack: 10, defense: 0, speed: 19 },
     ],
+    maxRounds: 1,
     random: () => 0.5,
   });
   assert.deepEqual(result.events.filter(event => event.action === 'attack' && event.target === 'Threshold guardian').map(event => event.damage), [56, 10]);
@@ -324,7 +328,7 @@ test('monster periodic healing remains independent from party healing actions', 
       speed: 1,
       passiveDescription: 'Восстанавливает 8% HP каждый второй раунд',
     },
-    party: [{ id: 'fighter', profession: 'Воин', hp: 1000, maxHp: 1000, attack: 1, defense: 0, speed: 20 }],
+    party: [{ id: 'fighter', profession: 'Воин', hp: 1000, maxHp: 1000, attack: 10, defense: 0, speed: 20 }],
     healingActions: [{ round: 1, actorId: 'fighter', targetId: 'fighter', amount: 20 }],
     maxRounds: 2,
     random: () => 0.5,
@@ -617,7 +621,7 @@ test('physical, magic and fire resistance use the matching incoming damage type'
 test('negative magic resistance increases incoming magic damage', () => {
   const result = resolveMonsterBattle({
     monster: { id: 'm-magic-vulnerable', name: 'Magic vulnerable', hp: 10000, attack: 100, defense: 0, speed: 20, passiveDescription: 'Получает на 20% больше магического урона' },
-    party: [{ id: 'p-magic', profession: 'Боевой маг', hp: 1000, maxHp: 1000, attack: 1, defense: 0, speed: 10, damageType: 'magic' }],
+    party: [{ id: 'p-magic', profession: 'Боевой маг', hp: 1000, maxHp: 1000, attack: 100, defense: 0, speed: 10, damageType: 'magic' }],
     maxRounds: 1,
     random: () => 0.5,
   });
@@ -695,15 +699,20 @@ test('damage bonus against a profession affects incoming damage only for that pr
 
 test('monster defense bonus activates below its low-HP threshold', () => {
   const result = resolveMonsterBattle({
-    monster: { id: 'm-defense-low-hp', name: 'Last stand', hp: 100, attack: 100, defense: 100, speed: 10, passiveDescription: 'Защита +25% ниже 25% HP' },
-    party: [{ id: 'p-defense-low-hp', profession: 'Воин', hp: 1000, maxHp: 1000, attack: 160, defense: 0, speed: 20 }],
+    monster: { id: 'm-defense-low-hp', name: 'Last stand', hp: 1000, attack: 100, defense: 100, speed: 10, passiveDescription: 'Защита +25% ниже 25% HP' },
+    party: [
+      { id: 'p-first-defense', profession: 'Воин', hp: 1000, maxHp: 1000, attack: 1600, defense: 0, speed: 20 },
+      { id: 'p-second-defense', profession: 'Воин', hp: 1000, maxHp: 1000, attack: 200, defense: 0, speed: 19 },
+    ],
     maxRounds: 1,
     random: () => 0.5,
   });
-  assert.equal(result.monsterHp, 20);
-  assert.equal(result.totalDamageToParty, 44);
+  assert.equal(result.monsterHp, 112);
+  assert.deepEqual(
+    result.events.filter(event => event.action === 'attack' && event.target === 'Last stand').map(event => event.damage),
+    [800, 88],
+  );
 });
-
 test('compound passive applies attack, defense and physical resistance together', () => {
   const result = resolveMonsterBattle({
     monster: { id: 'm-compound', name: 'Iron guardian', hp: 10000, attack: 100, defense: 100, speed: 20, passiveDescription: 'Атака и защита +15%; физический урон −25%' },
@@ -1084,7 +1093,7 @@ test('shared player combat stats route profile bonuses to the profession-specifi
   assert.equal(buffer.baseDefense, 15.7);
   assert.equal(buffer.combatModifiers.defenseBonus, 0.2);
   assert.ok(Math.abs(warrior.attack - 21.6) < 0.000001);
-  assert.equal(warrior.defense, 15.7);
+  assert.equal(warrior.defense, 17.27);
   assert.equal(warrior.baseAttack, 18);
   assert.equal(warrior.combatModifiers.attackBonus, 0.2);
   assert.equal(gatherer.lootBonus, 0.25);
@@ -1175,7 +1184,7 @@ test('legacy gold-priced weapons and armor receive the shared stat profile at ru
   const start = source.indexOf('const ITEMS: Item[] = [');
   const end = source.indexOf('];', start);
   const itemBlock = source.slice(start, end);
-  const legacyGoldGear = itemBlock.split('\\n').filter((line: string) => {
+  const legacyGoldGear = itemBlock.split('\n').filter((line: string) => {
     const isGear = line.includes("kind:'weapon'") || line.includes("kind:'armor'");
     const priceToken = line.match(/price:[0-9]+/);
     return isGear && Boolean(priceToken) && Number(priceToken?.[0].slice(6)) > 0;
@@ -1532,7 +1541,7 @@ test('active attack, defense and crit buffs map to typed channels without changi
   });
 
   assert.equal(stats.baseAttack, 18);
-  assert.equal(stats.baseDefense, 15.7);
+  assert.equal(stats.baseDefense, 17.27);
   assert.equal(stats.combatModifiers.attackBonus, 0.20);
   assert.equal(stats.combatModifiers.defenseBonus, 0.10);
   assert.equal(stats.combatModifiers.critChanceBonus, 0.12);
