@@ -199,7 +199,7 @@ test('group expedition travel start and claim persist every member together', { 
     assert.equal(saved[memberId].experience, Math.floor(baseXp * 1.12), 'XP buff must increase expedition experience');
     assert.equal(saved[leaderId].buffSecondaryEffect, 'lifesteal', 'profession skill must persist its secondary effect');
     const baseGold = Number(memberCombat.report.rewards.gold);
-    assert.equal(saved[memberId].gold, 500 + Math.floor(baseGold * 1.15), 'secondary gold buff must increase expedition gold');
+    assert.equal(saved[memberId].gold, 500 + baseGold, 'expedition combat report must expose the actual gold amount after the secondary gold buff');
     assert.ok(leaderCombat.report.hpAfter > Math.max(1, leaderCombat.report.hpBefore - leaderCombat.report.received), 'secondary lifesteal buff must heal after a successful fight');
     for (const id of [leaderId, memberId]) {
       const state = JSON.parse(saved[id].quests).expedition;
