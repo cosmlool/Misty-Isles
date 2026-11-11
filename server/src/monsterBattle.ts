@@ -345,10 +345,10 @@ export function resolveMonsterBattle(input: MonsterBattleInput): MonsterBattleRe
       const monsterCritMultiplier = monsterCrit
         ? Math.max(1, safeStat(input.monster.critMultiplier, 1.5) + (effect.critDamage || 0))
         : 1;
-      const incoming = Math.max(1, floorDamage(
+      const incoming = Math.min(target.hp, Math.max(1, floorDamage(
         damageThroughDefense(safeStat(input.monster.attack) * monsterDamageMultiplier, targetDefense) * monsterCritMultiplier *
         (1 - clamp(safeStat(targetModifiers.resistanceBonus), 0, 0.75)),
-      ));
+      )));
       {
         target.hp = Math.max(0, target.hp - incoming);
         target.damageTaken += incoming;
@@ -406,7 +406,7 @@ export function resolveMonsterBattle(input: MonsterBattleInput): MonsterBattleRe
       if (appliedRound >= round) continue;
       const poisonedTarget = party.find(member => member.id === poisonedId);
       if (!poisonedTarget || poisonedTarget.hp <= 0) continue;
-      const poisonDamage = Math.max(1, Math.floor(poisonedTarget.maxHp * 0.03));
+      const poisonDamage = Math.min(poisonedTarget.hp, Math.max(1, floorDamage(poisonedTarget.maxHp * 0.03)));
       poisonedTarget.hp = Math.max(0, poisonedTarget.hp - poisonDamage);
       poisonedTarget.damageTaken += poisonDamage;
       totalDamageToParty += poisonDamage;
