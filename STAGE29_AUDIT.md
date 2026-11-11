@@ -680,3 +680,13 @@
 ### Typed battle input integrity guard
 
 - The typed battle resolver now rejects duplicate party combatant IDs before initiative is built. Previously, initiative entries were resolved back to party members by ID using the first matching member, so duplicate IDs could cause one combatant to act multiple times while another never acted. Added a deterministic regression test. This is an input-integrity guard only; it does not change legitimate single-player or group balance.
+
+
+### Deterministic synthetic combat matrix — 2026-11-11
+
+- Added a regression matrix with 63 deterministic scenarios: seven professions currently present in the server catalog × party sizes 1/2/3 × normal monster/boss/HP-threshold monster.
+- Scenarios use a fixed random source and fixed clock, then resolve twice and compare the complete result. The matrix checks party cardinality, bounded HP/rounds, non-negative damage, winner domain, and reconciliation of total damage against per-member dealt/taken counters.
+- Scenario fixtures include fire weakness, boss target metadata, compound attack/defense/physical-resistance passive, low-HP attack threshold, crit chance/multiplier, physical/magic damage bonuses, boss damage, lifesteal and attack-speed modifiers.
+- Existing focused tests remain responsible for exact expected values for individual mechanics (fire weakness, critical hits, thresholds, resistance, healing, poison, lifesteal and initiative); the matrix is a broad regression net, not a new balance target.
+- **Catalog gap:** the live `PROFESSIONS` constant and the existing baseline stat test both contain seven profiles: Cat—Battle Mage/Assassin; Dog—Warrior/Buffer; Bird—Archer; Rodent—Vampire/Gatherer. The separately planned Bird Assassin is absent, and Dog's class is still stored/displayed as `Воин`, not `Рыцарь`. Do not rename or add a class until IDs, skill trees, item restrictions, saved character values, race validation and client labels are audited together.
+- No live battle handler was switched and no gameplay coefficients or bestiary values were changed.
