@@ -3,7 +3,7 @@ import test from 'node:test';
 import { mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
-import { claimCraftJob, refundCraftMaterials, startCraftJob } from '../src/craftingQueue.js';
+import { cancelCraftJob, claimCraftJob, refundCraftMaterials, startCraftJob } from '../src/craftingQueue.js';
 
 test('refunds the exact materials stored on a craft job', () => {
   const inventory = ['herb_material', 'wood_material'];
