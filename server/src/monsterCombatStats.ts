@@ -404,7 +404,7 @@ const value = (n: number | undefined): number =>
 export function calculatePlayerMonsterCombatStats(
   input: PlayerMonsterStatsInput,
 ): PlayerMonsterCombatStats {
-  const profession = String(input.profession || '');
+  const profession = normalizeProfession(input.profession);
   const magic = profession === 'Боевой маг';
   const agile = ['Ассасин', 'Ассасин птицы', 'Лучник', 'Вампир'].includes(profession);
   const weaponEnhancement = Math.max(0, value(input.weaponEnhancementLevel));
