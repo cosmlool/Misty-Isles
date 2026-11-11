@@ -102,7 +102,7 @@ test('crafting skill and daily craft progress increase only after a successful c
         level: 1,
         crafting: 1,
         gold: 250,
-        inventory: JSON.stringify(['herb_material', 'herb_material', 'herb_material']),
+        inventory: JSON.stringify(['herb_material', 'herb_material', 'herb_material', 'herb_material', 'herb_material', 'herb_material']),
         craftQueue: '[]',
         equipment: JSON.stringify({ weapon: '', helmet: '', armor: '', gloves: '', boots: '', cloak: '', amulet: '' }),
       },
@@ -158,6 +158,30 @@ test('crafting skill and daily craft progress increase only after a successful c
     assert.equal(saved.crafting, 2, 'successful claim grants one crafting progression point');
     assert.equal(saved.itemsCrafted, 1);
     assert.deepEqual(JSON.parse(saved.inventory), ['field_potion']);
+
+    const secondQueue = new Promise<any>(resolve => room!.onMessage('craftQueue', resolve));
+    room.send('craft', { recipe: 'field_potion' });
+    const secondPayload = await withTimeout(secondQueue, 10_000, 'second craft queue response');
+    assert.equal(secondPayload.jobs.length, 1);
+
+    const cancelledQueue = new Promise<any>(resolve => room!.onMessage('craftQueue', resolve));
+    room.send('craftCancel', { id: secondPayload.jobs[0].id });
+    const cancelledPayload = await withTimeout(cancelledQueue, 10_000, 'craft cancellation response');
+    assert.equal(cancelledPayload.jobs.length, 0);
+
+    const cancelDeadline = Date.now() + 8_000;
+    while (Date.now() < cancelDeadline) {
+      saved = readJson(join(dataDir, 'players.json'))[playerId];
+      const inventory = JSON.parse(saved.inventory || '[]');
+      if (JSON.parse(saved.craftQueue || '[]').length === 0 && inventory.filter((id: string) => id === 'herb_material').length === 3) break;
+      await delay(50);
+    }
+    assert.equal(saved.crafting, 2, 'cancelling an order must not grant crafting progression');
+    assert.equal(saved.itemsCrafted, 1, 'cancelling an order must not count a crafted item');
+    assert.deepEqual(JSON.parse(saved.inventory), ['field_potion', 'herb_material', 'herb_material', 'herb_material']);
+    const afterCancelQuests = JSON.parse(saved.quests || '{}');
+    assert.equal(afterCancelQuests.activityToday?.crafts, 1, 'cancelled orders do not increment completed craft count');
+    assert.equal(afterCancelQuests.activityLog.filter((entry: any) => entry.type === 'craft').length, 4, 'start, completion, second start, and cancellation are logged separately');
     const completedQuests = JSON.parse(saved.quests || '{}');
     assert.equal(completedQuests.activityToday?.crafts, 1, 'one completed order increments the daily craft count once');
     assert.equal(completedQuests.activityLog.filter((entry: any) => entry.type === 'craft').length, 2, 'start and completion remain separate activity-log events');
