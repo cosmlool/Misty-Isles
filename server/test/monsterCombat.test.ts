@@ -4,7 +4,7 @@ import { dirname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import test from 'node:test';
 
-import { getMonsterPassiveDescriptions, parseMonsterWeakness, resolveMonsterPassive } from '../src/monsterCombat.js';
+import { getMonsterPassiveDescriptions, parseMonsterWeakness, resolveMonsterPassive, resolveLegacyMonsterAttackMultiplier, resolveLegacyMonsterDefenseMultiplier, resolveLegacyMonsterProfessionDamageMultiplier, resolveLegacyMonsterResistance } from '../src/monsterCombat.js';
 import { calculateCombatSpeed, resolveMonsterBattle } from '../src/monsterBattle.js';
 import { adaptPlayerCombatant, buildPlayerCombatantForMonsterBattle } from '../src/monsterCombatantAdapter.js';
 import { resolveEquipmentSetTierDescriptions, aggregateMonsterCombatModifiers, calculatePlayerMonsterCombatStats, parseMonsterCombatEffect, parseMonsterCombatEffectClauses, resolveMonsterCombatProperty, resolveMonsterPendantCombatEffect, resolvePlayerMonsterCombatHealth, resolveEquipmentSetCombatEffects, resolveGoldEquipmentStatProfile, resolvePlayerMonsterLifestealRate } from '../src/monsterCombatStats.js';
@@ -43,6 +43,42 @@ test('passive registry keeps compound effects instead of dropping secondary clau
   });
 });
 
+
+test('legacy monster resistance stacks static sources and clamps the total', () => {
+  const effect = {
+    allResistance: 0.2,
+    physicalResistance: 0.15,
+    professionResistance: { Воин: 0.1 },
+  } as Parameters<typeof resolveLegacyMonsterResistance>[0];
+  assert.equal(resolveLegacyMonsterResistance(effect, 'Воин'), 0.45);
+  assert.equal(resolveLegacyMonsterResistance(effect, 'Боевой маг'), 0.35);
+
+  const capped = { allResistance: 0.75, physicalResistance: 0.3 } as Parameters<typeof resolveLegacyMonsterResistance>[0];
+  assert.equal(resolveLegacyMonsterResistance(capped, 'Воин'), 0.85);
+});
+
+test('legacy monster attack and defense multipliers keep conditional ally bonuses separate', () => {
+  const effect = {
+    attackMultiplier: 1.1,
+    attackWhenAllies: 0.2,
+    defenseMultiplier: 1.15,
+    defenseWhenAllies: 0.1,
+  } as Parameters<typeof resolveLegacyMonsterAttackMultiplier>[0];
+  assert.equal(resolveLegacyMonsterAttackMultiplier(effect, 0), 1.1);
+  assert.equal(resolveLegacyMonsterAttackMultiplier(effect, 1), 1.32);
+  assert.equal(resolveLegacyMonsterDefenseMultiplier(effect, 0), 1.15);
+  assert.equal(resolveLegacyMonsterDefenseMultiplier(effect, 1), 1.265);
+});
+
+test('legacy monster profession damage bonuses match profession aliases', () => {
+  const effect = {
+    attackVsProfession: { profession: 'Боевой маг', multiplier: 1.15 },
+    damageVsProfession: { profession: 'Лучник', multiplier: 1.2 },
+  } as Parameters<typeof resolveLegacyMonsterProfessionDamageMultiplier>[0];
+  assert.equal(resolveLegacyMonsterProfessionDamageMultiplier(effect, 'Маг'), 1.15);
+  assert.equal(resolveLegacyMonsterProfessionDamageMultiplier(effect, 'Лучник'), 1.2);
+  assert.equal(resolveLegacyMonsterProfessionDamageMultiplier(effect, 'Воин'), 1);
+});
 
 test('monster battle resolves profession and fire weaknesses deterministically', () => {
   const base = {
