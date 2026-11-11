@@ -4,7 +4,7 @@ import { dirname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import test from 'node:test';
 
-import { getMonsterPassiveDescriptions, parseMonsterWeakness, resolveMonsterPassive, resolveLegacyMonsterAttackMultiplier, resolveLegacyMonsterDefenseMultiplier, resolveLegacyMonsterProfessionDamageMultiplier, resolveLegacyMonsterResistance, resolveLegacyMonsterWeaknessMultiplier, resolveLegacyMonsterHitMultiplier, resolveLegacyPlayerHitMultiplier } from '../src/monsterCombat.js';
+import { getMonsterPassiveDescriptions, parseMonsterWeakness, resolveMonsterPassive, resolveLegacyMonsterAttackMultiplier, resolveLegacyMonsterDefenseMultiplier, resolveLegacyMonsterProfessionDamageMultiplier, resolveLegacyMonsterResistance, resolveLegacyMonsterWeaknessMultiplier, resolveLegacyMonsterHitMultiplier, resolveLegacyPlayerHitMultiplier, resolveLegacyHealingMultiplier } from '../src/monsterCombat.js';
 import { calculateCombatSpeed, resolveMonsterBattle } from '../src/monsterBattle.js';
 import { adaptPlayerCombatant, buildPlayerCombatantForMonsterBattle } from '../src/monsterCombatantAdapter.js';
 import { resolveEquipmentSetTierDescriptions, aggregateMonsterCombatModifiers, calculatePlayerMonsterCombatStats, parseMonsterCombatEffect, parseMonsterCombatEffectClauses, resolveMonsterCombatProperty, resolveMonsterPendantCombatEffect, resolvePlayerMonsterCombatHealth, resolveEquipmentSetCombatEffects, resolveGoldEquipmentStatProfile, resolvePlayerMonsterLifestealRate } from '../src/monsterCombatStats.js';
@@ -81,6 +81,22 @@ test('legacy monster evasion reduces expected hits and accuracy gear counters it
     const passive = resolveMonsterPassive(monster.passiveDescription);
     assert.equal(passive?.evasion, 0.15);
     assert.equal(resolveLegacyMonsterHitMultiplier(passive), 0.85);
+  }
+});
+
+test('legacy healing multiplier applies monster reduction and player healing bonuses', () => {
+  assert.equal(resolveLegacyHealingMultiplier(undefined), 1);
+  assert.equal(resolveLegacyHealingMultiplier({ healReduction: 0.1 } as Parameters<typeof resolveLegacyHealingMultiplier>[0]), 0.9);
+  assert.equal(resolveLegacyHealingMultiplier({ healReduction: 0.1 } as Parameters<typeof resolveLegacyHealingMultiplier>[0], 0.5), 1.35);
+  assert.equal(resolveLegacyHealingMultiplier({ healReduction: 1 } as Parameters<typeof resolveLegacyHealingMultiplier>[0], 5), 0);
+  assert.equal(resolveLegacyHealingMultiplier(undefined, 10), 6);
+
+  const healingMonsters = bestiary.monsters.filter((monster: any) => /Лечение противника −10%/.test(String(monster.passiveDescription || '')));
+  assert.equal(healingMonsters.length, 2);
+  for (const monster of healingMonsters) {
+    const passive = resolveMonsterPassive(monster.passiveDescription);
+    assert.equal(passive?.healReduction, 0.1);
+    assert.equal(resolveLegacyHealingMultiplier(passive), 0.9);
   }
 });
 
