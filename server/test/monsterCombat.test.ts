@@ -1884,3 +1884,40 @@ test('deterministic typed combat matrix covers every implemented profession at s
   }
   assert.equal(scenarios, 63);
 });
+
+test('new professional set bonuses never infer legacy multipliers from profession or mastery', () => {
+  const base = {
+    profession: 'Воин', strength: 10, dexterity: 10, intelligence: 10,
+    vitality: 10, stamina: 10, baseDefense: 10,
+  };
+  const withoutSet = calculatePlayerMonsterCombatStats(base);
+  for (const effect of ['attack', 'defense', 'crit', 'lifesteal', 'loot']) {
+    const withSet = calculatePlayerMonsterCombatStats({
+      ...base,
+      setBonuses: [{ effect, itemCount: 5, mastery: 10 }],
+    });
+    assert.equal(withSet.attack, withoutSet.attack, `unexpected inferred attack for ${effect}`);
+    assert.equal(withSet.defense, withoutSet.defense, `unexpected inferred defense for ${effect}`);
+    assert.equal(withSet.combatModifiers.attackBonus, 0);
+    assert.equal(withSet.combatModifiers.defenseBonus, 0);
+  }
+});
+
+test('new set explicit tier effects are applied once and do not receive hidden five-piece or mastery bonuses', () => {
+  const base = {
+    profession: 'Воин', strength: 10, dexterity: 10, intelligence: 10,
+    vitality: 10, stamina: 10, baseDefense: 10,
+  };
+  const withoutSet = calculatePlayerMonsterCombatStats(base);
+  const withSet = calculatePlayerMonsterCombatStats({
+    ...base,
+    setBonuses: [{
+      effect: 'attack', itemCount: 5, mastery: 10,
+      descriptions: ['2/5: +10% к атаке'],
+    }],
+  });
+  assert.equal(withSet.attack, withoutSet.attack);
+  assert.equal(withSet.defense, withoutSet.defense);
+  assert.equal(withSet.combatModifiers.attackBonus, 0.10);
+  assert.equal(withSet.combatModifiers.defenseBonus, 0);
+});
