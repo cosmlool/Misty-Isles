@@ -182,9 +182,6 @@ test('crafting skill and daily craft progress increase only after a successful c
     const afterCancelQuests = JSON.parse(saved.quests || '{}');
     assert.equal(afterCancelQuests.activityToday?.crafts, 1, 'cancelled orders do not increment completed craft count');
     assert.equal(afterCancelQuests.activityLog.filter((entry: any) => entry.type === 'craft').length, 4, 'start, completion, second start, and cancellation are logged separately');
-    const completedQuests = JSON.parse(saved.quests || '{}');
-    assert.equal(completedQuests.activityToday?.crafts, 1, 'one completed order increments the daily craft count once');
-    assert.equal(completedQuests.activityLog.filter((entry: any) => entry.type === 'craft').length, 2, 'start and completion remain separate activity-log events');
   } finally {
     await leaveRoomSafely(room);
     if (child) await stopServer(child);
