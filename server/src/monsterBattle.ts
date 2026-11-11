@@ -130,6 +130,10 @@ function resistanceFor(effect: MonsterPassiveEffect, fighter: MonsterBattleComba
 }
 
 export function resolveMonsterBattle(input: MonsterBattleInput): MonsterBattleResult {
+  const partyIds = input.party.map(member => String(member.id || ''));
+  if (new Set(partyIds).size !== partyIds.length) {
+    throw new Error('Monster battle party contains duplicate combatant IDs.');
+  }
   const random = input.random || Math.random;
   const now = input.now ?? Date.now();
   const maxRounds = Math.floor(clamp(input.maxRounds ?? 30, 1, 100));
