@@ -1932,3 +1932,26 @@ type EquipmentSetEffect = {
 - Таблица подтверждает несопоставимость PvP/PvE каналов и показывает, что Добытчик/Баффер не имеют отдельного PvE базового множителя атаки/защиты. Это кандидаты для будущего дизайн-решения, но не доказательство, что их надо усиливать: нужны навыки, полная экипировка, длительность боя, выживаемость, добыча и групповая полезность.
 
 Числовые коэффициенты не менялись. Следующий необходимый шаг перед предложениями по балансу — сравнение полного боевого цикла с реальными профильными предметами уровня 25/55/100 и доступными навыками для всех восьми профессий.
+
+
+### Сопоставление профильной экипировки 25/55/100 и live-каналов — 2026-11-11
+
+Проверены все 8 комплектов в `server/data/equipment_catalog.json` (по 6 обычных оружий и 35 обычных частей брони на профессию; у каждого также 5 легендарных частей). У всех профессий одинаковые базовые числа обычной экипировки соответствующего уровня: оружие `attack` = 34/72/184 на уровнях 25/55/100; пять обычных частей брони дают суммарно `defense` = 320/560/1080 и `health` = 400/720/1400. Пять легендарных частей уровня 100 добавляют ещё 900 защиты и 1100 здоровья. Значит, базовая сырая защита/здоровье комплектов выровнены; специализация лежит в primaryAttribute, атрибутах и typed `combatStats`.
+
+Суммарные профильные typed-эффекты оружия + пяти обычных частей брони на уровнях 25/55/100:
+
+| Профиль | Уровень 25 | Уровень 55 | Уровень 100 |
+|---|---|---|---|
+| Боевой маг | magicDamage 2.0%, accuracy 0.8%, resistance 0.8% | magicDamage 3.3%, accuracy 1.3%, resistance 1.3% | magicDamage 5.0%, accuracy 2.0%, resistance 2.0% |
+| Ассасин / Ассасин птицы | physicalDamage 2.0%, critChance 0.8%, critDamage 0.4% | physicalDamage 3.3%, critChance 1.4%, critDamage 0.7% | physicalDamage 5.0%, critChance 2.2%, critDamage 1.1% |
+| Рыцарь | physicalDamage 2.0%, controlResistance 1.2% | physicalDamage 3.3%, controlResistance 2.0% | physicalDamage 5.0%, controlResistance 3.1% |
+| Баффер | healing 2.4%, controlResistance 0.8% | healing 4.0%, controlResistance 1.3% | healing 6.1%, controlResistance 2.0% |
+| Лучник | physicalDamage 2.0%, critChance 0.8%, critDamage 0.4% | physicalDamage 3.3%, critChance 1.4%, critDamage 0.7% | physicalDamage 5.0%, critChance 2.2%, critDamage 1.1% |
+| Вампир | physicalDamage 2.0%, lifesteal 1.2% | physicalDamage 3.3%, lifesteal 2.1% | physicalDamage 5.0%, lifesteal 3.3% |
+| Добытчик | physicalDamage 2.0%, loot 2.4% | physicalDamage 3.3%, loot 4.0% | physicalDamage 5.0%, loot 6.2% |
+
+Дополнительно у всех комплектов растут accuracy/resistance/health/evasion/attackSpeed/controlResistance базовых слотов; выше показаны отличающиеся профильные каналы. Проценты — сумма значений `combatStats`, не обещание фактического усиления live боя.
+
+**Подтверждённая интеграционная проблема:** PvP live-формула читает числовые `attack/defense`, заточку, `equipmentProperties` и legacy set flags, но не читает `combatStats` каталога. Поэтому профильные `physicalDamage`, `magicDamage`, `critChance`, `critDamage`, `healing`, `lifesteal`, `loot`, а также `accuracy/evasion/resistance/health/attackSpeed` не превращаются в PvP-модификаторы этим путём. В PvE live aggregate часть каналов уже потребляется (accuracy, evasion, healing, loot, lifesteal; здоровье также влияет на effective max HP), но `physicalDamage`, `magicDamage`, `critChance`, `critDamage`, `attackSpeed`, `resistance` не встроены в его итоговый урон/защиту. Таким образом, часть специализированной экипировки сейчас имеет декларативные свойства, которые не дают заявленного эффекта в конкретных live-режимах.
+
+**Решение аудита:** не пытаться чинить это добавлением всех процентов к общей атаке/защите. Для физического/магического урона, критов, скорости, сопротивления и поддержки нужны отдельные согласованные правила в PvP и PvE, иначе один и тот же предмет начнёт работать по-разному или умножать эффект дважды. В этой фазе только зафиксирована матрица. Коэффициенты и поведение боя не менялись.
