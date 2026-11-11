@@ -98,7 +98,14 @@ test('PvP offers four saved real characters, steals 20 percent gold, persists co
         strength: 100_000, dexterity: 100_000, defense: 100_000, vitality: 100_000,
         gold: 250, buff: 'attack', buffValue: 0.15, buffSecondaryEffect: 'crit', buffSecondaryValue: 0.12,
         buffUntil: Date.now() + 5 * 60 * 1000,
-        inventory: '[]', equipment: '{}', quests: '{}',
+        inventory: '[]',
+        equipment: JSON.stringify({ weapon: 'WPN-C-020', armor: 'ARM-C-2-020' }),
+        equipmentEnhancements: JSON.stringify({ 'weapon:WPN-C-020': 5, 'armor:ARM-C-2-020': 3 }),
+        collections: JSON.stringify({ equipmentProperties: {
+          'WPN-C-020': { effect: 'attack', value: 0.1 },
+          'ARM-C-2-020': { effect: 'defense', value: 0.2 },
+        } }),
+        quests: '{}',
       },
     };
     for (const [index, id] of targetIds.entries()) {
@@ -106,7 +113,14 @@ test('PvP offers four saved real characters, steals 20 percent gold, persists co
         id, name: `Offline Target ${index + 1}`, race: 'Собака', level: [20, 23, 10, 40, 15, 55, 8, 32, 60][index],
         strength: 1, dexterity: 1, defense: 100_000, vitality: 100_000,
         buff: 'defense', buffValue: 0.20, buffUntil: Date.now() + 5 * 60 * 1000,
-        gold: 1_000 + index * 100, inventory: '[]', equipment: '{}', quests: '{}',
+        gold: 1_000 + index * 100, inventory: '[]',
+        equipment: JSON.stringify({ weapon: 'WPN-C-020', armor: 'ARM-C-2-020' }),
+        equipmentEnhancements: JSON.stringify({ 'weapon:WPN-C-020': 5, 'armor:ARM-C-2-020': 3 }),
+        collections: JSON.stringify({ equipmentProperties: {
+          'WPN-C-020': { effect: 'attack', value: 0.1 },
+          'ARM-C-2-020': { effect: 'defense', value: 0.2 },
+        } }),
+        quests: '{}',
       };
     }
     const bystanderId = 'pvp_runtime_online_bystander';
@@ -167,9 +181,14 @@ test('PvP offers four saved real characters, steals 20 percent gold, persists co
     attackerRoom.send('pvpChallenge', { targetId: chosen.id });
     const result = await waitFor(() => results[0], 'PvP combat result');
     assert.equal(result.report.result, 'win', 'the synthetic high-stat attacker should win');
-    assert.ok(result.report.attack >= 184_002, 'active +15% attack buff must affect the PvP combat calculation');
-    assert.ok(result.report.scores.player >= 264_082, 'secondary critical buff must increase the PvP combat score');
-    assert.ok(result.report.scores.opponent >= 69_600, 'the target\'s active +20% defense buff must affect its PvP score');
+    assert.ok(result.report.attack >= 227_739 && result.report.attack <= 227_749,
+      'weapon attack property, +5 sharpening and active +15% attack buff must all reach the live PvP calculation');
+    assert.equal(result.report.defense, 174_041,
+      'armor defense property and +3 armor sharpening must reach the live PvP calculation');
+    assert.ok(result.report.scores.player >= 324_684,
+      'secondary critical buff must increase the gear-adjusted PvP combat score');
+    assert.ok(result.report.scores.opponent >= 83_578,
+      'the target weapon/armor properties, sharpening and active +20% defense buff must affect its PvP score');
     const saved = readJson(join(dataDir, 'players.json'));
     assert.ok(saved[bystanderId].health > 50, 'PvP persistence must include unsaved health regeneration from every online character');
     const stolen = Math.floor(targetBefore.gold * 0.2);
