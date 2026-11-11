@@ -77,13 +77,14 @@ function readJson(path: string): any {
   return JSON.parse(readFileSync(path, 'utf8'));
 }
 
-test('server rejects equipping another race equipment even when it is in inventory', { timeout: 45_000 }, async () => {
+test('server preserves race equipment rules, migrates Warrior to Knight and enables Bird Assassin', { timeout: 45_000 }, async () => {
   const dataDir = mkdtempSync(join(tmpdir(), 'misty-race-equipment-'));
   const playerId = 'runtime_race_equipment_01';
   const port = await unusedPort();
   let child: ChildProcess | undefined;
   let room: Room | undefined;
   let birdRoom: Room | undefined;
+  let knightRoom: Room | undefined;
   try {
     for (const file of staticDataFiles) copyFileSync(join(serverDir, 'data', file), join(dataDir, file));
     writeFileSync(join(dataDir, 'players.json'), JSON.stringify({
@@ -96,6 +97,13 @@ test('server rejects equipping another race equipment even when it is in invento
       runtime_bird_assassin_01: {
         id: 'runtime_bird_assassin_01', name: 'Bird Assassin Tester', race: 'Птица', profession: '',
         city: 'Высокое гнездо', level: 30, gold: 500000, inventory: '[]',
+        equipment: JSON.stringify({ weapon: '', armor: '', helmet: '', gloves: '', boots: '', cloak: '', amulet: '' }),
+        quests: '{}',
+      },
+      runtime_knight_legacy_01: {
+        id: 'runtime_knight_legacy_01', name: 'Legacy Knight Tester', race: 'Собака', profession: 'Воин',
+        level: 30, gold: 500, inventory: JSON.stringify(['dog_oathaxe']),
+        guildSkills: JSON.stringify({ professionUnlocked: ['shield_wall'], prof_shield_wall: 12345 }),
         equipment: JSON.stringify({ weapon: '', armor: '', helmet: '', gloves: '', boots: '', cloak: '', amulet: '' }),
         quests: '{}',
       },
@@ -126,6 +134,19 @@ test('server rejects equipping another race equipment even when it is in invento
     await waitFor(() => notices.find(message => message.includes('Экипировано: Мантия серебряного архива')), 'own-race equipment remains usable');
     const afterAllowed = readJson(join(dataDir, 'players.json'))[playerId];
     assert.equal(JSON.parse(afterAllowed.equipment).armor, 'cat_silversilk');
+    const knightPlayerId = 'runtime_knight_legacy_01';
+    const knightClient = new Client(`ws://127.0.0.1:${port}`);
+    const knightToken = await guestToken(port, knightPlayerId);
+    knightRoom = await knightClient.joinOrCreate('my_room', { playerId: knightPlayerId, sessionToken: knightToken });
+    const knightNotices: string[] = [];
+    knightRoom.onMessage('notice', payload => knightNotices.push(String(payload?.text || '')));
+    knightRoom.send('equipItem', { id: 'dog_oathaxe' });
+    await waitFor(() => knightNotices.find(message => message.includes('Экипировано: Топор клятвы')), 'legacy Warrior gear remains usable by migrated Knight');
+    const knightSaved = readJson(join(dataDir, 'players.json'))[knightPlayerId];
+    assert.equal(knightSaved.profession, 'Рыцарь');
+    assert.equal(JSON.parse(knightSaved.equipment).weapon, 'dog_oathaxe');
+    assert.deepEqual(JSON.parse(knightSaved.guildSkills).professionUnlocked, ['shield_wall']);
+    assert.equal(JSON.parse(knightSaved.guildSkills).prof_shield_wall, 12345);
     const birdPlayerId = 'runtime_bird_assassin_01';
     const birdClient = new Client(`ws://127.0.0.1:${port}`);
     const birdToken = await guestToken(port, birdPlayerId);
@@ -146,6 +167,7 @@ test('server rejects equipping another race equipment even when it is in invento
     assert.equal(birdSaved.profession, 'Ассасин птицы');
     assert.equal(JSON.parse(birdSaved.equipment).weapon, 'WPN-BIRD-ASS-025');
   } finally {
+    await leaveRoomSafely(knightRoom);
     await leaveRoomSafely(birdRoom);
     await leaveRoomSafely(room);
     if (child) await stopServer(child);
