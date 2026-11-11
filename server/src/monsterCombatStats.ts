@@ -116,6 +116,7 @@ export function parseMonsterCombatEffect(description: string): ParsedMonsterComb
     /критическ\p{L}*\s+(?:шанс|вероятност)\p{L}*/iu.test(text) ? 'critChance' :
     /критическ\p{L}*\s+урон\p{L}*/iu.test(text) ? 'critDamage' :
     /вампиризм|похищен\p{L}*\s+здоров\p{L}*|восстанавлива\p{L}*\s+\d/iu.test(text) ? 'lifesteal' :
+    /золот/iu.test(text) ? 'gold' :
     /добыч|ресурс|трофе|редк\p{L}*\s+материал\p{L}*/iu.test(text) ? 'loot' :
     /магическ\p{L}*\s+урон\p{L}*/iu.test(text) ? 'magicDamage' :
     /физическ\p{L}*\s+урон\p{L}*/iu.test(text) ? 'physicalDamage' :
@@ -130,7 +131,6 @@ export function parseMonsterCombatEffect(description: string): ParsedMonsterComb
     /поддержк|положительн\p{L}*\s+эффект\p{L}*/iu.test(text) ? 'support' :
     /производств/iu.test(text) ? 'production' :
     /опыт/iu.test(text) ? 'experience' :
-    /золот/iu.test(text) ? 'gold' :
     /\bhp\b|максимальн\p{L}*\s+hp|здоровь/iu.test(text) ? 'health' :
     /защит/iu.test(text) ? 'defense' :
     /атак/iu.test(text) ? 'attack' :
