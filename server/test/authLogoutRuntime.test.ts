@@ -103,7 +103,10 @@ test('logout revokes a valid session, closes its active WebSocket and rejects fu
 
     const validLogout = await post(port, '/auth/logout', { token });
     assert.equal(validLogout.status, 200);
-    await left;
+    await Promise.race([
+      left,
+      delay(5_000).then(() => { throw new Error('The active gameplay WebSocket was not closed after logout.'); }),
+    ]);
     assert.equal(typeof leaveCode, 'number', 'the active gameplay socket must be closed after logout');
     const revoked = await post(port, '/auth/check', { token });
     assert.equal(revoked.status, 401);
@@ -119,7 +122,9 @@ test('logout revokes a valid session, closes its active WebSocket and rejects fu
     assert.equal(renewed.playerId, playerId);
     assert.equal((await post(port, '/auth/check', { token: renewed.token })).status, 200);
   } finally {
-    if (room) await room.leave().catch(() => undefined);
+    if (room && leaveCode === undefined) {
+      await Promise.race([room.leave().catch(() => undefined), delay(1_000)]);
+    }
     if (child) await stopServer(child);
     rmSync(dataDir, { recursive: true, force: true });
   }
