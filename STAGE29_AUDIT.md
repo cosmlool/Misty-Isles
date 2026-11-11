@@ -576,3 +576,22 @@
 ### Следующий безопасный этап
 Сначала построить контрольную матрицу legacy vs typed engine на синтетических персонажах и монстрах, затем определить единый расчёт характеристик и адаптеры для каждого боевого режима. Параллельно подготовить спецификацию пассивной прогрессии восьми профессий и экономики Spoil/Sweep. Не менять игровые коэффициенты, сохранения или live-боевые обработчики до сравнительного отчёта и согласования числовой спецификации.
 
+
+
+## Persistence follow-up: online snapshots and periodic autosave — 2026-11-11
+
+### PvP and auction online-player snapshot review
+- loadPlayersWithOnline() starts from the persisted player map and overlays every currently online Player.toJSON() snapshot.
+- PvP matchmaking and PvP resolution use the online overlay before saving. The PvP runtime test explicitly checks that an online bystander's unsaved health regeneration is retained when a PvP result is persisted.
+- Auction listing, withdrawal, and purchase build transaction snapshots from the same online overlay. The economy runtime test checks that an online bystander's unsaved health regeneration survives auction listing, and that buyer/seller balances and inventories remain correct through competing purchases, withdrawal, disconnect, and restart.
+- Player room saves and bulk player persistence also merge online snapshots. Clan transaction commits explicitly overlay all online players before writing the shared player snapshot.
+- No separate direct write to players.json was found in server/src/index.ts; player persistence is routed through the player save store or transaction stores.
+- Conclusion: the original all-online-player overwrite risk is addressed in the current branch implementation and has targeted runtime regression coverage. The runtime tests have not been executed against the current HEAD in this review; no pass is claimed.
+
+### Periodic autosave added
+- Added server/src/playerAutosave.ts, a single reusable interval scheduler with positive-interval validation, error reporting, unref() support, and idempotent shutdown.
+- Server startup now runs one process-level autosave every 30 seconds, not one timer per room. It persists all online players through persistPlayers(), which merges the online snapshots with the full saved player map.
+- Autosave skips writes when no characters are online, logs storage failures, and retries on the next interval instead of silently swallowing the error.
+- Added unit coverage in server/test/playerAutosave.test.ts for scheduling, repeated saves, timer cleanup, error reporting, and invalid intervals; included it in the server test script.
+- Current PR head after these changes: 571aa9afd56f22580c2ba7aae303b88f875390d5. Combined commit statuses and workflow runs returned empty lists at the time of this note; CI remains unconfirmed.
+- No gameplay coefficients, player schema, existing player saves, Stage 27, admin panel, or main were changed.
