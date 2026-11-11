@@ -65,6 +65,10 @@ test('PvP critical properties are read from weapon and armor independently', () 
 });
 
 test('PvP five-piece armor slots are intentionally outside this formula input', () => {
-  const actual = calculatePvpCombatStats({ ...base, profession: 'Рыцарь' });
-  assert.deepEqual(Object.keys(actual).sort(), ['attack', 'defense', 'score']);
+  const baseline = calculatePvpCombatStats({ ...base, profession: 'Рыцарь' });
+  const withIgnoredSlots = calculatePvpCombatStats({
+    ...base, profession: 'Рыцарь', helmetDefense: 999, glovesDefense: 999,
+    bootsDefense: 999, cloakDefense: 999,
+  } as typeof base & Record<string, number>);
+  assert.deepEqual(withIgnoredSlots, baseline);
 });
