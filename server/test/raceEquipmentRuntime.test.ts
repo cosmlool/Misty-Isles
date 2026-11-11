@@ -14,6 +14,17 @@ import { seedGuestCredentials, testGuestProof, leaveRoomSafely } from './guestAu
 const serverDir = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const staticDataFiles = ['city_npcs.json', 'equipment_catalog.json', 'forgotten_lands.json'];
 
+const professionRuntimeProfiles = [
+  { playerId: 'runtime_profession_mage', race: 'Кот', profession: 'Боевой маг', weaponId: 'WPN-МАГ-025', weaponName: 'Звёздный посох' },
+  { playerId: 'runtime_profession_assassin', race: 'Кот', profession: 'Ассасин', weaponId: 'WPN-АСС-025', weaponName: 'Безмолвный кинжал' },
+  { playerId: 'runtime_profession_knight', race: 'Собака', profession: 'Рыцарь', weaponId: 'WPN-ВОИ-025', weaponName: 'Клятвенный меч' },
+  { playerId: 'runtime_profession_buffer', race: 'Собака', profession: 'Баффер', weaponId: 'WPN-ПОД-025', weaponName: 'Живительный жезл' },
+  { playerId: 'runtime_profession_archer', race: 'Птица', profession: 'Лучник', weaponId: 'WPN-ЛУЧ-025', weaponName: 'Дальний лук' },
+  { playerId: 'runtime_profession_bird_assassin', race: 'Птица', profession: 'Ассасин птицы', weaponId: 'WPN-BIRD-ASS-025', weaponName: 'Кинжал ветреной тени' },
+  { playerId: 'runtime_profession_vampire', race: 'Грызун', profession: 'Вампир', weaponId: 'WPN-ВАМ-025', weaponName: 'Алый клык' },
+  { playerId: 'runtime_profession_gatherer', race: 'Грызун', profession: 'Добытчик', weaponId: 'WPN-ДОБ-025', weaponName: 'Шахтёрский кирку' },
+] as const;
+
 async function unusedPort(): Promise<number> {
   const probe = createServer();
   await new Promise<void>((resolve, reject) => {
@@ -77,7 +88,7 @@ function readJson(path: string): any {
   return JSON.parse(readFileSync(path, 'utf8'));
 }
 
-test('server preserves race equipment rules, migrates Warrior to Knight and enables Bird Assassin', { timeout: 45_000 }, async () => {
+test('server preserves race equipment rules, migrates Warrior to Knight and enables Bird Assassin', { timeout: 120_000 }, async () => {
   const dataDir = mkdtempSync(join(tmpdir(), 'misty-race-equipment-'));
   const playerId = 'runtime_race_equipment_01';
   const port = await unusedPort();
@@ -85,6 +96,7 @@ test('server preserves race equipment rules, migrates Warrior to Knight and enab
   let room: Room | undefined;
   let birdRoom: Room | undefined;
   let knightRoom: Room | undefined;
+  const professionRooms: Room[] = [];
   try {
     for (const file of staticDataFiles) copyFileSync(join(serverDir, 'data', file), join(dataDir, file));
     writeFileSync(join(dataDir, 'players.json'), JSON.stringify({
@@ -107,6 +119,12 @@ test('server preserves race equipment rules, migrates Warrior to Knight and enab
         equipment: JSON.stringify({ weapon: '', armor: '', helmet: '', gloves: '', boots: '', cloak: '', amulet: '' }),
         quests: '{}',
       },
+      ...Object.fromEntries(professionRuntimeProfiles.map(profile => [profile.playerId, {
+        id: profile.playerId, name: profile.profession + ' Runtime Tester', race: profile.race,
+        profession: '', level: 30, gold: 100000, inventory: '[]',
+        equipment: JSON.stringify({ weapon: '', armor: '', helmet: '', gloves: '', boots: '', cloak: '', amulet: '' }),
+        quests: '{}',
+      }])),
     }, null, 2));
 
     seedGuestCredentials(dataDir);
@@ -166,7 +184,45 @@ test('server preserves race equipment rules, migrates Warrior to Knight and enab
     const birdSaved = readJson(join(dataDir, 'players.json'))[birdPlayerId];
     assert.equal(birdSaved.profession, 'Ассасин птицы');
     assert.equal(JSON.parse(birdSaved.equipment).weapon, 'WPN-BIRD-ASS-025');
+
+    // Exercise the actual server selection, shop and equipment handlers for every live profile.
+    for (const profile of professionRuntimeProfiles) {
+      const profileClient = new Client(`ws://127.0.0.1:${port}`);
+      const profileToken = await guestToken(port, profile.playerId);
+      const profileRoom = await profileClient.joinOrCreate('my_room', { playerId: profile.playerId, sessionToken: profileToken });
+      professionRooms.push(profileRoom);
+      const profileNotices: string[] = [];
+      let profileCatalog: any;
+      profileRoom.onMessage('notice', payload => profileNotices.push(String(payload?.text || '')));
+      profileRoom.onMessage('catalog', payload => { profileCatalog = payload; });
+
+      profileRoom.send('chooseProfession', { profession: profile.profession });
+      await waitFor(
+        () => profileNotices.find(message => message.includes(`Ты вступил в боевую гильдию: ${profile.profession}.`)),
+        profile.profession + ' profession selection',
+      );
+      await waitFor(
+        () => Array.isArray(profileCatalog?.professionSkills?.[profile.profession])
+          && profileCatalog.professionSkills[profile.profession].length > 0 ? true : undefined,
+        profile.profession + ' skill catalog',
+      );
+      profileRoom.send('buyItem', { id: profile.weaponId });
+      await waitFor(
+        () => profileNotices.find(message => message.startsWith('Куплено:')),
+        profile.profession + ' weapon purchase',
+      );
+      profileRoom.send('equipItem', { id: profile.weaponId });
+      await waitFor(
+        () => profileNotices.find(message => message.includes('Экипировано: ' + profile.weaponName)),
+        profile.profession + ' weapon equip',
+      );
+
+      const saved = readJson(join(dataDir, 'players.json'))[profile.playerId];
+      assert.equal(saved.profession, profile.profession, profile.profession + ' profession must persist');
+      assert.equal(JSON.parse(saved.equipment).weapon, profile.weaponId, profile.profession + ' weapon must persist');
+    }
   } finally {
+    for (const profileRoom of professionRooms) await leaveRoomSafely(profileRoom);
     await leaveRoomSafely(knightRoom);
     await leaveRoomSafely(birdRoom);
     await leaveRoomSafely(room);
