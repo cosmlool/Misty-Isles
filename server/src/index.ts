@@ -20,7 +20,7 @@ import { calculateClanWarDamage, clanWarCooldownRemaining, disbandClanState, rec
 import { calculatePvpGoldTransfer, resolvePvpOutcome, isPvpTargetOffered, pvpCooldownRemaining, pvpImmunityRemaining, selectPvpOpponents, PVP_ATTACK_COOLDOWN_MS, PVP_IMMUNITY_MS, readPvpState as readPvpStateSafe } from './pvpOperations.js';
 import { resetWeeklyHuntProgress, utcIsoWeekKey } from './calendarOperations.js';
 import { checkExpeditionTravelConsistency, checkExpeditionTravelReadiness, checkExpeditionTravelStartReadiness } from './expeditionOperations.js';
-import { resolveLegacyMonsterAttackMultiplier, resolveLegacyMonsterDefenseMultiplier, resolveLegacyMonsterProfessionDamageMultiplier, resolveLegacyMonsterResistance } from './monsterCombat.js';
+import { resolveLegacyMonsterAttackMultiplier, resolveLegacyMonsterDefenseMultiplier, resolveLegacyMonsterProfessionDamageMultiplier, resolveLegacyMonsterResistance, resolveMonsterPassive } from './monsterCombat.js';
 
 const ONLINE_PLAYERS = new Map<string, Player>();
 const ONLINE_CLIENTS = new Map<string, Client>();
