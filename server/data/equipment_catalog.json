@@ -3602,7 +3602,7 @@
     "name": "Шлем железной клятвы «ученика»",
     "kind": "armor",
     "slot": "helmet",
-    "set": "Рыцарь-25",
+    "set": "Воин-25",
     "price": 3000,
     "level": 25,
     "defense": 64,
@@ -3619,14 +3619,15 @@
     },
     "combatStats": {
       "controlResistance": 0.008
-    }
+    },
+    "setDisplayName": "Рыцарь-25"
   },
   {
     "id": "ARM-ВОИ-1-040",
     "name": "Шлем железной клятвы «посвящённого»",
     "kind": "armor",
     "slot": "helmet",
-    "set": "Рыцарь-40",
+    "set": "Воин-40",
     "price": 7200,
     "level": 40,
     "defense": 86,
@@ -3643,14 +3644,15 @@
     },
     "combatStats": {
       "controlResistance": 0.01
-    }
+    },
+    "setDisplayName": "Рыцарь-40"
   },
   {
     "id": "ARM-ВОИ-1-055",
     "name": "Шлем железной клятвы «мастера»",
     "kind": "armor",
     "slot": "helmet",
-    "set": "Рыцарь-55",
+    "set": "Воин-55",
     "price": 15600,
     "level": 55,
     "defense": 112,
@@ -3667,14 +3669,15 @@
     },
     "combatStats": {
       "controlResistance": 0.013
-    }
+    },
+    "setDisplayName": "Рыцарь-55"
   },
   {
     "id": "ARM-ВОИ-1-070",
     "name": "Шлем железной клятвы «ветерана»",
     "kind": "armor",
     "slot": "helmet",
-    "set": "Рыцарь-70",
+    "set": "Воин-70",
     "price": 31200,
     "level": 70,
     "defense": 142,
@@ -3691,14 +3694,15 @@
     },
     "combatStats": {
       "controlResistance": 0.015
-    }
+    },
+    "setDisplayName": "Рыцарь-70"
   },
   {
     "id": "ARM-ВОИ-1-085",
     "name": "Шлем железной клятвы «элиты»",
     "kind": "armor",
     "slot": "helmet",
-    "set": "Рыцарь-85",
+    "set": "Воин-85",
     "price": 62400,
     "level": 85,
     "defense": 176,
@@ -3715,14 +3719,15 @@
     },
     "combatStats": {
       "controlResistance": 0.018
-    }
+    },
+    "setDisplayName": "Рыцарь-85"
   },
   {
     "id": "ARM-ВОИ-1-100",
     "name": "Шлем железной клятвы «первого круга»",
     "kind": "armor",
     "slot": "helmet",
-    "set": "Рыцарь-100",
+    "set": "Воин-100",
     "price": 120000,
     "level": 100,
     "defense": 216,
@@ -3739,14 +3744,15 @@
     },
     "combatStats": {
       "controlResistance": 0.02
-    }
+    },
+    "setDisplayName": "Рыцарь-100"
   },
   {
     "id": "ARM-ВОИ-2-025",
     "name": "Кираса несокрушимого стража «ученика»",
     "kind": "armor",
     "slot": "armor",
-    "set": "Рыцарь-25",
+    "set": "Воин-25",
     "price": 6000,
     "level": 25,
     "defense": 128,
@@ -3765,14 +3771,15 @@
     "combatStats": {
       "resistance": 0.008,
       "health": 0.004
-    }
+    },
+    "setDisplayName": "Рыцарь-25"
   },
   {
     "id": "ARM-ВОИ-2-040",
     "name": "Кираса несокрушимого стража «посвящённого»",
     "kind": "armor",
     "slot": "armor",
-    "set": "Рыцарь-40",
+    "set": "Воин-40",
     "price": 14400,
     "level": 40,
     "defense": 172,
@@ -3791,14 +3798,15 @@
     "combatStats": {
       "resistance": 0.01,
       "health": 0.006
-    }
+    },
+    "setDisplayName": "Рыцарь-40"
   },
   {
     "id": "ARM-ВОИ-2-055",
     "name": "Кираса несокрушимого стража «мастера»",
     "kind": "armor",
     "slot": "armor",
-    "set": "Рыцарь-55",
+    "set": "Воин-55",
     "price": 31200,
     "level": 55,
     "defense": 224,
@@ -3817,14 +3825,15 @@
     "combatStats": {
       "resistance": 0.013,
       "health": 0.007
-    }
+    },
+    "setDisplayName": "Рыцарь-55"
   },
   {
     "id": "ARM-ВОИ-2-070",
     "name": "Кираса несокрушимого стража «ветерана»",
     "kind": "armor",
     "slot": "armor",
-    "set": "Рыцарь-70",
+    "set": "Воин-70",
     "price": 62400,
     "level": 70,
     "defense": 284,
@@ -3843,14 +3852,15 @@
     "combatStats": {
       "resistance": 0.015,
       "health": 0.008
-    }
+    },
+    "setDisplayName": "Рыцарь-70"
   },
   {
     "id": "ARM-ВОИ-2-085",
     "name": "Кираса несокрушимого стража «элиты»",
     "kind": "armor",
     "slot": "armor",
-    "set": "Рыцарь-85",
+    "set": "Воин-85",
     "price": 124800,
     "level": 85,
     "defense": 352,
@@ -3869,14 +3879,15 @@
     "combatStats": {
       "resistance": 0.018,
       "health": 0.01
-    }
+    },
+    "setDisplayName": "Рыцарь-85"
   },
   {
     "id": "ARM-ВОИ-2-100",
     "name": "Кираса несокрушимого стража «первого круга»",
     "kind": "armor",
     "slot": "armor",
-    "set": "Рыцарь-100",
+    "set": "Воин-100",
     "price": 240000,
     "level": 100,
     "defense": 432,
@@ -3895,14 +3906,15 @@
     "combatStats": {
       "resistance": 0.02,
       "health": 0.011
-    }
+    },
+    "setDisplayName": "Рыцарь-100"
   },
   {
     "id": "ARM-ВОИ-3-025",
     "name": "Рукавицы крепкой стены «ученика»",
     "kind": "armor",
     "slot": "gloves",
-    "set": "Рыцарь-25",
+    "set": "Воин-25",
     "price": 2250,
     "level": 25,
     "defense": 48,
@@ -3919,14 +3931,15 @@
     },
     "combatStats": {
       "physicalDamage": 0.008
-    }
+    },
+    "setDisplayName": "Рыцарь-25"
   },
   {
     "id": "ARM-ВОИ-3-040",
     "name": "Рукавицы крепкой стены «посвящённого»",
     "kind": "armor",
     "slot": "gloves",
-    "set": "Рыцарь-40",
+    "set": "Воин-40",
     "price": 5400,
     "level": 40,
     "defense": 64,
@@ -3943,14 +3956,15 @@
     },
     "combatStats": {
       "physicalDamage": 0.01
-    }
+    },
+    "setDisplayName": "Рыцарь-40"
   },
   {
     "id": "ARM-ВОИ-3-055",
     "name": "Рукавицы крепкой стены «мастера»",
     "kind": "armor",
     "slot": "gloves",
-    "set": "Рыцарь-55",
+    "set": "Воин-55",
     "price": 11700,
     "level": 55,
     "defense": 84,
@@ -3967,14 +3981,15 @@
     },
     "combatStats": {
       "physicalDamage": 0.013
-    }
+    },
+    "setDisplayName": "Рыцарь-55"
   },
   {
     "id": "ARM-ВОИ-3-070",
     "name": "Рукавицы крепкой стены «ветерана»",
     "kind": "armor",
     "slot": "gloves",
-    "set": "Рыцарь-70",
+    "set": "Воин-70",
     "price": 23400,
     "level": 70,
     "defense": 106,
@@ -3991,14 +4006,15 @@
     },
     "combatStats": {
       "physicalDamage": 0.015
-    }
+    },
+    "setDisplayName": "Рыцарь-70"
   },
   {
     "id": "ARM-ВОИ-3-085",
     "name": "Рукавицы крепкой стены «элиты»",
     "kind": "armor",
     "slot": "gloves",
-    "set": "Рыцарь-85",
+    "set": "Воин-85",
     "price": 46800,
     "level": 85,
     "defense": 132,
@@ -4015,14 +4031,15 @@
     },
     "combatStats": {
       "physicalDamage": 0.018
-    }
+    },
+    "setDisplayName": "Рыцарь-85"
   },
   {
     "id": "ARM-ВОИ-3-100",
     "name": "Рукавицы крепкой стены «первого круга»",
     "kind": "armor",
     "slot": "gloves",
-    "set": "Рыцарь-100",
+    "set": "Воин-100",
     "price": 90000,
     "level": 100,
     "defense": 162,
@@ -4039,14 +4056,15 @@
     },
     "combatStats": {
       "physicalDamage": 0.02
-    }
+    },
+    "setDisplayName": "Рыцарь-100"
   },
   {
     "id": "ARM-ВОИ-4-025",
     "name": "Сапоги громового марша «ученика»",
     "kind": "armor",
     "slot": "boots",
-    "set": "Рыцарь-25",
+    "set": "Воин-25",
     "price": 2250,
     "level": 25,
     "defense": 48,
@@ -4065,14 +4083,15 @@
     "combatStats": {
       "evasion": 0.008,
       "attackSpeed": 0.004
-    }
+    },
+    "setDisplayName": "Рыцарь-25"
   },
   {
     "id": "ARM-ВОИ-4-040",
     "name": "Сапоги громового марша «посвящённого»",
     "kind": "armor",
     "slot": "boots",
-    "set": "Рыцарь-40",
+    "set": "Воин-40",
     "price": 5400,
     "level": 40,
     "defense": 64,
@@ -4091,14 +4110,15 @@
     "combatStats": {
       "evasion": 0.01,
       "attackSpeed": 0.006
-    }
+    },
+    "setDisplayName": "Рыцарь-40"
   },
   {
     "id": "ARM-ВОИ-4-055",
     "name": "Сапоги громового марша «мастера»",
     "kind": "armor",
     "slot": "boots",
-    "set": "Рыцарь-55",
+    "set": "Воин-55",
     "price": 11700,
     "level": 55,
     "defense": 84,
@@ -4117,14 +4137,15 @@
     "combatStats": {
       "evasion": 0.013,
       "attackSpeed": 0.007
-    }
+    },
+    "setDisplayName": "Рыцарь-55"
   },
   {
     "id": "ARM-ВОИ-4-070",
     "name": "Сапоги громового марша «ветерана»",
     "kind": "armor",
     "slot": "boots",
-    "set": "Рыцарь-70",
+    "set": "Воин-70",
     "price": 23400,
     "level": 70,
     "defense": 106,
@@ -4143,14 +4164,15 @@
     "combatStats": {
       "evasion": 0.015,
       "attackSpeed": 0.008
-    }
+    },
+    "setDisplayName": "Рыцарь-70"
   },
   {
     "id": "ARM-ВОИ-4-085",
     "name": "Сапоги громового марша «элиты»",
     "kind": "armor",
     "slot": "boots",
-    "set": "Рыцарь-85",
+    "set": "Воин-85",
     "price": 46800,
     "level": 85,
     "defense": 132,
@@ -4169,14 +4191,15 @@
     "combatStats": {
       "evasion": 0.018,
       "attackSpeed": 0.01
-    }
+    },
+    "setDisplayName": "Рыцарь-85"
   },
   {
     "id": "ARM-ВОИ-4-100",
     "name": "Сапоги громового марша «первого круга»",
     "kind": "armor",
     "slot": "boots",
-    "set": "Рыцарь-100",
+    "set": "Воин-100",
     "price": 90000,
     "level": 100,
     "defense": 162,
@@ -4195,14 +4218,15 @@
     "combatStats": {
       "evasion": 0.02,
       "attackSpeed": 0.011
-    }
+    },
+    "setDisplayName": "Рыцарь-100"
   },
   {
     "id": "ARM-ВОИ-5-025",
     "name": "Плащ верного щита «ученика»",
     "kind": "armor",
     "slot": "cloak",
-    "set": "Рыцарь-25",
+    "set": "Воин-25",
     "price": 1500,
     "level": 25,
     "defense": 32,
@@ -4220,14 +4244,15 @@
     },
     "combatStats": {
       "controlResistance": 0.004
-    }
+    },
+    "setDisplayName": "Рыцарь-25"
   },
   {
     "id": "ARM-ВОИ-5-040",
     "name": "Плащ верного щита «посвящённого»",
     "kind": "armor",
     "slot": "cloak",
-    "set": "Рыцарь-40",
+    "set": "Воин-40",
     "price": 3600,
     "level": 40,
     "defense": 43,
@@ -4245,14 +4270,15 @@
     },
     "combatStats": {
       "controlResistance": 0.006
-    }
+    },
+    "setDisplayName": "Рыцарь-40"
   },
   {
     "id": "ARM-ВОИ-5-055",
     "name": "Плащ верного щита «мастера»",
     "kind": "armor",
     "slot": "cloak",
-    "set": "Рыцарь-55",
+    "set": "Воин-55",
     "price": 7800,
     "level": 55,
     "defense": 56,
@@ -4270,14 +4296,15 @@
     },
     "combatStats": {
       "controlResistance": 0.007
-    }
+    },
+    "setDisplayName": "Рыцарь-55"
   },
   {
     "id": "ARM-ВОИ-5-070",
     "name": "Плащ верного щита «ветерана»",
     "kind": "armor",
     "slot": "cloak",
-    "set": "Рыцарь-70",
+    "set": "Воин-70",
     "price": 15600,
     "level": 70,
     "defense": 71,
@@ -4295,14 +4322,15 @@
     },
     "combatStats": {
       "controlResistance": 0.008
-    }
+    },
+    "setDisplayName": "Рыцарь-70"
   },
   {
     "id": "ARM-ВОИ-5-085",
     "name": "Плащ верного щита «элиты»",
     "kind": "armor",
     "slot": "cloak",
-    "set": "Рыцарь-85",
+    "set": "Воин-85",
     "price": 31200,
     "level": 85,
     "defense": 88,
@@ -4320,14 +4348,15 @@
     },
     "combatStats": {
       "controlResistance": 0.01
-    }
+    },
+    "setDisplayName": "Рыцарь-85"
   },
   {
     "id": "ARM-ВОИ-5-100",
     "name": "Плащ верного щита «первого круга»",
     "kind": "armor",
     "slot": "cloak",
-    "set": "Рыцарь-100",
+    "set": "Воин-100",
     "price": 60000,
     "level": 100,
     "defense": 108,
@@ -4345,7 +4374,8 @@
     },
     "combatStats": {
       "controlResistance": 0.011
-    }
+    },
+    "setDisplayName": "Рыцарь-100"
   },
   {
     "id": "ARM-ПОД-1-025",
