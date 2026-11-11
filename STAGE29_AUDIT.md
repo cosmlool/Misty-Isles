@@ -595,3 +595,14 @@
 - Added unit coverage in server/test/playerAutosave.test.ts for scheduling, repeated saves, timer cleanup, error reporting, and invalid intervals; included it in the server test script.
 - Current PR head after these changes: 571aa9afd56f22580c2ba7aae303b88f875390d5. Combined commit statuses and workflow runs returned empty lists at the time of this note; CI remains unconfirmed.
 - No gameplay coefficients, player schema, existing player saves, Stage 27, admin panel, or main were changed.
+
+
+## Authentication lifecycle race guard — 2026-11-11
+
+- Confirmed /auth/logout is not subject to the login/register/guest IP rate limiter. A valid logout revokes its token in the persisted session list and closes the active WebSocket only when the online session hash matches that token. The existing authLogoutRuntime test covers invalid logout, continued gameplay after invalid logout, valid logout, socket closure, token revocation, repeated logout, and guest recovery.
+- Found a lifecycle race in GameRoom: onLeave unconditionally removed ONLINE_PLAYERS, ONLINE_CLIENTS, and ONLINE_SESSION_HASHES by player ID; a delayed callback from an old room could therefore remove a newer room's registry entries. The room save path could also serialize its stale Player instance while another instance for the same ID was already online.
+- Added playerSessionOwnership.ts and regression tests. onLeave now checks player instance, client identity, and session-token digest before removing the live registry entries or mutating group state. Room save now skips a stale room snapshot whenever a different Player instance is currently registered online.
+- Added playerSessionOwnership.test.ts to the server test command. The helper tests cover current-vs-stale room ownership and stale snapshot rejection.
+- Auth rate limiting remains an in-memory per-IP map for login/register/guest only; it resets on process restart. Logout is deliberately not rate-limited so a user can always revoke a valid session. Persistent/distributed rate limiting remains a separate hardening item, especially if the server is deployed with multiple processes or behind a proxy.
+- Current PR head after this change: ba9afe99016ab0ba8fe4d47c1982e6b358065023. CI has not yet been confirmed for this HEAD.
+- No gameplay balance, real player data, Stage 27, main, or admin panel was changed.
