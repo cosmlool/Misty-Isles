@@ -410,6 +410,7 @@ export function validateEquipmentSetDefinitions(input: unknown, catalog: unknown
   });
 
   const definitionIds = new Set<string>();
+  const definitionSetNames = new Set<string>();
   input.forEach((raw, index) => {
     const prefix = `definitions[${index}]`;
     if (!isRecord(raw)) { errors.push(`${prefix} must be an object`); return; }
@@ -435,9 +436,14 @@ export function validateEquipmentSetDefinitions(input: unknown, catalog: unknown
         const setNames = new Set(items.map(item => item.set));
         if (setNames.size !== 1 || !items[0].set) errors.push(`${prefix}.itemIds must belong to one catalog set`);
         else {
-          const group = catalogSets.get(String(items[0].set)) || [];
+          const catalogSetName = String(items[0].set);
+          const group = catalogSets.get(catalogSetName) || [];
           if (group.length !== 5 || group.some(item => !ids.includes(String(item.id)))) {
             errors.push(`${prefix}.itemIds must match all five items in the catalog set`);
+          } else if (definitionSetNames.has(catalogSetName)) {
+            errors.push(`${prefix}.itemIds duplicates a catalog set definition`);
+          } else {
+            definitionSetNames.add(catalogSetName);
           }
         }
         if (new Set(items.map(item => item.profession ?? '')).size !== 1) {
