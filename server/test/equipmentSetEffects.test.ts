@@ -15,10 +15,10 @@ import {
 const serverDir = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const equipment = JSON.parse(readFileSync(resolve(serverDir, 'data/equipment_catalog.json'), 'utf8'));
 
-test('current equipment catalog has 57 structurally complete five-piece sets', () => {
+test('current equipment catalog has 64 structurally complete five-piece sets', () => {
   assert.deepEqual(validateEquipmentSetCatalog(equipment), []);
   const setNames = new Set(equipment.filter((item: any) => item.set).map((item: any) => item.set));
-  assert.equal(setNames.size, 57);
+  assert.equal(setNames.size, 64);
 });
 
 test('set effect schema accepts typed targets, explicit scope and cumulative tiers', () => {
@@ -100,7 +100,7 @@ test('catalog validator rejects non-object catalog entries instead of silently s
 });
 
 
-test('catalog profession coverage matches the seven live professions and excludes planned profiles', () => {
+test('catalog profession coverage includes all eight live race-profession profiles', () => {
   const armor = equipment.filter((item: any) => item.kind === 'armor');
   const professionSetCounts = new Map<string, Set<string>>();
   for (const item of armor) {
@@ -111,13 +111,12 @@ test('catalog profession coverage matches the seven live professions and exclude
   }
 
   assert.deepEqual([...professionSetCounts.keys()].sort(), [
-    'Ассасин', 'Баффер', 'Боевой маг', 'Воин', 'Вампир', 'Добытчик', 'Лучник',
+    'Ассасин', 'Ассасин птицы', 'Баффер', 'Боевой маг', 'Рыцарь', 'Вампир', 'Добытчик', 'Лучник',
   ].sort());
   for (const profession of professionSetCounts.keys()) {
     assert.equal(professionSetCounts.get(profession)?.size, 7, profession);
   }
-  assert.equal(professionSetCounts.has('Рыцарь'), false);
-  assert.equal(professionSetCounts.has('Ассасин птицы'), false);
+
 });
 
 test('one catalog armor set cannot be registered by multiple structured definitions', () => {
