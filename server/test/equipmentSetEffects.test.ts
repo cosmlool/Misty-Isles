@@ -77,3 +77,23 @@ test('catalog validator detects incomplete, duplicate-slot and mixed-description
   assert.ok(errors.some(error => error.includes('mixes professions')));
   assert.ok(errors.some(error => error.includes('inconsistent setBonus')));
 });
+
+test('catalog validator rejects armor without a set, non-armor set members and global duplicate ids', () => {
+  const malformed = [
+    { id: 'armor-without-set', kind: 'armor', slot: 'helmet' },
+    { id: 'weapon-in-set', kind: 'weapon', slot: 'weapon', set: 'not-armor' },
+    { id: 'duplicate-id', kind: 'weapon', slot: 'weapon' },
+    { id: 'duplicate-id', kind: 'armor', slot: 'helmet', set: 'partial' },
+  ];
+  const errors = validateEquipmentSetCatalog(malformed);
+  assert.ok(errors.some(error => error.includes('armor item has no valid set')));
+  assert.ok(errors.some(error => error.includes('non-armor item cannot belong')));
+  assert.ok(errors.some(error => error.includes('duplicates item id')));
+  assert.ok(errors.some(error => error.includes('exactly five')));
+});
+
+test('catalog validator rejects non-object catalog entries instead of silently skipping them', () => {
+  const errors = validateEquipmentSetCatalog([null, 'not-an-item']);
+  assert.ok(errors.some(error => error.includes('catalog[0] must be an object')));
+  assert.ok(errors.some(error => error.includes('catalog[1] must be an object')));
+});
