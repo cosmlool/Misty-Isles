@@ -1,3 +1,4 @@
+import { normalizeProfession } from './professionProfiles.js';
 import { calculateCombatSpeed } from './monsterBattle.js';
 
 export type MonsterCombatEffectTarget =
@@ -315,14 +316,14 @@ export type GoldEquipmentStatProfile = {
 
 /** Deterministic level- and role-scaled profile for gold-purchasable gear. */
 export function resolveGoldEquipmentStatProfile(input: GoldEquipmentStatProfileInput): GoldEquipmentStatProfile {
-  const profession = String(input.profession || '');
+  const profession = normalizeProfession(input.profession);
   const level = Math.max(1, Number.isFinite(input.level) ? input.level : 1);
   const mainStat: Record<string, string> = {
-    'Боевой маг': 'intelligence', 'Ассасин': 'dexterity', 'Воин': 'strength',
+    'Боевой маг': 'intelligence', 'Ассасин': 'dexterity', 'Ассасин птицы': 'dexterity', 'Рыцарь': 'strength',
     'Баффер': 'intelligence', 'Лучник': 'dexterity', 'Вампир': 'stamina', 'Добытчик': 'intelligence',
   };
   const secondaryStat: Record<string, string> = {
-    'Боевой маг': 'stamina', 'Ассасин': 'strength', 'Воин': 'stamina',
+    'Боевой маг': 'stamina', 'Ассасин': 'strength', 'Ассасин птицы': 'strength', 'Рыцарь': 'stamina',
     'Баффер': 'vitality', 'Лучник': 'stamina', 'Вампир': 'vitality', 'Добытчик': 'dexterity',
   };
   const unit = profession ? Math.max(1, Math.round(level / 20)) : Math.max(1, Math.round(level / 10));
@@ -332,7 +333,7 @@ export function resolveGoldEquipmentStatProfile(input: GoldEquipmentStatProfileI
 
   if (input.kind === 'weapon') {
     addAttribute(secondaryStat[profession] || 'stamina', unit * (profession ? 0.55 : 0.35));
-    if (profession === 'Воин' || profession === 'Вампир') addAttribute('vitality', unit * 0.25);
+    if (profession === 'Рыцарь' || profession === 'Вампир') addAttribute('vitality', unit * 0.25);
   } else {
     const slot = String(input.slot || 'armor');
     const primary = mainStat[profession] || 'strength';
@@ -344,10 +345,10 @@ export function resolveGoldEquipmentStatProfile(input: GoldEquipmentStatProfileI
       addAttribute('stamina', unit * 0.45);
     } else if (slot === 'gloves') {
       addAttribute(primary, unit * 0.45);
-      if (profession === 'Ассасин' || profession === 'Лучник') addAttribute('dexterity', unit * 0.25);
+      if (profession === 'Ассасин' || profession === 'Ассасин птицы' || profession === 'Лучник') addAttribute('dexterity', unit * 0.25);
     } else if (slot === 'boots') {
       addAttribute('dexterity', unit * 0.65);
-      if (profession === 'Воин' || profession === 'Вампир') addAttribute('vitality', unit * 0.2);
+      if (profession === 'Рыцарь' || profession === 'Вампир') addAttribute('vitality', unit * 0.2);
     } else if (slot === 'cloak') {
       addAttribute('stamina', unit * 0.55);
       addAttribute('vitality', unit * 0.35);
@@ -359,23 +360,23 @@ export function resolveGoldEquipmentStatProfile(input: GoldEquipmentStatProfileI
   if (input.kind === 'weapon') {
     const damage = profession === 'Боевой маг' ? 'magicDamage' : profession === 'Баффер' ? 'healing' : 'physicalDamage';
     combatStats[damage] = Math.round(q * 1.5 * 1000) / 1000;
-    if (profession === 'Ассасин' || profession === 'Лучник') combatStats.critChance = q2;
-    else if (profession === 'Воин') combatStats.critDamage = q2;
+    if (profession === 'Ассасин' || profession === 'Ассасин птицы' || profession === 'Лучник') combatStats.critChance = q2;
+    else if (profession === 'Рыцарь') combatStats.critDamage = q2;
     else if (profession === 'Вампир') combatStats.lifesteal = q2;
     else if (profession === 'Добытчик') combatStats.loot = Math.round(q * 2 * 1000) / 1000;
     else if (!profession) combatStats.accuracy = q2;
   } else {
     const slot = String(input.slot || 'armor');
     if (slot === 'helmet') {
-      if (['Боевой маг', 'Ассасин', 'Лучник'].includes(profession)) combatStats.accuracy = q;
+      if (['Боевой маг', 'Ассасин', 'Ассасин птицы', 'Лучник'].includes(profession)) combatStats.accuracy = q;
       else combatStats.controlResistance = q;
-      if (profession === 'Ассасин' || profession === 'Лучник') combatStats.critChance = q2;
+      if (profession === 'Ассасин' || profession === 'Ассасин птицы' || profession === 'Лучник') combatStats.critChance = q2;
     } else if (slot === 'armor') {
       combatStats.resistance = q;
       combatStats.health = q2;
     } else if (slot === 'gloves') {
       combatStats[profession === 'Боевой маг' ? 'magicDamage' : profession === 'Баффер' ? 'healing' : 'physicalDamage'] = q;
-      if (profession === 'Ассасин' || profession === 'Лучник') combatStats.critDamage = q2;
+      if (profession === 'Ассасин' || profession === 'Ассасин птицы' || profession === 'Лучник') combatStats.critDamage = q2;
       else if (profession === 'Вампир') combatStats.lifesteal = q2;
       else if (profession === 'Добытчик') combatStats.loot = q2;
     } else if (slot === 'boots') {
@@ -405,7 +406,7 @@ export function calculatePlayerMonsterCombatStats(
 ): PlayerMonsterCombatStats {
   const profession = String(input.profession || '');
   const magic = profession === 'Боевой маг';
-  const agile = ['Ассасин', 'Лучник', 'Вампир'].includes(profession);
+  const agile = ['Ассасин', 'Ассасин птицы', 'Лучник', 'Вампир'].includes(profession);
   const weaponEnhancement = Math.max(0, value(input.weaponEnhancementLevel));
   const enhancedWeaponAttack = value(input.weaponAttack) * (1 + weaponEnhancement * 0.04);
   const armorAttack = input.armorItems
@@ -436,9 +437,9 @@ export function calculatePlayerMonsterCombatStats(
     armorDefense;
 
   if (profession === 'Боевой маг') attack *= 1.10;
-  if (profession === 'Ассасин') attack *= 1.08;
+  if (profession === 'Ассасин' || profession === 'Ассасин птицы') attack *= 1.08;
   if (profession === 'Лучник') attack *= 1.06;
-  if (profession === 'Воин') defense *= 1.10;
+  if (profession === 'Рыцарь') defense *= 1.10;
 
   // These are the new engine's clean stat inputs. Legacy totals continue below unchanged.
   const baseAttack = attack;
