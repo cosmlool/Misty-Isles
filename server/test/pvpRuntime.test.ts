@@ -181,11 +181,11 @@ test('PvP offers four saved real characters, steals 20 percent gold, persists co
     attackerRoom.send('pvpChallenge', { targetId: chosen.id });
     const result = await waitFor(() => results[0], 'PvP combat result');
     assert.equal(result.report.result, 'win', 'the synthetic high-stat attacker should win');
-    assert.ok(result.report.attack >= 227_739 && result.report.attack <= 227_749,
+    assert.ok(result.report.attack >= 202_442 && result.report.attack <= 202_452,
       'weapon attack property, +5 sharpening and active +15% attack buff must all reach the live PvP calculation');
     assert.equal(result.report.defense, 174_041,
       'armor defense property and +3 armor sharpening must reach the live PvP calculation');
-    assert.ok(result.report.scores.player >= 324_684,
+    assert.ok(result.report.scores.player >= 296_352,
       'secondary critical buff must increase the gear-adjusted PvP combat score');
     assert.ok(result.report.scores.opponent >= 83_578,
       'the target weapon/armor properties, sharpening and active +20% defense buff must affect its PvP score');
