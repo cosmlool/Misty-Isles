@@ -4,7 +4,7 @@ import { dirname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import test from 'node:test';
 
-import { getMonsterPassiveDescriptions, parseMonsterWeakness, resolveMonsterPassive, resolveLegacyMonsterAttackMultiplier, resolveLegacyMonsterDefenseMultiplier, resolveLegacyMonsterProfessionDamageMultiplier, resolveLegacyMonsterResistance, resolveLegacyMonsterWeaknessMultiplier } from '../src/monsterCombat.js';
+import { getMonsterPassiveDescriptions, parseMonsterWeakness, resolveMonsterPassive, resolveLegacyMonsterAttackMultiplier, resolveLegacyMonsterDefenseMultiplier, resolveLegacyMonsterProfessionDamageMultiplier, resolveLegacyMonsterResistance, resolveLegacyMonsterWeaknessMultiplier, resolveLegacyMonsterHitMultiplier } from '../src/monsterCombat.js';
 import { calculateCombatSpeed, resolveMonsterBattle } from '../src/monsterBattle.js';
 import { adaptPlayerCombatant, buildPlayerCombatantForMonsterBattle } from '../src/monsterCombatantAdapter.js';
 import { resolveEquipmentSetTierDescriptions, aggregateMonsterCombatModifiers, calculatePlayerMonsterCombatStats, parseMonsterCombatEffect, parseMonsterCombatEffectClauses, resolveMonsterCombatProperty, resolveMonsterPendantCombatEffect, resolvePlayerMonsterCombatHealth, resolveEquipmentSetCombatEffects, resolveGoldEquipmentStatProfile, resolvePlayerMonsterLifestealRate } from '../src/monsterCombatStats.js';
@@ -65,6 +65,15 @@ test('legacy monster resistance stacks static sources and clamps the total', () 
 
   const capped = { allResistance: 0.75, physicalResistance: 0.3 } as Parameters<typeof resolveLegacyMonsterResistance>[0];
   assert.equal(resolveLegacyMonsterResistance(capped, 'Воин'), 0.85);
+});
+
+test('legacy monster evasion reduces expected hits and accuracy gear counters it', () => {
+  const effect = { evasion: 0.15 } as Parameters<typeof resolveLegacyMonsterHitMultiplier>[0];
+  assert.equal(resolveLegacyMonsterHitMultiplier(undefined), 1);
+  assert.equal(resolveLegacyMonsterHitMultiplier(effect), 0.85);
+  assert.equal(resolveLegacyMonsterHitMultiplier(effect, 0.1), 0.95);
+  assert.equal(resolveLegacyMonsterHitMultiplier(effect, 0.2), 1);
+  assert.equal(resolveLegacyMonsterHitMultiplier({ evasion: 0.9 } as Parameters<typeof resolveLegacyMonsterHitMultiplier>[0]), 0.25);
 });
 
 test('legacy monster attack and defense multipliers keep conditional ally bonuses separate', () => {
