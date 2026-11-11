@@ -98,3 +98,38 @@ test('catalog validator rejects non-object catalog entries instead of silently s
   assert.ok(errors.some(error => error.includes('catalog[0] must be an object')));
   assert.ok(errors.some(error => error.includes('catalog[1] must be an object')));
 });
+
+
+test('structured set definitions validate five catalog members and explicit threshold ownership', () => {
+  const setItems = equipment.filter((item: any) => item.set === 'Маг-25');
+  const definition = {
+    id: 'armor_mag_25',
+    name: 'Маг-25',
+    profession: 'Боевой маг',
+    itemIds: setItems.map((item: any) => item.id),
+    thresholds: {
+      2: [{ pieces: 2, target: 'attack', value: 0.01, scope: ['hunt'] }],
+      3: [{ pieces: 3, target: 'attributePercent', attribute: 'intelligence', value: 0.01, scope: ['hunt'] }],
+    },
+  };
+  assert.deepEqual(validateEquipmentSetDefinitions([definition], equipment), []);
+});
+
+test('structured set definitions reject duplicate, foreign and incorrectly tiered members/effects', () => {
+  const setItems = equipment.filter((item: any) => item.set === 'Маг-25');
+  const definition = {
+    id: 'armor_mag_25',
+    name: 'Маг-25',
+    profession: 'Боевой маг',
+    itemIds: [setItems[0].id, setItems[0].id, ...setItems.slice(2).map((item: any) => item.id)],
+    thresholds: {
+      2: [{ pieces: 3, target: 'attack', value: 0.01, scope: ['hunt'] }],
+      6: [],
+    },
+  };
+  const errors = validateEquipmentSetDefinitions([definition], equipment);
+  assert.ok(errors.some(error => error.includes('itemIds contains duplicates')));
+  assert.ok(errors.some(error => error.includes('match all five')));
+  assert.ok(errors.some(error => error.includes('unsupported tier 6')));
+  assert.ok(errors.some(error => error.includes('assigned to another tier')));
+});
