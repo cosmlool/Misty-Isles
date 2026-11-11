@@ -74,6 +74,14 @@ test('legacy monster evasion reduces expected hits and accuracy gear counters it
   assert.equal(resolveLegacyMonsterHitMultiplier(effect, 0.1), 0.95);
   assert.equal(resolveLegacyMonsterHitMultiplier(effect, 0.2), 1);
   assert.equal(resolveLegacyMonsterHitMultiplier({ evasion: 0.9 } as Parameters<typeof resolveLegacyMonsterHitMultiplier>[0]), 0.25);
+
+  const evasionMonsters = bestiary.monsters.filter((monster: any) => /Уклонение \+15%/.test(String(monster.passiveDescription || '')));
+  assert.equal(evasionMonsters.length, 2);
+  for (const monster of evasionMonsters) {
+    const passive = resolveMonsterPassive(monster.passiveDescription);
+    assert.equal(passive?.evasion, 0.15);
+    assert.equal(resolveLegacyMonsterHitMultiplier(passive), 0.85);
+  }
 });
 
 test('legacy player evasion reduces expected monster hits', () => {
