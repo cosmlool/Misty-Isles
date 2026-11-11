@@ -157,7 +157,7 @@ test('crafting skill and daily craft progress increase only after a successful c
     }
     assert.equal(saved.crafting, 2, 'successful claim grants one crafting progression point');
     assert.equal(saved.itemsCrafted, 1);
-    assert.deepEqual(JSON.parse(saved.inventory), ['field_potion']);
+    assert.deepEqual(JSON.parse(saved.inventory), ['herb_material', 'herb_material', 'herb_material', 'field_potion']);
 
     const secondQueue = new Promise<any>(resolve => room!.onMessage('craftQueue', resolve));
     room.send('craft', { recipe: 'field_potion' });
