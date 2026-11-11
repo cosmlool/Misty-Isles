@@ -606,3 +606,14 @@
 - Auth rate limiting remains an in-memory per-IP map for login/register/guest only; it resets on process restart. Logout is deliberately not rate-limited so a user can always revoke a valid session. Persistent/distributed rate limiting remains a separate hardening item, especially if the server is deployed with multiple processes or behind a proxy.
 - Current PR head after this change: ba9afe99016ab0ba8fe4d47c1982e6b358065023. CI has not yet been confirmed for this HEAD.
 - No gameplay balance, real player data, Stage 27, main, or admin panel was changed.
+
+
+## Crafting progression correction — 2026-11-11
+
+- Found a progression timing defect in the live `craft` handler: `p.crafting` increased when materials were consumed and a job was queued, before production succeeded.
+- Corrected the lifecycle: starting an order records the start event and reserves materials, but does not grant crafting progression. A successful `craftClaim` grants exactly one crafting progression point together with the crafted output. A blocked unique-item claim that refunds materials exits before progression is granted.
+- Corrected daily activity aggregation: `activityToday.crafts` now counts completed craft orders only. The activity log still records both the start and completion events.
+- Expanded the isolated crafting runtime test to verify no progression, crafted-item count, or daily craft count on start; then wait for the real recipe timer, claim the output, and verify each completion counter increments once.
+- The crafting queue has no dedicated cancellation message/handler in the current client-server protocol. Material refunds are implemented for a unique-output conflict, but a player-initiated cancel action is not currently available. Do not claim cancellation support until that feature is implemented and tested.
+- Authentication/session persistence review: auth JSON reads reject malformed files rather than replacing them with defaults; writes use a sibling temporary file and atomic rename. Player saves additionally create rolling backups before replacing the save. These operations are synchronous within the single Node.js process, so their read-modify-write sections do not interleave inside that process. They do not provide cross-process locking or a distributed rate limiter; multi-process deployment remains unsupported without shared transactional storage/locking. Atomic rename also does not by itself guarantee fsync-level durability after sudden power loss.
+- No authentication storage format, player save format, gameplay combat coefficient, real save, Stage 27, admin panel, or `main` was changed.
