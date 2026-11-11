@@ -51,7 +51,10 @@ test('legacy monster resistance stacks static sources and clamps the total', () 
     professionResistance: { Воин: 0.1 },
   } as Parameters<typeof resolveLegacyMonsterResistance>[0];
   assert.equal(resolveLegacyMonsterResistance(effect, 'Воин'), 0.45);
-  assert.equal(resolveLegacyMonsterResistance(effect, 'Боевой маг'), 0.35);
+  assert.equal(resolveLegacyMonsterResistance(effect, 'Боевой маг'), 0.2);
+
+  const mageEffect = { magicResistance: -0.2, professionResistance: { 'Боевой маг': 0.1 } } as Parameters<typeof resolveLegacyMonsterResistance>[0];
+  assert.equal(resolveLegacyMonsterResistance(mageEffect, 'Маг'), -0.1);
 
   const capped = { allResistance: 0.75, physicalResistance: 0.3 } as Parameters<typeof resolveLegacyMonsterResistance>[0];
   assert.equal(resolveLegacyMonsterResistance(capped, 'Воин'), 0.85);
