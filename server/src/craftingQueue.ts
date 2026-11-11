@@ -70,3 +70,21 @@ export function claimCraftJob(input: {
     refunded: false,
   };
 }
+
+
+export function cancelCraftJob(input: {
+  inventory: string[]; queue: CraftJob[]; jobId: string; now: number; fallbackMaterials?: CraftMaterialMap;
+}): { inventory: string[]; queue: CraftJob[]; refunded: true } {
+  if (!Array.isArray(input.inventory) || input.inventory.some(item => typeof item !== 'string')) {
+    throw new Error('Craft inventory is invalid.');
+  }
+  if (!Array.isArray(input.queue) || !Number.isFinite(input.now)) throw new Error('Craft queue is invalid.');
+  const job = input.queue.find(entry => entry.id === input.jobId);
+  if (!job) throw new Error('Craft job not found.');
+  if (!Number.isFinite(job.finishAt) || input.now >= job.finishAt) {
+    throw new Error('Completed craft jobs cannot be cancelled; claim the result instead.');
+  }
+  const refund = refundCraftMaterials(input.inventory, job, input.fallbackMaterials);
+  if (!refund.refunded) throw new Error('Craft materials cannot be safely refunded; job retained for review.');
+  return { inventory: refund.inventory, queue: input.queue.filter(entry => entry.id !== input.jobId), refunded: true };
+}
