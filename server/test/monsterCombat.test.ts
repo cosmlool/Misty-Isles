@@ -1818,7 +1818,8 @@ test('deterministic typed combat matrix covers every implemented profession at s
   const professions = [
     { name: 'Боевой маг', attack: 17.05, defense: 15.7, damageType: 'fire' as const },
     { name: 'Ассасин', attack: 22.68, defense: 15.7, damageType: 'physical' as const },
-    { name: 'Воин', attack: 18, defense: 17.27, damageType: 'physical' as const },
+    { name: 'Ассасин птицы', attack: 22.68, defense: 15.7, damageType: 'physical' as const },
+    { name: 'Рыцарь', attack: 18, defense: 17.27, damageType: 'physical' as const },
     { name: 'Баффер', attack: 18, defense: 15.7, damageType: 'physical' as const },
     { name: 'Лучник', attack: 22.26, defense: 15.7, damageType: 'physical' as const },
     { name: 'Вампир', attack: 21, defense: 15.7, damageType: 'physical' as const },
@@ -1882,7 +1883,34 @@ test('deterministic typed combat matrix covers every implemented profession at s
       }
     }
   }
-  assert.equal(scenarios, 63);
+  assert.equal(scenarios, 72);
+});
+
+test('Knight preserves Warrior combat profile and Bird Assassin matches the Assassin archetype', () => {
+  for (const kind of ['weapon', 'armor'] as const) {
+    assert.deepEqual(
+      resolveGoldEquipmentStatProfile({ kind, level: 40, profession: 'Рыцарь', slot: kind === 'armor' ? 'helmet' : undefined }),
+      resolveGoldEquipmentStatProfile({ kind, level: 40, profession: 'Воин', slot: kind === 'armor' ? 'helmet' : undefined }),
+    );
+    assert.deepEqual(
+      resolveGoldEquipmentStatProfile({ kind, level: 40, profession: 'Ассасин птицы', slot: kind === 'armor' ? 'gloves' : undefined }),
+      resolveGoldEquipmentStatProfile({ kind, level: 40, profession: 'Ассасин', slot: kind === 'armor' ? 'gloves' : undefined }),
+    );
+  }
+  const knight = calculatePlayerMonsterCombatStats({
+    profession: 'Рыцарь', strength: 10, dexterity: 10, intelligence: 10, vitality: 10, stamina: 10, baseDefense: 10,
+  });
+  const oldWarrior = calculatePlayerMonsterCombatStats({
+    profession: 'Воин', strength: 10, dexterity: 10, intelligence: 10, vitality: 10, stamina: 10, baseDefense: 10,
+  });
+  assert.deepEqual(knight, oldWarrior);
+  const birdAssassin = calculatePlayerMonsterCombatStats({
+    profession: 'Ассасин птицы', strength: 10, dexterity: 10, intelligence: 10, vitality: 10, stamina: 10, baseDefense: 10,
+  });
+  const catAssassin = calculatePlayerMonsterCombatStats({
+    profession: 'Ассасин', strength: 10, dexterity: 10, intelligence: 10, vitality: 10, stamina: 10, baseDefense: 10,
+  });
+  assert.deepEqual(birdAssassin, catAssassin);
 });
 
 test('new professional set bonuses never infer legacy multipliers from profession or mastery', () => {
