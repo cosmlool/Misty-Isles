@@ -1,0 +1,79 @@
+import assert from 'node:assert/strict';
+import { readFileSync } from 'node:fs';
+import { dirname, resolve } from 'node:path';
+import { fileURLToPath } from 'node:url';
+import test from 'node:test';
+
+import {
+  resolveEquipmentSetEffects,
+  validateEquipmentSetCatalog,
+  validateEquipmentSetEffects,
+  type EquipmentSetEffect,
+} from '../src/equipmentSetEffects.js';
+
+const serverDir = resolve(dirname(fileURLToPath(import.meta.url)), '..');
+const equipment = JSON.parse(readFileSync(resolve(serverDir, 'data/equipment_catalog.json'), 'utf8'));
+
+test('current equipment catalog has 57 structurally complete five-piece sets', () => {
+  assert.deepEqual(validateEquipmentSetCatalog(equipment), []);
+  const setNames = new Set(equipment.filter((item: any) => item.set).map((item: any) => item.set));
+  assert.equal(setNames.size, 57);
+});
+
+test('set effect schema accepts typed targets, explicit scope and cumulative tiers', () => {
+  const effects: EquipmentSetEffect[] = [
+    { pieces: 2, target: 'critChance', value: 0.01, scope: ['hunt', 'dungeon'] },
+    { pieces: 3, target: 'attributePercent', attribute: 'dexterity', value: 0.02, scope: ['hunt'] },
+    { pieces: 4, target: 'accuracy', value: 0.03, scope: ['hunt', 'pvp'] },
+    { pieces: 5, target: 'critDamage', value: 0.04, scope: ['hunt'], trigger: 'onCrit' },
+  ];
+  assert.deepEqual(validateEquipmentSetEffects(effects), []);
+  assert.deepEqual(resolveEquipmentSetEffects(effects, 1, 'hunt'), []);
+  assert.deepEqual(resolveEquipmentSetEffects(effects, 2, 'hunt'), [effects[0]]);
+  assert.deepEqual(resolveEquipmentSetEffects(effects, 3, 'hunt'), effects.slice(0, 2));
+  assert.deepEqual(resolveEquipmentSetEffects(effects, 4, 'hunt'), effects.slice(0, 3));
+  assert.deepEqual(resolveEquipmentSetEffects(effects, 5, 'hunt'), effects);
+  assert.deepEqual(resolveEquipmentSetEffects(effects, 5, 'pvp'), [effects[2]]);
+});
+
+test('set effect schema rejects unknown channels, invalid values and malformed scopes', () => {
+  const invalid = [
+    { pieces: 6, target: 'attack', value: 0.1, scope: ['hunt'] },
+    { pieces: 2, target: 'unknown-to-combat', value: 0.1, scope: ['hunt'] },
+    { pieces: 3, target: 'attack', value: Number.NaN, scope: ['hunt'] },
+    { pieces: 4, target: 'defense', value: -0.1, scope: ['hunt'] },
+    { pieces: 5, target: 'health', value: 0.1, scope: [] },
+    { pieces: 2, target: 'health', value: 0.1, scope: ['arena'] },
+    { pieces: 3, target: 'health', value: 0.1, scope: ['hunt', 'hunt'] },
+    { pieces: 4, target: 'attributePercent', value: 0.1, scope: ['hunt'] },
+    { pieces: 5, target: 'critChance', attribute: 'strength', value: 0.1, scope: ['hunt'] },
+  ];
+  assert.ok(validateEquipmentSetEffects(invalid).length >= invalid.length);
+});
+
+test('Gatherer Spoil and Sweep chances respect 80% cap and Sweep dependency', () => {
+  const valid = [
+    { pieces: 2, target: 'spoilChance', value: 0.8, scope: ['hunt'] },
+    { pieces: 3, target: 'sweepChance', value: 0.8, scope: ['hunt'], trigger: 'onSpoilSuccess' },
+  ];
+  assert.deepEqual(validateEquipmentSetEffects(valid), []);
+  const invalid = [
+    { pieces: 2, target: 'spoilChance', value: 0.81, scope: ['hunt'] },
+    { pieces: 3, target: 'sweepChance', value: 0.8, scope: ['hunt'] },
+  ];
+  const errors = validateEquipmentSetEffects(invalid);
+  assert.ok(errors.some(error => error.includes('80%')));
+  assert.ok(errors.some(error => error.includes('onSpoilSuccess')));
+});
+
+test('catalog validator detects incomplete, duplicate-slot and mixed-description sets', () => {
+  const malformed = [
+    { id: 'one', set: 'broken', slot: 'helmet', profession: 'Воин', setBonus: 'A' },
+    { id: 'two', set: 'broken', slot: 'helmet', profession: 'Лучник', setBonus: 'B' },
+  ];
+  const errors = validateEquipmentSetCatalog(malformed);
+  assert.ok(errors.some(error => error.includes('exactly five')));
+  assert.ok(errors.some(error => error.includes('duplicate slots')));
+  assert.ok(errors.some(error => error.includes('mixes professions')));
+  assert.ok(errors.some(error => error.includes('inconsistent setBonus')));
+});
