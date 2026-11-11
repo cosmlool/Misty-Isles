@@ -175,3 +175,12 @@ export function parseMonsterWeakness(value: string): MonsterWeakness | undefined
   }
   return undefined;
 }
+
+/** Applies explicit profession weaknesses in the legacy runtime; player damage-type mapping is not available here. */
+export function resolveLegacyMonsterWeaknessMultiplier(weakness: MonsterWeakness | undefined, profession: string): number {
+  if (!weakness || weakness.kind !== 'profession') return 1;
+  return normalizePassiveProfession(weakness.profession) === normalizePassiveProfession(profession)
+    ? Number((1 + weakness.bonus).toFixed(10))
+    : 1;
+}
+

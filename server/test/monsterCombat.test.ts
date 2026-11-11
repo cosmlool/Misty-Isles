@@ -4,7 +4,7 @@ import { dirname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import test from 'node:test';
 
-import { getMonsterPassiveDescriptions, parseMonsterWeakness, resolveMonsterPassive, resolveLegacyMonsterAttackMultiplier, resolveLegacyMonsterDefenseMultiplier, resolveLegacyMonsterProfessionDamageMultiplier, resolveLegacyMonsterResistance } from '../src/monsterCombat.js';
+import { getMonsterPassiveDescriptions, parseMonsterWeakness, resolveMonsterPassive, resolveLegacyMonsterAttackMultiplier, resolveLegacyMonsterDefenseMultiplier, resolveLegacyMonsterProfessionDamageMultiplier, resolveLegacyMonsterResistance, resolveLegacyMonsterWeaknessMultiplier } from '../src/monsterCombat.js';
 import { calculateCombatSpeed, resolveMonsterBattle } from '../src/monsterBattle.js';
 import { adaptPlayerCombatant, buildPlayerCombatantForMonsterBattle } from '../src/monsterCombatantAdapter.js';
 import { resolveEquipmentSetTierDescriptions, aggregateMonsterCombatModifiers, calculatePlayerMonsterCombatStats, parseMonsterCombatEffect, parseMonsterCombatEffectClauses, resolveMonsterCombatProperty, resolveMonsterPendantCombatEffect, resolvePlayerMonsterCombatHealth, resolveEquipmentSetCombatEffects, resolveGoldEquipmentStatProfile, resolvePlayerMonsterLifestealRate } from '../src/monsterCombatStats.js';
@@ -21,6 +21,13 @@ test('every bestiary passive description has one typed registry entry', () => {
     assert.ok(registered.has(description), `Missing passive mapping: ${description}`);
     assert.ok(resolveMonsterPassive(description), `Passive has no typed effect: ${description}`);
   }
+});
+
+test('legacy monster weakness bonuses affect only the matching profession and skip unmapped fire damage', () => {
+  assert.equal(resolveLegacyMonsterWeaknessMultiplier(parseMonsterWeakness('Маг +25%'), 'Боевой маг'), 1.25);
+  assert.equal(resolveLegacyMonsterWeaknessMultiplier(parseMonsterWeakness('Маг +25%'), 'Маг'), 1.25);
+  assert.equal(resolveLegacyMonsterWeaknessMultiplier(parseMonsterWeakness('Маг +25%'), 'Лучник'), 1);
+  assert.equal(resolveLegacyMonsterWeaknessMultiplier(parseMonsterWeakness('Огненный урон +25%'), 'Боевой маг'), 1);
 });
 
 test('monster weakness parser distinguishes professions from damage types', () => {
