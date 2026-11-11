@@ -1,3 +1,4 @@
+import { normalizeProfession } from './professionProfiles.js';
 export type MonsterPassiveEffect = {
   physicalResistance?: number;
   magicResistance?: number;
@@ -107,8 +108,8 @@ export function resolveMonsterPassive(description: string): MonsterPassiveEffect
 }
 
 function normalizePassiveProfession(profession: string): string {
-  const aliases: Record<string, string> = { 'Маг': 'Боевой маг', 'Убийца': 'Ассасин' };
-  return aliases[profession] || profession;
+  const aliases: Record<string, string> = { 'Маг': 'Боевой маг', 'Убийца': 'Ассасин', 'Ассасин птицы': 'Ассасин' };
+  return aliases[profession] || normalizeProfession(profession);
 }
 
 function finitePassiveValue(value: number | undefined, fallback = 0): number {
@@ -191,7 +192,7 @@ export function parseMonsterWeakness(value: string): MonsterWeakness | undefined
   const bonus = Number(match[2]) / 100;
   if (!Number.isFinite(bonus) || bonus <= 0) return undefined;
   if (target === 'Огненный урон') return { kind: 'damageType', damageType: 'fire', bonus };
-  if (['Маг', 'Лучник', 'Воин', 'Ассасин'].includes(target)) {
+  if (['Маг', 'Лучник', 'Воин', 'Рыцарь', 'Ассасин', 'Ассасин птицы'].includes(target)) {
     return { kind: 'profession', profession: target, bonus };
   }
   return undefined;
