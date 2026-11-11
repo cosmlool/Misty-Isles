@@ -690,3 +690,57 @@
 - Existing focused tests remain responsible for exact expected values for individual mechanics (fire weakness, critical hits, thresholds, resistance, healing, poison, lifesteal and initiative); the matrix is a broad regression net, not a new balance target.
 - **Catalog gap:** the live `PROFESSIONS` constant and the existing baseline stat test both contain seven profiles: Cat—Battle Mage/Assassin; Dog—Warrior/Buffer; Bird—Archer; Rodent—Vampire/Gatherer. The separately planned Bird Assassin is absent, and Dog's class is still stored/displayed as `Воин`, not `Рыцарь`. Do not rename or add a class until IDs, skill trees, item restrictions, saved character values, race validation and client labels are audited together.
 - No live battle handler was switched and no gameplay coefficients or bestiary values were changed.
+
+
+### Profession catalog dependency audit — 2026-11-11
+
+Scope: read-only dependency mapping for the planned eight combat profiles. No profession labels, IDs, character saves, equipment, skills, or live combat formulas were changed.
+
+#### 1. Current authoritative catalog and character persistence
+
+- `server/src/index.ts` defines the server allowlist `PROFESSIONS`: Cat = Battle Mage/Assassin; Dog = Warrior/Buffer; Bird = Archer; Rodent = Vampire/Gatherer. The catalog currently exposes seven selectable entries.
+- The same catalog is sent to the client through the `catalog` message. The client does not own a second authoritative list; however, `client/src/main.ts` has a separately hardcoded `RACES` creation-screen description that currently advertises only the existing race/class options.
+- `chooseProfession` validates level 20, an empty current profession, and membership in `PROFESSIONS[p.race]`; after selection the profession cannot be changed through this handler.
+- `server/src/PlayerSchema.ts` stores `profession` as an unconstrained string. There is no enum/schema-level validation and no profession normalization/migration in the inspected player load path. Existing JSON saves therefore retain their exact historical string, including `Воин`.
+- The existing save field `guildSkills` is a JSON string. Profession skill unlocks are stored in its `professionUnlocked` array and cooldown timestamps are keyed by skill IDs, so preserving skill IDs is important when changing a display label or class key.
+
+#### 2. Profession-keyed gameplay dependencies
+
+- `server/src/index.ts` defines `PROFESSION_SKILLS` with seven keys and two skills per current class. `professionSkill` resolves skills by the exact `p.profession` key. A renamed key without an alias/migration makes the old class skills unavailable to existing saves.
+- `server/src/monsterCombatStats.ts` contains exact-name mappings for primary/secondary attributes, profession bonuses, damage channels, accuracy, criticals, defense, healing, lifesteal and loot. Current Warrior-specific branches include vitality and defense bonuses; Assassin/Archer share agility/critical branches; Vampire has lifesteal; Gatherer has loot.
+- `server/src/index.ts` also has direct profession checks outside the typed stats resolver:
+  - weapon primary-attribute fallback mapping;
+  - class-derived equipment profile bonus routing;
+  - dungeon group guard: presence of a Warrior gives the group an 8% incoming-damage reduction;
+  - Buffer presence grants each party member a 4% max-HP heal on a successful dungeon clear;
+  - PvP uses class-specific magic/agility/defense/critical calculations, including Warrior defense and Assassin/Archer critical bonuses.
+- `server/src/monsterCombat.ts` has profession-targeted monster passives and normalization aliases. These include explicit Archer and Assassin references and must be considered when splitting or renaming a class.
+- `server/src/monsterCombatantAdapter.ts` carries the profession string through to the typed engine; it does not provide a canonical class-ID translation layer.
+
+#### 3. Equipment and crafting dependencies
+
+- `server/data/equipment_catalog.json` currently contains 346 records: 59 general items plus 41 profession-bound items for each of the seven existing profession labels.
+- Each current profession has 6 weapons and 35 armor pieces (seven five-piece sets); professional equipment is present at levels 25, 40, 55, 70, 85 and 100. The 41 profession-bound rows do not carry a race restriction in this catalog; access is gated by the exact profession string.
+- Shop filtering, purchase validation and equip validation in `server/src/index.ts` compare item profession against `p.profession` (or the legacy subclass aliases). Purchase/equip checks also preserve race restrictions where an item has a race field.
+- Armor-set effects are generated from the first item's profession label. The current mapping explicitly assigns Gatherer=loot, Battle Mage=attack, Warrior/Buffer=defense, Vampire=lifesteal and Assassin/Archer=critical; an unrecognized new label falls through to defense.
+- Profession recipes are dynamically generated from legendary armor records. Crafting also validates the output item's profession. The smith specialization heuristic explicitly lists Assassin, Warrior and Archer. A new distinct class label therefore needs an explicit crafting classification and set-effect mapping.
+- The existing runtime test `server/test/raceEquipmentRuntime.test.ts` verifies cross-race equipment rejection and own-race equipment acceptance, but it does not cover profession migration, the eight-class catalog, or weapon-hand configuration.
+
+#### 4. Concrete migration risks
+
+1. Renaming `Воин` to `Рыцарь` without compatibility handling affects saved characters, `PROFESSION_SKILLS`, attribute selection, combat stat resolution, PvP, dungeon group guard, equipment filters, set-effect generation, recipes and crafting specialization.
+2. Adding a Bird Assassin under the same literal key `Ассасин` would make the existing exact-name checks treat it like the Cat dual-blade Assassin. The current model has no separate stable profession ID or weapon-hand/specialization field to distinguish the two variants.
+3. Reusing the existing Assassin equipment rows for the Bird variant would expose the same six weapon entries and seven armor sets unless race/variant constraints are introduced. The current professional catalog has no separate Bird-Assassin inventory.
+4. Adding a new display label alone is insufficient: the typed stats resolver, legacy PvP/dungeon formulas, armor-set effect mapping, profession skill map, recipe classification and monster passive matching all need an explicit decision for the new class.
+5. Because profession choice is permanent in the current handler, any migration must be deterministic and must not silently reset or overwrite saved progress, equipped items, enhancements, collections or skill unlocks.
+
+#### 5. Recommended implementation sequence (not yet applied)
+
+- Introduce stable internal profession identifiers separately from localized display names, while retaining a compatibility reader for existing saved strings.
+- Define the eight class records in one canonical server catalog, including race, display name, combat role, weapon configuration and skill-tree key.
+- Add an explicit legacy mapping `Воин -> Рыцарь` only after deciding whether the stored value is migrated eagerly or normalized at read time; preserve the existing skill IDs and all character progression.
+- Model the Bird one-dagger Assassin as a distinct class variant/configuration, not merely as another character with the generic `Ассасин` string. Decide whether its visible name remains «Ассасин» and define its unique internal ID before creating equipment or skills.
+- Add catalog and migration tests first: all eight race/class combinations, legacy Warrior save, old skill unlocks, equipment ownership/equip rules, set bonuses, crafting, PvP and dungeon group effects.
+- Only after those tests pass, add the Bird Assassin's six weapons and seven armor sets (or an explicitly approved shared-gear policy), and then update the client race descriptions and class UI.
+
+Status: dependency map completed; no migration or gameplay change applied. The eight-profession design remains a project decision to implement, not the current live catalog.
