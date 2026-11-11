@@ -675,3 +675,8 @@
 - После матрицы принять отдельное решение: адаптировать live-режимы к пошаговому движку или сохранить legacy-модель и перенести в неё только согласованные недостающие эффекты.
 
 Текущие CI статусы и workflow runs для HEAD PR #14 не опубликованы; запуск тестов в рамках этой сверки не подтверждён.
+
+
+### Typed battle input integrity guard
+
+- The typed battle resolver now rejects duplicate party combatant IDs before initiative is built. Previously, initiative entries were resolved back to party members by ID using the first matching member, so duplicate IDs could cause one combatant to act multiple times while another never acted. Added a deterministic regression test. This is an input-integrity guard only; it does not change legitimate single-player or group balance.
