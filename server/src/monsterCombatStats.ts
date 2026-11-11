@@ -81,7 +81,7 @@ export function aggregateMonsterCombatModifiers(
   for (const effect of effects) {
     if (!effect || !Number.isFinite(effect.value)) continue;
     const key = targets[effect.target];
-    if (key) result[key] += effect.value;
+    if (key) result[key] = Number((result[key] + effect.value).toFixed(10));
   }
   return result;
 }
@@ -167,6 +167,8 @@ export type EquipmentSetTierDescriptions = {
   three?: string;
   four?: string;
   full?: string;
+  /** Number of equipped pieces required for the full tier; defaults to five. */
+  fullAt?: number;
 };
 
 /** Return only the exact set tiers the equipped item count has unlocked. */
@@ -176,7 +178,8 @@ export function resolveEquipmentSetTierDescriptions(input: EquipmentSetTierDescr
   if (count >= 2 && input.two) descriptions.push(input.two);
   if (count >= 3 && input.three) descriptions.push(input.three);
   if (count >= 4 && input.four) descriptions.push(input.four);
-  if (count >= 5 && input.full) descriptions.push(input.full);
+  const fullAt = Number.isFinite(input.fullAt) ? Math.max(2, Math.floor(input.fullAt as number)) : 5;
+  if (count >= fullAt && input.full) descriptions.push(input.full);
   return descriptions;
 }
 
@@ -478,21 +481,7 @@ export function calculatePlayerMonsterCombatStats(
   }
 
   const setEffects = (input.setBonuses || []).flatMap(set => (set.descriptions || []).flatMap(parseMonsterCombatEffectClauses));
-  // The legacy set formula also grants a small per-piece and mastery bonus.
-  // Keep those generic attack/defense bonuses in the typed engine instead of losing them.
-  const setTierEffects: ParsedMonsterCombatEffect[] = (input.setBonuses || []).flatMap(set => {
-    const count = Math.max(0, value(set.itemCount));
-    if (count < 2) return [];
-    const effects: ParsedMonsterCombatEffect[] = [];
-    const bonus = count * 0.01 + value(set.mastery) * 0.01;
-    if (set.effect === 'attack') effects.push({ target: 'attack', value: bonus });
-    else if (set.effect === 'defense') effects.push({ target: 'defense', value: bonus });
-    if (input.applyFivePieceSetBonus !== false && count >= 5) {
-      if (set.effect === 'attack') effects.push({ target: 'attack', value: 0.05 });
-      else if (set.effect === 'defense') effects.push({ target: 'defense', value: 0.05 });
-    }
-    return effects;
-  });
+  // Only explicit tier descriptions are promoted into typed modifiers.
   const profileEffects: ParsedMonsterCombatEffect[] = profileBonus > 0
     ? [{ target: profession === 'Баффер' ? 'defense' : 'attack', value: profileBonus }]
     : [];
@@ -508,7 +497,6 @@ export function calculatePlayerMonsterCombatStats(
     ...(input.equipmentEffects || []),
     ...(input.pendantCombatEffect ? [input.pendantCombatEffect] : []),
     ...setEffects,
-    ...setTierEffects,
     ...profileEffects,
     ...activeBuffEffects,
   ]);

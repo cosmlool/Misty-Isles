@@ -122,8 +122,11 @@ test('expedition reports capture pre/post health and disconnect cancels stale gr
     child = spawn(process.execPath, ['--import', 'tsx', 'src/index.ts'], {
       cwd: serverDir,
       env: { ...process.env, MISTY_DATA_DIR: dataDir, MISTY_PORT: String(port) },
-      stdio: 'ignore',
+      stdio: ['ignore', 'pipe', 'pipe'],
     });
+    const serverOutput: string[] = [];
+    child.stdout?.on('data', chunk => serverOutput.push(String(chunk)));
+    child.stderr?.on('data', chunk => serverOutput.push(String(chunk)));
     await waitForServer(port, child);
     const client = new Client(`ws://127.0.0.1:${port}`);
     const ids = [soloId, leaderId, memberId, orphanId];
@@ -182,7 +185,9 @@ test('expedition reports capture pre/post health and disconnect cancels stale gr
     const combatResults: any[] = [];
     connected[soloId].onMessage('combatResult', payload => combatResults.push(payload));
     connected[soloId].send('expeditionSearchClaim');
-    const combat = await waitFor(() => combatResults[0], 'solo expedition combat report');
+    const combat = await waitFor(() => combatResults[0], 'solo expedition combat report').catch(error => {
+      throw new Error(`${error instanceof Error ? error.message : String(error)}\nServer output:\n${serverOutput.slice(-80).join('')}`);
+    });
     assert.equal(combat.report.result, 'win');
     assert.equal(combat.report.hpBefore, 1_000);
     assert.ok(combat.report.hpAfter < combat.report.hpBefore, 'combat report must show actual health loss');

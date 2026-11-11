@@ -1708,11 +1708,13 @@ test('normalized combatant builder preserves HP ratio and merges active lifestea
 test('legacy Shadowstalker set tiers contribute explicit typed crit effects to the new engine', () => {
   const twoPieces = resolveEquipmentSetCombatEffects({
     itemCount: 2,
+    fullAt: 3,
     two: '2 предмета: +6% к критическому шансу',
     full: '3 предмета: +12% к критическому урону',
   });
   const threePieces = resolveEquipmentSetCombatEffects({
     itemCount: 3,
+    fullAt: 3,
     two: '2 предмета: +6% к критическому шансу',
     full: '3 предмета: +12% к критическому урону',
   });
