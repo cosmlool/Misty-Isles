@@ -98,6 +98,10 @@ test('expedition reports capture pre/post health and disconnect cancels stale gr
     const expeditionData = JSON.parse(readFileSync(expeditionDataPath, 'utf8'));
     expeditionData.searchSeconds = 0;
     writeFileSync(expeditionDataPath, JSON.stringify(expeditionData, null, 2));
+    const expeditionDataPath = join(dataDir, 'forgotten_lands.json');
+    const expeditionData = JSON.parse(readFileSync(expeditionDataPath, 'utf8'));
+    expeditionData.searchSeconds = 0;
+    writeFileSync(expeditionDataPath, JSON.stringify(expeditionData, null, 2));
     const makePlayer = (id: string, name: string, friend: string, quests: any = {}) => ({
       id, name, race: 'Кот', level: 5, strength: 100_000, dexterity: 100_000,
       defense: 100, vitality: 100, stamina: 100, health: 1_000, maxHealth: 1_000,
@@ -107,7 +111,7 @@ test('expedition reports capture pre/post health and disconnect cancels stale gr
     });
     writeFileSync(join(dataDir, 'players.json'), JSON.stringify({
       [soloId]: makePlayer(soloId, 'Solo Explorer', leaderId, {
-        expedition: { branchId: 'forgotten_lands', currentZoneId: 'el1', opened: 1, cleared: [], seen: {}, state: 'searching', startedAt: Date.now() - 20_000, endsAt: Date.now() - 1_000, groupId: '' },
+        expedition: { branchId: 'forgotten_lands', currentZoneId: 'el1', opened: 1, cleared: [], seen: {}, state: 'idle', startedAt: 0, endsAt: 0, groupId: '' },
       }),
       [leaderId]: makePlayer(leaderId, 'Group Leader', `${memberId},${soloId},${orphanId}`),
       [memberId]: makePlayer(memberId, 'Group Member', leaderId),
@@ -186,6 +190,12 @@ test('expedition reports capture pre/post health and disconnect cancels stale gr
     connected[soloId].onMessage('notice', payload => soloNotices.push(String(payload?.text || '')));
     const combatResults: any[] = [];
     connected[soloId].onMessage('combatResult', payload => combatResults.push(payload));
+    connected[soloId].send('expeditionSearchStart');
+    await waitFor(() => {
+      const saved = readPlayers(join(dataDir, 'players.json'))[soloId];
+      const state = JSON.parse(saved.quests).expedition;
+      return state?.state === 'searching' && Number(state.endsAt) <= Date.now() ? state : undefined;
+    }, 'solo expedition search start');
     connected[soloId].send('expeditionSearchClaim');
     const combat = await waitFor(() => combatResults[0], 'solo expedition combat report').catch(error => {
       throw new Error(`${error instanceof Error ? error.message : String(error)}\nNotices: ${soloNotices.join(' | ')}\nServer output:\n${serverOutput.slice(-80).join('')}`);
