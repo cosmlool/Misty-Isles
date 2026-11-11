@@ -95,6 +95,34 @@ test('monster defense ally bonus applies to incoming player damage', () => {
 });
 
 
+test('monster resistance and matching profession weakness combine multiplicatively', () => {
+  const result = resolveMonsterBattle({
+    monster: {
+      id: 'm-resist-weakness',
+      name: 'Balanced guardian',
+      hp: 10000,
+      attack: 1,
+      defense: 0,
+      speed: 0,
+      passiveDescription: 'На 20% меньше физического урона',
+      weakness: 'Воин +25%',
+    },
+    party: [{
+      id: 'p-resist-weakness',
+      profession: 'Воин',
+      hp: 1000,
+      maxHp: 1000,
+      attack: 100,
+      defense: 0,
+      speed: 20,
+      damageType: 'physical',
+    }],
+    maxRounds: 1,
+    random: () => 0.5,
+  });
+  assert.equal(result.totalDamageToMonster, 100);
+});
+
 test('monster poison is applied to the struck player and ticks on following rounds', () => {
   const result = resolveMonsterBattle({
     monster: { id: 'm5', name: 'Venom beast', hp: 10000, attack: 10, defense: 0, speed: 5, passiveDescription: 'Атака накладывает яд' },
