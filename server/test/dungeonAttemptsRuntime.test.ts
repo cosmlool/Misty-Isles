@@ -182,7 +182,7 @@ test('solo Forgotten Lands boss dungeon reports remaining daily entries and enfo
     const afterListing = readJson(join(dataDir, 'players.json'))[playerId];
     assert.equal(JSON.parse(afterListing.equipment).cloak, '');
     assert.equal(afterListing.health, 1_080, 'listing equipped HP armor must not leave health above the new maximum');
-    assert.equal(afterListing.gold, 1_248, 'listing fee is charged exactly once');
+    assert.equal(afterListing.gold, 1_158, 'listing fee is charged exactly once after three dungeon rewards');
   } finally {
     await leaveRoomSafely(room);
     await leaveRoomSafely(lossRoom);
