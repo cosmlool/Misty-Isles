@@ -106,9 +106,14 @@ test('expedition reports capture pre/post health and disconnect cancels stale gr
       quests: JSON.stringify(quests),
     });
     writeFileSync(join(dataDir, 'players.json'), JSON.stringify({
-      [soloId]: makePlayer(soloId, 'Solo Explorer', leaderId, {
-        expedition: { branchId: 'forgotten_lands', currentZoneId: 'el1', opened: 1, cleared: [], seen: {}, state: 'idle', startedAt: 0, endsAt: 0, groupId: '' },
-      }),
+      [soloId]: {
+        ...makePlayer(soloId, 'Solo Explorer', leaderId, {
+          expedition: { branchId: 'forgotten_lands', currentZoneId: 'el1', opened: 1, cleared: [], seen: {}, state: 'idle', startedAt: 0, endsAt: 0, groupId: '' },
+        }),
+        equipment: JSON.stringify({ amulet: 'PEN-001' }),
+        collections: JSON.stringify({ friends: [leaderId], pendantLevels: { 'PEN-001': 1 } }),
+        buff: 'xp', buffValue: 0.25, buffSecondaryEffect: 'gold', buffSecondaryValue: 0.10, buffUntil: Date.now() + 3_600_000,
+      },
       [leaderId]: makePlayer(leaderId, 'Group Leader', `${memberId},${soloId},${orphanId}`),
       [memberId]: makePlayer(memberId, 'Group Member', leaderId),
       [orphanId]: makePlayer(orphanId, 'Orphaned Explorer', leaderId, {
@@ -195,6 +200,11 @@ test('expedition reports capture pre/post health and disconnect cancels stale gr
     assert.equal(combat.report.result, 'win');
     assert.equal(combat.report.hpBefore, 1_000);
     assert.ok(combat.report.hpAfter < combat.report.hpBefore, 'combat report must show actual health loss');
+    const rewardedMonster = expeditionData.monsters.find((entry: any) => entry.name === combat.report.enemy);
+    assert.ok(rewardedMonster, 'the reported expedition monster must exist in the test catalogue');
+    assert.equal(combat.report.rewards.xp, Math.floor(rewardedMonster.xp * 1.005 * 1.25), 'expedition report must include the XP pendant and active XP buff');
+    assert.equal(combat.report.rewards.gold, Math.floor(rewardedMonster.gold * 1.10), 'expedition report must include the active gold buff');
+    assert.ok(combat.text.includes(`${combat.report.rewards.xp} опыта`) && combat.text.includes(`${combat.report.rewards.gold} золота`), 'expedition result text must match actual modified rewards');
     const soloProgress = JSON.parse(readPlayers(join(dataDir, 'players.json'))[soloId].quests);
     assert.equal(soloProgress.dailyHunts, 1, 'an expedition victory must count toward the daily monster-win challenge');
     assert.equal(soloProgress.weeklyHunts, 1, 'an expedition victory must count toward the weekly monster-win challenge');

@@ -1881,3 +1881,11 @@ type EquipmentSetEffect = {
 - Catalog scan: 387 items; 56 weapons have typed `combatStats`. Weapon typed effects are included in the typed modifier aggregation, but attack/defense legacy totals are calculated separately. The current dungeon aggregate formula does not apply typed magic/physical/boss damage, critical chance/damage, attack speed, or resistance modifiers.
 - Existing item fields `effects` for weapon profile efficiency (+4/+5/+6%) are handled by `weaponProfile`; this is not the same as arbitrary typed weapon combat effects.
 - No formula or coefficient was changed in this audit. The missing live integration is an architectural/design gap, not a safe isolated parser patch: wiring the typed engine would alter combat semantics, timing, damage, criticals, statuses and rewards. It needs a separate migration plan and regression matrix across all eight professions, solo/group, ordinary/rare/boss/dungeon encounters.
+
+
+### PvE: фактические награды в боевых отчётах — 2026-11-11
+
+- В live-путях экспедиции и босс-подземелья начисление опыта/золота учитывало бонусы соответствующего амулета и активных баффов, но персональные `combatResult` и `combatHistory` отчёты показывали исходные базовые значения до модификаторов. Это могло расходиться с фактическим изменением сохранения игрока.
+- Исправлено: для каждого участника сохраняются фактически начисленные XP и золото; персональные отчёты и текст результата используют именно эти значения. Для группового боя значения остаются индивидуальными и учитывают личные бонусы участника.
+- Формулы начисления, базовые награды, распределение золота, коэффициенты амулетов/баффов и условия победы не менялись. Исправлена только достоверность отображения уже начисленных наград.
+- Добавлены runtime-проверки на соло-экспедицию и соло-босс-подземелье с XP-амулетом и активными XP/gold баффами; ожидаемые значения проверяются вместе с текстом результата.

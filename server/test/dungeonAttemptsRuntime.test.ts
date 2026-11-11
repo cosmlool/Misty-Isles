@@ -81,11 +81,13 @@ test('solo Forgotten Lands boss dungeon reports remaining daily entries and enfo
   const dataDir = mkdtempSync(join(tmpdir(), 'misty-dungeon-attempts-'));
   const playerId = 'runtime_dungeon_attempts_01';
   const lossPlayerId = 'runtime_dungeon_loss_01';
+  const bonusPlayerId = 'runtime_dungeon_bonus_01';
   const today = new Date().toISOString().slice(0, 10);
   const port = await unusedPort();
   let child: ChildProcess | undefined;
   let room: Room | undefined;
   let lossRoom: Room | undefined;
+  let bonusRoom: Room | undefined;
   try {
     for (const file of staticDataFiles) copyFileSync(join(serverDir, 'data', file), join(dataDir, file));
     writeFileSync(join(dataDir, 'players.json'), JSON.stringify({
@@ -101,6 +103,15 @@ test('solo Forgotten Lands boss dungeon reports remaining daily entries and enfo
         strength: 0, dexterity: 0, intelligence: 0, defense: 0, vitality: 0, stamina: 0,
         health: 1_000, maxHealth: 1_000, gold: 500,
         inventory: '[]', equipment: '{}', quests: JSON.stringify({ dungeonDay: today, dungeonRuns: 0 }),
+      },
+      [bonusPlayerId]: {
+        id: bonusPlayerId, name: 'Bonus Dungeon Tester', race: 'Кот', profession: 'Вампир', level: 8,
+        strength: 100_000, dexterity: 100_000, intelligence: 100_000,
+        defense: 100_000, vitality: 100_000, stamina: 100_000,
+        health: 1_000, maxHealth: 1_000, gold: 500,
+        inventory: '[]', equipment: JSON.stringify({ amulet: 'PEN-001' }),
+        buff: 'xp', buffValue: 0.25, buffSecondaryEffect: 'gold', buffSecondaryValue: 0.10, buffUntil: Date.now() + 3_600_000,
+        quests: JSON.stringify({ dungeonDay: today, dungeonRuns: 0 }),
       },
     }, null, 2));
 
@@ -118,10 +129,14 @@ test('solo Forgotten Lands boss dungeon reports remaining daily entries and enfo
     room = await client.joinOrCreate('my_room', { playerId, sessionToken: token });
     const lossToken = await guestToken(port, lossPlayerId);
     lossRoom = await client.joinOrCreate('my_room', { playerId: lossPlayerId, sessionToken: lossToken });
+    const bonusToken = await guestToken(port, bonusPlayerId);
+    bonusRoom = await client.joinOrCreate('my_room', { playerId: bonusPlayerId, sessionToken: bonusToken });
 
     const results: any[] = [];
     const lossResults: any[] = [];
+    const bonusResults: any[] = [];
     lossRoom.onMessage('combatResult', payload => lossResults.push(payload));
+    bonusRoom.onMessage('combatResult', payload => bonusResults.push(payload));
     const notices: string[] = [];
     room.onMessage('combatResult', payload => results.push(payload));
     room.onMessage('notice', payload => notices.push(String(payload?.text || '')));
@@ -140,6 +155,14 @@ test('solo Forgotten Lands boss dungeon reports remaining daily entries and enfo
     room.send('dungeonRun', { id: 'fl_dungeon_03' });
     await waitFor(() => notices.find(message => message.includes('закончились попытки в подземельях')), 'daily dungeon cap');
     assert.equal(results.length, beforeRejectedAttempt);
+
+    bonusRoom.send('dungeonRun', { id: 'fl_dungeon_03' });
+    const bonusResult = await waitFor(() => bonusResults[0], 'dungeon reward modifiers');
+    assert.equal(bonusResult.report.result, 'win');
+    assert.equal(bonusResult.report.rewards.xp, 527, 'combat report must show XP after the XP pendant and active XP buff');
+    assert.equal(bonusResult.report.rewards.gold, 242, 'combat report must show gold after the active gold buff');
+    assert.ok(bonusResult.text.includes('527 опыта') && bonusResult.text.includes('242 золота'));
+    assert.equal(readJson(join(dataDir, 'players.json'))[bonusPlayerId].gold, 742);
 
     const saved = readJson(join(dataDir, 'players.json'))[playerId];
     const quests = JSON.parse(saved.quests);
@@ -186,6 +209,7 @@ test('solo Forgotten Lands boss dungeon reports remaining daily entries and enfo
   } finally {
     await leaveRoomSafely(room);
     await leaveRoomSafely(lossRoom);
+    await leaveRoomSafely(bonusRoom);
     if (child) await stopServer(child);
     rmSync(dataDir, { recursive: true, force: true });
   }
