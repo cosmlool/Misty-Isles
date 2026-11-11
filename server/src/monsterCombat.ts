@@ -141,6 +141,13 @@ export function resolveLegacyMonsterHitMultiplier(effect: MonsterPassiveEffect |
   return Number((1 - Math.min(0.75, Math.max(0, evasion - accuracy))).toFixed(10));
 }
 
+/** Expected monster hit rate after player evasion, matching the typed engine's hit and dodge checks. */
+export function resolveLegacyPlayerHitMultiplier(evasionBonus = 0, monsterAccuracy = 100): number {
+  const accuracy = Math.min(1, Math.max(0.05, finitePassiveValue(monsterAccuracy, 100) / 100));
+  const evasion = Math.min(0.75, Math.max(0, finitePassiveValue(evasionBonus)));
+  return Number((accuracy * (1 - evasion)).toFixed(10));
+}
+
 export function resolveLegacyMonsterAttackMultiplier(effect: MonsterPassiveEffect | undefined, monsterAllies = 0): number {
   const allyBonus = monsterAllies > 0 ? finitePassiveValue(effect?.attackWhenAllies) : 0;
   return Number(Math.max(0, finitePassiveValue(effect?.attackMultiplier, 1) * (1 + allyBonus)).toFixed(10));
