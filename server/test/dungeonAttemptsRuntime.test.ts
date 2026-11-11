@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import { spawn, type ChildProcess } from 'node:child_process';
-import { copyFileSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
+import { copyFileSync, existsSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { createServer } from 'node:net';
 import { tmpdir } from 'node:os';
 import { dirname, join, resolve } from 'node:path';
@@ -174,7 +174,9 @@ test('solo Forgotten Lands boss dungeon reports remaining daily entries and enfo
 
     room.send('auctionSell', { index: 0, itemId: 'ARM-C-5-001', expectedCount: 1, price: 100, currency: 'gold' });
     await waitFor(() => {
-      const lots = readJson(join(dataDir, 'auction.json'));
+      const auctionPath = join(dataDir, 'auction.json');
+      if (!existsSync(auctionPath)) return undefined;
+      const lots = readJson(auctionPath);
       return Array.isArray(lots) && lots.length === 1 ? true : undefined;
     }, 'listing equipped HP cloak');
     const afterListing = readJson(join(dataDir, 'players.json'))[playerId];
