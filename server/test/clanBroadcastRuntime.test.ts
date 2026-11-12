@@ -83,7 +83,7 @@ test('clan donation refreshes clan balance and shared quest progress for every o
   try {
     for (const file of staticDataFiles) copyFileSync(join(serverDir, 'data', file), join(dataDir, file));
     const player = (id: string, name: string) => ({
-      id, name, race: 'Кот', profession: '', level: 20, gold: 500,
+      id, name, race: 'Кот', profession: '', level: 20, gold: 5000,
       inventory: '[]', equipment: '{}', quests: '{}', collections: '{}',
     });
     writeFileSync(join(dataDir, 'players.json'), JSON.stringify({
@@ -94,6 +94,9 @@ test('clan donation refreshes clan balance and shared quest progress for every o
       [clanId]: {
         id: clanId, name: 'Broadcast Test', leader: ids[0], level: 1, xp: 0, vault: 0,
         upgrades: { barracks: 0, treasury: 0, banner: 0 }, seasonPoints: 0,
+        questDay: Math.floor(Date.now() / 86_400_000) - 1,
+        questProgress: { donate: 1500, raid: 1, war: 2, territory: 1 },
+        quests: [{ id: 'donate', name: 'Previous day', goal: 2000, progress: 1500, claimed: false }],
         members: [
           { id: ids[0], name: 'Clan Leader', role: 'Лидер', contribution: 0 },
           { id: ids[1], name: 'Clan Member', role: 'Участник', contribution: 0 },
@@ -128,21 +131,44 @@ test('clan donation refreshes clan balance and shared quest progress for every o
     const memberClanQuests: any[] = [];
     connected[ids[1]].onMessage('clanList', payload => memberClanLists.push(payload));
     connected[ids[1]].onMessage('clanQuests', payload => memberClanQuests.push(payload));
-    connected[ids[0]].send('clanDonate', { amount: 100 });
+    connected[ids[1]].send('clanQuests', {});
+    await waitFor(
+      () => memberClanQuests.find(payload => payload.quests?.some((quest: any) => quest.id === 'donate' && quest.progress === 0)),
+      'daily clan quest reset for member',
+    );
+    const reset = JSON.parse(readFileSync(join(dataDir, 'clans.json'), 'utf8'))[clanId];
+    assert.equal(reset.questDay, Math.floor(Date.now() / 86_400_000));
+    assert.equal(reset.questProgress.donate, 0);
+
+    connected[ids[0]].send('clanDonate', { amount: 2000 });
 
     const list = await waitFor(
-      () => memberClanLists.find(payload => payload.clans?.some((clan: any) => clan.id === clanId && clan.vault === 100)),
+      () => memberClanLists.find(payload => payload.clans?.some((clan: any) => clan.id === clanId && clan.vault === 2000)),
       'updated clan balance for second member',
     );
     assert.equal(list.clans.find((clan: any) => clan.id === clanId).members, 2);
     const quests = await waitFor(
-      () => memberClanQuests.find(payload => payload.quests?.some((quest: any) => quest.id === 'donate' && quest.progress === 100)),
+      () => memberClanQuests.find(payload => payload.quests?.some((quest: any) => quest.id === 'donate' && quest.progress === 2000)),
       'updated shared donation quest for second member',
     );
-    assert.equal(quests.quests.find((quest: any) => quest.id === 'donate').progress, 100);
+    assert.equal(quests.quests.find((quest: any) => quest.id === 'donate').progress, 2000);
     const saved = JSON.parse(readFileSync(join(dataDir, 'clans.json'), 'utf8'))[clanId];
-    assert.equal(saved.vault, 100);
-    assert.equal(saved.questProgress.donate, 100);
+    assert.equal(saved.vault, 2000);
+    assert.equal(saved.questProgress.donate, 2000);
+
+    connected[ids[1]].send('clanQuestClaim', { id: 'donate' });
+    await waitFor(
+      () => memberClanQuests.find(payload => payload.quests?.some((quest: any) => quest.id === 'donate' && quest.claimed === true)),
+      'claimed shared donation quest for second member',
+    );
+    const claimed = JSON.parse(readFileSync(join(dataDir, 'clans.json'), 'utf8'))[clanId];
+    assert.equal(claimed.vault, 3250);
+    assert.equal(claimed.quests.find((quest: any) => quest.id === 'donate').claimed, true);
+
+    connected[ids[1]].send('clanQuestClaim', { id: 'donate' });
+    await delay(100);
+    const afterDuplicateClaim = JSON.parse(readFileSync(join(dataDir, 'clans.json'), 'utf8'))[clanId];
+    assert.equal(afterDuplicateClaim.vault, 3250);
   } finally {
     for (const room of rooms) await leaveRoomSafely(room);
     if (child) await stopServer(child);
