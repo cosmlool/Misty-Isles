@@ -1,13 +1,14 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import { createSharedStateRuntime } from '../src/sharedStateRuntime.js';
+import type { SharedStateSnapshot } from '../src/sharedStateTransactions.js';
 
 function fixture() {
   const events: string[] = [];
   let sharedPending = false;
   const shared = {
     recover() { events.push('shared.recover'); if (sharedPending) { events.push('shared.replay'); sharedPending = false; } return true; },
-    transact<T>(prepare: () => { files: Record<string, unknown>; result: T }): T {
+    transact<T>(prepare: () => { files: SharedStateSnapshot; result: T }): T {
       events.push('shared.transact');
       this.recover();
       const prepared = prepare();
