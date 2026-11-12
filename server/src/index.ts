@@ -735,7 +735,7 @@ class GameRoom extends Room<RoomState> {
         p.gold-=cost;p.goldSpent+=cost;p.clan=id;
         return {clanName:name};
       });
-      if('error' in result)return this.notice(c,result.error);
+      if(typeof result.error==='string')return this.notice(c,result.error);
       const clans=loadClans();
       broadcastClanOverview(clans);broadcastClanQuests(clans);
       this.notice(c,`Клан «${result.clanName}» создан. В казну внесено 0 золота; создание стоило 5000.`);
@@ -754,7 +754,7 @@ class GameRoom extends Room<RoomState> {
         p.clan=clan.id;
         return {clanName:clan.name};
       });
-      if('error' in result)return this.notice(c,result.error);
+      if(typeof result.error==='string')return this.notice(c,result.error);
       const clans=loadClans();
       broadcastClanOverview(clans);broadcastClanQuests(clans);
       this.notice(c,`Ты вступил в клан «${result.clanName}».`);
@@ -783,7 +783,7 @@ class GameRoom extends Room<RoomState> {
         }
         return {kind:'left'};
       });
-      if('error' in result)return this.notice(c,result.error);
+      if(typeof result.error==='string')return this.notice(c,result.error);
       const clans=loadClans(),wars=loadWars(),territories=loadTerritories();
       if(result.kind==='disbanded'){
         const clanPayload=broadcastClanOverview(clans);
@@ -816,7 +816,7 @@ class GameRoom extends Room<RoomState> {
         while(clan.level<10&&clan.xp>=clan.level*100){clan.xp-=clan.level*100;clan.level++;}
         return {clanLevel:clan.level};
       });
-      if('error' in result)return this.notice(c,result.error);
+      if(typeof result.error==='string')return this.notice(c,result.error);
       const clans=loadClans();broadcastClanOverview(clans);broadcastClanQuests(clans);
       this.notice(c,`Вклад в клан: ${amount} золота. Уровень клана: ${result.clanLevel}.`);
     });
@@ -850,7 +850,7 @@ class GameRoom extends Room<RoomState> {
         }
         return {success:false};
       });
-      if('error' in result)return this.notice(c,result.error);
+      if(typeof result.error==='string')return this.notice(c,result.error);
       const clans=loadClans();
       if(result.success){
         broadcastClanOverview(clans);broadcastClanQuests(clans);
@@ -891,7 +891,7 @@ class GameRoom extends Room<RoomState> {
         clan.vault-=cost;clan.upgrades[id]=level+1;
         return {name:spec.name,level:level+1,cost};
       });
-      if('error' in result)return this.notice(c,result.error);
+      if(typeof result.error==='string')return this.notice(c,result.error);
       const clans=loadClans();broadcastClanOverview(clans);broadcastClanQuests(clans);
       this.notice(c,`${result.name} улучшена до ${result.level}/5 уровня. Потрачено ${result.cost} золота.`);
     });
@@ -920,7 +920,7 @@ class GameRoom extends Room<RoomState> {
         clan.questProgress.territory=(clan.questProgress.territory||0)+1;
         return {success:true,territoryName:t.name,seasonPoints};
       });
-      if('error' in result)return this.notice(c,result.error);
+      if(typeof result.error==='string')return this.notice(c,result.error);
       const clans=loadClans(),territories=loadTerritories();
       broadcastClanOverview(clans);
       if(result.success){
@@ -945,7 +945,7 @@ class GameRoom extends Room<RoomState> {
         clan.xp=Number(clan.xp||0)+20;clan.seasonPoints=Number(clan.seasonPoints||0)+15;
         return {reward};
       });
-      if('error' in result)return this.notice(c,result.error);
+      if(typeof result.error==='string')return this.notice(c,result.error);
       const clans=loadClans();broadcastClanOverview(clans);broadcastClanQuests(clans);
       this.notice(c,`Клан получил ${result.reward} золота, 20 опыта клана и 15 сезонных очков.`);
     });
@@ -964,7 +964,7 @@ class GameRoom extends Room<RoomState> {
         clan.vault=Number(clan.vault||0)+reward;clan.lastSeasonRewardWeek=week;
         return {rank,reward};
       });
-      if('error' in result)return this.notice(c,result.error);
+      if(typeof result.error==='string')return this.notice(c,result.error);
       const clans=loadClans();broadcastClanOverview(clans);broadcastClanQuests(clans);
       this.notice(c,`Клан занял ${result.rank||'—'} место и получил ${result.reward} золота в казну.`);
     });
@@ -1011,7 +1011,7 @@ class GameRoom extends Room<RoomState> {
       });
       const clans=loadClans(),wars=loadWars();
       if('refresh' in result&&result.refresh){broadcastClanOverview(clans);broadcastClanQuests(clans);}
-      if('error' in result)return this.notice(c,result.error);
+      if(typeof result.error==='string')return this.notice(c,result.error);
       const payload=broadcastClanWarList(wars,clans);
       c.send('clanWarList',payload);
       this.notice(c,`Клану «${result.targetName}» объявлена война на 24 часа.`);
@@ -1072,7 +1072,7 @@ class GameRoom extends Room<RoomState> {
       });
       const clans=loadClans(),wars=loadWars();
       if('refresh' in result&&result.refresh){broadcastClanOverview(clans);broadcastClanQuests(clans);}
-      if('error' in result)return this.notice(c,result.error);
+      if(typeof result.error==='string')return this.notice(c,result.error);
       const payload=broadcastClanWarList(wars,clans);
       this.notice(c,`Атака нанесла ${result.damage} урона. Суммарный урон: ${result.updated.aName||result.updated.a} — ${result.updated.aDamage||0}, ${result.updated.bName||result.updated.b} — ${result.updated.bDamage||0}. Следующая атака через 1 сек.`);
       c.send('clanWarList',payload);
@@ -1113,7 +1113,7 @@ class GameRoom extends Room<RoomState> {
       let committedTarget:any; let committedTargetId=''; let onlineTargetClient:any;
       let result:any;
       try {
-        result=sharedStateRuntime.transact((hadRecovery)=>{
+        result=sharedStateRuntime.transact<any>((hadRecovery)=>{
           if(hadRecovery)syncOnlinePlayersAfterRecovery();
           const p=this.state.player;
           rollbackAttacker=p.toJSON();
