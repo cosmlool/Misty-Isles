@@ -31,7 +31,8 @@ import { parseMonsterWeakness, resolveLegacyMonsterAttackMultiplier, resolveLega
 const ONLINE_PLAYERS = new Map<string, Player>();
 const ONLINE_CLIENTS = new Map<string, Client>();
 const ONLINE_SESSION_HASHES = new Map<string, string>();
-const HUNT_GROUPS = new Map<string, { id:string; leader:string; members:string[] }>();
+type HuntGroup = { id:string; leader:string; members:string[] };
+const HUNT_GROUPS = new Map<string, HuntGroup>();
 const PLAYER_GROUP = new Map<string,string>();
 const GROUP_INVITES = new Map<string,string>();
 const FRIEND_REQUESTS = new Map<string,Set<string>>();
@@ -49,6 +50,7 @@ const AUCTION_FILE = join(DATA_DIR, 'auction.json');
 const AUCTION_HISTORY_FILE = join(DATA_DIR, 'auction_history.json');
 const WAR_FILE = join(DATA_DIR, 'clan_wars.json');
 const TERRITORY_FILE = join(DATA_DIR, 'clan_territories.json');
+const HUNT_GROUP_FILE = join(DATA_DIR, 'hunt_groups.json');
 const ACCOUNT_FILE = join(DATA_DIR, 'accounts.json');
 const SESSION_FILE = join(DATA_DIR, 'sessions.json');
 const GUEST_CREDENTIAL_FILE = join(DATA_DIR, 'guest_credentials.json');
@@ -69,10 +71,43 @@ const sharedStateTransactions = createSharedStateTransactionStore({
     clans: CLAN_FILE,
     wars: WAR_FILE,
     territories: TERRITORY_FILE,
+    huntGroups: HUNT_GROUP_FILE,
   },
 });
 sharedStateTransactions.recover();
 const sharedStateRuntime = createSharedStateRuntime({ shared: sharedStateTransactions, auction: auctionTransactions, clans: clanTransactions });
+function restoreHuntGroupsFromDisk(){
+  HUNT_GROUPS.clear();
+  PLAYER_GROUP.clear();
+  if(!existsSync(HUNT_GROUP_FILE))return;
+  const raw=JSON.parse(readFileSync(HUNT_GROUP_FILE,'utf8'));
+  if(!Array.isArray(raw))throw new Error('hunt_groups.json must contain an array; refusing to start with ambiguous group membership.');
+  for(const entry of raw){
+    const id=String(entry?.id||''),leader=String(entry?.leader||'');
+    const members=Array.isArray(entry?.members)?entry.members.map((value:any)=>String(value||'')):[];
+    if(!id||!leader||members.length<1||members.length>3||members.some((member:string)=>!member)||new Set(members).size!==members.length||!members.includes(leader)){
+      throw new Error('hunt_groups.json contains an invalid group; refusing to start with ambiguous group membership.');
+    }
+    if(members.some((member:string)=>PLAYER_GROUP.has(member))||HUNT_GROUPS.has(id)){
+      throw new Error('hunt_groups.json contains duplicate group membership; refusing to start with ambiguous group membership.');
+    }
+    const group:HuntGroup={id,leader,members};
+    HUNT_GROUPS.set(id,group);
+    for(const member of members)PLAYER_GROUP.set(member,id);
+  }
+}
+restoreHuntGroupsFromDisk();
+function persistHuntGroups(){
+  try{
+    sharedStateRuntime.transact((recovered)=>{
+      if(recovered)throw new Error('Shared state was recovered during a group mutation; retry the action.');
+      return {files:{huntGroups:Array.from(HUNT_GROUPS.values()).map(group=>({id:group.id,leader:group.leader,members:[...group.members]}))},result:undefined};
+    });
+  }catch(error){
+    restoreHuntGroupsFromDisk();
+    throw error;
+  }
+}
 const EXPEDITION_DATA:any = JSON.parse(readFileSync(join(DATA_DIR,'forgotten_lands.json'),'utf8'));
 const EXPEDITION_BESTIARY:any[] = EXPEDITION_DATA.monsters
   .filter((monster:any)=>['rare','elite','guardian','boss','finalBoss'].includes(monster.rank))
