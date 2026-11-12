@@ -12,8 +12,8 @@ type Recoverable = { recover(): boolean };
 type SharedStore = Recoverable & {
   transact<T>(prepareAfterRecovery: () => { files: SharedStateSnapshot; result: T }): T;
 };
-type AuctionStore = Recoverable & { commit(snapshot: unknown): void };
-type ClanStore = Recoverable & { commit(snapshot: unknown): void };
+type AuctionStore = Recoverable;
+type ClanStore = Recoverable;
 
 type Options = {
   shared: SharedStore;
@@ -36,16 +36,26 @@ export function createSharedStateRuntime(options: Options) {
 
   function commitAuction<T>(prepareAfterRecovery: (recovered: boolean) => { snapshot: unknown; result: T }): T {
     const recovered = recoverPendingState();
-    const prepared = prepareAfterRecovery(recovered);
-    options.auction.commit(prepared.snapshot);
-    return prepared.result;
+    return options.shared.transact(() => {
+      const prepared = prepareAfterRecovery(recovered);
+      const snapshot = prepared.snapshot as { players: unknown; auction: unknown[]; history: unknown[] };
+      return {
+        files: { players: snapshot.players, auction: snapshot.auction, auctionHistory: snapshot.history },
+        result: prepared.result
+      };
+    });
   }
 
   function commitClan<T>(prepareAfterRecovery: (recovered: boolean) => { snapshot: unknown; result: T }): T {
     const recovered = recoverPendingState();
-    const prepared = prepareAfterRecovery(recovered);
-    options.clans.commit(prepared.snapshot);
-    return prepared.result;
+    return options.shared.transact(() => {
+      const prepared = prepareAfterRecovery(recovered);
+      const snapshot = prepared.snapshot as { players: unknown; clans: unknown; wars: unknown[]; territories: unknown[] };
+      return {
+        files: { players: snapshot.players, clans: snapshot.clans, wars: snapshot.wars, territories: snapshot.territories },
+        result: prepared.result
+      };
+    });
   }
 
   return { transact, commitAuction, commitClan, recoverPendingState };
