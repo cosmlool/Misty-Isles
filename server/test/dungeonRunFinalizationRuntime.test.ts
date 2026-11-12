@@ -24,11 +24,11 @@ function createRun(): DungeonRunRecord {
     ...base,
     roundIndex: 2,
     updatedAt: 200,
-    roundPlan: createDungeonRoundPlan({
+    roundPlan: { ...createDungeonRoundPlan({
       totalRounds: 2,
       totalBossDamage: 500,
       totalIncomingDamageByParticipant: { p1: 20, p2: 30 },
-    }),
+    }), nextRoundIndex: 2 },
   };
 }
 function players() {
@@ -147,9 +147,9 @@ test('a finalization journal recovers terminal state and all player rewards afte
         ],
         bossId: 'boss_20', bossHealth: 500, seed: 'seed_finalize_wal', now: 100,
       });
-      const run = { ...base, roundIndex: 2, updatedAt: 200, roundPlan: createDungeonRoundPlan({
+      const run = { ...base, roundIndex: 2, updatedAt: 200, roundPlan: { ...createDungeonRoundPlan({
         totalRounds: 2, totalBossDamage: 500, totalIncomingDamageByParticipant: { p1: 20, p2: 30 },
-      }) };
+      }), nextRoundIndex: 2 } };
       const players = {
         p1: { id: 'p1', health: 80, gold: 600, inventory: '["dungeon_resource"]', quests: '{}' },
         p2: { id: 'p2', health: 60, gold: 450, inventory: '[]', quests: '{}' },
