@@ -148,9 +148,16 @@ test('startup migration recovery replays legacy journals before the newer shared
     }));
 
     const runtime = createSharedStateRuntime({ shared: f.store, auction, clans });
-    assert.equal(runtime.recoverPendingState(), true);
+    let observedGold = 0;
+    const saved = runtime.transact(hadRecovery => {
+      assert.equal(hadRecovery, true);
+      observedGold = readJson(f.files.players).p1.gold;
+      return { files: { players: { p1: { gold: observedGold - 10 } } }, result: 'saved' };
+    });
+    assert.equal(saved, 'saved');
+    assert.equal(observedGold, 30, 'ordinary writer must prepare from the latest recovered snapshot');
 
-    assert.equal(readJson(f.files.players).p1.gold, 30);
+    assert.equal(readJson(f.files.players).p1.gold, 20);
     assert.deepEqual(readJson(f.files.auction), [{ id: 'shared_lot' }]);
     assert.deepEqual(readJson(f.files.auctionHistory), [{ id: 'shared_tx' }]);
     assert.deepEqual(readJson(f.files.clans), { c1: { vault: 2 } });
