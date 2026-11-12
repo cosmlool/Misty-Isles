@@ -10,10 +10,23 @@ export type DungeonFinalizationOutcome =
 
 export type DungeonFinalizationPlayerSnapshot = Record<string, unknown>;
 
+export type DungeonResultOutboxEvent = {
+  eventId: string;
+  runId: string;
+  playerId: string;
+  messageType: string;
+  payload: Record<string, unknown>;
+  status: 'pending' | 'delivered';
+  createdAt: number;
+  deliveredAt?: number;
+};
+export type DungeonResultOutbox = Record<string, DungeonResultOutboxEvent>;
+
 export type PreparedDungeonFinalization = {
   run: DungeonRunRecord;
   players: Record<string, DungeonFinalizationPlayerSnapshot>;
   runs: DungeonRunStore;
+  outbox: DungeonResultOutbox;
   claimId: string;
   alreadyFinalized: boolean;
 };
@@ -38,6 +51,8 @@ export function prepareDungeonRunFinalization(input: {
   players: Record<string, DungeonFinalizationPlayerSnapshot>;
   runs: DungeonRunStore;
   now: number;
+  outbox?: DungeonResultOutbox;
+  events?: Array<Omit<DungeonResultOutboxEvent, 'status' | 'createdAt' | 'deliveredAt'>>;
 }): PreparedDungeonFinalization {
   if (!input.runId || !Number.isInteger(input.expectedRoundIndex) ||
       input.expectedRoundIndex < 0 || !Number.isFinite(input.expectedUpdatedAt) ||
@@ -48,6 +63,9 @@ export function prepareDungeonRunFinalization(input: {
   const current = currentRuns[input.runId];
   if (!current) throw new Error('Dungeon run does not exist.');
   const claimId = `dungeon:${current.runId}:${current.requestId}:${input.outcome}`;
+  const currentOutbox = input.outbox || {};
+  if (!isRecord(currentOutbox)) throw new Error('Dungeon result outbox must be an object keyed by event ID.');
+  const nextOutbox: DungeonResultOutbox = { ...currentOutbox };
 
   if (current.status !== 'active') {
     if (current.terminalResult?.outcome !== input.outcome) {
@@ -60,6 +78,7 @@ export function prepareDungeonRunFinalization(input: {
       run: current,
       players: input.players,
       runs: currentRuns,
+      outbox: currentOutbox,
       claimId,
       alreadyFinalized: true,
     };
@@ -79,6 +98,29 @@ export function prepareDungeonRunFinalization(input: {
     }
   }
 
+  const events = input.events || [];
+  const eventIds = new Set<string>();
+  for (const event of events) {
+    if (!event || event.runId !== current.runId || !current.participantIds.includes(event.playerId) ||
+        !event.eventId || !event.eventId.startsWith(`dungeon:${current.runId}:`) ||
+        !event.messageType || !isRecord(event.payload) || eventIds.has(event.eventId)) {
+      throw new Error('Dungeon result outbox event is invalid or does not belong to this run.');
+    }
+    eventIds.add(event.eventId);
+    const existing = nextOutbox[event.eventId];
+    if (existing) {
+      if (existing.runId !== event.runId || existing.playerId !== event.playerId ||
+          existing.messageType !== event.messageType || JSON.stringify(existing.payload) !== JSON.stringify(event.payload)) {
+        throw new Error('Dungeon result outbox event ID is already bound to a different payload.');
+      }
+      continue;
+    }
+    nextOutbox[event.eventId] = {
+      ...event,
+      status: 'pending',
+      createdAt: input.now,
+    };
+  }
   const nextRun = finishDungeonRun(current, input.outcome, input.now);
   const nextRuns = validateDungeonRunStore({
     ...currentRuns,
@@ -88,6 +130,7 @@ export function prepareDungeonRunFinalization(input: {
     run: nextRun,
     players: input.players,
     runs: nextRuns,
+    outbox: nextOutbox,
     claimId,
     alreadyFinalized: false,
   };
@@ -95,7 +138,7 @@ export function prepareDungeonRunFinalization(input: {
 
 type DungeonFinalizationRuntime = {
   transact<T>(prepare: (recovered: boolean) => {
-    files: { players: Record<string, DungeonFinalizationPlayerSnapshot>; dungeonRuns: DungeonRunStore };
+    files: { players?: Record<string, DungeonFinalizationPlayerSnapshot>; dungeonRuns?: DungeonRunStore; dungeonOutbox?: DungeonResultOutbox };
     result: T;
     skipWrite?: boolean;
   }): T;
@@ -114,6 +157,8 @@ export function commitDungeonRunFinalization(input: {
   players: Record<string, DungeonFinalizationPlayerSnapshot>;
   runs: DungeonRunStore;
   now: number;
+  outbox?: DungeonResultOutbox;
+  events?: Array<Omit<DungeonResultOutboxEvent, 'status' | 'createdAt' | 'deliveredAt'>>;
 }): PreparedDungeonFinalization {
   return input.runtime.transact(recovered => {
     if (recovered) {
@@ -124,9 +169,38 @@ export function commitDungeonRunFinalization(input: {
       files: {
         players: prepared.players,
         dungeonRuns: prepared.runs,
+        dungeonOutbox: prepared.outbox,
       },
       result: prepared,
       skipWrite: prepared.alreadyFinalized,
     };
+  });
+}
+
+
+/**
+ * Marks a result event delivered only after the transport accepts the send.
+ * Delivery is at-least-once: a process crash between send and acknowledgement
+ * can replay the event, so consumers should deduplicate by eventId.
+ */
+export function markDungeonResultEventDelivered(input: {
+  runtime: DungeonFinalizationRuntime;
+  outbox: DungeonResultOutbox;
+  eventId: string;
+  now: number;
+}): DungeonResultOutbox {
+  if (!input.eventId || !Number.isFinite(input.now)) throw new Error('Invalid dungeon outbox acknowledgement.');
+  return input.runtime.transact(recovered => {
+    if (recovered) throw new Error('Shared state was recovered during dungeon outbox acknowledgement; reload the outbox before retrying.');
+    const current = input.outbox[input.eventId];
+    if (!current) throw new Error('Dungeon result outbox event does not exist.');
+    if (current.status === 'delivered') {
+      return { files: { dungeonOutbox: input.outbox }, result: input.outbox, skipWrite: true };
+    }
+    const next = {
+      ...input.outbox,
+      [input.eventId]: { ...current, status: 'delivered' as const, deliveredAt: input.now },
+    };
+    return { files: { dungeonOutbox: next }, result: next };
   });
 }

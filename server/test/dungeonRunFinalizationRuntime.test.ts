@@ -7,7 +7,7 @@ import test from 'node:test';
 import { createSharedStateTransactionStore } from '../src/sharedStateTransactions.js';
 import { createSharedStateRuntime } from '../src/sharedStateRuntime.js';
 import { createDungeonRunRecord, createDungeonRoundPlan, type DungeonRunRecord } from '../src/dungeonRunState.js';
-import { commitDungeonRunFinalization } from '../src/dungeonRunFinalizationRuntime.js';
+import { commitDungeonRunFinalization, markDungeonResultEventDelivered } from '../src/dungeonRunFinalizationRuntime.js';
 
 function readJson(file: string) { return JSON.parse(readFileSync(file, 'utf8')); }
 function createRun(): DungeonRunRecord {
@@ -47,7 +47,7 @@ function runtimeFor(store: ReturnType<typeof createSharedStateTransactionStore>)
 
 test('finalization commits terminal result and every post-reward player snapshot atomically', () => {
   const dataDir = mkdtempSync(join(tmpdir(), 'misty-dungeon-finalize-'));
-  const files = { players: join(dataDir, 'players.json'), dungeonRuns: join(dataDir, 'dungeon_runs.json') };
+  const files = { players: join(dataDir, 'players.json'), dungeonRuns: join(dataDir, 'dungeon_runs.json'), dungeonOutbox: join(dataDir, 'dungeon_outbox.json') };
   try {
     const run = createRun();
     const nextPlayers = players();
@@ -58,6 +58,11 @@ test('finalization commits terminal result and every post-reward player snapshot
     const result = commitDungeonRunFinalization({
       runtime, runId: run.runId, expectedRoundIndex: 2, expectedUpdatedAt: 200,
       outcome: 'win', players: nextPlayers, runs: { [run.runId]: run }, now: 300,
+      events: [{
+        eventId: `dungeon:${run.runId}:p1:combatResult`,
+        runId: run.runId, playerId: 'p1', messageType: 'combatResult',
+        payload: { requestId: run.requestId, text: 'Dungeon complete', report: { result: 'win' } },
+      }],
     });
     assert.equal(result.alreadyFinalized, false);
     assert.equal(result.run.status, 'completed');
@@ -67,6 +72,15 @@ test('finalization commits terminal result and every post-reward player snapshot
     assert.equal(readJson(files.players).p1.gold, 600);
     assert.deepEqual(readJson(files.players).p1.inventory, ['dungeon_resource']);
     assert.equal(readJson(files.players).p2.gold, 450);
+    const outbox = readJson(files.dungeonOutbox);
+    const eventId = `dungeon:${run.runId}:p1:combatResult`;
+    assert.equal(outbox[eventId].status, 'pending');
+    assert.equal(outbox[eventId].payload.report.result, 'win');
+    const acknowledged = markDungeonResultEventDelivered({
+      runtime, outbox, eventId, now: 350,
+    });
+    assert.equal(acknowledged[eventId].status, 'delivered');
+    assert.equal(readJson(files.dungeonOutbox)[eventId].deliveredAt, 350);
   } finally {
     rmSync(dataDir, { recursive: true, force: true });
   }
@@ -83,6 +97,11 @@ test('duplicate finalization is a no-op and cannot apply a second reward payload
     const first = commitDungeonRunFinalization({
       runtime, runId: run.runId, expectedRoundIndex: 2, expectedUpdatedAt: 200,
       outcome: 'win', players: firstPlayers, runs: { [run.runId]: run }, now: 300,
+      events: [{
+        eventId: `dungeon:${run.runId}:p1:combatResult`,
+        runId: run.runId, playerId: 'p1', messageType: 'combatResult',
+        payload: { requestId: run.requestId, text: 'Only once', report: { result: 'win' } },
+      }],
     });
     const retryPlayers = players();
     retryPlayers.p1.gold += 999999;
@@ -93,6 +112,7 @@ test('duplicate finalization is a no-op and cannot apply a second reward payload
     assert.equal(retry.alreadyFinalized, true);
     assert.equal(readJson(files.players).p1.gold, 200);
     assert.equal(readJson(files.dungeonRuns)[run.runId].terminalResult.claimId, first.claimId);
+    assert.equal(Object.keys(readJson(files.dungeonOutbox)).length, 1);
     assert.throws(() => commitDungeonRunFinalization({
       runtime, runId: run.runId, expectedRoundIndex: 2, expectedUpdatedAt: 200,
       outcome: 'loss', players: retryPlayers, runs: { [run.runId]: first.run }, now: 500,

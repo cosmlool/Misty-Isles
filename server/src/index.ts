@@ -59,6 +59,7 @@ const WAR_FILE = join(DATA_DIR, 'clan_wars.json');
 const TERRITORY_FILE = join(DATA_DIR, 'clan_territories.json');
 const HUNT_GROUP_FILE = join(DATA_DIR, 'hunt_groups.json');
 const DUNGEON_RUN_FILE = join(DATA_DIR, 'dungeon_runs.json');
+const DUNGEON_OUTBOX_FILE = join(DATA_DIR, 'dungeon_outbox.json');
 const ACCOUNT_FILE = join(DATA_DIR, 'accounts.json');
 const SESSION_FILE = join(DATA_DIR, 'sessions.json');
 const GUEST_CREDENTIAL_FILE = join(DATA_DIR, 'guest_credentials.json');
@@ -77,6 +78,7 @@ const sharedStateTransactions = createSharedStateTransactionStore({
     territories: TERRITORY_FILE,
     huntGroups: HUNT_GROUP_FILE,
     dungeonRuns: DUNGEON_RUN_FILE,
+    dungeonOutbox: DUNGEON_OUTBOX_FILE,
   },
 });
 // One recovery gate handles legacy migration and the shared WAL. If both legacy

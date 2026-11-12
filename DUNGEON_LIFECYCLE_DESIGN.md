@@ -153,3 +153,11 @@ Important limitation: the current boss dungeon handler is still synchronous and 
 - Finalization refuses stale snapshots, missing participant snapshots, unresolved planned rounds, and any retry after shared-state recovery until both snapshots are reloaded.
 - Crash coverage interrupts after the player file write and verifies WAL replay restores both player reward snapshots and the terminal run marker.
 - This is a persistence foundation only. The live `runExpeditionDungeon()` handler still calculates and mutates rewards synchronously and is not wired to this helper. Reward calculation, loot selection/distribution, report construction, event delivery/outbox semantics, and live-handler replacement remain outstanding. No reward formula, chance, or balance value was changed.
+
+
+## Durable dungeon result outbox foundation
+
+- The shared WAL now supports `dungeon_outbox.json`; terminal run state, post-reward player snapshots, and queued result messages can be committed in the same transaction.
+- Result events have deterministic IDs bound to the run and recipient. Repeated finalization cannot enqueue a second copy or replace an existing event payload.
+- Delivery acknowledgement is persisted separately after transport send. This is at-least-once delivery: a crash between socket send and acknowledgement can replay an event. A future client receiver must deduplicate by `eventId`.
+- The outbox is persistence infrastructure only. The current synchronous live dungeon handler still sends directly and does not enqueue through this outbox. No live dispatch worker, reconnect replay, client deduplication, or reward formula change is included in this stage.
