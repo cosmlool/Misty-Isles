@@ -15,7 +15,7 @@ import { startPlayerAutosave } from './playerAutosave.js';
 import { canSaveRoomPlayerSnapshot, isCurrentRoomSession } from './playerSessionOwnership.js';
 import { readJsonFile as readPersistentJson } from './jsonPersistence.js';
 import { filterAvailableUniqueItems, isLastEquippedCopy, ownsItemCopy, removeInventoryCopy } from './inventoryOperations.js';
-import { consumeResurrectionScroll, purchaseResurrectionScroll, RESURRECTION_SCROLL_ID } from './resurrectionScrolls.js';
+import { purchaseResurrectionScroll, RESURRECTION_SCROLL_ID } from './resurrectionScrolls.js';
 import { readPlayerArray as readArray, readPlayerObject as readObject } from './playerJson.js';
 import { createAuctionTransactionStore } from './auctionTransactions.js';
 import { createClanTransactionStore } from './clanTransactions.js';
