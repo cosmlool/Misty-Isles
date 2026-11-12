@@ -2494,3 +2494,11 @@ PlayerSchema содержит mining=0, но серверный код не ис
 - Fix commit: `bf097e28ef8b1bfdd6b9c84c2471125a9600835d`.
 - Pre-fix CI: Playwright browser smoke, client build and project/data audit passed. Both server jobs failed on the same single test; server build steps were skipped after test failure.
 - Post-fix validation has not yet run. Do not call this fixed/verified until new CI for the exact new HEAD passes server tests, server build, client build, project audit and Playwright smoke tests.
+
+
+### Admin authorization hardening — 2026-11-12
+- Production admin message handler previously had no effective authorization check despite a comment claiming that the feature was open only for a test build.
+- Added a fail-closed allowlist parsed from `MISTY_ADMIN_PLAYER_IDS`. Empty/unset configuration means no player has admin access. The handler rejects non-allowlisted player IDs before executing any command and still requires a created character.
+- Added parser unit coverage and a runtime regression proving that a non-allowlisted guest cannot invoke `admin`.
+- Exact code HEAD verified: `e1328083b1bf735c7fba99a2df860283247a51ef`. Quality Gate push run `43182193156`, Quality Gate PR run `43182468883`, and Server checks PR run `43182468784` all SUCCESS. Server tests/build, client build, project/data audit and Playwright passed.
+- PR #15 remains Draft/unmerged. The dungeon lifecycle/60-minute AFK policy is still a separate unimplemented architecture task: dungeon combat currently resolves synchronously in one handler and does not expose a persistent active-dungeon state or spectator lifecycle.
