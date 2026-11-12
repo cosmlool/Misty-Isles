@@ -106,17 +106,29 @@ test('resurrection rejects self, duplicate rescuer-target pairs, living targets 
   }), /scroll is required/);
 });
 
-test('another participant may revive the same ally after a separate death', () => {
-  const dead = markDungeonParticipantDead(run(), 'p2', 2);
+test('another active participant may revive the same ally after a separate death', () => {
+  const threePlayerRun = createDungeonRunRecord({
+    runId: 'run_003', requestId: 'dungeon_req_003', dungeonId: 'fl_dungeon_03',
+    groupId: 'group_1', leaderId: 'p1',
+    participants: [
+      { playerId: 'p1', health: 100, maxHealth: 120 },
+      { playerId: 'p2', health: 90, maxHealth: 110 },
+      { playerId: 'p3', health: 95, maxHealth: 115 },
+    ],
+    bossId: 'boss_03', bossHealth: 500, seed: 'deterministic-seed', now: 1,
+  });
+  const dead = markDungeonParticipantDead(threePlayerRun, 'p2', 2);
   const first = reviveDungeonParticipant(dead, {
     rescuerId: 'p1', targetId: 'p2', availableScrolls: 1, reviveHealth: 10, now: 3,
   }).run;
   const secondDeath = markDungeonParticipantDead(first, 'p2', 4);
   const second = reviveDungeonParticipant(secondDeath, {
-    rescuerId: 'p2', targetId: 'p1', availableScrolls: 1, reviveHealth: 15, now: 5,
+    rescuerId: 'p3', targetId: 'p2', availableScrolls: 1, reviveHealth: 15, now: 5,
   });
-  assert.equal(second.run.participants.p1.status, 'revived');
-  assert.deepEqual(second.run.participants.p2.resurrectedPlayerIds, ['p1']);
+  assert.equal(second.run.participants.p2.status, 'revived');
+  assert.equal(second.run.participants.p2.health, 15);
+  assert.deepEqual(second.run.participants.p1.resurrectedPlayerIds, ['p2']);
+  assert.deepEqual(second.run.participants.p3.resurrectedPlayerIds, ['p2']);
 });
 
 
