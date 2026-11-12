@@ -10,7 +10,7 @@ import type { SharedStateSnapshot } from './sharedStateTransactions.js';
 
 type Recoverable = { recover(): boolean };
 type SharedStore = Recoverable & {
-  transact<T>(prepareAfterRecovery: () => { files: SharedStateSnapshot; result: T }): T;
+  transact<T>(prepareAfterRecovery: () => { files: SharedStateSnapshot; result: T; skipWrite?: boolean }): T;
 };
 type AuctionStore = Recoverable;
 type ClanStore = Recoverable;
