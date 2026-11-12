@@ -130,7 +130,7 @@ test('a round journal recovers the whole committed round after process interrupt
       const playerSnapshots = Object.fromEntries(run.participantIds.map(id => [id, { id, health: run.participants[id].health, maxHealth: run.participants[id].maxHealth }]));
       const store = createSharedStateTransactionStore({
         dataDir, files,
-        testHooks: { afterTargetWrite(key) { if (key === 'dungeonRuns') process.exit(74); } },
+        testHooks: { afterTargetWrite(key) { if (key === 'players') process.exit(74); } },
       });
       const runtime = createSharedStateRuntime({
         shared: store, auction: { recover: () => false }, clans: { recover: () => false },
