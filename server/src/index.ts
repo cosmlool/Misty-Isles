@@ -866,14 +866,13 @@ class GameRoom extends Room<RoomState> {
       this.notice(c,`Клан занял ${result.rank||'—'} место и получил ${result.reward} золота в казну.`);
     });
     this.onAuthenticatedMessage('clanWarList',(c)=>{
-      if(!this.requireCharacter(c))return;
-      transactClanMutation(this.playerId,({clans,wars})=>{
-        ensureAllClanQuests(clans);
+      transactClanStateMutation(({clans,wars})=>{
+        const questsChanged=ensureAllClanQuests(clans);
         const settled=settleExpiredClanWars(wars,clans,Date.now());
         for(const id of Object.keys(clans))delete clans[id];
         Object.assign(clans,settled.clans);
         wars.splice(0,wars.length,...settled.wars);
-        return undefined;
+        return {changed:settled.changed||questsChanged};
       });
       const clans=loadClans(),currentWars=loadWars();
       const payload=broadcastClanWarList(currentWars,clans);
@@ -1075,6 +1074,14 @@ function loadClans():Record<string,any>{return readPersistentJson<Record<string,
 function loadTerritories():any[]{const defaults=TERRITORIES.map(t=>({...t,owner:'',ownerName:'',capturedAt:0,defense:0}));const list=readPersistentJson<any[]>(TERRITORY_FILE,defaults,value=>Array.isArray(value)&&value.every(isPlainObject));if(!existsSync(TERRITORY_FILE))saveTerritories(list);return list;}
 function saveTerritories(list:any[]){writeJsonAtomic(TERRITORY_FILE,list);}
 function isClanMember(clan:any,playerId:string):boolean{return !!clan&&Array.isArray(clan.members)&&clan.members.some((member:any)=>member?.id===playerId);}
+function transactClanStateMutation<T>(prepare:(state:{clans:Record<string,any>;wars:any[];territories:any[]})=>T):T{
+  return sharedStateRuntime.commitClan((hadRecovery)=>{
+    if(hadRecovery)syncOnlinePlayersAfterRecovery();
+    const clans=loadClans(),wars=loadWars(),territories=loadTerritories();
+    const result=prepare({clans,wars,territories});
+    return {snapshot:{players:loadPlayersWithOnline(),clans,wars,territories},result};
+  });
+}
 function transactClanMutation<T>(playerId:string,prepare:(state:{p:Player;clans:Record<string,any>;wars:any[];territories:any[]})=>T):T{
   return sharedStateRuntime.commitClan((hadRecovery)=>{
     if(hadRecovery)syncOnlinePlayersAfterRecovery();
