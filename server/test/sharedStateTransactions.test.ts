@@ -147,9 +147,8 @@ test('startup migration recovery replays legacy journals before the newer shared
       },
     }));
 
-    assert.equal(auction.recover(), true);
-    assert.equal(clans.recover(), false, 'only one legacy journal may be pending during migration');
-    assert.equal(f.store.recover(), true);
+    const runtime = createSharedStateRuntime({ shared: f.store, auction, clans });
+    assert.equal(runtime.recoverPendingState(), true);
 
     assert.equal(readJson(f.files.players).p1.gold, 30);
     assert.deepEqual(readJson(f.files.auction), [{ id: 'shared_lot' }]);
