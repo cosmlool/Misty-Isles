@@ -188,7 +188,14 @@ test('PvP offers four saved real characters, steals 20 percent gold, persists co
     const chosen = firstOffer.players[0];
     const targetId = targetIds.find(id => publicCode(id) === chosen.id);
     assert.ok(targetId, 'the offered target must be one of the offline saved characters');
-    const targetBefore = readJson(join(dataDir, 'players.json'))[targetId];
+    let challengeRecovery = readJson(join(dataDir, 'players.json'));
+    challengeRecovery[attackerId].gold = 888;
+    challengeRecovery[targetId].gold = Number(challengeRecovery[targetId].gold || 0) + 100;
+    writeFileSync(join(dataDir, 'shared_state_transaction.json'), JSON.stringify({
+      version: 1,
+      files: { players: challengeRecovery },
+    }));
+    const targetBefore = challengeRecovery[targetId];
 
     attackerRoom.send('pvpChallenge', { targetId: chosen.id });
     const result = await waitFor(() => results[0], 'PvP combat result');
@@ -204,7 +211,7 @@ test('PvP offers four saved real characters, steals 20 percent gold, persists co
     const saved = readJson(join(dataDir, 'players.json'));
     assert.ok(saved[bystanderId].health > 50, 'PvP persistence must include unsaved health regeneration from every online character');
     const stolen = Math.floor(targetBefore.gold * 0.2);
-    assert.equal(saved[attackerId].gold, 777 + stolen);
+    assert.equal(saved[attackerId].gold, 888 + stolen, 'PvP challenge must calculate rewards from recovered attacker gold');
     assert.equal(saved[targetId].gold, targetBefore.gold - stolen);
     assert.equal(result.report.rewards.gold, stolen);
     assert.equal(saved[attackerId].lastPvpAt > 0, true);
