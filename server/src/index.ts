@@ -786,7 +786,39 @@ class GameRoom extends Room<RoomState> {
       const clans=loadClans();broadcastClanOverview(clans);broadcastClanQuests(clans);
       this.notice(c,`${result.name} улучшена до ${result.level}/5 уровня. Потрачено ${result.cost} золота.`);
     });
-    this.onAuthenticatedMessage('clanTerritoryCapture',(c,d:any)=>{if(!this.requireCharacter(c))return;const p=this.state.player;if(!p?.clan)return this.notice(c,'Сначала вступи в клан.');const clans=loadClans();const clan=clans[p.clan];if(!clan)return this.notice(c,'Клан не найден.');if(!isClanMember(clan,this.playerId))return this.notice(c,'Персонаж не состоит в этом клане.');const list=loadTerritories();const t=list.find((x:any)=>x.id===String(d?.id||''));if(!t)return this.notice(c,'Территория не найдена.');if(t.owner===clan.id)return this.notice(c,'Эта территория уже принадлежит твоему клану.');const now=Date.now();if(now-Number(clan.lastTerritoryCaptureAt||0)<6*60*60*1000)return this.notice(c,`Новая экспедиция доступна через ${Math.ceil((6*60*60*1000-(now-Number(clan.lastTerritoryCaptureAt||0)))/3600000)} ч.`);const cost=1000+Number(t.level||1)*750;if(Number(clan.vault||0)<cost)return this.notice(c,`В клановой казне нужно ${cost} золота.`);clan.vault-=cost;clan.lastTerritoryCaptureAt=now;const upgrades=clan.upgrades||{};const strength=Number(clan.level||1)*5+clan.members.length*3+Number(p.level||1)*(1+activeBuffValue(p,'attack',now)+activeBuffValue(p,'crit',now)*.5)+Number(p.defense||0)*.1*activeBuffValue(p,'defense',now)+rand(0,20)+Number(upgrades.barracks||0)*2;const defense=Number(t.defense||0)||Number(t.level||1)*12+rand(0,20);if(strength<defense){commitClanState(clans);broadcastClanOverview(clans);return this.notice(c,`Экспедиция проиграла: сила ${strength}, защита ${defense}. Казна потратила ${cost} золота; повтор через 6 часов.`);}t.owner=clan.id;t.ownerName=clan.name;t.capturedAt=now;t.defense=defense;clan.seasonPoints=Number(clan.seasonPoints||0)+25+Number(upgrades.banner||0)*5;ensureClanQuests(clan);clan.questProgress=clan.questProgress||{};clan.questProgress.territory=(clan.questProgress.territory||0)+1;commitClanState(clans,loadWars(),list);broadcastClanTerritories(clans,list);broadcastClanOverview(clans);broadcastClanQuests(clans);this.notice(c,`Территория «${t.name}» захвачена! +${25+Number(upgrades.banner||0)*5} сезонных очков.`);});
+    this.onAuthenticatedMessage('clanTerritoryCapture',(c,d:any)=>{
+      if(!this.requireCharacter(c))return;
+      const territoryId=String(d?.id||''),now=Date.now();
+      const result=transactClanMutation(this.playerId,({p,clans,territories})=>{
+        if(!p?.clan)return {error:'Сначала вступи в клан.'};
+        const clan=clans[p.clan];if(!clan)return {error:'Клан не найден.'};
+        if(!isClanMember(clan,this.playerId))return {error:'Персонаж не состоит в этом клане.'};
+        const t=territories.find((x:any)=>x.id===territoryId);
+        if(!t)return {error:'Территория не найдена.'};
+        if(t.owner===clan.id)return {error:'Эта территория уже принадлежит твоему клану.'};
+        if(now-Number(clan.lastTerritoryCaptureAt||0)<6*60*60*1000)return {error:`Новая экспедиция доступна через ${Math.ceil((6*60*60*1000-(now-Number(clan.lastTerritoryCaptureAt||0)))/3600000)} ч.`};
+        const cost=1000+Number(t.level||1)*750;
+        if(Number(clan.vault||0)<cost)return {error:`В клановой казне нужно ${cost} золота.`};
+        clan.vault-=cost;clan.lastTerritoryCaptureAt=now;
+        const upgrades=clan.upgrades||{};
+        const strength=Number(clan.level||1)*5+clan.members.length*3+Number(p.level||1)*(1+activeBuffValue(p,'attack',now)+activeBuffValue(p,'crit',now)*.5)+Number(p.defense||0)*.1*activeBuffValue(p,'defense',now)+rand(0,20)+Number(upgrades.barracks||0)*2;
+        const defense=Number(t.defense||0)||Number(t.level||1)*12+rand(0,20);
+        if(strength<defense)return {success:false,strength,defense,cost};
+        t.owner=clan.id;t.ownerName=clan.name;t.capturedAt=now;t.defense=defense;
+        const seasonPoints=25+Number(upgrades.banner||0)*5;
+        clan.seasonPoints=Number(clan.seasonPoints||0)+seasonPoints;
+        ensureClanQuests(clan);clan.questProgress=clan.questProgress||{};
+        clan.questProgress.territory=(clan.questProgress.territory||0)+1;
+        return {success:true,territoryName:t.name,seasonPoints};
+      });
+      if('error' in result)return this.notice(c,result.error);
+      const clans=loadClans(),territories=loadTerritories();
+      broadcastClanOverview(clans);
+      if(result.success){
+        broadcastClanTerritories(clans,territories);broadcastClanQuests(clans);
+        this.notice(c,`Территория «${result.territoryName}» захвачена! +${result.seasonPoints} сезонных очков.`);
+      }else this.notice(c,`Экспедиция проиграла: сила ${result.strength}, защита ${result.defense}. Казна потратила ${result.cost} золота; повтор через 6 часов.`);
+    });
     this.onAuthenticatedMessage('clanQuestClaim',(c,d:any)=>{
       if(!this.requireCharacter(c))return;
       const questId=String(d?.id||'');
