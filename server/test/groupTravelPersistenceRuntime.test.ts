@@ -97,7 +97,7 @@ test('group expedition travel start and claim persist every member together', { 
     writeFileSync(join(dataDir, 'forgotten_lands.json'), JSON.stringify(expeditionData, null, 2));
     const makePlayer = (id: string, name: string, friend: string) => ({
       id, name, race: id === leaderId ? 'Грызун' : 'Кот', profession: id === leaderId ? 'Вампир' : '',
-      level: id === leaderId ? 20 : 3, gold: id === leaderId ? 5_000 : 500,
+      level: id === leaderId ? 20 : 15, gold: id === leaderId ? 5_000 : 500,
       health: id === leaderId ? 50 : 100, maxHealth: 100,
       buff: id === memberId ? 'xp' : '', buffValue: id === memberId ? 0.12 : 0,
       buffSecondaryEffect: id === memberId ? 'gold' : '',
