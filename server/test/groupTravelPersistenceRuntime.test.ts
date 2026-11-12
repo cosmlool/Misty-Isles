@@ -238,7 +238,7 @@ test('group expedition travel start and claim persist every member together', { 
     assert.equal(restoredWithOfflineMember.group.members.find((member: any) => member.id === publicCode(memberId))?.online, false,
       'an offline member must retain their group slot after restart');
 
-    const memberRoom = await restartedClient.joinOrCreate('my_room', {
+    let memberRoom = await restartedClient.joinOrCreate('my_room', {
       playerId: memberId, sessionToken: await guestToken(port, memberId),
     });
     rooms.push(memberRoom);
