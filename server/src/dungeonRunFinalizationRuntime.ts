@@ -69,7 +69,8 @@ export function prepareDungeonRunFinalization(input: {
       current.updatedAt !== input.expectedUpdatedAt) {
     throw new Error('Dungeon finalization snapshot is stale; reload the current run and players.');
   }
-  if (current.roundPlan && current.roundPlan.nextRoundIndex !== current.roundPlan.totalRounds) {
+  if ((input.outcome === 'win' || input.outcome === 'loss') && current.roundPlan &&
+      current.roundPlan.nextRoundIndex !== current.roundPlan.totalRounds) {
     throw new Error('Cannot finalize a dungeon run while planned combat rounds remain unresolved.');
   }
   for (const playerId of current.participantIds) {

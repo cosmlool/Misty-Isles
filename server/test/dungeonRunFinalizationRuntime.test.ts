@@ -123,6 +123,27 @@ test('finalization rejects stale run snapshots and unresolved planned rounds', (
   }
 });
 
+test('leader abort outcomes can finalize before all planned combat rounds resolve', () => {
+  const dataDir = mkdtempSync(join(tmpdir(), 'misty-dungeon-finalize-abort-'));
+  const files = { players: join(dataDir, 'players.json'), dungeonRuns: join(dataDir, 'dungeon_runs.json') };
+  try {
+    const run = createRun();
+    const interruptedRun = {
+      ...run,
+      roundPlan: { ...run.roundPlan!, nextRoundIndex: 1 },
+    };
+    const runtime = runtimeFor(createSharedStateTransactionStore({ dataDir, files }));
+    const result = commitDungeonRunFinalization({
+      runtime, runId: run.runId, expectedRoundIndex: 2, expectedUpdatedAt: 200,
+      outcome: 'leader_afk', players: players(), runs: { [run.runId]: interruptedRun }, now: 300,
+    });
+    assert.equal(result.run.status, 'aborted');
+    assert.equal(result.run.terminalResult?.outcome, 'leader_afk');
+  } finally {
+    rmSync(dataDir, { recursive: true, force: true });
+  }
+});
+
 test('a finalization journal recovers terminal state and all player rewards after interruption', () => {
   const dataDir = mkdtempSync(join(tmpdir(), 'misty-dungeon-finalize-crash-'));
   const files = { players: join(dataDir, 'players.json'), dungeonRuns: join(dataDir, 'dungeon_runs.json') };
