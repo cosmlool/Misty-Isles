@@ -81,6 +81,10 @@ export function prepareDungeonRunStart(input: {
       nextQuests.dungeonRuns = 0;
     }
     const used = Number(nextQuests.dungeonRuns || 0);
+    const battles = Number(player.battles || 0);
+    if (!Number.isInteger(battles) || battles < 0) {
+      throw new Error(`Invalid battle counter for dungeon participant ${playerId}.`);
+    }
     if (!Number.isInteger(used) || used < 0 || used >= dailyLimit) {
       throw new Error(`Daily dungeon attempts exhausted for participant ${playerId}.`);
     }
@@ -88,7 +92,7 @@ export function prepareDungeonRunStart(input: {
     nextPlayers[playerId] = {
       ...player,
       quests: JSON.stringify(nextQuests),
-      battles: Number(player.battles || 0) + 1,
+      battles: battles + 1,
     };
   }
 

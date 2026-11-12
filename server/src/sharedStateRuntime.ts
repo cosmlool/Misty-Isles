@@ -37,7 +37,7 @@ export function createSharedStateRuntime(options: Options) {
     return auctionRecovered || clansRecovered || sharedRecovered;
   }
 
-  function transact<T>(prepareAfterRecovery: (recovered: boolean) => { files: SharedStateSnapshot; result: T }): T {
+  function transact<T>(prepareAfterRecovery: (recovered: boolean) => { files: SharedStateSnapshot; result: T; skipWrite?: boolean }): T {
     const recovered = recoverPendingState();
     return options.shared.transact(() => prepareAfterRecovery(recovered));
   }

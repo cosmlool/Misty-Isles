@@ -117,3 +117,12 @@ Important limitation: the current boss dungeon handler is still synchronous and 
 - A repeated request with the same durable run identity returns the existing run without incrementing attempts or battles again. Reusing a request ID for a different run, overlapping an active run, malformed player snapshots, or exhausted daily attempts rejects the entire preparation.
 - Tests cover daily reset, party-wide attempt charging, retry idempotency, active-run overlap, attempt limits, and input immutability.
 - The helper is not yet called by `runExpeditionDungeon()`; production entry remains synchronous until the runtime integration stage. The next step is to wire this preparation into the shared WAL and then add durable round continuation/finalization without changing combat or reward formulas.
+
+
+## Shared-WAL dungeon entry commit
+
+- Added `commitDungeonRunStart`: the prepared player snapshots (daily attempt and battle counters) and the active run record are now submitted together as one shared-WAL transaction.
+- If startup recovery replayed a newer committed snapshot, entry preparation fails closed and asks the caller to reload player/run state before retrying. This prevents a stale in-memory snapshot from overwriting recovered data.
+- Idempotent retries of the same request do not write a second attempt charge. Invalid battle counters are rejected before serialization.
+- A process-crash test interrupts the WAL after the player file is written and verifies recovery restores both the attempt charge and active dungeon run.
+- The runtime transaction helper is still not called by `runExpeditionDungeon()`. The live handler remains synchronous; this stage hardens the durable transaction boundary and tests it without claiming the production dungeon has become resumable.
