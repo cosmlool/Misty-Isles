@@ -463,8 +463,9 @@
 ### Путешествия и восстановление групп
 
 - **Городское путешествие:** обработчик travel мгновенно меняет city при проверке допустимого названия. Стоимость и время перехода не реализованы; README_STAGE28 прямо оставляет формулу на согласование. Не придумывать цену/таймер самостоятельно.
-- **Группы экспедиций:** состав группы хранится в памяти процесса. После перезапуска сервер безопасно сбрасывает устаревшие expedition-состояния, но не восстанавливает состав группы и приглашения. Перемещение группы между зонами сохраняется для участников, однако восстановление группы после отключения/перезапуска остаётся отдельной незавершённой задачей.
-- Это нужно закрыть до финального QA социальных механик; сначала определить ожидаемое поведение при выходе лидера, выходе участника и полном рестарте сервера.
+- **Группы экспедиций — обновление 2026-11-12:** состав и лидер теперь сохраняются в `hunt_groups.json` через общий WAL; сервер восстанавливает `HUNT_GROUPS` и `PLAYER_GROUP` при запуске. Отключение не удаляет участника и не передаёт лидерство; его место остаётся занятым. Явный выход удаляет участника и атомарно сохраняет новый состав.
+- Приглашения по-прежнему временные и не переживают рестарт. Runtime-тест восстановления после рестарта с одним offline-участником добавлен, но не исполнен в этой среде; CI для текущего head пока не вернул результатов.
+- Открытое UX-решение: если лидер offline, остальные участники не могут запускать групповые действия до его возвращения или явного выхода. Автоматическую передачу лидерства не вводил без согласования.
 
 ### Основные характеристики: сервер принимал скрытые улучшения
 
@@ -2385,3 +2386,11 @@ PlayerSchema содержит mining=0, но серверный код не ис
 2. Добавить fault-injection тесты для пересечения незавершённых журналов и обычных сохранений.
 3. Только после этого подключать server-only mining job store и тестировать claim/replay/restart.
 4. Отдельно спроектировать инвентарь: capacity, stackable categories, overflow policy, backward-compatible persistence и централизованную выдачу. Не выбирать числовой capacity самостоятельно.
+
+
+### Hunt-group persistence implementation — 2026-11-12
+- Added the `huntGroups` target to the shared-state transaction key set and configured `hunt_groups.json` as a WAL participant.
+- Startup rejects malformed group snapshots, duplicate player membership, duplicate group IDs, missing leaders and rosters outside the existing 1–3 member limit.
+- Group creation, acceptance and explicit leave write the roster through shared-state WAL. Disconnect only marks the player offline in runtime maps; it does not mutate persisted membership.
+- Added restart integration coverage to `groupTravelPersistenceRuntime.test.ts` for offline-member retention and full roster restoration after both players reconnect.
+- Not yet executed; no current-head CI result is available.
