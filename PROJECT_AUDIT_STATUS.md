@@ -2752,3 +2752,13 @@ PEN-009 стоит 100 кристаллов и при максимальном �
 - Исправлен риск миграции: два старых журнала auction_transaction.json и clan_transaction.json могли одновременно содержать конфликтующие полные снимки players.json. Теперь единый startup/runtime recovery gate обнаруживает оба pending-журнала и останавливается до replay или записи; оба исходных журнала сохраняются. Один legacy journal по-прежнему восстанавливается перед shared WAL.
 - Добавлены unit и integration-style тесты для fail-closed поведения; миграционный тест оставлен на однозначном сценарии с одним legacy journal. Статический playerPersistenceWriters.test.ts проверяет отсутствие обходных writers и порядок startup recovery; оба новых тестовых файла включены в server npm test.
 - Проверки/сборки не запускались; требуется CI по текущему head.
+
+
+### CI recovery checkpoint — 2026-11-12
+- Проверен актуальный PR #15 head до исправления: `460fdd6c7153b1ec41498176c95041826b390b49`; ветка основана на текущем `main`, compare: 90 ahead / 0 behind, 86 changed files. PR остаётся Draft и не объединён.
+- GitHub Actions завершились: браузерные Playwright smoke tests — SUCCESS; client TypeScript/Vite build — SUCCESS; data/docs/project structure — SUCCESS.
+- Оба серверных запуска завершились FAILURE: `Server TypeScript build` и `Server checks`. В каждом полный серверный набор дал 267 passed / 1 failed; server build был пропущен из-за остановки job после теста.
+- Единственный отказ: `server/test/sharedStateTransactions.test.ts`, сценарий `runtime refuses to replay two pending legacy journals without changing either snapshot`, строка 276: ожидалось исключение, но оно не было выброшено.
+- Причина установлена по коду: auction store экспортировал `hasPending()`, clan store — нет. Общий recovery gate трактовал отсутствие метода как `false`, не обнаруживал одновременно ожидающие auction и clan journals и продолжал recovery. Это дефект production recovery gate, а не только теста.
+- Исправлено в `server/src/clanTransactions.ts`: добавлен `hasPending(): boolean { return existsSync(journalFile); }` и метод экспортирован из store. Commit: `bf097e28ef8b1bfdd6b9c84c2471125a9600835d`.
+- Статус исправления: внесено, но ещё НЕ проверено новым CI. Следующий обязательный шаг — дождаться новых workflow runs на новом HEAD, подтвердить 268/268 server tests, server build и все остальные jobs. До этого считать серверный контур непроверенным; PR не объединять.
