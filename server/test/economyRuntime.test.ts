@@ -9,6 +9,8 @@ import { setTimeout as delay } from 'node:timers/promises';
 import { Client, type Room } from 'colyseus.js';
 import test from 'node:test';
 
+import { seedGuestCredentials, testGuestProof } from './guestAuthTestHelpers.js';
+
 const serverDir = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const staticDataFiles = ['city_npcs.json', 'equipment_catalog.json', 'forgotten_lands.json'];
 
@@ -55,6 +57,7 @@ async function waitForServer(port: number, child: ChildProcess): Promise<void> {
 }
 
 function startServer(dataDir: string, port: number, output: string[]): ChildProcess {
+  seedGuestCredentials(dataDir);
   const child = spawn(process.execPath, ['--import', 'tsx', 'src/index.ts'], {
     cwd: serverDir,
     env: { ...process.env, MISTY_DATA_DIR: dataDir, MISTY_PORT: String(port) },
@@ -78,7 +81,7 @@ async function stopServer(child: ChildProcess): Promise<void> {
 
 async function guestToken(port: number, playerId: string): Promise<string> {
   const response = await fetch('http://127.0.0.1:' + port + '/auth/guest', {
-    method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ playerId }),
+    method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ playerId, guestProof: testGuestProof(playerId) }),
   });
   assert.equal(response.status, 200, 'synthetic guest session should be issued');
   const payload = await response.json() as { token: string };
@@ -147,6 +150,7 @@ test('live Colyseus auction flows preserve both players through disconnect and s
       [sellerId]: makePlayer(sellerId, 'Runtime Seller', 1000, ['WPN-C-001', 'WPN-C-004']),
       [buyerId]: makePlayer(buyerId, 'Runtime Buyer One', 2000, []),
       [secondBuyerId]: makePlayer(secondBuyerId, 'Runtime Buyer Two', 2000, []),
+      runtime_online_bystander: { ...makePlayer('runtime_online_bystander', 'Online Bystander', 500, []), health: 50, maxHealth: 100, quests: JSON.stringify({ hpRegenAt: Date.now() - 5 * 60 * 1000, pvp: { immunityUntil: Date.now() + 60 * 60 * 1000 } }) },
     }, null, 2));
 
     stage = 'starting isolated server';
@@ -167,6 +171,10 @@ test('live Colyseus auction flows preserve both players through disconnect and s
     const secondBuyerToken = await guestToken(port, secondBuyerId);
     const secondBuyer = await connect(port, secondBuyerId, secondBuyerToken);
     rooms.push(secondBuyer.room);
+    stage = 'connecting online bystander for persistence snapshot coverage';
+    const bystanderToken = await guestToken(port, 'runtime_online_bystander');
+    const bystander = await connect(port, 'runtime_online_bystander', bystanderToken);
+    rooms.push(bystander.room);
 
     stage = 'seller listing auction item';
     seller.room.send('auctionSell', { index: 0, itemId: 'WPN-C-001', expectedCount: 1, price: 500, currency: 'gold' });
@@ -174,6 +182,8 @@ test('live Colyseus auction flows preserve both players through disconnect and s
       const lots = readJson(join(dataDir, 'auction.json'));
       return Array.isArray(lots) && lots.length === 1;
     }, 'seller listing to persist');
+    assert.ok(readJson(join(dataDir, 'players.json')).runtime_online_bystander.health > 50,
+      'auction snapshot must preserve unsaved health regeneration from every online character');
 
     stage = 'disconnecting seller before purchase';
     await leaveRoom(seller.room);
