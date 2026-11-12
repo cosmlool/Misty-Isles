@@ -524,10 +524,10 @@ class GameRoom extends Room<RoomState> {
   private sessionToken = '';
   onCreate() { (this as any).maxClients = 1; this.setState(new RoomState()); this.registerHandlers(); this.clock.setInterval(() => applyHealthRegeneration(this.state.player), 1000); }
   onJoin(client: Client, options?: any) {
-    recoverPlayerStateBeforeMutation();
     const requestedPlayerId=safeId(options?.playerId);const session=verifySession(String(options?.sessionToken||''));
     if(!session||session.playerId!==requestedPlayerId) throw new Error('Требуется войти в аккаунт.');
     if (ONLINE_PLAYERS.has(session.playerId)) throw new Error('Этот персонаж уже находится в игре.');
+    recoverPlayerStateBeforeMutation();
     this.playerId = session.playerId;
     this.sessionToken = String(options?.sessionToken||'');
     const saved = loadPlayers()[this.playerId];
@@ -546,7 +546,7 @@ class GameRoom extends Room<RoomState> {
     client.send('catalog', { items: ITEMS, shopItems:shopCatalogForPlayer(player), zones: EXPEDITION_DATA.zones, expedition:EXPEDITION_DATA, neutralCities: NEUTRAL_CITIES, professions: PROFESSIONS, recipes: RECIPES, guildSkills: GUILD_SKILLS, cityLocations: CITY_LOCS, cityNpcs:CITY_NPCS, bossCatalog: EXPEDITION_BESTIARY, raceCityInfo: RACE_CITY_INFO, raceDailyQuests: RACE_DAILY_QUESTS, rareProperties: RARE_PROPERTIES, professionSkills: PROFESSION_SKILLS, dungeons: DUNGEONS, equipmentSets: EQUIPMENT_SETS });
     client.send('notice', { text: this.state.player.race ? `С возвращением, ${this.state.player.name}!` : 'Выбери расу, чтобы начать приключение.' });
   }
-  onLeave(client: Client) { recoverPlayerStateBeforeMutation(); if (!isCurrentRoomSession({player:ONLINE_PLAYERS.get(this.playerId),client:ONLINE_CLIENTS.get(this.playerId),sessionHash:ONLINE_SESSION_HASHES.get(this.playerId)}, {player:this.state.player,client,sessionHash:tokenDigest(this.sessionToken)})) return; ONLINE_PLAYERS.delete(this.playerId); ONLINE_CLIENTS.delete(this.playerId); ONLINE_SESSION_HASHES.delete(this.playerId); const q=readObject(this.state.player.quests);if(q.expedition){if(q.expedition.groupId&&['searching','moving'].includes(q.expedition.state)){q.expedition.state='idle';q.expedition.endsAt=0;delete q.expedition.targetZoneId;}q.expedition.groupId='';this.state.player.quests=JSON.stringify(q);}const gid=PLAYER_GROUP.get(this.playerId),g=gid?HUNT_GROUPS.get(gid):undefined;if(g){g.members=g.members.filter(id=>id!==this.playerId);PLAYER_GROUP.delete(this.playerId);if(g.leader===this.playerId&&g.members.length)g.leader=g.members[0];if(!g.members.length)HUNT_GROUPS.delete(g.id);else for(const id of g.members)ONLINE_CLIENTS.get(id)?.send('huntGroupState',{group:groupSnapshot(id)});} this.save(); }
+  onLeave(client: Client) { if (!isCurrentRoomSession({player:ONLINE_PLAYERS.get(this.playerId),client:ONLINE_CLIENTS.get(this.playerId),sessionHash:ONLINE_SESSION_HASHES.get(this.playerId)}, {player:this.state.player,client,sessionHash:tokenDigest(this.sessionToken)})) return; recoverPlayerStateBeforeMutation(); ONLINE_PLAYERS.delete(this.playerId); ONLINE_CLIENTS.delete(this.playerId); ONLINE_SESSION_HASHES.delete(this.playerId); const q=readObject(this.state.player.quests);if(q.expedition){if(q.expedition.groupId&&['searching','moving'].includes(q.expedition.state)){q.expedition.state='idle';q.expedition.endsAt=0;delete q.expedition.targetZoneId;}q.expedition.groupId='';this.state.player.quests=JSON.stringify(q);}const gid=PLAYER_GROUP.get(this.playerId),g=gid?HUNT_GROUPS.get(gid):undefined;if(g){g.members=g.members.filter(id=>id!==this.playerId);PLAYER_GROUP.delete(this.playerId);if(g.leader===this.playerId&&g.members.length)g.leader=g.members[0];if(!g.members.length)HUNT_GROUPS.delete(g.id);else for(const id of g.members)ONLINE_CLIENTS.get(id)?.send('huntGroupState',{group:groupSnapshot(id)});} this.save(); }
   onDispose() { recoverPlayerStateBeforeMutation(); this.save(); }
   private save() { if (!this.playerId || !canSaveRoomPlayerSnapshot(ONLINE_PLAYERS.get(this.playerId), this.state.player)) return; this.state.player.lastSeenAt=Date.now(); persistPlayers([this.state.player]); }
   private notice(c: Client, text: string) { c.send('notice', { text }); this.save(); }
@@ -1252,6 +1252,7 @@ startPlayerAutosave({
   save: () => {
     if (ONLINE_PLAYERS.size) {
       recoverPlayerStateBeforeMutation();
+      for (const player of ONLINE_PLAYERS.values()) applyHealthRegeneration(player);
       persistPlayers(Array.from(ONLINE_PLAYERS.values()));
     }
   },
