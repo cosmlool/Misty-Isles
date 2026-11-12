@@ -22,31 +22,31 @@ type Options = {
 };
 
 export function createSharedStateRuntime(options: Options) {
-  function recoverLegacyJournals() {
-    options.auction.recover();
-    options.clans.recover();
+  function recoverPendingState(): boolean {
+    const auctionRecovered = options.auction.recover();
+    const clansRecovered = options.clans.recover();
+    const sharedRecovered = options.shared.recover();
+    return auctionRecovered || clansRecovered || sharedRecovered;
   }
 
-  function transact<T>(prepareAfterRecovery: () => { files: SharedStateSnapshot; result: T }): T {
-    recoverLegacyJournals();
-    return options.shared.transact(prepareAfterRecovery);
+  function transact<T>(prepareAfterRecovery: (recovered: boolean) => { files: SharedStateSnapshot; result: T }): T {
+    const recovered = recoverPendingState();
+    return options.shared.transact(() => prepareAfterRecovery(recovered));
   }
 
-  function commitAuction<T>(prepareAfterRecovery: () => { snapshot: unknown; result: T }): T {
-    recoverLegacyJournals();
-    options.shared.recover();
-    const prepared = prepareAfterRecovery();
+  function commitAuction<T>(prepareAfterRecovery: (recovered: boolean) => { snapshot: unknown; result: T }): T {
+    const recovered = recoverPendingState();
+    const prepared = prepareAfterRecovery(recovered);
     options.auction.commit(prepared.snapshot);
     return prepared.result;
   }
 
-  function commitClan<T>(prepareAfterRecovery: () => { snapshot: unknown; result: T }): T {
-    recoverLegacyJournals();
-    options.shared.recover();
-    const prepared = prepareAfterRecovery();
+  function commitClan<T>(prepareAfterRecovery: (recovered: boolean) => { snapshot: unknown; result: T }): T {
+    const recovered = recoverPendingState();
+    const prepared = prepareAfterRecovery(recovered);
     options.clans.commit(prepared.snapshot);
     return prepared.result;
   }
 
-  return { transact, commitAuction, commitClan, recoverLegacyJournals };
+  return { transact, commitAuction, commitClan, recoverPendingState };
 }
