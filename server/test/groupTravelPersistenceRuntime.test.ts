@@ -208,6 +208,49 @@ test('group expedition travel start and claim persist every member together', { 
       assert.equal(state.endsAt, 0);
       assert.equal(state.targetZoneId, undefined);
     }
+
+    const savedGroups = JSON.parse(readFileSync(join(dataDir, 'hunt_groups.json'), 'utf8'));
+    assert.equal(savedGroups.length, 1, 'accepted group must be persisted');
+    assert.deepEqual(savedGroups[0].members, [leaderId, memberId]);
+
+    for (const room of rooms) await leaveRoomSafely(room);
+    rooms.length = 0;
+    await stopServer(child!);
+    child = spawn(process.execPath, ['--import', 'tsx', 'src/index.ts'], {
+      cwd: serverDir,
+      env: { ...process.env, MISTY_DATA_DIR: dataDir, MISTY_PORT: String(port) },
+      stdio: 'ignore',
+    });
+    await waitForServer(port, child);
+
+    const restartedClient = new Client(`ws://127.0.0.1:${port}`);
+    const leaderRoom = await restartedClient.joinOrCreate('my_room', {
+      playerId: leaderId, sessionToken: await guestToken(port, leaderId),
+    });
+    rooms.push(leaderRoom);
+    const leaderGroupStates: any[] = [];
+    leaderRoom.onMessage('huntGroupState', payload => leaderGroupStates.push(payload));
+    leaderRoom.send('huntGroupList');
+    const restoredWithOfflineMember = await waitFor(
+      () => leaderGroupStates.find(payload => payload.group?.members?.length === 2),
+      'restored group with offline member',
+    );
+    assert.equal(restoredWithOfflineMember.group.members.find((member: any) => member.id === publicCode(memberId))?.online, false,
+      'an offline member must retain their group slot after restart');
+
+    const memberRoom = await restartedClient.joinOrCreate('my_room', {
+      playerId: memberId, sessionToken: await guestToken(port, memberId),
+    });
+    rooms.push(memberRoom);
+    const memberGroupStates: any[] = [];
+    memberRoom.onMessage('huntGroupState', payload => memberGroupStates.push(payload));
+    memberRoom.send('huntGroupList');
+    const restoredWithBothOnline = await waitFor(
+      () => memberGroupStates.find(payload => payload.group?.members?.length === 2 &&
+        payload.group.members.every((member: any) => member.online)),
+      'restored group after both members reconnect',
+    );
+    assert.equal(restoredWithBothOnline.group.leader, publicCode(leaderId));
   } finally {
     for (const room of rooms) await leaveRoomSafely(room);
     if (child) await stopServer(child);
