@@ -62,14 +62,10 @@ test('a guest can create a character, hunt, and keep progress after reconnecting
   await page.locator('[data-action="expeditionSearchStart"]').click();
   await expect(page.locator('.expedition-timer')).toBeVisible();
 
-  // Wait for the server-confirmed search completion, then reconnect and
-  // verify that the completed encounter is still claimable after reload.
+  // Complete the encounter before disconnecting. The server deliberately
+  // cancels an unfinished expedition when its owner disconnects.
   const claimButton = page.getByRole('button', { name: 'Завершить поиск и вступить в бой', exact: true });
   await expect(claimButton).toBeVisible({ timeout: 15_000 });
-  await page.reload();
-  await expect(page.locator('.sidebar-identity strong')).toHaveText('Путник-Кот', { timeout: 20_000 });
-  await page.locator('.quick-nav [data-tab="farm"]').click();
-  await expect(claimButton).toBeVisible({ timeout: 10_000 });
   await claimButton.click();
 
   await expect(page.locator('.combat-journal-head')).toContainText('Победа', { timeout: 15_000 });
