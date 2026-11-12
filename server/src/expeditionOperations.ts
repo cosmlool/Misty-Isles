@@ -62,3 +62,10 @@ export function checkExpeditionTravelStartReadiness(states: ExpeditionTravelStat
   }
   return { ready: true };
 }
+
+
+/** A hunt group is valid only when every member is within the leader's level window. */
+export function isHuntGroupLevelRangeValid(leaderLevel: number, memberLevels: number[], maxDifference = 5): boolean {
+  if (!Number.isFinite(leaderLevel) || !Number.isFinite(maxDifference) || maxDifference < 0 || !memberLevels.length) return false;
+  return memberLevels.every(level => Number.isFinite(level) && Math.abs(level - leaderLevel) <= maxDifference);
+}
