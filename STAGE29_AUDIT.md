@@ -2502,3 +2502,11 @@ PlayerSchema содержит mining=0, но серверный код не ис
 - Added parser unit coverage and a runtime regression proving that a non-allowlisted guest cannot invoke `admin`.
 - Exact code HEAD verified: `e1328083b1bf735c7fba99a2df860283247a51ef`. Quality Gate push run `43182193156`, Quality Gate PR run `43182468883`, and Server checks PR run `43182468784` all SUCCESS. Server tests/build, client build, project/data audit and Playwright passed.
 - PR #15 remains Draft/unmerged. The dungeon lifecycle/60-minute AFK policy is still a separate unimplemented architecture task: dungeon combat currently resolves synchronously in one handler and does not expose a persistent active-dungeon state or spectator lifecycle.
+
+
+### Dungeon lifecycle audit — 2026-11-12
+- Verified current boss dungeon handler performs the entire encounter synchronously in `runExpeditionDungeon()`. The code has no durable run object, active encounter state, spectator state, per-player activity timestamp, or 60-minute leader AFK watchdog.
+- Existing group persistence is separate from dungeon execution. `onLeave()` only handles online/group/expedition cleanup and cannot implement the approved in-dungeon AFK abort semantics.
+- Added `DUNGEON_LIFECYCLE_DESIGN.md` defining the run aggregate, immutable participant roster, transition invariants, shared-WAL persistence requirement, meaningful activity signal, and staged implementation sequence.
+- This was an audit/design commit only; no combat formula or runtime dungeon behavior was changed.
+- Important unresolved policy: behavior after a server crash/restart while a run is active. Must be explicitly decided before implementing recovery.
