@@ -226,6 +226,8 @@ test('PvP offers four saved real characters, steals 20 percent gold, persists co
     assert.equal(cooldownOffer.players.length, 0);
     attackerRoom.send('pvpChallenge', { targetId: chosen.id });
     await waitFor(() => notices.find(message => message.startsWith('Следующая атака через')), 'server-side fifteen-minute cooldown');
+    assert.equal(readJson(join(dataDir, 'players.json'))[attackerId].gold, saved[attackerId].gold,
+      'a repeated challenge during cooldown must not transfer gold or grant rewards again');
 
     // Restart the isolated server with the persisted attacker session after advancing
     // only the test fixture's attack timestamp beyond the fifteen-minute cooldown.
