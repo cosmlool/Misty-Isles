@@ -15,7 +15,7 @@ test('preserves the legacy single-player dungeon calculation', () => {
       outgoingResistanceMultiplier: 0.9, weaknessMultiplier: 0.95, hitMultiplier: 0.8, incomingProfessionMultiplier: 1, incomingHitMultiplier: 1,
     }],
   });
-  const perRound = 30 * 7 * (100 / 120) * 0.8;
+  const perRound = 30 * 7 * (100 / 120) * 0.9 * 0.95 * 0.8;
   const rounds = Math.max(1, Math.ceil(100 * 1.35 / (perRound + 20 * 0.65)));
   assert.equal(result.rounds, rounds);
   assert.deepEqual(result.incoming, [Math.max(1, Math.floor((100 * 0.14 - 20 * 0.10) * rounds))]);
