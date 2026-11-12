@@ -2665,3 +2665,11 @@ PEN-009 стоит 100 кристаллов и при максимальном �
 - Extended shared WAL crash test: process exits immediately after the player target write while the journal also contains a new hunt-group roster; restart recovery must replay the missing group target.
 - Extended group runtime test: after restart/reconnect, leader leaves and leadership transfers to the remaining member; the final member leaves and the persisted group file becomes empty.
 - Tests are authored but not executed in this environment; CI confirmation remains pending.
+
+
+### Групповая экспедиция: отмена действия при disconnect — 2026-11-12
+- Найден runtime deadlock: отключение участника сбрасывало только его собственный поиск/переход, оставляя остальных в активном состоянии. Проверка согласованности затем блокировала claim, а проверка занятости — новый старт.
+- Теперь disconnect любого участника атомарно сбрасывает активное групповое действие у всех доступных участников: state=idle, endsAt=0, targetZoneId удаляется. Прогресс зоны/открытые маршруты и состав группы сохраняются; уходящий участник остаётся в roster как offline, остальные сохраняют groupId.
+- Изменения всех затронутых игроков записываются одним player snapshot через shared WAL до удаления disconnect-сессии из online maps. При ошибке сохранения quest JSON откатывается в памяти.
+- Runtime-тест расширен проверкой, что после disconnect поиск сброшен и у оставшегося лидера, а связь лидера с persisted group сохраняется.
+- Тесты и сборка не запускались; CI для текущего head не подтверждён.
