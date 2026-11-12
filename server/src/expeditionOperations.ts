@@ -97,3 +97,21 @@ export function canInviteToHuntGroup(memberCount:number,pendingInviteCount:numbe
     &&memberCount>=1&&pendingInviteCount>=0&&maxMembers>=1
     &&memberCount+pendingInviteCount<maxMembers;
 }
+
+
+/** Removes expired invitations and their matching expiry records. */
+export function expireHuntGroupInvites(
+  invites:Map<string,string>,
+  expiries:Map<string,number>,
+  now:number,
+):number{
+  let removed=0;
+  for(const [playerId,expiresAt] of expiries){
+    if(!Number.isFinite(expiresAt)||expiresAt<=now){
+      expiries.delete(playerId);
+      invites.delete(playerId);
+      removed++;
+    }
+  }
+  return removed;
+}
