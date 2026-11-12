@@ -6,18 +6,18 @@ const source = readFileSync(new URL('../src/index.ts', import.meta.url), 'utf8')
 
 test('production runtime has no direct player or legacy subsystem writer bypasses', () => {
   for (const pattern of [
-    /\\bsavePlayers\\s*\\(/,
-    /\\b(?:auctionTransactions|clanTransactions)\\.commit\\s*\\(/,
-    /\\b(?:saveClans|saveTerritories|saveAuction|saveAuctionHistory|saveWars)\\s*\\(/,
+    /\bsavePlayers\s*\(/,
+    /\b(?:auctionTransactions|clanTransactions)\.commit\s*\(/,
+    /\b(?:saveClans|saveTerritories|saveAuction|saveAuctionHistory|saveWars)\s*\(/,
   ]) {
-    assert.equal(pattern.test(source), false, `forbidden direct persistence writer found: ${pattern}`);
+    assert.equal(pattern.test(source), false, \`forbidden direct persistence writer found: \${pattern}\`);
   }
 });
 
 test('player, auction and clan mutations are routed through the shared transaction coordinator', () => {
-  assert.match(source, /sharedStateRuntime\\.transact\\s*\\(/);
-  assert.match(source, /sharedStateRuntime\\.commitAuction\\s*\\(/);
-  assert.match(source, /sharedStateRuntime\\.commitClan\\s*\\(/);
+  assert.match(source, /sharedStateRuntime\.transact\s*\(/);
+  assert.match(source, /sharedStateRuntime\.commitAuction\s*\(/);
+  assert.match(source, /sharedStateRuntime\.commitClan\s*\(/);
 });
 
 test('startup recovery finishes before hunt-group restore and autosave startup', () => {
