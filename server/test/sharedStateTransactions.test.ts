@@ -17,6 +17,7 @@ function fixture(testHooks?: any) {
     clans: join(dataDir, 'clans.json'),
     wars: join(dataDir, 'clan_wars.json'),
     territories: join(dataDir, 'clan_territories.json'),
+    huntGroups: join(dataDir, 'hunt_groups.json'),
   };
   return {
     dataDir, files,
@@ -91,12 +92,13 @@ test('a process crash between target writes is replayed from the single shared j
       const store = createSharedStateTransactionStore({
         dataDir: ${JSON.stringify(f.dataDir)},
         files: ${JSON.stringify(f.files)},
-        testHooks: { afterTargetWrite(key) { if (key === 'auction') process.exit(73); } },
+        testHooks: { afterTargetWrite(key) { if (key === 'players') process.exit(73); } },
       });
       store.transact(() => ({ files: {
         players: { p1: { gold: 30 } },
         auction: [{ id: 'new_lot' }],
         clans: { c1: { vault: 40 } },
+        huntGroups: [{ id: 'g1', leader: 'p1', members: ['p1', 'p2'] }],
       }, result: null }));
       process.exit(0);
     `;
@@ -106,14 +108,14 @@ test('a process crash between target writes is replayed from the single shared j
     assert.equal(child.status, 73);
     assert.equal(existsSync(f.store.journalFile), true);
     assert.deepEqual(readJson(f.files.players), { p1: { gold: 30 } });
-    assert.deepEqual(readJson(f.files.auction), [{ id: 'new_lot' }]);
-    assert.equal(existsSync(f.files.clans), false);
+    assert.equal(existsSync(f.files.huntGroups), false, 'group roster write must still be pending after the crash');
 
     const restarted = createSharedStateTransactionStore({ dataDir: f.dataDir, files: f.files });
     assert.equal(restarted.recover(), true);
     assert.deepEqual(readJson(f.files.players), { p1: { gold: 30 } });
     assert.deepEqual(readJson(f.files.auction), [{ id: 'new_lot' }]);
     assert.deepEqual(readJson(f.files.clans), { c1: { vault: 40 } });
+    assert.deepEqual(readJson(f.files.huntGroups), [{ id: 'g1', leader: 'p1', members: ['p1', 'p2'] }]);
     assert.equal(existsSync(restarted.journalFile), false);
     assert.equal(restarted.recover(), false);
   } finally { f.cleanup(); }
