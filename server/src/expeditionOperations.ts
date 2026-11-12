@@ -71,12 +71,13 @@ export function isHuntGroupLevelRangeValid(leaderLevel: number, memberLevels: nu
 }
 
 
-export function invalidateHuntGroupInvites(invites:Map<string,string>,groupId:string):number{
+export function invalidateHuntGroupInvites(invites:Map<string,string>,groupId:string,expiries?:Map<string,number>):number{
   if(!groupId)return 0;
   let removed=0;
   for(const [playerId,invitedGroupId] of invites){
     if(invitedGroupId!==groupId)continue;
     invites.delete(playerId);
+    expiries?.delete(playerId);
     removed++;
   }
   return removed;
