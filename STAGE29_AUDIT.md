@@ -2459,3 +2459,12 @@ PlayerSchema содержит mining=0, но серверный код не ис
 - Expiry releases the reserved slot. Expiry records are cleared when the invited player disconnects, accepts, or the group leader changes.
 - TTL and invitations remain process-local; restart clears all pending invitations.
 - Added unit tests for the exact expiry boundary, reservation release and invalid deadlines. Tests/builds have not been run; CI is unconfirmed.
+
+
+### Аудит восстановления охотничьих групп — 2026-11-12
+- Проверен порядок старта: legacy auction/clan journal recovery → shared WAL recovery → восстановление `hunt_groups.json` в runtime maps. Повторная загрузка roster из промежуточного состояния не обнаружена.
+- `persistHuntGroups()` сохраняет player snapshot и group roster одной shared WAL-транзакцией. При ошибке helper восстанавливает runtime maps из дискового roster; явный leave дополнительно откатывает quest JSON уходящего игрока.
+- Существующий fault-injection тест `sharedStateTransactions.test.ts` уже имитирует process crash после записи player target и до записи huntGroups target, затем проверяет replay всего журнала. Runtime-тест `groupTravelPersistenceRuntime.test.ts` покрывает restart, offline member slot, reconnect, leader leave и disband. Дублирующий тест не добавлялся.
+- Disconnect cancellation и reconnect groupId synchronization согласованы с persisted roster; активный поиск/переход сбрасывается для онлайн-участников, а offline участник сохраняет место.
+- Остаётся нерешённый owner decision: succession сейчас назначает первого участника без проверки ±5 от нового лидера. Не менять автоматически до выбора политики: допустимый преемник с disband при отсутствии либо disband при любом нарушении окна.
+- Тесты/build не запускались. На текущем PR head workflow runs и commit statuses отсутствуют; это не является подтверждением успешной проверки.
