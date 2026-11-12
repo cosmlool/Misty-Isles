@@ -198,7 +198,7 @@
 - Coordinator unit test проверяет отказ до любого replay, если одновременно pending auction и clan journals.
 - Integration-style test с реальными legacy stores проверяет, что оба журнала остаются нетронутыми и target-файлы не изменяются при неоднозначном recovery.
 - Migration integration test теперь запускает обычную запись через coordinator при pending auction legacy journal + shared WAL и доказывает, что callback видит самый новый recovered player snapshot, а не старые данные.
-- sharedStateRuntime.test.ts добавлен в команду npm test.
+- sharedStateRuntime.test.ts и playerPersistenceWriters.test.ts добавлены в команду npm test. Статический guard проверяет отсутствие прямых player/auction/clan writers в index.ts, наличие shared coordinator paths и порядок startup recovery до group restore/autosave.
 
 ### 10.4 Что ещё не закрыто
 
