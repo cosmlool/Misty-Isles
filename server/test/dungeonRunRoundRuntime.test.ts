@@ -29,7 +29,7 @@ function createRun() {
     }),
   };
 }
-function runtimeFor(store: ReturnType<typeof createSharedStateTransactionStore>) {
+function playerSnapshots(run = createRun()) { return Object.fromEntries(run.participantIds.map(id => [id, { id, health: run.participants[id].health, maxHealth: run.participants[id].maxHealth }])); }\nfunction runtimeFor(store: ReturnType<typeof createSharedStateTransactionStore>) {
   return createSharedStateRuntime({
     shared: store,
     auction: { recover: () => false },
@@ -39,23 +39,23 @@ function runtimeFor(store: ReturnType<typeof createSharedStateTransactionStore>)
 
 test('one dungeon round is committed atomically and stale retry cannot apply damage twice', () => {
   const dataDir = mkdtempSync(join(tmpdir(), 'misty-dungeon-round-'));
-  const files = { dungeonRuns: join(dataDir, 'dungeon_runs.json') };
+  const files = { players: join(dataDir, 'players.json'), dungeonRuns: join(dataDir, 'dungeon_runs.json') };
   try {
     const store = createSharedStateTransactionStore({ dataDir, files });
     const runtime = runtimeFor(store);
     const first = commitDungeonRunRound({
       runtime, runId: 'run_round_wal', expectedRoundIndex: 0,
-      runs: { run_round_wal: createRun() }, now: 200,
+      runs: { run_round_wal: createRun() }, players: playerSnapshots(), now: 200,
     });
     assert.equal(first.run.roundIndex, 1);
     assert.equal(first.run.roundPlan?.nextRoundIndex, 1);
     assert.equal(first.run.encounter.bossHealth, 400);
     assert.equal(first.run.participants.p1.health, 80);
     assert.equal(first.run.participants.p2.health, 70);
-    assert.equal(readJson(files.dungeonRuns).run_round_wal.roundIndex, 1);
+    assert.equal(readJson(files.dungeonRuns).run_round_wal.roundIndex, 1);\n    assert.equal(readJson(files.players).p1.health, 80);
     assert.throws(() => commitDungeonRunRound({
       runtime, runId: 'run_round_wal', expectedRoundIndex: 0,
-      runs: { run_round_wal: first.run }, now: 300,
+      runs: { run_round_wal: first.run }, players: first.players, now: 300,
     }), /stale/);
     assert.equal(readJson(files.dungeonRuns).run_round_wal.roundIndex, 1);
   } finally {
@@ -78,18 +78,18 @@ test('round slices preserve the legacy minimum-one-HP loss outcome instead of cr
     }),
   };
   const storeDir = mkdtempSync(join(tmpdir(), 'misty-dungeon-round-floor-'));
-  const files = { dungeonRuns: join(storeDir, 'dungeon_runs.json') };
+  const files = { players: join(storeDir, 'players.json'), dungeonRuns: join(storeDir, 'dungeon_runs.json') };
   try {
     const runtime = runtimeFor(createSharedStateTransactionStore({ dataDir: storeDir, files }));
     const first = commitDungeonRunRound({
       runtime, runId: lowHealthRun.runId, expectedRoundIndex: 0,
-      runs: { [lowHealthRun.runId]: lowHealthRun }, now: 200,
+      runs: { [lowHealthRun.runId]: lowHealthRun }, players: playerSnapshots(lowHealthRun), now: 200,
     });
     assert.equal(first.run.participants.p1.health, 1);
     assert.equal(first.run.participants.p1.status, 'alive');
     const second = commitDungeonRunRound({
       runtime, runId: lowHealthRun.runId, expectedRoundIndex: 1,
-      runs: { [lowHealthRun.runId]: first.run }, now: 300,
+      runs: { [lowHealthRun.runId]: first.run }, players: first.players, now: 300,
     });
     assert.equal(second.run.participants.p1.health, 1);
     assert.equal(second.run.participants.p1.status, 'alive');
@@ -112,7 +112,7 @@ test('a round journal recovers the whole committed round after process interrupt
       import { createDungeonRunRecord, createDungeonRoundPlan } from ${JSON.stringify(stateModule)};
       import { commitDungeonRunRound } from ${JSON.stringify(roundModule)};
       const dataDir = ${JSON.stringify(dataDir)};
-      const files = ${JSON.stringify(files)};
+      const files = ${JSON.stringify(files)};\n      const playerSnapshots = Object.fromEntries(run.participantIds.map(id => [id, { id, health: run.participants[id].health, maxHealth: run.participants[id].maxHealth }]));
       const base = createDungeonRunRecord({
         runId: 'run_round_wal', requestId: 'request_round_wal', dungeonId: 'dungeon_20',
         groupId: 'group_1', leaderId: 'p1',
@@ -146,7 +146,7 @@ test('a round journal recovers the whole committed round after process interrupt
     assert.equal(recovered.roundIndex, 1);
     assert.equal(recovered.roundPlan.nextRoundIndex, 1);
     assert.equal(recovered.encounter.bossHealth, 400);
-    assert.equal(recovered.participants.p1.health, 80);
+    assert.equal(recovered.participants.p1.health, 80);\n    assert.equal(readJson(files.players).p1.health, 80);
     assert.equal(existsSync(join(dataDir, 'shared_state_transaction.json')), false);
   } finally {
     rmSync(dataDir, { recursive: true, force: true });
@@ -158,16 +158,16 @@ test('round commit fails closed when shared-state recovery occurred before prepa
   const files = { dungeonRuns: join(dataDir, 'dungeon_runs.json') };
   try {
     const store = createSharedStateTransactionStore({ dataDir, files });
-    store.transact(() => ({ files: { dungeonRuns: {} }, result: null }));
+    store.transact(() => ({ files: { players: {}, dungeonRuns: {} }, result: null }));
     writeFileSync(store.journalFile, JSON.stringify({
       version: 1,
-      files: { dungeonRuns: {} },
+      files: { players: {}, dungeonRuns: {} },
     }));
     const runtime = runtimeFor(createSharedStateTransactionStore({ dataDir, files }));
     assert.throws(() => commitDungeonRunRound({
       runtime, runId: 'run_round_wal', expectedRoundIndex: 0,
-      runs: { run_round_wal: createRun() }, now: 200,
-    }), /reload the dungeon run/);
+      runs: { run_round_wal: createRun() }, players: playerSnapshots(), now: 200,
+    }), /reload player and dungeon run/);
     assert.deepEqual(readJson(files.dungeonRuns), {});
   } finally {
     rmSync(dataDir, { recursive: true, force: true });
