@@ -9,3 +9,12 @@ test('Player schema remains within Colyseus 64-field limit', () => {
   assert.equal(player.lastMineAt, 0);
   assert.equal(player.lastWorkAt, 0);
 });
+
+test('server-only cooldown fields are not included in synchronized schema JSON', () => {
+  const player = new Player();
+  player.lastMineAt = 123456;
+  player.lastWorkAt = 654321;
+  const saved = player.toJSON() as Record<string, unknown>;
+  assert.equal(Object.hasOwn(saved, 'lastMineAt'), false);
+  assert.equal(Object.hasOwn(saved, 'lastWorkAt'), false);
+});
