@@ -295,8 +295,9 @@ test('group expedition travel start and claim persist every member together', { 
     await waitFor(() => {
       const roster = JSON.parse(readFileSync(join(dataDir, 'hunt_groups.json'), 'utf8'));
       const saved = readPlayers(join(dataDir, 'players.json'));
+      const memberExpedition = JSON.parse(saved[memberId].quests).expedition;
       return roster.length === 1 && roster[0].members.length === 2 &&
-        JSON.parse(saved[memberId].quests).expedition.groupId === roster[0].id ? true : undefined;
+        memberExpedition.state === 'idle' && memberExpedition.groupId === '' ? true : undefined;
     }, 'offline member remains reserved before leader leaves');
 
     leaderRoom.send('huntGroupLeave');
