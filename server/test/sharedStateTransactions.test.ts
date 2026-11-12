@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict';
-import { mkdtempSync, existsSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
+import { mkdirSync, mkdtempSync, existsSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { spawnSync } from 'node:child_process';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
@@ -123,7 +123,6 @@ test('target write failure retains the journal and blocks a later transaction un
   try {
     // A directory at the target path forces atomic rename to fail.
     const blockedDir = join(f.dataDir, 'clans.json');
-    const { mkdirSync } = require('node:fs');
     mkdirSync(blockedDir);
     assert.throws(() => f.store.transact(() => ({
       files: { players: { p1: { gold: 5 } }, clans: { c1: {} } }, result: null,
