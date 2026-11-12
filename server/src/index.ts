@@ -903,11 +903,12 @@ class GameRoom extends Room<RoomState> {
         const now=Date.now();
         const questsChanged=ensureAllClanQuests(clans);
         const settled=settleExpiredClanWars(wars,clans,now);
+        const refresh=settled.changed||questsChanged;
         for(const id of Object.keys(clans))delete clans[id];
         Object.assign(clans,settled.clans);
         wars.splice(0,wars.length,...settled.wars);
         if(wars.some((war:any)=>war.status==='active'&&(war.a===own.id||war.b===own.id||war.a===target.id||war.b===target.id))){
-          return {error:'Один из кланов уже участвует в активной войне.'};
+          return {error:'Один из кланов уже участвует в активной войне.',refresh};
         }
         wars.push({
           id:`war_${now}_${rand(100,999)}`,
@@ -915,11 +916,11 @@ class GameRoom extends Room<RoomState> {
           aDamage:0,bDamage:0,lastAttackAtByPlayer:{},status:'active',
           createdAt:now,endsAt:now+24*60*60*1000,
         });
-        return {targetName:target.name,questsChanged};
+        return {targetName:target.name,refresh};
       });
-      if('error' in result)return this.notice(c,result.error);
       const clans=loadClans(),wars=loadWars();
-      if(result.questsChanged){broadcastClanOverview(clans);broadcastClanQuests(clans);}
+      if(result.refresh){broadcastClanOverview(clans);broadcastClanQuests(clans);}
+      if('error' in result)return this.notice(c,result.error);
       const payload=broadcastClanWarList(wars,clans);
       c.send('clanWarList',payload);
       this.notice(c,`Клану «${result.targetName}» объявлена война на 24 часа.`);
@@ -938,19 +939,20 @@ class GameRoom extends Room<RoomState> {
         const questsChanged=ensureAllClanQuests(clans);
         const now=Date.now();
         const settled=settleExpiredClanWars(wars,clans,now);
+        const refresh=settled.changed||questsChanged;
         for(const id of Object.keys(clans))delete clans[id];
         Object.assign(clans,settled.clans);
         wars.splice(0,wars.length,...settled.wars);
         const war=wars.find((entry:any)=>entry.id===selectedId);
         if(!war||war.status!=='active'){
           const winner=war?.winnerId?String(war.winnerId===war.a?war.aName:war.bName):'ничья';
-          return {error:`Война завершена. Итог: ${winner}.`,questsChanged};
+          return {error:`Война завершена. Итог: ${winner}.`,refresh};
         }
         const remaining=clanWarCooldownRemaining(war,this.playerId,now);
-        if(remaining>0)return {error:`Следующая атака через ${Math.ceil(remaining/1000)} сек.`,questsChanged};
+        if(remaining>0)return {error:`Следующая атака через ${Math.ceil(remaining/1000)} сек.`,refresh};
         const enemyId=war.a===clan.id?war.b:war.a;
         const enemy=clans[enemyId];
-        if(!enemy)return {error:'Клан-соперник не найден.',questsChanged};
+        if(!enemy)return {error:'Клан-соперник не найден.',refresh};
 
         // Clan wars use an abstract damage score, not a full arena duel. Attacker
         // character power and clan barracks are compared with the enemy clan baseline.
@@ -975,11 +977,11 @@ class GameRoom extends Room<RoomState> {
         const index=wars.findIndex((entry:any)=>entry.id===war.id);
         wars[index]=updated;
         p.battles=Number(p.battles||0)+1;
-        return {damage,updated,questsChanged};
+        return {damage,updated,refresh};
       });
-      if('error' in result)return this.notice(c,result.error);
       const clans=loadClans(),wars=loadWars();
-      if(result.questsChanged){broadcastClanOverview(clans);broadcastClanQuests(clans);}
+      if(result.refresh){broadcastClanOverview(clans);broadcastClanQuests(clans);}
+      if('error' in result)return this.notice(c,result.error);
       const payload=broadcastClanWarList(wars,clans);
       this.notice(c,`Атака нанесла ${result.damage} урона. Суммарный урон: ${result.updated.aName||result.updated.a} — ${result.updated.aDamage||0}, ${result.updated.bName||result.updated.b} — ${result.updated.bDamage||0}. Следующая атака через 1 сек.`);
       c.send('clanWarList',payload);
