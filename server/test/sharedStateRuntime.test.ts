@@ -67,7 +67,7 @@ test('ordinary shared transaction reports no recovery so live in-memory changes 
   assert.equal(recoveredDuringPrepare, false);
 });
 
-test('legacy auction writes recover every journal before building their snapshot', () => {
+test('auction commits prepare and persist all auction files through the shared WAL', () => {
   const f = fixture();
   const result = f.runtime.commitAuction(() => {
     f.events.push('prepare');
@@ -75,12 +75,12 @@ test('legacy auction writes recover every journal before building their snapshot
   });
   assert.equal(result, 7);
   assert.deepEqual(f.events, [
-    'auction.recover', 'clans.recover', 'shared.recover', 'prepare',
-    'auction.commit:{"players":{"p1":{"gold":80}},"auction":[]}',
+    'auction.recover', 'clans.recover', 'shared.recover',
+    'shared.transact', 'shared.recover', 'prepare', 'shared.commit',
   ]);
 });
 
-test('legacy clan writes recover every journal before building their snapshot', () => {
+test('clan commits prepare and persist all clan files through the shared WAL', () => {
   const f = fixture();
   const result = f.runtime.commitClan(() => {
     f.events.push('prepare');
@@ -88,8 +88,8 @@ test('legacy clan writes recover every journal before building their snapshot', 
   });
   assert.equal(result, 'saved');
   assert.deepEqual(f.events, [
-    'auction.recover', 'clans.recover', 'shared.recover', 'prepare',
-    'clans.commit:{"players":{},"clans":{},"wars":[],"territories":[]}',
+    'auction.recover', 'clans.recover', 'shared.recover',
+    'shared.transact', 'shared.recover', 'prepare', 'shared.commit',
   ]);
 });
 
