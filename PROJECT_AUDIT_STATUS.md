@@ -2687,7 +2687,7 @@ PEN-009 стоит 100 кристаллов и при максимальном �
 - Invitation now checks the target and existing roster against the inviter/leader before creating a new group or persisting a roster. Acceptance repeats the check against the current online leader and every existing member; client-supplied group data cannot bypass it.
 - Group dungeon entry now requires the leader to meet the dungeon minimum. Invited members may be below the dungeon minimum, but every member must still remain within ±5 levels of the leader. Solo entry continues to require the solo player's own minimum level.
 - Added unit coverage for inclusive boundaries, out-of-range values and invalid levels. Tests/builds have not been executed; current-head CI remains unconfirmed.
-- Leadership succession remains intentionally unchanged pending owner decision: current leave behavior promotes the first remaining member, which can violate the new level window. Do not implement succession policy by assumption.
+- Owner decision is final: leadership succession is forbidden. A voluntary leader leave outside the dungeon disbands the entire hunt group; no remaining member is promoted.
 
 
 ### Hunt-group reconnect consistency and runtime fixture — 2026-11-12
@@ -2695,11 +2695,11 @@ PEN-009 стоит 100 кристаллов и при максимальном �
 - В `groupTravelPersistenceRuntime.test.ts` добавлена проверка expedition state после повторного входа участника.
 - Обнаружено несоответствие существующего runtime fixture новым правилам ±5: лидер был 20 уровня, приглашённый участник — 3 уровня. Исправлен уровень участника на 15, чтобы сценарий действительно проверял допустимую группу, а не устаревшее поведение.
 - Тесты не запускались; CI для текущего head не подтверждён.
-- Дополнительная находка для следующего этапа: приглашения хранятся только в `GROUP_INVITES` в памяти процесса. При явном выходе лидера приглашения, ранее отправленные им в эту группу, не инвалидируются. Нужно закрыть возможность принять приглашение, выданное предыдущим лидером, после передачи лидерства; также проверить expiry/restart semantics отдельно.
+- Исправлено: при добровольном выходе лидера группа распускается, а все pending invitations для неё инвалидируются. Приглашение прежнего лидера нельзя принять после disband. TTL и поведение приглашений при рестарте остаются отдельными ограничениями.
 
 
 ### Hunt-group invitation invalidation — 2026-11-12
-- При успешном явном выходе текущего лидера все ожидающие приглашения, связанные с этой группой, удаляются из `GROUP_INVITES`. Это работает и при передаче лидерства, и при расформировании группы последним участником.
+- При успешном явном выходе лидера все ожидающие приглашения для группы удаляются из `GROUP_INVITES`; лидерство не передаётся, группа распускается целиком.
 - Инвалидация выполняется только после успешной записи нового roster через shared WAL, чтобы не терять приглашения при откате неудачной транзакции.
 - Добавлен чистый helper и unit-тест: удаляются все приглашения данной группы, приглашения других групп сохраняются.
 - Приглашения по-прежнему существуют только в памяти процесса: перезапуск очищает их. TTL не добавлялся, поскольку срок действия приглашения — отдельное продуктовое правило и не был согласован.
@@ -2727,10 +2727,10 @@ PEN-009 стоит 100 кристаллов и при максимальном �
 ### Аудит восстановления охотничьих групп — 2026-11-12
 - Повторно прослежен startup order: сначала replay legacy auction/clan journals, затем shared WAL, и только после этого загрузка `hunt_groups.json` в `HUNT_GROUPS`/`PLAYER_GROUP`. Это предотвращает восстановление roster из промежуточного состояния.
 - Подтверждена атомарная граница roster mutation: `persistHuntGroups()` сохраняет полный player snapshot и `hunt_groups.json` в одном shared WAL; при ошибке in-memory roster перечитывается из сохранённого файла. Явный выход также откатывает quest JSON при ошибке.
-- Уже существующий `sharedStateTransactions.test.ts` проверяет аварийное завершение после записи `players.json` до записи `hunt_groups.json`, а затем replay обоих файлов из одного журнала. `groupTravelPersistenceRuntime.test.ts` проверяет рестарт, offline-slot, reconnect, передачу лидерства и disband. Новые тесты на этом этапе не потребовались.
+- `sharedStateTransactions.test.ts` проверяет аварийное завершение между записью `players.json` и `hunt_groups.json` с последующим replay. `groupTravelPersistenceRuntime.test.ts` проверяет restart, offline-slot, reconnect, disband лидером без succession и очистку offline groupId.
 - Disconnect сохраняет roster, сбрасывает активный общий поиск/переход для онлайн-участников и очищает groupId только в сохранении отключившегося персонажа; reconnect восстанавливает groupId из authoritative roster.
-- Подтверждённый открытый дефект игрового правила: при выходе лидера назначается первый оставшийся участник без проверки ±5 для всего нового состава. Код не менялся до выбора владельца между подбором допустимого преемника (и disband, если его нет) либо немедленным disband при недопустимом составе.
-- Проверки и сборка не запускались. Текущий head PR #14: `7f8a556292e19af0379fb6673b8d6431c61471fc`; CI workflow runs и commit statuses отсутствуют.
+- Исправлено по решению владельца: при добровольном выходе лидера группа распускается без проверки/назначения преемника. Очищаются groupId всех участников, в том числе offline, и инвалидируются приглашения.
+- CI run `43169266504` на code head `8919ac42e2433f5784bcb261c9acc0b218d07fab`: server tests, server build, client build, data/project audit и Playwright завершились SUCCESS.
 
 
 ### Утверждённые правила лидерства и выхода из охотничьей группы — 2026-11-12
@@ -2739,7 +2739,7 @@ PEN-009 стоит 100 кристаллов и при максимальном �
 - AFK лидера в подземелье немедленно прекращает забег для всех участников: всех отправляет в город, группа распускается. Забег не продолжается и новый лидер не назначается.
 - Смерть обычного участника без доступного воскрешения оставляет его наблюдателем в составе группы. Если лидер погибает и воскрешений больше нет, весь отряд покидает подземелье, но группа не распускается.
 - После штатного завершения подземелья группа сохраняет исходный состав; автоматического роспуска нет. AFK лидера — специальное исключение: группа распускается.
-- Статус реализации: правила утверждены, но не реализованы. Текущий серверный dungeon handler выполняет бой синхронно и не имеет длительного состояния подземелья, spectator lifecycle или AFK inactivity timer. Нельзя считать запрет выхода во время подземелья и 60-минутное исключение реализованными до отдельной реализации и тестов.
+- Статус реализации: добровольный выход лидера вне подземелья реализован — вся группа распускается без передачи лидерства; groupId всех участников, включая offline, очищается в одной shared WAL транзакции; pending invites инвалидируются. Runtime-регрессия покрывает offline member и reconnect. Остальные dungeon-правила (AFK 60 минут, abort/teleport при AFK лидера, spectator lifecycle и воскрешение) пока не реализованы: dungeon handler остаётся синхронным и не моделирует длительный забег.
 - Передача лидерства запрещена; лидер остаётся неизменным. Если лидер выходит из группы вне подземелья, группа распускается.
 - Во время подземелья обычный выход из группы запрещён; единственное исключение — AFK/неактивность 60 минут. Выход доступен вне подземелья: во время сбора или после завершения забега.
 - Смерть обычного участника без доступного воскрешения оставляет его наблюдателем в составе группы. Если лидер погибает и воскрешений больше нет, весь отряд покидает подземелье, но группа не распускается.
@@ -2751,4 +2751,4 @@ PEN-009 стоит 100 кристаллов и при максимальном �
 - Проверен контур записи players.json: autosave, обычные player mutations, группы, PvP, аукцион и кланы используют общий sharedStateRuntime/shared WAL. Прямых вызовов legacy savePlayers() в server/src/index.ts не найдено.
 - Исправлен риск миграции: два старых журнала auction_transaction.json и clan_transaction.json могли одновременно содержать конфликтующие полные снимки players.json. Теперь единый startup/runtime recovery gate обнаруживает оба pending-журнала и останавливается до replay или записи; оба исходных журнала сохраняются. Один legacy journal по-прежнему восстанавливается перед shared WAL.
 - Добавлены unit и integration-style тесты для fail-closed поведения; миграционный тест оставлен на однозначном сценарии с одним legacy journal. Статический playerPersistenceWriters.test.ts проверяет отсутствие обходных writers и порядок startup recovery; оба новых тестовых файла включены в server npm test.
-- Проверки/сборки не запускались; требуется CI по текущему head.
+- CI run `43169266504` на code head `8919ac42e2433f5784bcb261c9acc0b218d07fab` завершился SUCCESS по всем четырём job.
