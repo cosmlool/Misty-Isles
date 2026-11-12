@@ -878,15 +878,16 @@ class GameRoom extends Room<RoomState> {
       this.notice(c,`Клан занял ${result.rank||'—'} место и получил ${result.reward} золота в казну.`);
     });
     this.onAuthenticatedMessage('clanWarList',(c)=>{
-      transactClanStateMutation(({clans,wars})=>{
+      const changed=transactClanStateMutation(({clans,wars})=>{
         const questsChanged=ensureAllClanQuests(clans);
         const settled=settleExpiredClanWars(wars,clans,Date.now());
         for(const id of Object.keys(clans))delete clans[id];
         Object.assign(clans,settled.clans);
         wars.splice(0,wars.length,...settled.wars);
-        return {changed:settled.changed||questsChanged};
+        return settled.changed||questsChanged;
       });
       const clans=loadClans(),currentWars=loadWars();
+      if(changed){broadcastClanOverview(clans);broadcastClanQuests(clans);}
       const payload=broadcastClanWarList(currentWars,clans);
       c.send('clanWarList',payload);
     });
