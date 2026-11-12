@@ -81,3 +81,19 @@ export function invalidateHuntGroupInvites(invites:Map<string,string>,groupId:st
   }
   return removed;
 }
+
+
+/** Counts outstanding invitations that reserve slots in a specific group. */
+export function countHuntGroupInvites(invites:Map<string,string>,groupId:string):number{
+  if(!groupId)return 0;
+  let count=0;
+  for(const invitedGroupId of invites.values())if(invitedGroupId===groupId)count++;
+  return count;
+}
+
+/** Pending invitations reserve capacity so a leader cannot over-invite a group. */
+export function canInviteToHuntGroup(memberCount:number,pendingInviteCount:number,maxMembers=3):boolean{
+  return Number.isInteger(memberCount)&&Number.isInteger(pendingInviteCount)&&Number.isInteger(maxMembers)
+    &&memberCount>=1&&pendingInviteCount>=0&&maxMembers>=1
+    &&memberCount+pendingInviteCount<maxMembers;
+}
