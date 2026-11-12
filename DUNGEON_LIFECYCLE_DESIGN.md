@@ -100,3 +100,12 @@ Important limitation: the current boss dungeon handler is still synchronous and 
 - The helper validates the rescuer inventory, delegates party/status/duplicate-rescue checks to the dungeon state transition, and removes exactly one scroll without mutating the caller's input objects.
 - The caller must persist both returned snapshots (`players` and `dungeonRuns`) in the same shared-WAL transaction. A dedicated crash test interrupts the write after the player file and verifies restart replay restores both the consumed scroll and revived participant state.
 - This is transaction preparation and WAL-level recovery coverage, not yet a live combat command. The active dungeon handler remains synchronous; the next runtime step must create and advance durable run records before a player-facing revive action can be enabled.
+
+
+## Deterministic resumable round plan
+
+- The durable run model now optionally carries a validated round plan: total rounds, next unresolved round, boss-damage slices, and per-participant damage slices.
+- Aggregate integer damage is divided deterministically across rounds using cumulative floors. The sum of all slices is exactly the original aggregate damage; no combat coefficient or total damage is changed by the split.
+- `resolveNextDungeonRunRound` applies exactly one saved slice, advances the round cursor, updates participant HP/status and boss HP, and returns a new immutable run snapshot. A serialized snapshot resumes from the next unresolved round.
+- Tests cover exact damage conservation, one-round-at-a-time progression, serialization/recovery between rounds, terminal exhaustion, and malformed plans.
+- Scope limitation: this is the deterministic resumable round engine and persisted plan format. The production `runExpeditionDungeon()` handler still resolves the encounter synchronously and does not yet create/commit this plan or expose a round action to clients. Runtime wiring and preserving the current reward/loot/idempotency behavior remain the next integration task.
