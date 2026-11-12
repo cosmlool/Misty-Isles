@@ -2688,3 +2688,11 @@ PEN-009 стоит 100 кристаллов и при максимальном �
 - Group dungeon entry now requires the leader to meet the dungeon minimum. Invited members may be below the dungeon minimum, but every member must still remain within ±5 levels of the leader. Solo entry continues to require the solo player's own minimum level.
 - Added unit coverage for inclusive boundaries, out-of-range values and invalid levels. Tests/builds have not been executed; current-head CI remains unconfirmed.
 - Leadership succession remains intentionally unchanged pending owner decision: current leave behavior promotes the first remaining member, which can violate the new level window. Do not implement succession policy by assumption.
+
+
+### Hunt-group reconnect consistency and runtime fixture — 2026-11-12
+- Исправлен reconnect path: `onJoin` теперь восстанавливает `quests.expedition.groupId` из authoritative persisted roster (`PLAYER_GROUP`), а не только очищает несовпадающую старую ссылку. Это закрывает рассинхронизацию после disconnect, когда roster сохранял участника, но его player snapshot содержал пустой `groupId`.
+- В `groupTravelPersistenceRuntime.test.ts` добавлена проверка expedition state после повторного входа участника.
+- Обнаружено несоответствие существующего runtime fixture новым правилам ±5: лидер был 20 уровня, приглашённый участник — 3 уровня. Исправлен уровень участника на 15, чтобы сценарий действительно проверял допустимую группу, а не устаревшее поведение.
+- Тесты не запускались; CI для текущего head не подтверждён.
+- Дополнительная находка для следующего этапа: приглашения хранятся только в `GROUP_INVITES` в памяти процесса. При явном выходе лидера приглашения, ранее отправленные им в эту группу, не инвалидируются. Нужно закрыть возможность принять приглашение, выданное предыдущим лидером, после передачи лидерства; также проверить expiry/restart semantics отдельно.
