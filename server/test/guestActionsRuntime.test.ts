@@ -117,12 +117,13 @@ test('guest gameplay actions cannot consume rewards or alter character state bef
       ['achievements', {}],
       ['returnReward', {}],
       ['pvpList', {}],
+      ['admin', { action: 'gold', amount: 999999 }],
     ];
     for (const [action, payload] of actions) {
       const before = notices.length;
       room.send(action, payload);
       const notice = await waitFor(() => notices.length > before ? notices[notices.length - 1] : undefined, action + ' guard response');
-      assert.equal(notice, 'Сначала создай персонажа.', action + ' must require a created character');
+      assert.equal(notice, action === 'admin' ? 'Нет прав для выполнения этой команды.' : 'Сначала создай персонажа.', action + ' must be rejected for an uncreated, non-allowlisted guest');
     }
 
     const saved = readJson(join(dataDir, 'players.json'))[playerId];
