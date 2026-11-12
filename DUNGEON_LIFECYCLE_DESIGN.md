@@ -144,3 +144,12 @@ Important limitation: the current boss dungeon handler is still synchronous and 
 - A retry using an old round index is rejected, preventing duplicate round damage. If shared-state recovery occurred during the operation, the helper refuses stale in-memory state and requires both player and run snapshots to be reloaded.
 - Crash coverage interrupts execution after the player snapshot write and verifies journal replay restores both player HP and dungeon encounter progress.
 - Scope limitation: this is an atomic persistence boundary and test foundation, not production runtime wiring. The synchronous `runExpeditionDungeon()` handler still does not create/advance durable rounds through this helper. Reward/loot finalization, idempotent event delivery, and live handler replacement remain outstanding; no claim is made that dungeon rounds are now restart-resumable in production.
+
+
+## Shared-WAL dungeon finalization foundation
+
+- `dungeonRunFinalizationRuntime.ts` prepares terminal outcomes against an expected round index and run timestamp, then commits `players.json` and `dungeon_runs.json` in one shared-WAL transaction.
+- The durable terminal result carries a deterministic claim ID bound to run ID, original dungeon request ID, and outcome. A duplicate same-outcome retry is a no-write operation; a conflicting outcome is rejected.
+- Finalization refuses stale snapshots, missing participant snapshots, unresolved planned rounds, and any retry after shared-state recovery until both snapshots are reloaded.
+- Crash coverage interrupts after the player file write and verifies WAL replay restores both player reward snapshots and the terminal run marker.
+- This is a persistence foundation only. The live `runExpeditionDungeon()` handler still calculates and mutates rewards synchronously and is not wired to this helper. Reward calculation, loot selection/distribution, report construction, event delivery/outbox semantics, and live-handler replacement remain outstanding. No reward formula, chance, or balance value was changed.

@@ -40,6 +40,7 @@ export type DungeonRunRecord = {
     outcome: 'win' | 'loss' | 'leader_afk' | 'leader_dead';
     committedAt: number;
     requestId: string;
+    claimId?: string;
   };
 };
 
@@ -101,7 +102,8 @@ export function validateDungeonRunStore(value: unknown): DungeonRunStore {
     if (raw.status !== 'active' && (!isRecord(raw.terminalResult) ||
       !['win', 'loss', 'leader_afk', 'leader_dead'].includes(raw.terminalResult.outcome) ||
       !Number.isFinite(raw.terminalResult.committedAt) ||
-      raw.terminalResult.requestId !== raw.requestId)) {
+      raw.terminalResult.requestId !== raw.requestId ||
+      (raw.terminalResult.claimId !== undefined && raw.terminalResult.claimId !== `dungeon:${key}:${raw.requestId}:${raw.terminalResult.outcome}`))) {
       throw new Error(`dungeon_runs.json contains a terminal run without a durable terminal result: ${key}.`);
     }
     result[key] = raw as DungeonRunRecord;
@@ -262,7 +264,12 @@ export function finishDungeonRun(
     ...current,
     status: outcome === 'win' || outcome === 'loss' ? 'completed' : 'aborted',
     updatedAt: now,
-    terminalResult: { outcome, committedAt: now, requestId: current.requestId },
+    terminalResult: {
+      outcome,
+      committedAt: now,
+      requestId: current.requestId,
+      claimId: `dungeon:${current.runId}:${current.requestId}:${outcome}`,
+    },
   };
 }
 
