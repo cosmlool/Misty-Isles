@@ -919,7 +919,7 @@ class GameRoom extends Room<RoomState> {
         return {targetName:target.name,refresh};
       });
       const clans=loadClans(),wars=loadWars();
-      if(result.refresh){broadcastClanOverview(clans);broadcastClanQuests(clans);}
+      if('refresh' in result&&result.refresh){broadcastClanOverview(clans);broadcastClanQuests(clans);}
       if('error' in result)return this.notice(c,result.error);
       const payload=broadcastClanWarList(wars,clans);
       c.send('clanWarList',payload);
@@ -980,7 +980,7 @@ class GameRoom extends Room<RoomState> {
         return {damage,updated,refresh};
       });
       const clans=loadClans(),wars=loadWars();
-      if(result.refresh){broadcastClanOverview(clans);broadcastClanQuests(clans);}
+      if('refresh' in result&&result.refresh){broadcastClanOverview(clans);broadcastClanQuests(clans);}
       if('error' in result)return this.notice(c,result.error);
       const payload=broadcastClanWarList(wars,clans);
       this.notice(c,`Атака нанесла ${result.damage} урона. Суммарный урон: ${result.updated.aName||result.updated.a} — ${result.updated.aDamage||0}, ${result.updated.bName||result.updated.b} — ${result.updated.bDamage||0}. Следующая атака через 1 сек.`);
