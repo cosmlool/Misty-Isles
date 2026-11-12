@@ -19,6 +19,7 @@ function fixture() {
       events.push('shared.transact');
       this.recover();
       const prepared = prepare();
+      if (prepared.skipWrite) { events.push('shared.skip'); return prepared.result; }
       events.push('shared.commit');
       return prepared.result;
     },
@@ -90,6 +91,21 @@ test('clan commits prepare and persist all clan files through the shared WAL', (
   assert.deepEqual(f.events, [
     'auction.recover', 'clans.recover', 'shared.recover',
     'shared.transact', 'shared.recover', 'prepare', 'shared.commit',
+  ]);
+});
+
+test('clan no-op commits still recover journals but skip shared WAL writes', () => {
+  const f = fixture();
+  f.setPending({ clans: true });
+  const result = f.runtime.commitClan(() => ({
+    snapshot: { players: {}, clans: {}, wars: [], territories: [] },
+    result: 'unchanged',
+    skipWrite: true,
+  }));
+  assert.equal(result, 'unchanged');
+  assert.deepEqual(f.events, [
+    'auction.recover', 'clans.recover', 'shared.recover',
+    'shared.transact', 'shared.recover', 'shared.skip',
   ]);
 });
 
