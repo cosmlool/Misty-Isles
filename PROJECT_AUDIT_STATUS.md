@@ -2770,3 +2770,11 @@ PEN-009 стоит 100 кристаллов и при максимальном �
 - Добавлены unit-тесты парсера allowlist и runtime-регрессия: незанесённый в allowlist гость не может выполнить admin-команду.
 - Подтверждение на точном code HEAD `e1328083b1bf735c7fba99a2df860283247a51ef`: Quality Gate push run `43182193156` SUCCESS; Quality Gate pull_request run `43182468883` SUCCESS; Server checks run `43182468784` SUCCESS. В Quality Gate прошли server tests/build, client build, data/docs/project audit и Playwright; отдельный Server checks также прошёл тесты и сборку.
 - PR #15 остаётся Draft и не объединён. После этого документального коммита потребуется новый CI на обновлённом HEAD.
+
+
+### Dungeon lifecycle audit — 2026-11-12
+- Confirmed `runExpeditionDungeon()` is a synchronous one-shot resolver; no durable active run, spectator state, per-participant combat lifecycle, or 60-minute leader AFK watchdog exists.
+- `HUNT_GROUPS` is persisted separately from dungeon execution. Current `onLeave()` cannot enforce dungeon-specific exit/abort semantics.
+- Added `DUNGEON_LIFECYCLE_DESIGN.md` as the implementation contract. It preserves the approved rules: no leadership succession; voluntary leave locked during a run; ordinary completion retains party; ordinary dead members become spectators; leader death without revive ends run but retains party; leader AFK >=60m aborts, sends everyone to city, and disbands party.
+- No production dungeon code was changed in this audit step. Restart behavior for a server crash during an active run remains an explicit design decision; do not guess.
+- Current validation is being checked against the documentation HEAD; do not infer green CI from the earlier code-only SHA.
