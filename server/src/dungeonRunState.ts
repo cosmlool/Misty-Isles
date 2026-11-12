@@ -9,6 +9,13 @@ export type DungeonRunParticipant = {
   resurrectedPlayerIds: string[];
 };
 
+export type DungeonRoundPlan = {
+  totalRounds: number;
+  nextRoundIndex: number;
+  bossDamageByRound: number[];
+  participantDamageByRound: Record<string, number[]>;
+};
+
 export type DungeonRunRecord = {
   version: 1;
   runId: string;
@@ -21,6 +28,7 @@ export type DungeonRunRecord = {
   startedAt: number;
   updatedAt: number;
   roundIndex: number;
+  roundPlan?: DungeonRoundPlan;
   participants: Record<string, DungeonRunParticipant>;
   encounter: {
     bossId: string;
@@ -55,8 +63,28 @@ export function validateDungeonRunStore(value: unknown): DungeonRunStore {
       !['active', 'completed', 'aborted'].includes(raw.status) ||
       !Number.isFinite(raw.startedAt) || !Number.isFinite(raw.updatedAt) ||
       !Number.isInteger(raw.roundIndex) || raw.roundIndex < 0 ||
+      (raw.roundPlan !== undefined && (!isRecord(raw.roundPlan) ||
+        !Number.isInteger(raw.roundPlan.totalRounds) || raw.roundPlan.totalRounds < 1 ||
+        !Number.isInteger(raw.roundPlan.nextRoundIndex) || raw.roundPlan.nextRoundIndex < 0 ||
+        raw.roundPlan.nextRoundIndex > raw.roundPlan.totalRounds ||
+        !Array.isArray(raw.roundPlan.bossDamageByRound) ||
+        raw.roundPlan.bossDamageByRound.length !== raw.roundPlan.totalRounds ||
+        raw.roundPlan.bossDamageByRound.some((damage: unknown) => !Number.isFinite(damage) || Number(damage) < 0) ||
+        !isRecord(raw.roundPlan.participantDamageByRound))) ||
       !isRecord(raw.participants) || !isRecord(raw.encounter)) {
       throw new Error(`dungeon_runs.json contains an invalid run record: ${key}.`);
+    }
+    if (raw.roundPlan && Object.keys(raw.roundPlan.participantDamageByRound).length !== raw.participantIds.length) {
+      throw new Error(`dungeon_runs.json contains an incomplete round plan for ${key}.`);
+    }
+    if (raw.roundPlan) {
+      for (const playerId of raw.participantIds) {
+        const schedule = raw.roundPlan.participantDamageByRound[playerId];
+        if (!Array.isArray(schedule) || schedule.length !== raw.roundPlan.totalRounds ||
+          schedule.some((damage: unknown) => !Number.isFinite(damage) || Number(damage) < 0)) {
+          throw new Error(`dungeon_runs.json contains an invalid damage schedule for ${playerId} in ${key}.`);
+        }
+      }
     }
     for (const playerId of raw.participantIds) {
       const participant = raw.participants[playerId];
@@ -136,6 +164,64 @@ export function createDungeonRunRecord(input: {
       bossMaxHealth: input.bossHealth,
       seed: input.seed,
     },
+  };
+}
+
+/** Split aggregate combat damage into deterministic integer round slices without changing its total. */
+export function createDungeonRoundPlan(input: {
+  totalRounds: number;
+  totalBossDamage: number;
+  totalDamageByParticipant: Record<string, number>;
+}): DungeonRoundPlan {
+  const ids = Object.keys(input.totalDamageByParticipant);
+  if (!Number.isInteger(input.totalRounds) || input.totalRounds < 1 ||
+    !Number.isFinite(input.totalBossDamage) || input.totalBossDamage < 0 ||
+    ids.length < 1 || ids.some(id => !id || !Number.isFinite(input.totalDamageByParticipant[id]) || input.totalDamageByParticipant[id] < 0)) {
+    throw new Error('Invalid deterministic dungeon round plan.');
+  }
+  const split = (total: number) => Array.from({ length: input.totalRounds }, (_, index) =>
+    Math.floor(total * (index + 1) / input.totalRounds) - Math.floor(total * index / input.totalRounds));
+  return {
+    totalRounds: input.totalRounds,
+    nextRoundIndex: 0,
+    bossDamageByRound: split(input.totalBossDamage),
+    participantDamageByRound: Object.fromEntries(ids.map(id => [id, split(input.totalDamageByParticipant[id])])),
+  };
+}
+
+export function resolveNextDungeonRunRound(
+  current: DungeonRunRecord,
+  now: number,
+): DungeonRunRecord {
+  if (current.status !== 'active') throw new Error('Cannot advance a terminal dungeon run.');
+  const plan = current.roundPlan;
+  if (!plan || plan.nextRoundIndex >= plan.totalRounds) throw new Error('No unresolved dungeon round remains.');
+  if (!Number.isFinite(now)) throw new Error('Invalid dungeon round timestamp.');
+  const participantHealth: Record<string, number> = {};
+  const participants = { ...current.participants };
+  for (const playerId of current.participantIds) {
+    const participant = participants[playerId];
+    if (participant.status === 'spectator') {
+      participantHealth[playerId] = 0;
+      continue;
+    }
+    const damage = plan.participantDamageByRound[playerId][plan.nextRoundIndex];
+    participantHealth[playerId] = Math.max(0, participant.health - damage);
+    if (participantHealth[playerId] === 0) {
+      participants[playerId] = { ...participant, status: 'spectator', health: 0, lastActivityAt: now };
+    } else {
+      participants[playerId] = { ...participant, health: participantHealth[playerId] };
+    }
+  }
+  const nextBossHealth = Math.max(0, current.encounter.bossHealth - plan.bossDamageByRound[plan.nextRoundIndex]);
+  const nextPlan = { ...plan, nextRoundIndex: plan.nextRoundIndex + 1 };
+  return {
+    ...current,
+    updatedAt: now,
+    roundIndex: current.roundIndex + 1,
+    participants,
+    roundPlan: nextPlan,
+    encounter: { ...current.encounter, bossHealth: nextBossHealth },
   };
 }
 
