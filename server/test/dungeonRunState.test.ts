@@ -4,6 +4,8 @@ import {
   advanceDungeonRunRound,
   createDungeonRunRecord,
   finishDungeonRun,
+  markDungeonParticipantDead,
+  reviveDungeonParticipant,
   validateDungeonRunStore,
 } from '../src/dungeonRunState.js';
 
@@ -57,4 +59,60 @@ test('invalid roster, leader and terminal snapshots fail closed on startup recov
   assert.throws(() => validateDungeonRunStore({
     run_001: { ...finishDungeonRun(state, 'win', 3000), terminalResult: undefined },
   }), /terminal run without a durable terminal result/);
+});
+
+
+test('death moves a participant to spectator without changing the party roster', () => {
+  const dead = markDungeonParticipantDead(run(), 'p2', 2500);
+  assert.deepEqual(dead.participantIds, ['p1', 'p2']);
+  assert.equal(dead.participants.p2.status, 'spectator');
+  assert.equal(dead.participants.p2.health, 0);
+  assert.equal(dead.participants.p2.lastActivityAt, 2500);
+  assert.equal(markDungeonParticipantDead(dead, 'p2', 2600), dead);
+});
+
+test('one scroll revives one different ally and records per-rescuer history', () => {
+  const dead = markDungeonParticipantDead(run(), 'p2', 2500);
+  const revived = reviveDungeonParticipant(dead, {
+    rescuerId: 'p1', targetId: 'p2', availableScrolls: 2, reviveHealth: 30, now: 3000,
+  });
+  assert.equal(revived.scrollsRemaining, 1);
+  assert.equal(revived.run.participants.p2.status, 'revived');
+  assert.equal(revived.run.participants.p2.health, 30);
+  assert.deepEqual(revived.run.participants.p1.resurrectedPlayerIds, ['p2']);
+  assert.equal(validateDungeonRunStore({ run_001: revived.run }).run_001.participants.p2.status, 'revived');
+});
+
+test('resurrection rejects self, duplicate rescuer-target pairs, living targets and missing scrolls', () => {
+  const base = run();
+  assert.throws(() => reviveDungeonParticipant(base, {
+    rescuerId: 'p1', targetId: 'p1', availableScrolls: 1, reviveHealth: 10, now: 1,
+  }), /cannot revive themselves/);
+  assert.throws(() => reviveDungeonParticipant(base, {
+    rescuerId: 'p1', targetId: 'p2', availableScrolls: 1, reviveHealth: 10, now: 1,
+  }), /fallen spectator/);
+  const dead = markDungeonParticipantDead(base, 'p2', 2);
+  const first = reviveDungeonParticipant(dead, {
+    rescuerId: 'p1', targetId: 'p2', availableScrolls: 2, reviveHealth: 10, now: 3,
+  }).run;
+  const secondDeath = markDungeonParticipantDead(first, 'p2', 4);
+  assert.throws(() => reviveDungeonParticipant(secondDeath, {
+    rescuerId: 'p1', targetId: 'p2', availableScrolls: 1, reviveHealth: 10, now: 5,
+  }), /already revived/);
+  assert.throws(() => reviveDungeonParticipant(dead, {
+    rescuerId: 'p1', targetId: 'p2', availableScrolls: 0, reviveHealth: 10, now: 3,
+  }), /scroll is required/);
+});
+
+test('another participant may revive the same ally after a separate death', () => {
+  const dead = markDungeonParticipantDead(run(), 'p2', 2);
+  const first = reviveDungeonParticipant(dead, {
+    rescuerId: 'p1', targetId: 'p2', availableScrolls: 1, reviveHealth: 10, now: 3,
+  }).run;
+  const secondDeath = markDungeonParticipantDead(first, 'p2', 4);
+  const second = reviveDungeonParticipant(secondDeath, {
+    rescuerId: 'p2', targetId: 'p1', availableScrolls: 1, reviveHealth: 15, now: 5,
+  });
+  assert.equal(second.run.participants.p1.status, 'revived');
+  assert.deepEqual(second.run.participants.p2.resurrectedPlayerIds, ['p1']);
 });
