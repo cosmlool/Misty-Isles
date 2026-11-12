@@ -2485,3 +2485,12 @@ PlayerSchema содержит mining=0, но серверный код не ис
 - Проверка активного поиска/перехода учитывает сохранённое состояние offline-участника и не блокирует выход лидера только из-за отсутствия участника в сети.
 - Регрессионный сценарий проверяет disband при offline-участнике и отсутствие группы после reconnect.
 - CI run `43169266504`, code head `8919ac42e2433f5784bcb261c9acc0b218d07fab`: все четыре job завершились SUCCESS. После документального обновления требуется повторный CI на новом HEAD.
+
+
+### CI failure diagnosis and clan journal guard fix — 2026-11-12
+- First complete CI on clean recovery branch exposed one server regression: 267/268 tests passed; the integration test for simultaneous pending legacy auction + clan journals failed with `Missing expected exception` at `server/test/sharedStateTransactions.test.ts:276`.
+- Root cause: `createSharedStateRuntime.recoverPendingState()` checks optional `hasPending()` on both legacy stores. Auction store exposed it, but clan store did not; therefore `clansPending` defaulted to false and the ambiguous dual-journal state was not rejected.
+- Fixed `server/src/clanTransactions.ts` by adding/exporting `hasPending(): boolean` backed by `existsSync(journalFile)`.
+- Fix commit: `bf097e28ef8b1bfdd6b9c84c2471125a9600835d`.
+- Pre-fix CI: Playwright browser smoke, client build and project/data audit passed. Both server jobs failed on the same single test; server build steps were skipped after test failure.
+- Post-fix validation has not yet run. Do not call this fixed/verified until new CI for the exact new HEAD passes server tests, server build, client build, project audit and Playwright smoke tests.
