@@ -135,3 +135,10 @@ Important limitation: the current boss dungeon handler is still synchronous and 
 - The helper returns the original round count, incoming damage per participant, victory decision, and each participant's aggregate outgoing damage. Combat reports now read their damage value from this shared result rather than duplicating the formula.
 - Dedicated tests cover the legacy calculation, party scaling, damage flooring, and strict survival threshold.
 - This is a formula extraction and test seam only. The handler still executes the whole encounter synchronously; no durable round commits, reward timing, loot timing, or client round actions are wired yet.
+
+
+## Shared-WAL dungeon round commit boundary
+
+- Added `commitDungeonRunRound`: it validates the stored run, checks the expected round index, resolves exactly one preplanned round, validates the resulting run, and commits the updated `dungeonRuns` snapshot through the shared WAL.
+- A retry using an old round index is rejected, so a caller cannot accidentally apply the same round damage twice. If shared-state recovery occurred during the operation, the helper refuses stale in-memory state and requires a reload.
+- This transaction boundary currently commits the authoritative dungeon encounter snapshot only. It does not yet mutate player HP, grant rewards/loot, send round events, or replace the synchronous live handler. Those must be integrated together in a later runtime stage.
