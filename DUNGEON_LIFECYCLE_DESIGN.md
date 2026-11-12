@@ -69,3 +69,17 @@ A periodic network keepalive is not proof of player activity. The future activit
 6. Add integration tests for leader AFK, ordinary member death, leader death, normal completion, disconnect, restart recovery, duplicate requests, and no leadership succession.
 
 No numeric combat coefficients or reward balance are to be changed as part of this refactor.
+
+
+## Approved crash/restart policy
+
+An active run resumes from its latest committed snapshot after a process restart. It is not restarted from round zero, and a committed daily attempt is not charged a second time.
+
+Implementation foundation added:
+- `dungeon_runs.json` is now a shared-WAL target, so a run snapshot can be committed atomically alongside player snapshots, group roster, and other shared state.
+- Startup replays the shared WAL before parsing active dungeon records.
+- `dungeonRunState.ts` defines a versioned run snapshot, frozen participant IDs, per-player health/status/activity/resurrection history, boss health, round index, deterministic encounter seed, and durable terminal result.
+- Startup validation fails closed on malformed or ambiguous active-run records instead of silently discarding them.
+- Unit tests cover frozen rosters, per-participant round snapshots, exact serialization/recovery, terminal idempotency, and invalid-state rejection. Shared-WAL crash recovery now also verifies replay of a dungeon snapshot written in the same transaction as player/group state.
+
+Important limitation: the current boss dungeon handler is still synchronous and has not yet been refactored to create, advance, and commit these records. The new durable model is the foundation, not a claim that active dungeons already resume in production. Next implementation step is to replace the one-shot handler with a deterministic round/step resolver that commits the entire game snapshot after each step before exposing it to clients.
