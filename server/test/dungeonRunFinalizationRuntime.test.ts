@@ -88,7 +88,7 @@ test('finalization commits terminal result and every post-reward player snapshot
 
 test('duplicate finalization is a no-op and cannot apply a second reward payload', () => {
   const dataDir = mkdtempSync(join(tmpdir(), 'misty-dungeon-finalize-retry-'));
-  const files = { players: join(dataDir, 'players.json'), dungeonRuns: join(dataDir, 'dungeon_runs.json') };
+  const files = { players: join(dataDir, 'players.json'), dungeonRuns: join(dataDir, 'dungeon_runs.json'), dungeonOutbox: join(dataDir, 'dungeon_outbox.json') };
   try {
     const run = createRun();
     const runtime = runtimeFor(createSharedStateTransactionStore({ dataDir, files }));
@@ -124,7 +124,7 @@ test('duplicate finalization is a no-op and cannot apply a second reward payload
 
 test('finalization rejects stale run snapshots and unresolved planned rounds', () => {
   const dataDir = mkdtempSync(join(tmpdir(), 'misty-dungeon-finalize-stale-'));
-  const files = { players: join(dataDir, 'players.json'), dungeonRuns: join(dataDir, 'dungeon_runs.json') };
+  const files = { players: join(dataDir, 'players.json'), dungeonRuns: join(dataDir, 'dungeon_runs.json'), dungeonOutbox: join(dataDir, 'dungeon_outbox.json') };
   try {
     const run = createRun();
     const runtime = runtimeFor(createSharedStateTransactionStore({ dataDir, files }));
@@ -145,7 +145,7 @@ test('finalization rejects stale run snapshots and unresolved planned rounds', (
 
 test('leader abort outcomes can finalize before all planned combat rounds resolve', () => {
   const dataDir = mkdtempSync(join(tmpdir(), 'misty-dungeon-finalize-abort-'));
-  const files = { players: join(dataDir, 'players.json'), dungeonRuns: join(dataDir, 'dungeon_runs.json') };
+  const files = { players: join(dataDir, 'players.json'), dungeonRuns: join(dataDir, 'dungeon_runs.json'), dungeonOutbox: join(dataDir, 'dungeon_outbox.json') };
   try {
     const run = createRun();
     const interruptedRun = {
@@ -166,7 +166,7 @@ test('leader abort outcomes can finalize before all planned combat rounds resolv
 
 test('a finalization journal recovers terminal state and all player rewards after interruption', () => {
   const dataDir = mkdtempSync(join(tmpdir(), 'misty-dungeon-finalize-crash-'));
-  const files = { players: join(dataDir, 'players.json'), dungeonRuns: join(dataDir, 'dungeon_runs.json') };
+  const files = { players: join(dataDir, 'players.json'), dungeonRuns: join(dataDir, 'dungeon_runs.json'), dungeonOutbox: join(dataDir, 'dungeon_outbox.json') };
   try {
     const transactionModule = new URL('../src/sharedStateTransactions.ts', import.meta.url).href;
     const runtimeModule = new URL('../src/sharedStateRuntime.ts', import.meta.url).href;
@@ -229,7 +229,7 @@ test('a finalization journal recovers terminal state and all player rewards afte
 
 test('finalization fails closed when shared-state recovery occurred before preparation', () => {
   const dataDir = mkdtempSync(join(tmpdir(), 'misty-dungeon-finalize-recovery-'));
-  const files = { players: join(dataDir, 'players.json'), dungeonRuns: join(dataDir, 'dungeon_runs.json') };
+  const files = { players: join(dataDir, 'players.json'), dungeonRuns: join(dataDir, 'dungeon_runs.json'), dungeonOutbox: join(dataDir, 'dungeon_outbox.json') };
   try {
     const store = createSharedStateTransactionStore({ dataDir, files });
     store.transact(() => ({ files: { players: {}, dungeonRuns: {} }, result: null }));
