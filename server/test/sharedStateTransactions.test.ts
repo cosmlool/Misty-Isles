@@ -138,13 +138,6 @@ test('startup migration recovery replays legacy journals before the newer shared
       version: 1,
       snapshot: { players: { p1: { gold: 10 } }, auction: [{ id: 'legacy_lot' }], history: [] },
     }));
-    writeFileSync(clans.journalFile, JSON.stringify({
-      version: 1,
-      snapshot: {
-        players: { p1: { gold: 20 } }, clans: { c1: { vault: 1 } },
-        wars: [], territories: [],
-      },
-    }));
     writeFileSync(f.store.journalFile, JSON.stringify({
       version: 1,
       files: {
@@ -154,7 +147,7 @@ test('startup migration recovery replays legacy journals before the newer shared
     }));
 
     assert.equal(auction.recover(), true);
-    assert.equal(clans.recover(), true);
+    assert.equal(clans.recover(), false, 'only one legacy journal may be pending during migration');
     assert.equal(f.store.recover(), true);
 
     assert.equal(readJson(f.files.players).p1.gold, 30);
