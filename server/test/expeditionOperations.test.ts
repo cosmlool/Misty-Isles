@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { checkExpeditionTravelConsistency, checkExpeditionTravelReadiness, checkExpeditionTravelStartReadiness, invalidateHuntGroupInvites, isHuntGroupLevelRangeValid } from '../src/expeditionOperations.js';
+import { canInviteToHuntGroup, checkExpeditionTravelConsistency, checkExpeditionTravelReadiness, checkExpeditionTravelStartReadiness, countHuntGroupInvites, invalidateHuntGroupInvites, isHuntGroupLevelRangeValid } from '../src/expeditionOperations.js';
 
 test('group travel waits for the latest participant before any transition is applied', () => {
   const states = [
@@ -95,4 +95,19 @@ test('leadership change invalidates every pending invitation for the old group',
   assert.deepEqual(Array.from(invites.entries()), [['player-b', 'group-b']]);
   assert.equal(invalidateHuntGroupInvites(invites, 'group-a'), 0);
   assert.equal(invalidateHuntGroupInvites(invites, ''), 0);
+});
+
+
+test('pending group invitations reserve the remaining member slots', () => {
+  const invites = new Map([['player-a', 'group-a'], ['player-b', 'group-a'], ['player-c', 'group-b']]);
+  assert.equal(countHuntGroupInvites(invites, 'group-a'), 2);
+  assert.equal(countHuntGroupInvites(invites, 'group-b'), 1);
+  assert.equal(countHuntGroupInvites(invites, 'missing'), 0);
+  assert.equal(canInviteToHuntGroup(1, 0), true);
+  assert.equal(canInviteToHuntGroup(1, 1), true);
+  assert.equal(canInviteToHuntGroup(1, 2), false);
+  assert.equal(canInviteToHuntGroup(2, 1), false);
+  assert.equal(canInviteToHuntGroup(3, 0), false);
+  assert.equal(canInviteToHuntGroup(0, 0), false);
+  assert.equal(canInviteToHuntGroup(1, -1), false);
 });
