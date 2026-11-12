@@ -2441,3 +2441,12 @@ PlayerSchema содержит mining=0, но серверный код не ис
 - Добавлены helper и unit-тест на удаление приглашений нужной группы с сохранением приглашений других групп.
 - Приглашения остаются process-local и исчезают при рестарте. Срок действия/TTL не вводился без согласования продуктового правила.
 - Проверки не запускались; CI не подтверждён.
+
+
+
+### Hunt-group invitation capacity reservations — 2026-11-12
+- Concurrency review confirmed that the current Colyseus message handlers and shared WAL writes are synchronous. Two acceptance handlers cannot execute their mutation sections in parallel on this single-process event loop; each acceptance rechecks the actual roster size before appending, so the three-member cap is not bypassed by near-simultaneous accepts.
+- Found an invitation-state/UX issue: a leader could issue more pending invitations than the remaining slots. Each pending invitation now reserves one slot; a new invite is rejected when current members plus pending reservations reach three.
+- A player cannot receive a second pending group invitation that overwrites the first. Acceptance still rechecks actual capacity, membership, online leader and level range.
+- If roster persistence fails during acceptance, the invitation is restored to the process-local map when the group still exists after rollback.
+- No TTL policy was added; invitations remain process-local and are cleared on restart. Tests/builds have not been run; CI is unconfirmed.
