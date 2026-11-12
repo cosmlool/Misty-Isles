@@ -2450,3 +2450,12 @@ PlayerSchema содержит mining=0, но серверный код не ис
 - A player cannot receive a second pending group invitation that overwrites the first. Acceptance still rechecks actual capacity, membership, online leader and level range.
 - If roster persistence fails during acceptance, the invitation is restored to the process-local map when the group still exists after rollback.
 - No TTL policy was added; invitations remain process-local and are cleared on restart. Tests/builds have not been run; CI is unconfirmed.
+
+
+
+### Hunt-group invitation expiry — 2026-11-12
+- Owner-approved invitation lifetime: 5 minutes from dispatch.
+- The server stores an expiry deadline, includes expiresAt/expiresInMs in the invite message, and removes the invite on a timer. Acceptance and slot-reservation counting also prune expired entries, so timer delay cannot allow an expired invite to be accepted or reserve capacity.
+- Expiry releases the reserved slot. Expiry records are cleared when the invited player disconnects, accepts, or the group leader changes.
+- TTL and invitations remain process-local; restart clears all pending invitations.
+- Added unit tests for the exact expiry boundary, reservation release and invalid deadlines. Tests/builds have not been run; CI is unconfirmed.
