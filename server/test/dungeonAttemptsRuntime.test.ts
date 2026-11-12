@@ -178,6 +178,11 @@ test('solo Forgotten Lands boss dungeon reports remaining daily entries and enfo
     assert.equal(saved.gold, 1_160);
     assert.equal(saved.experience, 1_260);
     assert.equal(saved.health, 1_089, 'saved health must remain within the effective maximum, not the legacy base maximum');
+    room.send('dungeonRun', { id: 'fl_dungeon_03', requestId: 'solo_dungeon_attempt_1' });
+    await waitFor(() => results.length === 5, 'replay of an earlier request after later dungeon attempts');
+    const afterDelayedReplay = readJson(join(dataDir, 'players.json'))[playerId];
+    assert.equal(afterDelayedReplay.gold, 1_160, 'a delayed replay from the recent request history must not duplicate gold');
+    assert.equal(JSON.parse(afterDelayedReplay.quests).dungeonRuns, 3, 'a delayed replay must not consume a fourth attempt');
 
     lossRoom.send('dungeonRun', { id: 'fl_dungeon_03', requestId: 'solo_dungeon_loss_001' });
     const loss = await waitFor(() => lossResults[0], 'solo dungeon loss');
