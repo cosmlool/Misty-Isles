@@ -19,6 +19,7 @@ export const SHARED_STATE_KEYS = [
   'territories',
   'mining',
   'huntGroups',
+  'dungeonRuns',
 ] as const;
 
 export type SharedStateKey = typeof SHARED_STATE_KEYS[number];
