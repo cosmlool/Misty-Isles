@@ -7,6 +7,7 @@ import test from 'node:test';
 import { createSharedStateTransactionStore } from '../src/sharedStateTransactions.js';
 import { createAuctionTransactionStore } from '../src/auctionTransactions.js';
 import { createClanTransactionStore } from '../src/clanTransactions.js';
+import { createSharedStateRuntime } from '../src/sharedStateRuntime.js';
 
 function fixture(testHooks?: any) {
   const dataDir = mkdtempSync(join(tmpdir(), 'misty-shared-state-'));
@@ -238,5 +239,39 @@ test('shared player writes retain only the newest five backups', () => {
     assert.ok(values.includes(6));
     assert.ok(!values.includes(0));
     assert.ok(!values.includes(1));
+  } finally { f.cleanup(); }
+});
+
+
+test('runtime refuses to replay two pending legacy journals without changing either snapshot', () => {
+  const f = fixture();
+  try {
+    const auction = createAuctionTransactionStore({
+      dataDir: f.dataDir, playersFile: f.files.players,
+      auctionFile: f.files.auction, historyFile: f.files.auctionHistory,
+    });
+    const clans = createClanTransactionStore({
+      dataDir: f.dataDir, playersFile: f.files.players,
+      clansFile: f.files.clans, warsFile: f.files.wars,
+      territoriesFile: f.files.territories,
+    });
+    writeFileSync(auction.journalFile, JSON.stringify({
+      version: 1,
+      snapshot: { players: { p1: { gold: 10 } }, auction: [{ id: 'old_lot' }], history: [] },
+    }));
+    writeFileSync(clans.journalFile, JSON.stringify({
+      version: 1,
+      snapshot: {
+        players: { p1: { gold: 20 } }, clans: { c1: { vault: 1 } },
+        wars: [], territories: [],
+      },
+    }));
+    const runtime = createSharedStateRuntime({ shared: f.store, auction, clans });
+    assert.throws(() => runtime.recoverPendingState(), /both pending; recovery order is ambiguous/);
+    assert.equal(auction.hasPending(), true);
+    assert.equal(clans.hasPending(), true);
+    assert.equal(existsSync(f.files.players), false);
+    assert.equal(existsSync(f.files.auction), false);
+    assert.equal(existsSync(f.files.clans), false);
   } finally { f.cleanup(); }
 });
