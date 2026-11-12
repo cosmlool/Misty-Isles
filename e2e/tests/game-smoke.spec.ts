@@ -62,13 +62,13 @@ test('a guest can create a character, hunt, and keep progress after reconnecting
   await page.locator('[data-action="expeditionSearchStart"]').click();
   await expect(page.locator('.expedition-timer')).toBeVisible();
 
-  // Let the short test-only search finish, then reconnect to prove its state
-  // was persisted before claiming the encounter.
-  await page.waitForTimeout(1_300);
+  // Wait for the server-confirmed search completion, then reconnect and
+  // verify that the completed encounter is still claimable after reload.
+  const claimButton = page.getByRole('button', { name: 'Завершить поиск и вступить в бой', exact: true });
+  await expect(claimButton).toBeVisible({ timeout: 15_000 });
   await page.reload();
   await expect(page.locator('.sidebar-identity strong')).toHaveText('Путник-Кот', { timeout: 20_000 });
   await page.locator('.quick-nav [data-tab="farm"]').click();
-  const claimButton = page.getByRole('button', { name: 'Завершить поиск и вступить в бой', exact: true });
   await expect(claimButton).toBeVisible({ timeout: 10_000 });
   await claimButton.click();
 
