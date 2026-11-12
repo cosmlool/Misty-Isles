@@ -630,8 +630,45 @@ class GameRoom extends Room<RoomState> {
     this.onAuthenticatedMessage('auctionCancel',(c,d:any)=>{if(!this.requireCharacter(c))return;try{const prepared=sharedStateRuntime.commitAuction((hadRecovery)=>{if(hadRecovery)syncOnlinePlayersAfterRecovery();const p=this.state.player;const all=loadPlayersForAuction();all[this.playerId]=p.toJSON();const snapshot=cancelAuctionItem({snapshot:{players:all,auction:loadAuctionForTransaction(),history:loadAuctionHistoryForTransaction()},sellerId:this.playerId,lotId:String(d?.id||''),validItemIds:new Set(ITEMS.map(i=>i.id)),uniqueItemIds:new Set(ITEMS.filter(i=>i.kind==='amulet').map(i=>i.id)),now:Date.now()});return {snapshot,result:snapshot};});const snapshot=prepared as any;applySaved(this.state.player,snapshot.players[this.playerId]);c.send('auctionList',{list:snapshot.auction});c.send('auctionHistory',{history:snapshot.history.filter((x:any)=>x.sellerId===this.playerId||x.buyerId===this.playerId).slice(-50).reverse()});this.notice(c,'Лот снят. Предмет возвращён в инвентарь; комиссия размещения не возвращается.');}catch(error){this.notice(c,error instanceof Error?error.message:'Не удалось снять лот.');}});
     this.onAuthenticatedMessage('auctionBuy',(c,d:any)=>{if(!this.requireCharacter(c))return;try{const prepared=sharedStateRuntime.commitAuction((hadRecovery)=>{if(hadRecovery)syncOnlinePlayersAfterRecovery();const p=this.state.player;const auction=loadAuctionForTransaction();const lot=auction.find((x:any)=>x.id===String(d?.id||''));const onlineSeller=ONLINE_PLAYERS.get(String(lot?.sellerId||''));const all=loadPlayersForAuction();all[this.playerId]=p.toJSON();const result=buyAuctionItem({snapshot:{players:all,auction,history:loadAuctionHistoryForTransaction()},buyerId:this.playerId,lotId:String(d?.id||''),validItemIds:new Set(ITEMS.map(i=>i.id)),uniqueItemIds:new Set(ITEMS.filter(i=>i.kind==='amulet').map(i=>i.id)),now:Date.now()});const lotItem=ITEMS.find(i=>i.id===result.lot.itemId);if(lotItem?.kind==='amulet'&&ownsPendant(p,result.lot.itemId))throw new Error('У тебя уже есть такое кольцо. Сначала продай или убери имеющийся экземпляр.');return {snapshot:result.snapshot,result:{snapshot:result.snapshot,lot:result.lot,fee:result.fee,net:result.net,buyerId:this.playerId,sellerId:onlineSeller?.id||''}};});const snapshot=prepared.snapshot as any;applySaved(this.state.player,snapshot.players[this.playerId]);const onlineSeller=ONLINE_PLAYERS.get(String(prepared.sellerId||''));if(onlineSeller)applySaved(onlineSeller,snapshot.players[onlineSeller.id]);c.send('auctionList',{list:snapshot.auction});this.notice(c,`Куплено: ${prepared.lot.itemName}. ${prepared.fee?`Комиссия аукциона: ${prepared.fee} золота; продавец получил ${prepared.net}.`:''}`);}catch(error){this.notice(c,error instanceof Error?error.message:'Не удалось купить лот.');}});
     this.onAuthenticatedMessage('clanList',(c)=>{const clans=loadClans();c.send('clanList',{clans:Object.values(clans).map((x:any)=>({id:x.id,name:x.name,level:x.level,members:x.members.length,vault:x.vault,leader:x.leader,seasonPoints:x.seasonPoints||0,upgrades:x.upgrades||{barracks:0,treasury:0,banner:0}}))});});
-    this.onAuthenticatedMessage('clanCreate',(c,d:any)=>{if(!this.requireCharacter(c))return;const p=this.state.player;if(p.level<20)return this.notice(c,'Создать клан можно с 20 уровня.');if(p.clan)return this.notice(c,'Ты уже состоишь в клане.');const name=String(d?.name||'').trim().replace(/[<>]/g,'').slice(0,24);if(name.length<3)return this.notice(c,'Название клана должно содержать 3–24 символа.');const clans=loadClans();if(Object.values(clans).some((x:any)=>x.name.toLowerCase()===name.toLowerCase()))return this.notice(c,'Клан с таким названием уже существует.');const cost=5000;if(p.gold<cost)return this.notice(c,`Создание клана стоит ${cost} золота.`);const id=`clan_${Date.now()}_${rand(100,999)}`;clans[id]={id,name,leader:this.playerId,level:1,xp:0,vault:0,upgrades:{barracks:0,treasury:0,banner:0},seasonPoints:0,members:[{id:this.playerId,name:p.name,role:'Лидер',contribution:0,joinedAt:Date.now()}],createdAt:Date.now()};p.gold-=cost;p.goldSpent+=cost;p.clan=id;commitClanState(clans);broadcastClanOverview(clans);broadcastClanQuests(clans);this.notice(c,`Клан «${name}» создан. В казну внесено 0 золота; создание стоило ${cost}.`);});
-    this.onAuthenticatedMessage('clanJoin',(c,d:any)=>{if(!this.requireCharacter(c))return;const p=this.state.player;if(p.level<20)return this.notice(c,'Вступить в клан можно с 20 уровня.');if(p.clan)return this.notice(c,'Сначала выйди из текущего клана.');const clans=loadClans();const clan=clans[String(d?.id||'')];if(!clan)return this.notice(c,'Клан не найден. Обнови список.');if(clan.members.some((m:any)=>m.id===this.playerId))return this.notice(c,'Ты уже в этом клане.');clan.members.push({id:this.playerId,name:p.name,role:'Участник',contribution:0,joinedAt:Date.now()});p.clan=clan.id;commitClanState(clans);broadcastClanOverview(clans);broadcastClanQuests(clans);this.notice(c,`Ты вступил в клан «${clan.name}».`);});
+    this.onAuthenticatedMessage('clanCreate',(c,d:any)=>{
+      if(!this.requireCharacter(c))return;
+      const name=String(d?.name||'').trim().replace(/[<>]/g,'').slice(0,24);
+      const result=transactClanMutation(({p,clans})=>{
+        if(p.level<20)return {error:'Создать клан можно с 20 уровня.'};
+        if(p.clan)return {error:'Ты уже состоишь в клане.'};
+        if(name.length<3)return {error:'Название клана должно содержать 3–24 символа.'};
+        if(Object.values(clans).some((x:any)=>String(x.name||'').toLowerCase()===name.toLowerCase()))return {error:'Клан с таким названием уже существует.'};
+        const cost=5000;
+        if(p.gold<cost)return {error:`Создание клана стоит ${cost} золота.`};
+        const id=`clan_${Date.now()}_${rand(100,999)}`;
+        clans[id]={id,name,leader:this.playerId,level:1,xp:0,vault:0,upgrades:{barracks:0,treasury:0,banner:0},seasonPoints:0,members:[{id:this.playerId,name:p.name,role:'Лидер',contribution:0,joinedAt:Date.now()}],createdAt:Date.now()};
+        p.gold-=cost;p.goldSpent+=cost;p.clan=id;
+        return {clanName:name};
+      });
+      if(result.error)return this.notice(c,result.error);
+      const clans=loadClans();
+      broadcastClanOverview(clans);broadcastClanQuests(clans);
+      this.notice(c,`Клан «${result.clanName}» создан. В казну внесено 0 золота; создание стоило 5000.`);
+    });
+    this.onAuthenticatedMessage('clanJoin',(c,d:any)=>{
+      if(!this.requireCharacter(c))return;
+      const clanId=String(d?.id||'');
+      const result=transactClanMutation(({p,clans})=>{
+        if(p.level<20)return {error:'Вступить в клан можно с 20 уровня.'};
+        if(p.clan)return {error:'Сначала выйди из текущего клана.'};
+        const clan=clans[clanId];
+        if(!clan)return {error:'Клан не найден. Обнови список.'};
+        if(!Array.isArray(clan.members))clan.members=[];
+        if(clan.members.some((m:any)=>m.id===this.playerId))return {error:'Ты уже в этом клане.'};
+        clan.members.push({id:this.playerId,name:p.name,role:'Участник',contribution:0,joinedAt:Date.now()});
+        p.clan=clan.id;
+        return {clanName:clan.name};
+      });
+      if(result.error)return this.notice(c,result.error);
+      const clans=loadClans();
+      broadcastClanOverview(clans);broadcastClanQuests(clans);
+      this.notice(c,`Ты вступил в клан «${result.clanName}».`);
+    });
     this.onAuthenticatedMessage('clanLeave',(c)=>{
       if(!this.requireCharacter(c))return;
       const p=this.state.player;
@@ -861,6 +898,18 @@ function loadClans():Record<string,any>{return readPersistentJson<Record<string,
 function loadTerritories():any[]{const defaults=TERRITORIES.map(t=>({...t,owner:'',ownerName:'',capturedAt:0,defense:0}));const list=readPersistentJson<any[]>(TERRITORY_FILE,defaults,value=>Array.isArray(value)&&value.every(isPlainObject));if(!existsSync(TERRITORY_FILE))saveTerritories(list);return list;}
 function saveTerritories(list:any[]){writeJsonAtomic(TERRITORY_FILE,list);}
 function isClanMember(clan:any,playerId:string):boolean{return !!clan&&Array.isArray(clan.members)&&clan.members.some((member:any)=>member?.id===playerId);}
+function transactClanMutation<T>(prepare:(state:{p:Player;clans:Record<string,any>;wars:any[];territories:any[]})=>T):T{
+  return sharedStateRuntime.commitClan((hadRecovery)=>{
+    if(hadRecovery)syncOnlinePlayersAfterRecovery();
+    const p=ONLINE_PLAYERS.get(String((prepare as any).playerId||'')) as Player|undefined;
+    // The caller supplies the authenticated player's ID through the active room context.
+    const player=p;
+    if(!player)throw new Error('Authenticated player is not online.');
+    const clans=loadClans(),wars=loadWars(),territories=loadTerritories();
+    const result=prepare({p:player,clans,wars,territories});
+    return {snapshot:{players:loadPlayersWithOnline(),clans,wars,territories},result};
+  });
+}
 function commitClanState(clans:Record<string,any>,wars:any[]=loadWars(),territories:any[]=loadTerritories()){const players=loadPlayers();for(const [id,online] of ONLINE_PLAYERS)players[id]=online.toJSON();clanTransactions.commit({players,clans,wars,territories});}
 function ensureAllClanQuests(clans:Record<string,any>):boolean{const before=JSON.stringify(clans);for(const clan of Object.values(clans))ensureClanQuests(clan);return JSON.stringify(clans)!==before;}
 function ensureClanQuests(clan:any):any[]{const day=Math.floor(Date.now()/(24*60*60*1000));if(!clan.questDay||clan.questDay!==day){clan.questDay=day;clan.questProgress={donate:0,raid:0,war:0,territory:0};clan.quests=[{id:'donate',name:'Общая казна',desc:'Внесите вместе 2 000 золота в казну клана',goal:2000,progress:0,claimed:false},{id:'raid',name:'Экспедиция гильдии',desc:'Успешно завершите 2 клановых похода',goal:2,progress:0,claimed:false},{id:'war',name:'Защитники знамени',desc:'Выиграйте 3 клановые войны',goal:3,progress:0,claimed:false},{id:'territory',name:'Расширение владений',desc:'Захватите 1 новую территорию',goal:1,progress:0,claimed:false}];}const progress=clan.questProgress||{};for(const q of clan.quests||[]){q.progress=Math.min(q.goal,Number(progress[q.id]||0));}return clan.quests||[];}
