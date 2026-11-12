@@ -2750,5 +2750,5 @@ PEN-009 стоит 100 кристаллов и при максимальном �
 ### Единый контур восстановления сохранений — 2026-11-12
 - Проверен контур записи players.json: autosave, обычные player mutations, группы, PvP, аукцион и кланы используют общий sharedStateRuntime/shared WAL. Прямых вызовов legacy savePlayers() в server/src/index.ts не найдено.
 - Исправлен риск миграции: два старых журнала auction_transaction.json и clan_transaction.json могли одновременно содержать конфликтующие полные снимки players.json. Теперь единый startup/runtime recovery gate обнаруживает оба pending-журнала и останавливается до replay или записи; оба исходных журнала сохраняются. Один legacy journal по-прежнему восстанавливается перед shared WAL.
-- Добавлены unit и integration-style тесты для fail-closed поведения; миграционный тест оставлен на однозначном сценарии с одним legacy journal.
+- Добавлены unit и integration-style тесты для fail-closed поведения; миграционный тест оставлен на однозначном сценарии с одним legacy journal. Статический playerPersistenceWriters.test.ts проверяет отсутствие обходных writers и порядок startup recovery; оба новых тестовых файла включены в server npm test.
 - Проверки/сборки не запускались; требуется CI по текущему head.
