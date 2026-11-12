@@ -143,20 +143,26 @@ test('solo Forgotten Lands boss dungeon reports remaining daily entries and enfo
 
     for (let attempt = 1; attempt <= 3; attempt++) {
       const before = results.length;
-      room.send('dungeonRun', { id: 'fl_dungeon_03' });
+      room.send('dungeonRun', { id: 'fl_dungeon_03', requestId: `solo_dungeon_attempt_${attempt}` });
       const result = await waitFor(() => results[before], `dungeon attempt ${attempt}`);
       assert.equal(result.report.result, 'win');
+      if (attempt === 1) {
+        room.send('dungeonRun', { id: 'fl_dungeon_03', requestId: 'solo_dungeon_attempt_1' });
+        await waitFor(() => results.length === 2, 'idempotent replay of the first dungeon attempt');
+        assert.equal(readJson(join(dataDir, 'players.json'))[playerId].gold, 720, 'replaying the same request must not duplicate dungeon gold');
+        assert.equal(JSON.parse(readJson(join(dataDir, 'players.json'))[playerId].quests).dungeonRuns, 1, 'replaying the same request must not consume another attempt');
+      }
       assert.equal(result.report.maxHealth, 1_089, 'legacy health amulet must contribute its listed +8% maximum health');
       assert.equal(result.report.hpAfter, 1_089, 'vampire healing must preserve the amulet health bonus');
       assert.ok(result.text.includes(`Осталось входов сегодня: ${3 - attempt}.`));
     }
 
     const beforeRejectedAttempt = results.length;
-    room.send('dungeonRun', { id: 'fl_dungeon_03' });
+    room.send('dungeonRun', { id: 'fl_dungeon_03', requestId: 'solo_dungeon_cap_001' });
     await waitFor(() => notices.find(message => message.includes('закончились попытки в подземельях')), 'daily dungeon cap');
     assert.equal(results.length, beforeRejectedAttempt);
 
-    bonusRoom.send('dungeonRun', { id: 'fl_dungeon_03' });
+    bonusRoom.send('dungeonRun', { id: 'fl_dungeon_03', requestId: 'solo_dungeon_bonus_001' });
     const bonusResult = await waitFor(() => bonusResults[0], 'dungeon reward modifiers');
     assert.equal(bonusResult.report.result, 'win');
     assert.equal(bonusResult.report.rewards.xp, 527, 'combat report must show XP after the XP pendant and active XP buff');
@@ -173,7 +179,7 @@ test('solo Forgotten Lands boss dungeon reports remaining daily entries and enfo
     assert.equal(saved.experience, 1_260);
     assert.equal(saved.health, 1_089, 'saved health must remain within the effective maximum, not the legacy base maximum');
 
-    lossRoom.send('dungeonRun', { id: 'fl_dungeon_03' });
+    lossRoom.send('dungeonRun', { id: 'fl_dungeon_03', requestId: 'solo_dungeon_loss_001' });
     const loss = await waitFor(() => lossResults[0], 'solo dungeon loss');
     assert.equal(loss.report.result, 'loss');
     assert.equal(loss.report.hpBefore, 1_000);
