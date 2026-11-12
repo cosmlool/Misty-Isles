@@ -2425,3 +2425,11 @@ PlayerSchema содержит mining=0, но серверный код не ис
 - Group dungeon access is now leader-gated: the leader must meet the dungeon's minimum level, while invited members may be below it if they remain within ±5 levels. Solo dungeon minimum-level behavior is unchanged.
 - Added unit tests for the level-window helper, including inclusive endpoints and invalid values. Tests/builds are not executed; CI is not confirmed.
 - Open design decision: on leader departure, the current first-member promotion may leave the group outside the ±5 window. Owner must choose a valid-successor search or disband policy before that code is changed.
+
+
+### Hunt-group reconnect consistency — 2026-11-12
+- Исправлено восстановление связи участника с группой при `onJoin`: `expedition.groupId` синхронизируется с authoritative `PLAYER_GROUP`, восстановленным из `hunt_groups.json`. Disconnect очищает groupId игрока в `players.json`, но не удаляет его из roster; reconnect теперь восстанавливает обе стороны связи.
+- В runtime-тест добавлена проверка expedition state после reconnect.
+- Уровень тестового участника изменён с 3 на 15: после введения ±5 окно 20/3 больше не является допустимой группой и делало тест приглашения заведомо устаревшим.
+- Тесты и сборка не запускались; текущий CI не подтверждён.
+- Найдено незакрытое состояние приглашений: `GROUP_INVITES` — process-memory map, а приглашения старого лидера не очищаются при передаче лидерства. Следующий аудит должен проверить и исправить инвалидирование приглашений при смене лидера, не меняя без решения срок жизни приглашений и поведение после рестарта.
