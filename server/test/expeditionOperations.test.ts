@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { checkExpeditionTravelConsistency, checkExpeditionTravelReadiness, checkExpeditionTravelStartReadiness } from '../src/expeditionOperations.js';
+import { checkExpeditionTravelConsistency, checkExpeditionTravelReadiness, checkExpeditionTravelStartReadiness, isHuntGroupLevelRangeValid } from '../src/expeditionOperations.js';
 
 test('group travel waits for the latest participant before any transition is applied', () => {
   const states = [
@@ -75,4 +75,15 @@ test('group travel cannot overwrite another participant search or travel action'
     { state: 'idle' },
     { state: 'idle' },
   ]), { ready: true });
+});
+
+
+test('hunt group levels stay within five levels of the leader, inclusively', () => {
+  assert.equal(isHuntGroupLevelRangeValid(35, [30, 35, 40]), true);
+  assert.equal(isHuntGroupLevelRangeValid(35, [29, 35]), false);
+  assert.equal(isHuntGroupLevelRangeValid(35, [35, 41]), false);
+  assert.equal(isHuntGroupLevelRangeValid(100, [95, 100]), true);
+  assert.equal(isHuntGroupLevelRangeValid(35, [35, Number.NaN]), false);
+  assert.equal(isHuntGroupLevelRangeValid(Number.NaN, [35]), false);
+  assert.equal(isHuntGroupLevelRangeValid(35, []), false);
 });
