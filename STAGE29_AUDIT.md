@@ -2510,3 +2510,9 @@ PlayerSchema содержит mining=0, но серверный код не ис
 - Added `DUNGEON_LIFECYCLE_DESIGN.md` defining the run aggregate, immutable participant roster, transition invariants, shared-WAL persistence requirement, meaningful activity signal, and staged implementation sequence.
 - This was an audit/design commit only; no combat formula or runtime dungeon behavior was changed.
 - Important unresolved policy: behavior after a server crash/restart while a run is active. Must be explicitly decided before implementing recovery.
+
+### Dungeon crash-resume foundation — 2026-11-12
+- Approved policy: resume an active dungeon from the last committed snapshot after restart; do not restart at round zero or charge the daily attempt again.
+- Added `dungeon_runs.json` to the shared-state WAL targets and startup recovery path.
+- Added versioned run-state model and strict startup validation; added round snapshot and terminal-result idempotency tests; extended WAL crash-recovery test to include dungeon state.
+- Runtime limitation remains: the existing boss-dungeon handler still resolves synchronously. The next phase must refactor it into committed deterministic encounter steps before claiming live restart recovery.
