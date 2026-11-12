@@ -2778,3 +2778,10 @@ PEN-009 стоит 100 кристаллов и при максимальном �
 - Added `DUNGEON_LIFECYCLE_DESIGN.md` as the implementation contract. It preserves the approved rules: no leadership succession; voluntary leave locked during a run; ordinary completion retains party; ordinary dead members become spectators; leader death without revive ends run but retains party; leader AFK >=60m aborts, sends everyone to city, and disbands party.
 - No production dungeon code was changed in this audit step. Restart behavior for a server crash during an active run remains an explicit design decision; do not guess.
 - Current validation is being checked against the documentation HEAD; do not infer green CI from the earlier code-only SHA.
+
+### Dungeon crash-resume foundation — 2026-11-12
+- User approved restoring active dungeon runs from the last committed state after restart; no restart from round zero and no second daily-attempt charge.
+- Added versioned `dungeonRunState.ts` model with immutable participant roster, independent participant HP/status/activity/resurrection history, encounter boss HP, round index, deterministic seed, and durable terminal result.
+- Added `dungeon_runs.json` to shared WAL and startup recovery/strict validation after WAL replay.
+- Added unit coverage for snapshot round-trip, terminal idempotency, invalid snapshots, and shared-WAL crash replay including a dungeon snapshot.
+- This is persistence/model foundation only. The synchronous dungeon handler has not yet been replaced, so production active-run resume is not yet enabled.
