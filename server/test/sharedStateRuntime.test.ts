@@ -25,10 +25,12 @@ function fixture() {
     },
   };
   const auction = {
+    hasPending() { return auctionPending; },
     recover() { events.push('auction.recover'); const recovered = auctionPending; auctionPending = false; return recovered; },
     commit(snapshot: unknown) { events.push('auction.commit:' + JSON.stringify(snapshot)); },
   };
   const clans = {
+    hasPending() { return clansPending; },
     recover() { events.push('clans.recover'); const recovered = clansPending; clansPending = false; return recovered; },
     commit(snapshot: unknown) { events.push('clans.commit:' + JSON.stringify(snapshot)); },
   };
@@ -117,4 +119,18 @@ test('a failed recovery blocks snapshot preparation and every subsequent write',
     return { files: { players: {} }, result: undefined };
   }), /legacy journal is corrupt/);
   assert.deepEqual(f.events, ['auction.recover', 'clans.recover']);
+});
+
+
+test('simultaneous legacy auction and clan journals fail closed before either replay', () => {
+  const f = fixture();
+  f.setPending({ auction: true, clans: true, shared: true });
+  assert.throws(
+    () => f.runtime.transact(() => {
+      f.events.push('prepare');
+      return { files: { players: { p1: { gold: 999 } } }, result: undefined };
+    }),
+    /both pending; recovery order is ambiguous/
+  );
+  assert.deepEqual(f.events, []);
 });
