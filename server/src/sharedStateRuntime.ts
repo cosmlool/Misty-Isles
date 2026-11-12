@@ -8,7 +8,7 @@
  */
 import type { SharedStateSnapshot } from './sharedStateTransactions.js';
 
-type Recoverable = { recover(): boolean };
+type Recoverable = { recover(): boolean; hasPending?(): boolean };
 type SharedStore = Recoverable & {
   transact<T>(prepareAfterRecovery: () => { files: SharedStateSnapshot; result: T; skipWrite?: boolean }): T;
 };
@@ -23,6 +23,14 @@ type Options = {
 
 export function createSharedStateRuntime(options: Options) {
   function recoverPendingState(): boolean {
+    // Legacy auction and clan journals both contain a complete players.json snapshot.
+    // If both survived, their relative commit order is unknowable; replaying either
+    // first could silently overwrite newer player data from the other transaction.
+    const auctionPending = options.auction.hasPending?.() ?? false;
+    const clansPending = options.clans.hasPending?.() ?? false;
+    if (auctionPending && clansPending) {
+      throw new Error('Legacy auction and clan transaction journals are both pending; recovery order is ambiguous. Refusing to replay either journal or write state.');
+    }
     const auctionRecovered = options.auction.recover();
     const clansRecovered = options.clans.recover();
     const sharedRecovered = options.shared.recover();
