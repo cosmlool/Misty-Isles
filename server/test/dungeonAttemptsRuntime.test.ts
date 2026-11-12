@@ -158,7 +158,8 @@ test('solo Forgotten Lands boss dungeon reports remaining daily entries and enfo
       assert.equal(result.report.hpAfter, 1_089, 'vampire healing must preserve the amulet health bonus');
       const persistedRuns = Number(JSON.parse(readJson(join(dataDir, 'players.json'))[playerId].quests).dungeonRuns);
       assert.equal(persistedRuns, attempt, 'each distinct dungeon request must consume exactly one daily attempt');
-      assert.ok(result.text.includes(`Осталось входов сегодня: ${3 - attempt}.`), `unexpected remaining-attempt text: ${String(result.text)}`);
+      assert.equal(result.requestId, `solo_dungeon_attempt_${attempt}`, `attempt ${attempt} must receive its own result, not a delayed replay`);
+      assert.ok(result.text.includes(`Осталось входов сегодня: ${3 - attempt}.`), `attempt ${attempt} expected ${3 - attempt} remaining entries; got: ${String(result.text)}`);
     }
 
     const beforeRejectedAttempt = results.length;
