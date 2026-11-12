@@ -27,7 +27,7 @@ export function createSharedStateRuntime(options: Options) {
     options.clans.recover();
   }
 
-  function transact<T>(prepareAfterRecovery: () => { files: Record<string, unknown>; result: T }): T {
+  function transact<T>(prepareAfterRecovery: () => { files: SharedStateSnapshot; result: T }): T {
     recoverLegacyJournals();
     return options.shared.transact(prepareAfterRecovery);
   }
