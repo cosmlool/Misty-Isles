@@ -724,7 +724,43 @@ class GameRoom extends Room<RoomState> {
       const clans=loadClans();broadcastClanOverview(clans);broadcastClanQuests(clans);
       this.notice(c,`Вклад в клан: ${amount} золота. Уровень клана: ${result.clanLevel}.`);
     });
-    this.onAuthenticatedMessage('clanRaid',(c)=>{if(!this.requireCharacter(c))return;const p=this.state.player;if(!p.clan)return this.notice(c,'Для кланового похода нужен клан.');const clans=loadClans();const clan=clans[p.clan];if(!clan)return this.notice(c,'Клан не найден.');if(!isClanMember(clan,this.playerId))return this.notice(c,'Персонаж не состоит в этом клане.');const now=Date.now();if(now-Number(clan.lastRaidAt||0)<30*60*1000)return this.notice(c,`Клановый поход доступен через ${Math.ceil((30*60*1000-(now-Number(clan.lastRaidAt||0)))/60000)} мин.`);clan.lastRaidAt=now;const power=(p.level+p.strength*.15*(1+activeBuffValue(p,'attack',now))+p.defense*.1*(1+activeBuffValue(p,'defense',now))+clan.level*5)*(1+activeBuffValue(p,'crit',now)*.5)*(1+Number((clan.upgrades||{}).barracks||0)*.02);const threat=rand(20,55);if(power>=threat){const gold=500+clan.level*250+p.level*15;const ownedTerritories=loadTerritories().filter((t:any)=>t.owner===clan.id);const territoryBonus=1+ownedTerritories.length*.03;const treasuryBonus=1+Number((clan.upgrades||{}).treasury||0)*.03;const finalGold=Math.floor(gold*territoryBonus*treasuryBonus);clan.vault+=finalGold;if(ownedTerritories.some((t:any)=>t.id==='crystalcourt'))p.crystals+=2;clan.xp+=10+clan.level*3;ensureClanQuests(clan);clan.questProgress=clan.questProgress||{};clan.questProgress.raid=(clan.questProgress.raid||0)+1;clan.seasonPoints=Number(clan.seasonPoints||0)+10;this.addXp(p,Math.floor((80+p.level*12)*(1+activeBuffValue(p,'xp',now))));while(clan.level<10&&clan.xp>=clan.level*100){clan.xp-=clan.level*100;clan.level++;}commitClanState(clans);broadcastClanOverview(clans);broadcastClanQuests(clans);this.notice(c,`Клановый поход успешен! В казну добавлено ${finalGold} золота${ownedTerritories.some((t:any)=>t.id==='crystalcourt')?' и ты получил 2 кристалла':''}, ты получил опыт. Уровень клана: ${clan.level}.`);}else{commitClanState(clans);this.notice(c,'Клановый поход не удался. Улучшайте экипировку и уровень клана; повторная попытка через 30 минут.');}});
+    this.onAuthenticatedMessage('clanRaid',(c)=>{
+      if(!this.requireCharacter(c))return;
+      const now=Date.now();
+      const result=transactClanMutation(this.playerId,({p,clans,territories})=>{
+        if(!p.clan)return {error:'Для кланового похода нужен клан.'};
+        const clan=clans[p.clan];if(!clan)return {error:'Клан не найден.'};
+        if(!isClanMember(clan,this.playerId))return {error:'Персонаж не состоит в этом клане.'};
+        if(now-Number(clan.lastRaidAt||0)<30*60*1000)return {error:`Клановый поход доступен через ${Math.ceil((30*60*1000-(now-Number(clan.lastRaidAt||0)))/60000)} мин.`};
+        clan.lastRaidAt=now;
+        const power=(p.level+p.strength*.15*(1+activeBuffValue(p,'attack',now))+p.defense*.1*(1+activeBuffValue(p,'defense',now))+clan.level*5)*(1+activeBuffValue(p,'crit',now)*.5)*(1+Number((clan.upgrades||{}).barracks||0)*.02);
+        const threat=rand(20,55);
+        if(power>=threat){
+          const gold=500+clan.level*250+p.level*15;
+          const ownedTerritories=territories.filter((t:any)=>t.owner===clan.id);
+          const territoryBonus=1+ownedTerritories.length*.03;
+          const treasuryBonus=1+Number((clan.upgrades||{}).treasury||0)*.03;
+          const finalGold=Math.floor(gold*territoryBonus*treasuryBonus);
+          clan.vault+=finalGold;
+          const receivedCrystals=ownedTerritories.some((t:any)=>t.id==='crystalcourt');
+          if(receivedCrystals)p.crystals+=2;
+          clan.xp+=10+clan.level*3;ensureClanQuests(clan);
+          clan.questProgress=clan.questProgress||{};
+          clan.questProgress.raid=(clan.questProgress.raid||0)+1;
+          clan.seasonPoints=Number(clan.seasonPoints||0)+10;
+          this.addXp(p,Math.floor((80+p.level*12)*(1+activeBuffValue(p,'xp',now))));
+          while(clan.level<10&&clan.xp>=clan.level*100){clan.xp-=clan.level*100;clan.level++;}
+          return {success:true,finalGold,receivedCrystals,clanLevel:clan.level};
+        }
+        return {success:false};
+      });
+      if('error' in result)return this.notice(c,result.error);
+      const clans=loadClans();
+      if(result.success){
+        broadcastClanOverview(clans);broadcastClanQuests(clans);
+        this.notice(c,`Клановый поход успешен! В казну добавлено ${result.finalGold} золота${result.receivedCrystals?' и ты получил 2 кристалла':''}, ты получил опыт. Уровень клана: ${result.clanLevel}.`);
+      }else this.notice(c,'Клановый поход не удался. Улучшайте экипировку и уровень клана; повторная попытка через 30 минут.');
+    });
     this.onAuthenticatedMessage('clanQuests',(c)=>{const p=this.state.player;const clans=loadClans();const clan=p?.clan?clans[p.clan]:null;if(!clan||!isClanMember(clan,this.playerId)){c.send('clanQuests',{quests:[],upgrades:{barracks:0,treasury:0,banner:0},season:clanSeasonBoard(clans)});return;}clan.upgrades=clan.upgrades||{barracks:0,treasury:0,banner:0};const beforeQuestState=JSON.stringify(clan);const quests=ensureClanQuests(clan);if(JSON.stringify(clan)!==beforeQuestState)commitClanState(clans);c.send('clanQuests',{quests,upgrades:clan.upgrades,season:clanSeasonBoard(clans)});});
     this.onAuthenticatedMessage('clanTerritories',(c)=>{const clans=loadClans();const names=new Map(Object.values(clans).map((x:any)=>[x.id,x.name]));c.send('clanTerritories',{territories:loadTerritories().map((t:any)=>({...t,ownerName:names.get(t.owner)||t.ownerName||''}))});});
     this.onAuthenticatedMessage('clanUpgrade',(c,d:any)=>{
