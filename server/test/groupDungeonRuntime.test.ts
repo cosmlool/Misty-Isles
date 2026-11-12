@@ -201,7 +201,7 @@ test('group boss dungeon persists win rewards and loss costs for every participa
     assert.equal(afterCap[ids[0]].gold, 610, 'a fourth daily group entry must not award more gold');
     assert.equal(afterCap[ids[1]].gold, 610);
     assert.equal(JSON.parse(afterCap[ids[0]].quests).dungeonRuns, 3);
-    assert.equal(results[ids[0]].length, 1, 'a denied extra entry must not produce a second combat result');
+    assert.equal(results[ids[0]].length, 2, 'only the original result and its explicit idempotent replay may be delivered; a denied extra entry adds none');
 
     const sharedLootCount = ids.slice(0, 2).reduce((count, id) => count + JSON.parse(saved[id].inventory).filter((item: string) => item === 'FLDROP-03-10-A').length, 0);
     assert.equal(sharedLootCount, 1, 'the guaranteed dungeon resource is awarded once to one group member');
