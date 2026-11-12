@@ -71,7 +71,7 @@ test('auction commits prepare and persist all auction files through the shared W
   const f = fixture();
   const result = f.runtime.commitAuction(() => {
     f.events.push('prepare');
-    return { snapshot: { players: { p1: { gold: 80 } }, auction: [] }, result: 7 };
+    return { snapshot: { players: { p1: { gold: 80 } }, auction: [], history: [] }, result: 7 };
   });
   assert.equal(result, 7);
   assert.deepEqual(f.events, [
