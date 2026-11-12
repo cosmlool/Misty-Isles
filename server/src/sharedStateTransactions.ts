@@ -1,5 +1,5 @@
 import { randomBytes } from 'node:crypto';
-import { existsSync, mkdirSync, readFileSync, renameSync, unlinkSync, writeFileSync } from 'node:fs';
+import { copyFileSync, existsSync, mkdirSync, readFileSync, readdirSync, renameSync, unlinkSync, writeFileSync } from 'node:fs';
 import { dirname, isAbsolute, relative, resolve } from 'node:path';
 
 /**
@@ -33,6 +33,8 @@ type Options = {
     afterTargetWrite?: (key: SharedStateKey) => void;
   };
 };
+
+let lastPlayerBackupTimestamp = 0;
 
 function isRecord(value: unknown): value is Record<string, unknown> {
   return Boolean(value) && typeof value === 'object' && !Array.isArray(value);
@@ -95,12 +97,40 @@ export function createSharedStateTransactionStore(options: Options) {
     validateFiles(value.files);
   }
 
+  function backupPlayersBeforeWrite(target: string) {
+    if (!existsSync(target)) return undefined;
+    const timestamp = Math.max(Date.now(), lastPlayerBackupTimestamp + 1);
+    lastPlayerBackupTimestamp = timestamp;
+    const suffix = new Date(timestamp).toISOString().replace(/[:.]/g, '-') + '.' + process.pid + '.' + randomBytes(4).toString('hex');
+    const backupFile = target + '.' + suffix + '.bak';
+    const backupTemp = backupFile + '.tmp';
+    try {
+      copyFileSync(target, backupTemp);
+      renameSync(backupTemp, backupFile);
+      return backupFile;
+    } catch (error) {
+      try { if (existsSync(backupTemp)) unlinkSync(backupTemp); } catch {}
+      throw new Error(`Could not create a backup of players.json; shared-state write cancelled. ${String(error)}`);
+    }
+  }
+
+  function prunePlayerBackups() {
+    try {
+      const backups = readdirSync(dataDir).filter(name => /^players\\.json\\..+\\.bak$/.test(name)).sort();
+      for (const old of backups.slice(0, Math.max(0, backups.length - 5))) {
+        try { unlinkSync(resolve(dataDir, old)); } catch {}
+      }
+    } catch {}
+  }
+
   function apply(files: SharedStateSnapshot) {
     for (const key of SHARED_STATE_KEYS) {
       if (!Object.prototype.hasOwnProperty.call(files, key)) continue;
       const target = configuredFiles.get(key);
       if (!target) throw new Error(`Shared-state target "${key}" is not configured.`);
+      if (key === 'players') backupPlayersBeforeWrite(target);
       atomicWrite(target, files[key]);
+      if (key === 'players') prunePlayerBackups();
       options.testHooks?.afterTargetWrite?.(key);
     }
   }
