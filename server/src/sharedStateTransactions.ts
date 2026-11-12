@@ -149,7 +149,7 @@ export function createSharedStateTransactionStore(options: Options) {
     return true;
   }
 
-  function transact<T>(prepareAfterRecovery: () => { files: SharedStateSnapshot; result: T }): T {
+  function transact<T>(prepareAfterRecovery: () => { files: SharedStateSnapshot; result: T; skipWrite?: boolean }): T {
     // Critical ordering: no snapshot is prepared until all prior committed
     // transactions have been replayed successfully.
     recover();
@@ -157,6 +157,7 @@ export function createSharedStateTransactionStore(options: Options) {
     if (!prepared || typeof prepared !== 'object') {
       throw new Error('Shared-state transaction preparation returned an invalid result.');
     }
+    if (prepared.skipWrite) return prepared.result;
     validateFiles(prepared.files);
     const journal: Journal = { version: 1, files: prepared.files };
     atomicWrite(journalFile, journal);
