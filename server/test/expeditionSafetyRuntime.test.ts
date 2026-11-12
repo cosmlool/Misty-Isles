@@ -300,6 +300,14 @@ test('expedition reports capture pre/post health and disconnect cancels stale gr
       const state = JSON.parse(player.quests).expedition;
       return state?.state === 'idle' && state?.groupId === '' && state?.endsAt === 0 ? state : undefined;
     }, 'disconnected member expedition cancellation');
+    const savedLeaderAfterLeave = readPlayers(join(dataDir, 'players.json'))[leaderId];
+    const leaderExpeditionAfterLeave = JSON.parse(savedLeaderAfterLeave.quests).expedition;
+    assert.equal(leaderExpeditionAfterLeave.state, 'idle',
+      'disconnecting one participant must cancel the active group search for every remaining participant');
+    assert.equal(leaderExpeditionAfterLeave.groupId, JSON.parse(readFileSync(join(dataDir, 'hunt_groups.json'), 'utf8'))[0].id,
+      'the remaining online leader must retain the persisted group association');
+    assert.equal(leaderExpeditionAfterLeave.endsAt, 0);
+
 
     const token = await guestToken(port, memberId);
     connected[memberId] = await client.joinOrCreate('my_room', { playerId: memberId, sessionToken: token });
