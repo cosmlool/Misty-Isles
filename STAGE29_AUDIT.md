@@ -2418,3 +2418,10 @@ PlayerSchema содержит mining=0, но серверный код не ис
 - Это создаёт зависимость индивидуального прогресса от лидера и может дать разную семантику одного боя для разных участников.
 - Требуется решение владельца до реализации: (A) запретить поиск, пока прогресс всех участников не совпадает; либо (B) разрешить разный прогресс и рассчитать индивидуальную eligibility/progression для каждого участника. Вариант B также требует определить участие уже прошедшего зону игрока в бою и распределении наград.
 - До решения владельца игровое поведение не менялось.
+
+
+### Hunt-group level enforcement — 2026-11-12
+- Implemented server-side strict ±5 validation relative to the leader at invitation and acceptance, including a recheck of the complete roster.
+- Group dungeon access is now leader-gated: the leader must meet the dungeon's minimum level, while invited members may be below it if they remain within ±5 levels. Solo dungeon minimum-level behavior is unchanged.
+- Added unit tests for the level-window helper, including inclusive endpoints and invalid values. Tests/builds are not executed; CI is not confirmed.
+- Open design decision: on leader departure, the current first-member promotion may leave the group outside the ±5 window. Owner must choose a valid-successor search or disband policy before that code is changed.
