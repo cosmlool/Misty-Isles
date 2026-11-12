@@ -18,6 +18,7 @@ export const SHARED_STATE_KEYS = [
   'wars',
   'territories',
   'mining',
+  'huntGroups',
 ] as const;
 
 export type SharedStateKey = typeof SHARED_STATE_KEYS[number];
