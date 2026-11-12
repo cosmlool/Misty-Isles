@@ -149,6 +149,7 @@ test('group boss dungeon persists win rewards and loss costs for every participa
     const win = await waitFor(() => results[ids[0]][0], 'group boss dungeon win');
     const winMember = await waitFor(() => results[ids[1]][0], 'group member boss dungeon win');
     assert.equal(win.report.result, 'win');
+    assert.equal(win.requestId, 'group_dungeon_win_001', 'the server must echo the durable request ID so the client can clear its pending receipt');
     assert.equal(winMember.report.result, 'win');
 
     connected[ids[0]].send('dungeonRun', { id: 'fl_dungeon_03', requestId: 'group_dungeon_win_001' });
