@@ -92,5 +92,7 @@ export function createClanTransactionStore(options: Options) {
     }
   }
 
-  return { commit, recover, journalFile };
+  function hasPending(): boolean { return existsSync(journalFile); }
+
+  return { commit, recover, hasPending, journalFile };
 }
