@@ -146,6 +146,7 @@ test('solo Forgotten Lands boss dungeon reports remaining daily entries and enfo
       room.send('dungeonRun', { id: 'fl_dungeon_03', requestId: `solo_dungeon_attempt_${attempt}` });
       const result = await waitFor(() => results[before], `dungeon attempt ${attempt}`);
       assert.equal(result.report.result, 'win');
+      if (attempt === 1) assert.equal(result.requestId, 'solo_dungeon_attempt_1');
       if (attempt === 1) {
         room.send('dungeonRun', { id: 'fl_dungeon_03', requestId: 'solo_dungeon_attempt_1' });
         await waitFor(() => results.length === 2, 'idempotent replay of the first dungeon attempt');
