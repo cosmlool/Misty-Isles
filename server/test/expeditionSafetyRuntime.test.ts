@@ -168,7 +168,7 @@ test('expedition reports capture pre/post health and disconnect cancels stale gr
     const currentDungeonIds = dungeonLists[dungeonLists.length - 1].dungeons.map((entry: any) => entry.id);
     assert.deepEqual(currentDungeonIds.sort(), ['fl_dungeon_03','fl_dungeon_06','fl_dungeon_09','fl_dungeon_10'].sort(), 'only Forgotten Lands dungeons may be listed');
     const beforeLegacyDungeon = readPlayers(join(dataDir, 'players.json'))[soloId];
-    connected[soloId].send('dungeonRun', { id: 'root_vault' });
+    connected[soloId].send('dungeonRun', { id: 'root_vault', requestId: 'expedition_safety_dungeon_01' });
     await delay(100);
     const afterLegacyDungeon = readPlayers(join(dataDir, 'players.json'))[soloId];
     assert.equal(afterLegacyDungeon.gold, beforeLegacyDungeon.gold, 'legacy dungeon must not award gold');
