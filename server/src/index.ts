@@ -59,11 +59,7 @@ const GUEST_CREDENTIAL_FILE = join(DATA_DIR, 'guest_credentials.json');
 if (!existsSync(DATA_DIR)) mkdirSync(DATA_DIR, { recursive: true });
 const { loadPlayers, savePlayers } = createPlayerSaveStore(SAVE_FILE, DATA_DIR);
 const auctionTransactions = createAuctionTransactionStore({ dataDir: DATA_DIR, playersFile: SAVE_FILE, auctionFile: AUCTION_FILE, historyFile: AUCTION_HISTORY_FILE });
-auctionTransactions.recover();
 const clanTransactions = createClanTransactionStore({ dataDir: DATA_DIR, playersFile: SAVE_FILE, clansFile: CLAN_FILE, warsFile: WAR_FILE, territoriesFile: TERRITORY_FILE });
-clanTransactions.recover();
-// Legacy journals must be replayed first. A shared-state journal represents a
-// later transaction and therefore must be applied last during the transition.
 const sharedStateTransactions = createSharedStateTransactionStore({
   dataDir: DATA_DIR,
   files: {
@@ -76,8 +72,10 @@ const sharedStateTransactions = createSharedStateTransactionStore({
     huntGroups: HUNT_GROUP_FILE,
   },
 });
-sharedStateTransactions.recover();
+// One recovery gate handles legacy migration and the shared WAL. If both legacy
+// journals exist, the coordinator refuses to guess which full players snapshot is newer.
 const sharedStateRuntime = createSharedStateRuntime({ shared: sharedStateTransactions, auction: auctionTransactions, clans: clanTransactions });
+sharedStateRuntime.recoverPendingState();
 function restoreHuntGroupsFromDisk(){
   HUNT_GROUPS.clear();
   PLAYER_GROUP.clear();
