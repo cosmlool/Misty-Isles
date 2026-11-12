@@ -53,7 +53,7 @@ test('a recovered no-op transaction skips journal, player backup and target writ
     assert.equal(result, 'unchanged');
     assert.deepEqual(readJson(f.files.players), { p1: { gold: 15 } });
     assert.equal(existsSync(f.store.journalFile), false);
-    assert.equal(readdirSync(f.dataDir).filter(name => /^players\\.json\\..+\\.bak$/.test(name)).length, 0);
+    assert.equal(readdirSync(f.dataDir).filter(name => /^players\.json\..+\.bak$/.test(name)).length, 0);
   } finally { f.cleanup(); }
 });
 
