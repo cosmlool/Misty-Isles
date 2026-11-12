@@ -2394,3 +2394,11 @@ PlayerSchema содержит mining=0, но серверный код не ис
 - Group creation, acceptance and explicit leave write the roster through shared-state WAL. Disconnect only marks the player offline in runtime maps; it does not mutate persisted membership.
 - Added restart integration coverage to `groupTravelPersistenceRuntime.test.ts` for offline-member retention and full roster restoration after both players reconnect.
 - Not yet executed; no current-head CI result is available.
+
+
+### Атомарность выхода из охотничьей группы и WAL recovery — 2026-11-12
+- Усилен `persistHuntGroups`: общий WAL одновременно записывает snapshot игроков и `hunt_groups.json`. Явный выход, передача лидерства и расформирование сохраняются одной транзакцией.
+- При ошибке транзакции прежний `quests` уходящего игрока восстанавливается в памяти; helper восстанавливает реестр групп из дискового snapshot.
+- В `sharedStateTransactions.test.ts` добавлен crash-сценарий: процесс завершается сразу после записи `players.json`, пока roster группы ещё ожидает replay из WAL; после рестарта проверяется восстановление `hunt_groups.json`.
+- В `groupTravelPersistenceRuntime.test.ts` добавлены проверки передачи лидерства после выхода лидера и расформирования после выхода последнего участника.
+- Тесты добавлены, но не запускались в этой среде; CI для текущего head не подтверждён.
