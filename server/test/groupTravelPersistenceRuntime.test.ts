@@ -252,7 +252,7 @@ test('group expedition travel start and claim persist every member together', { 
     );
     assert.equal(restoredWithBothOnline.group.leader, publicCode(leaderId));
 
-    leaderRoom.send('expeditionTravelStart', { zoneId: 'el2' });
+    leaderRoom.send('expeditionTravelStart', { zoneId: 'el1' });
     await waitFor(() => {
       const players = readPlayers(join(dataDir, 'players.json'));
       return JSON.parse(players[leaderId].quests).expedition.state === 'moving' &&
