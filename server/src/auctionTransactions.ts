@@ -1,5 +1,5 @@
 import { randomBytes } from 'node:crypto';
-import { existsSync, mkdirSync, readFileSync, renameSync, unlinkSync, writeFileSync } from 'node:fs';
+import { copyFileSync, existsSync, mkdirSync, readFileSync, readdirSync, renameSync, unlinkSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 
 export type AuctionSnapshot = {
@@ -21,6 +21,8 @@ type AuctionTransactionOptions = {
 };
 
 type Journal = { version: 1; snapshot: AuctionSnapshot };
+
+let lastPlayerBackupTimestamp = 0;
 
 export function createAuctionTransactionStore(options: AuctionTransactionOptions) {
   const journalFile = join(options.dataDir, 'auction_transaction.json');
@@ -49,10 +51,37 @@ export function createAuctionTransactionStore(options: AuctionTransactionOptions
     }
   }
 
+  function backupPlayersBeforeWrite() {
+    if (!existsSync(options.playersFile)) return;
+    const timestamp = Math.max(Date.now(), lastPlayerBackupTimestamp + 1);
+    lastPlayerBackupTimestamp = timestamp;
+    const suffix = new Date(timestamp).toISOString().replace(/[:.]/g, '-') + '.' + process.pid + '.' + randomBytes(4).toString('hex');
+    const backupFile = options.playersFile + '.' + suffix + '.bak';
+    const backupTemp = backupFile + '.tmp';
+    try {
+      copyFileSync(options.playersFile, backupTemp);
+      renameSync(backupTemp, backupFile);
+    } catch (error) {
+      try { if (existsSync(backupTemp)) unlinkSync(backupTemp); } catch {}
+      throw new Error(`Could not create a backup of players.json; auction transaction write cancelled. ${String(error)}`);
+    }
+  }
+
+  function prunePlayerBackups() {
+    try {
+      const backups = readdirSync(options.dataDir).filter(name => /^players\.json\..+\.bak$/.test(name)).sort();
+      for (const old of backups.slice(0, Math.max(0, backups.length - 5))) {
+        try { unlinkSync(join(options.dataDir, old)); } catch {}
+      }
+    } catch {}
+  }
+
   function apply(snapshot: AuctionSnapshot) {
     // The journal is the write-ahead commit record. Startup recovery can safely
     // repeat these atomic replacements if the process stops between files.
+    backupPlayersBeforeWrite();
     atomicWrite(options.playersFile, snapshot.players);
+    prunePlayerBackups();
     options.testHooks?.afterTargetWrite?.('players');
     atomicWrite(options.auctionFile, snapshot.auction);
     options.testHooks?.afterTargetWrite?.('auction');
@@ -98,5 +127,7 @@ export function createAuctionTransactionStore(options: AuctionTransactionOptions
     }
   }
 
-  return { commit, recover, journalFile };
+  function hasPending(): boolean { return existsSync(journalFile); }
+
+  return { commit, recover, hasPending, journalFile };
 }
