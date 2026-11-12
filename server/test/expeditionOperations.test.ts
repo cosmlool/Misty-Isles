@@ -91,7 +91,9 @@ test('hunt group levels stay within five levels of the leader, inclusively', () 
 
 test('leadership change invalidates every pending invitation for the old group', () => {
   const invites = new Map([['player-a', 'group-a'], ['player-b', 'group-b'], ['player-c', 'group-a']]);
-  assert.equal(invalidateHuntGroupInvites(invites, 'group-a'), 2);
+  const expiries = new Map([['player-a', 100], ['player-b', 200], ['player-c', 300]]);
+  assert.equal(invalidateHuntGroupInvites(invites, 'group-a', expiries), 2);
+  assert.deepEqual(Array.from(expiries.entries()), [['player-b', 200]]);
   assert.deepEqual(Array.from(invites.entries()), [['player-b', 'group-b']]);
   assert.equal(invalidateHuntGroupInvites(invites, 'group-a'), 0);
   assert.equal(invalidateHuntGroupInvites(invites, ''), 0);
