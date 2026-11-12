@@ -69,3 +69,15 @@ export function isHuntGroupLevelRangeValid(leaderLevel: number, memberLevels: nu
   if (!Number.isFinite(leaderLevel) || !Number.isFinite(maxDifference) || maxDifference < 0 || !memberLevels.length) return false;
   return memberLevels.every(level => Number.isFinite(level) && Math.abs(level - leaderLevel) <= maxDifference);
 }
+
+
+export function invalidateHuntGroupInvites(invites:Map<string,string>,groupId:string):number{
+  if(!groupId)return 0;
+  let removed=0;
+  for(const [playerId,invitedGroupId] of invites){
+    if(invitedGroupId!==groupId)continue;
+    invites.delete(playerId);
+    removed++;
+  }
+  return removed;
+}
