@@ -2680,3 +2680,11 @@ PEN-009 стоит 100 кристаллов и при максимальном �
 - Состав группы может быть собран из игроков с разным `seen`/`cleared`/`opened`: текущие проверки требуют одинаковую текущую локацию, но не одинаковый прогресс. Поэтому один общий бой может быть обычным монстром для одного игрока и повторным/пропускающим этап для другого; лидер определяет момент появления gatekeeper.
 - Автоматически менять это поведение нельзя: есть два разных дизайна — (A) разрешать группу только при совпадающем прогрессе участников; (B) оставить общий бой, но вести индивидуальную eligibility/progression для каждого игрока. Второй вариант требует явно определить, что происходит, если один участник уже прошёл зону, а другой ещё нет.
 - До решения владельца код не менялся: не вводить запрет на совместную игру с разным прогрессом и не начислять индивидуальные пропуски/награды по догадке.
+
+
+### Hunt-group level enforcement — 2026-11-12
+- Added a shared server-side validator for the strict ±5-level window relative to the current group leader.
+- Invitation now checks the target and existing roster against the inviter/leader before creating a new group or persisting a roster. Acceptance repeats the check against the current online leader and every existing member; client-supplied group data cannot bypass it.
+- Group dungeon entry now requires the leader to meet the dungeon minimum. Invited members may be below the dungeon minimum, but every member must still remain within ±5 levels of the leader. Solo entry continues to require the solo player's own minimum level.
+- Added unit coverage for inclusive boundaries, out-of-range values and invalid levels. Tests/builds have not been executed; current-head CI remains unconfirmed.
+- Leadership succession remains intentionally unchanged pending owner decision: current leave behavior promotes the first remaining member, which can violate the new level window. Do not implement succession policy by assumption.
