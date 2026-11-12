@@ -252,6 +252,32 @@ test('group expedition travel start and claim persist every member together', { 
     );
     assert.equal(restoredWithBothOnline.group.leader, publicCode(leaderId));
 
+    leaderRoom.send('expeditionTravelStart', { zoneId: 'el2' });
+    await waitFor(() => {
+      const players = readPlayers(join(dataDir, 'players.json'));
+      return JSON.parse(players[leaderId].quests).expedition.state === 'moving' &&
+        JSON.parse(players[memberId].quests).expedition.state === 'moving' ? true : undefined;
+    }, 'restored group starts a persisted travel action');
+
+    await memberRoom.leave();
+    await waitFor(() => {
+      const players = readPlayers(join(dataDir, 'players.json'));
+      const leaderState = JSON.parse(players[leaderId].quests).expedition;
+      const memberState = JSON.parse(players[memberId].quests).expedition;
+      return leaderState.state === 'idle' && memberState.state === 'idle' &&
+        leaderState.endsAt === 0 && memberState.endsAt === 0 ? true : undefined;
+    }, 'disconnect during group travel cancels movement for all members');
+    const rosterAfterTravelDisconnect = JSON.parse(readFileSync(join(dataDir, 'hunt_groups.json'), 'utf8'));
+    assert.equal(rosterAfterTravelDisconnect.length, 1, 'disconnect must not remove the offline member from the group');
+    assert.deepEqual(rosterAfterTravelDisconnect[0].members, [leaderId, memberId]);
+
+    const reconnectedMemberRoom = await restartedClient.joinOrCreate('my_room', {
+      playerId: memberId, sessionToken: await guestToken(port, memberId),
+    });
+    rooms.push(reconnectedMemberRoom);
+    memberRoom = reconnectedMemberRoom;
+
+
     const memberNotices: string[] = [];
     const restoredLeaderNotices: string[] = [];
     memberRoom.onMessage('notice', payload => memberNotices.push(String(payload?.text || '')));
