@@ -151,6 +151,7 @@ test('solo Forgotten Lands boss dungeon reports remaining daily entries and enfo
         await waitFor(() => results.length === 2, 'idempotent replay of the first dungeon attempt');
         assert.equal(readJson(join(dataDir, 'players.json'))[playerId].gold, 720, 'replaying the same request must not duplicate dungeon gold');
         assert.equal(JSON.parse(readJson(join(dataDir, 'players.json'))[playerId].quests).dungeonRuns, 1, 'replaying the same request must not consume another attempt');
+        assert.equal(JSON.parse(readJson(join(dataDir, 'players.json'))[playerId].quests).dungeonRequestHistory[0].id, 'solo_dungeon_attempt_1', 'the request receipt must be persisted with player state');
       }
       assert.equal(result.report.maxHealth, 1_089, 'legacy health amulet must contribute its listed +8% maximum health');
       assert.equal(result.report.hpAfter, 1_089, 'vampire healing must preserve the amulet health bonus');
