@@ -847,7 +847,10 @@ function broadcastClanQuests(clans:Record<string,any>){
   const season=clanSeasonBoard(clans);
   const sent=new Set<string>();
   for(const clan of Object.values(clans)){
-    const payload={quests:ensureClanQuests(clan),upgrades:clan.upgrades||{barracks:0,treasury:0,banner:0},season};
+    // Build a read-only presentation snapshot: quest initialization belongs to
+    // the state-changing handler/transaction, never to a broadcast side effect.
+    const questView=JSON.parse(JSON.stringify(clan));
+    const payload={quests:ensureClanQuests(questView),upgrades:questView.upgrades||{barracks:0,treasury:0,banner:0},season};
     for(const member of Array.isArray(clan.members)?clan.members:[]){
       const id=String(member?.id||'');
       if(!id||sent.has(id))continue;
@@ -855,7 +858,6 @@ function broadcastClanQuests(clans:Record<string,any>){
       ONLINE_CLIENTS.get(id)?.send('clanQuests',payload);
     }
   }
-  saveClans(clans);
 }
 function broadcastClanTerritories(clans:Record<string,any>,territories:any[]=loadTerritories()){
   const names=new Map(Object.values(clans).map((clan:any)=>[clan.id,clan.name]));
