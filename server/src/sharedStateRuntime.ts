@@ -1,10 +1,10 @@
 /**
- * Coordinates the transition period between legacy auction/clan journals and
- * the shared-state WAL. All callbacks that build snapshots run only after
- * every older journal has been replayed.
+ * Routes production player, auction and clan mutations through the shared-state
+ * WAL while recovering legacy auction/clan journals before snapshot preparation.
+ * All callbacks that build snapshots run only after pending recovery is resolved.
  *
- * Keep this adapter until every runtime writer uses the shared WAL directly.
- * The server is single-process and these operations are synchronous.
+ * Legacy stores remain recovery-only; runtime writers must not call their commit
+ * APIs. The server is single-process and these operations are synchronous.
  */
 import type { SharedStateSnapshot } from './sharedStateTransactions.js';
 
