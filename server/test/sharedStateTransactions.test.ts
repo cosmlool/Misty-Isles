@@ -146,7 +146,7 @@ test('shared player writes preserve the previous save in a backup', () => {
     writeFileSync(f.files.players, JSON.stringify({ p1: { gold: 15 } }));
     f.store.transact(() => ({ files: { players: { p1: { gold: 25 } } }, result: null }));
     assert.deepEqual(readJson(f.files.players), { p1: { gold: 25 } });
-    const backups = readdirSync(f.dataDir).filter(name => /^players\\.json\\..+\\.bak$/.test(name));
+    const backups = readdirSync(f.dataDir).filter(name => /^players\.json\..+\.bak$/.test(name));
     assert.equal(backups.length, 1);
     assert.deepEqual(readJson(join(f.dataDir, backups[0])), { p1: { gold: 15 } });
   } finally { f.cleanup(); }
@@ -171,7 +171,7 @@ test('shared player writes retain only the newest five backups', () => {
     for (let gold = 1; gold <= 7; gold++) {
       f.store.transact(() => ({ files: { players: { p1: { gold } } }, result: null }));
     }
-    const backups = readdirSync(f.dataDir).filter(name => /^players\\.json\\..+\\.bak$/.test(name)).sort();
+    const backups = readdirSync(f.dataDir).filter(name => /^players\.json\..+\.bak$/.test(name)).sort();
     assert.equal(backups.length, 5);
     const values = backups.map(name => readJson(join(f.dataDir, name)).p1.gold);
     assert.ok(values.includes(2));

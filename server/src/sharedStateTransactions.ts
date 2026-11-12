@@ -116,7 +116,7 @@ export function createSharedStateTransactionStore(options: Options) {
 
   function prunePlayerBackups() {
     try {
-      const backups = readdirSync(dataDir).filter(name => /^players\\.json\\..+\\.bak$/.test(name)).sort();
+      const backups = readdirSync(dataDir).filter(name => /^players\.json\..+\.bak$/.test(name)).sort();
       for (const old of backups.slice(0, Math.max(0, backups.length - 5))) {
         try { unlinkSync(resolve(dataDir, old)); } catch {}
       }
