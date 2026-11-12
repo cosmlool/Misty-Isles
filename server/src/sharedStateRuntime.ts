@@ -6,9 +6,11 @@
  * Keep this adapter until every runtime writer uses the shared WAL directly.
  * The server is single-process and these operations are synchronous.
  */
+import type { SharedStateSnapshot } from './sharedStateTransactions.js';
+
 type Recoverable = { recover(): boolean };
 type SharedStore = Recoverable & {
-  transact<T>(prepareAfterRecovery: () => { files: Record<string, unknown>; result: T }): T;
+  transact<T>(prepareAfterRecovery: () => { files: SharedStateSnapshot; result: T }): T;
 };
 type AuctionStore = Recoverable & { commit(snapshot: unknown): void };
 type ClanStore = Recoverable & { commit(snapshot: unknown): void };
