@@ -3,7 +3,7 @@ import { mkdtempSync, mkdirSync, readFileSync, readdirSync, rmSync, writeFileSyn
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { test } from 'node:test';
-import { createPlayerSaveStore } from '../src/playerSaves.js';
+import { applyPlayerSave, createPlayerSaveStore } from '../src/playerSaves.js';
 
 function fixture(){
   const dir=mkdtempSync(join(tmpdir(),'misty-player-saves-'));
@@ -83,4 +83,20 @@ test('retains only the newest five backups after successful saves',()=>{
     assert.ok(!savedGold.includes(0));
     assert.ok(!savedGold.includes(1));
   }finally{f.cleanup();}
+});
+
+test('malformed player save field types cannot overwrite numeric defaults or prototypes', () => {
+  const player: Record<string, any> = {
+    id: 'safe_player', name: 'Safe Hero', gold: 250, strength: 10,
+    health: 100, quests: '{}',
+  };
+  const saved = JSON.parse('{"gold":"NaN","strength":null,"name":5,"health":150,"quests":{"weeklyHunts":999},"__proto__":{"polluted":true},"constructor":{"polluted":true}}');
+  applyPlayerSave(player, saved);
+  assert.equal(player.gold, 250);
+  assert.equal(player.strength, 10);
+  assert.equal(player.name, 'Safe Hero');
+  assert.equal(player.health, 150);
+  assert.equal(player.quests, '{}');
+  assert.equal((player as any).polluted, undefined);
+  assert.equal(Object.getPrototypeOf(player), Object.prototype);
 });
