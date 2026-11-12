@@ -165,8 +165,20 @@ test('PvP offers four saved real characters, steals 20 percent gold, persists co
     await waitFor(() => notices.find(message => message === 'Выбери другого соперника.'), 'reject unregistered training-bot IDs');
     assert.equal(readJson(join(dataDir, 'players.json'))[attackerId].lastPvpAt || 0, 0, 'invalid bot target must not consume a PvP turn');
 
+    // Simulate a committed shared-WAL transaction becoming pending after both
+    // characters are online. The PvP listing must recover it before preparing
+    // its player snapshot, then refresh the live Player objects from disk.
+    const recoveredPlayers = readJson(join(dataDir, 'players.json'));
+    recoveredPlayers[attackerId].gold = 777;
+    writeFileSync(join(dataDir, 'shared_state_transaction.json'), JSON.stringify({
+      version: 1,
+      files: { players: recoveredPlayers },
+    }));
+
     attackerRoom.send('pvpList');
-    const firstOffer = await waitFor(() => offers[0], 'four real opponents');
+    const firstOffer = await waitFor(() => offers[0], 'four real opponents after shared-WAL recovery');
+    assert.equal(readJson(join(dataDir, 'players.json'))[attackerId].gold, 777,
+      'PvP listing must not overwrite a recovered player snapshot with stale online state');
     assert.equal(firstOffer.players.length, 4);
     assert.equal(new Set(firstOffer.players.map((player: any) => player.id)).size, 4);
     assert.ok(firstOffer.players.every((player: any) => player.isBot === false));
@@ -192,7 +204,7 @@ test('PvP offers four saved real characters, steals 20 percent gold, persists co
     const saved = readJson(join(dataDir, 'players.json'));
     assert.ok(saved[bystanderId].health > 50, 'PvP persistence must include unsaved health regeneration from every online character');
     const stolen = Math.floor(targetBefore.gold * 0.2);
-    assert.equal(saved[attackerId].gold, 250 + stolen);
+    assert.equal(saved[attackerId].gold, 777 + stolen);
     assert.equal(saved[targetId].gold, targetBefore.gold - stolen);
     assert.equal(result.report.rewards.gold, stolen);
     assert.equal(saved[attackerId].lastPvpAt > 0, true);
