@@ -10,7 +10,7 @@ import { setTimeout as delay } from 'node:timers/promises';
 import { Client, type Room } from 'colyseus.js';
 import test from 'node:test';
 
-import { seedGuestCredentials, testGuestProof } from './guestAuthTestHelpers.js';
+import { seedGuestCredentials, testGuestProof, leaveRoomSafely } from './guestAuthTestHelpers.js';
 
 const serverDir = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const staticDataFiles = ['city_npcs.json', 'equipment_catalog.json'];
@@ -93,9 +93,16 @@ test('group expedition travel start and claim persist every member together', { 
     for (const file of staticDataFiles) copyFileSync(join(serverDir, 'data', file), join(dataDir, file));
     const expeditionData = JSON.parse(readFileSync(join(serverDir, 'data', 'forgotten_lands.json'), 'utf8'));
     expeditionData.travelSeconds = 0;
+    expeditionData.searchSeconds = 0;
     writeFileSync(join(dataDir, 'forgotten_lands.json'), JSON.stringify(expeditionData, null, 2));
     const makePlayer = (id: string, name: string, friend: string) => ({
-      id, name, race: 'Кот', level: 3, gold: 500, inventory: '[]', equipment: '{}',
+      id, name, race: id === leaderId ? 'Грызун' : 'Кот', profession: id === leaderId ? 'Вампир' : '',
+      level: id === leaderId ? 20 : 15, gold: id === leaderId ? 5_000 : 500,
+      health: id === leaderId ? 50 : 100, maxHealth: 100,
+      buff: id === memberId ? 'xp' : '', buffValue: id === memberId ? 0.12 : 0,
+      buffSecondaryEffect: id === memberId ? 'gold' : '',
+      buffSecondaryValue: id === memberId ? 0.15 : 0, buffUntil: id === memberId ? Date.now() + 60 * 60 * 1000 : 0,
+      inventory: '[]', equipment: '{}',
       collections: JSON.stringify({ friends: [friend] }),
       quests: JSON.stringify({
         expedition: { branchId: 'forgotten_lands', currentZoneId: 'el1', opened: 2, cleared: [], seen: {}, state: 'idle', endsAt: 0, groupId: '' },
@@ -126,9 +133,17 @@ test('group expedition travel start and claim persist every member together', { 
     const invitations: any[] = [];
     const groupStates: any[] = [];
     const leaderNotices: string[] = [];
+    const leaderCombatResults: any[] = [];
+    const memberCombatResults: any[] = [];
     connected[memberId].onMessage('huntGroupInvite', payload => invitations.push(payload));
     connected[leaderId].onMessage('huntGroupState', payload => groupStates.push(payload));
     connected[leaderId].onMessage('notice', payload => leaderNotices.push(String(payload?.text || '')));
+    connected[leaderId].onMessage('combatResult', payload => leaderCombatResults.push(payload));
+    connected[memberId].onMessage('combatResult', payload => memberCombatResults.push(payload));
+    connected[leaderId].send('professionSkill', { id: 'blood_burst' });
+    await waitFor(() => leaderNotices.find(message => message.includes('Навык «Кровавый всплеск» изучен')), 'learn compound vampire skill');
+    connected[leaderId].send('professionSkill', { id: 'blood_burst' });
+    await waitFor(() => leaderNotices.find(message => message.includes('Применён навык «Кровавый всплеск»')), 'apply compound vampire skill');
     connected[leaderId].send('huntGroupInvite', { targetId: publicCode(memberId) });
     const invite = await waitFor(() => invitations[0], 'group invitation');
     connected[memberId].send('huntGroupAccept', { groupId: invite.groupId });
@@ -173,7 +188,19 @@ test('group expedition travel start and claim persist every member together', { 
     assert.equal(JSON.parse(afterBlockedSearchLeave[leaderId].quests).expedition.state, 'searching');
     assert.equal(JSON.parse(afterBlockedSearchLeave[memberId].quests).expedition.state, 'searching');
 
+    connected[leaderId].send('expeditionSearchClaim');
+    const leaderCombat = await waitFor(() => leaderCombatResults[0], 'leader expedition combat result');
+    const memberCombat = await waitFor(() => memberCombatResults[0], 'member expedition combat result');
+    assert.equal(leaderCombat.report.result, 'win');
+    assert.equal(memberCombat.report.result, 'win');
     const saved = readPlayers(join(dataDir, 'players.json'));
+    const baseXp = Number(leaderCombat.report.rewards.xp);
+    assert.equal(saved[leaderId].experience, baseXp, 'leader without an XP buff must receive base expedition experience');
+    assert.equal(saved[memberId].experience, Math.floor(baseXp * 1.12), 'XP buff must increase expedition experience');
+    assert.equal(saved[leaderId].buffSecondaryEffect, 'lifesteal', 'profession skill must persist its secondary effect');
+    const baseGold = Number(memberCombat.report.rewards.gold);
+    assert.equal(saved[memberId].gold, 500 + baseGold, 'expedition combat report must expose the actual gold amount after the secondary gold buff');
+    assert.ok(leaderCombat.report.hpAfter > Math.max(1, leaderCombat.report.hpBefore - leaderCombat.report.received), 'secondary lifesteal buff must heal after a successful fight');
     for (const id of [leaderId, memberId]) {
       const state = JSON.parse(saved[id].quests).expedition;
       assert.equal(state.currentZoneId, 'el2');
@@ -181,8 +208,122 @@ test('group expedition travel start and claim persist every member together', { 
       assert.equal(state.endsAt, 0);
       assert.equal(state.targetZoneId, undefined);
     }
+
+    const savedGroups = JSON.parse(readFileSync(join(dataDir, 'hunt_groups.json'), 'utf8'));
+    assert.equal(savedGroups.length, 1, 'accepted group must be persisted');
+    assert.deepEqual(savedGroups[0].members, [leaderId, memberId]);
+
+    for (const room of rooms) await leaveRoomSafely(room);
+    rooms.length = 0;
+    await stopServer(child!);
+    child = spawn(process.execPath, ['--import', 'tsx', 'src/index.ts'], {
+      cwd: serverDir,
+      env: { ...process.env, MISTY_DATA_DIR: dataDir, MISTY_PORT: String(port) },
+      stdio: 'ignore',
+    });
+    await waitForServer(port, child);
+
+    const restartedClient = new Client(`ws://127.0.0.1:${port}`);
+    const leaderRoom = await restartedClient.joinOrCreate('my_room', {
+      playerId: leaderId, sessionToken: await guestToken(port, leaderId),
+    });
+    rooms.push(leaderRoom);
+    const leaderGroupStates: any[] = [];
+    leaderRoom.onMessage('huntGroupState', payload => leaderGroupStates.push(payload));
+    leaderRoom.send('huntGroupList');
+    const restoredWithOfflineMember = await waitFor(
+      () => leaderGroupStates.find(payload => payload.group?.members?.length === 2),
+      'restored group with offline member',
+    );
+    assert.equal(restoredWithOfflineMember.group.members.find((member: any) => member.id === publicCode(memberId))?.online, false,
+      'an offline member must retain their group slot after restart');
+
+    let memberRoom = await restartedClient.joinOrCreate('my_room', {
+      playerId: memberId, sessionToken: await guestToken(port, memberId),
+    });
+    rooms.push(memberRoom);
+    const memberGroupStates: any[] = [];
+    memberRoom.onMessage('huntGroupState', payload => memberGroupStates.push(payload));
+    memberRoom.send('huntGroupList');
+    const restoredWithBothOnline = await waitFor(
+      () => memberGroupStates.find(payload => payload.group?.members?.length === 2 &&
+        payload.group.members.every((member: any) => member.online)),
+      'restored group after both members reconnect',
+    );
+    assert.equal(restoredWithBothOnline.group.leader, publicCode(leaderId));
+
+    leaderRoom.send('expeditionTravelStart', { zoneId: 'el1' });
+    await waitFor(() => {
+      const players = readPlayers(join(dataDir, 'players.json'));
+      return JSON.parse(players[leaderId].quests).expedition.state === 'moving' &&
+        JSON.parse(players[memberId].quests).expedition.state === 'moving' ? true : undefined;
+    }, 'restored group starts a persisted travel action');
+
+    await memberRoom.leave();
+    await waitFor(() => {
+      const players = readPlayers(join(dataDir, 'players.json'));
+      const leaderState = JSON.parse(players[leaderId].quests).expedition;
+      const memberState = JSON.parse(players[memberId].quests).expedition;
+      return leaderState.state === 'idle' && memberState.state === 'idle' &&
+        leaderState.endsAt === 0 && memberState.endsAt === 0 ? true : undefined;
+    }, 'disconnect during group travel cancels movement for all members');
+    const rosterAfterTravelDisconnect = JSON.parse(readFileSync(join(dataDir, 'hunt_groups.json'), 'utf8'));
+    assert.equal(rosterAfterTravelDisconnect.length, 1, 'disconnect must not remove the offline member from the group');
+    assert.deepEqual(rosterAfterTravelDisconnect[0].members, [leaderId, memberId]);
+
+    const reconnectedMemberRoom = await restartedClient.joinOrCreate('my_room', {
+      playerId: memberId, sessionToken: await guestToken(port, memberId),
+    });
+    rooms.push(reconnectedMemberRoom);
+    memberRoom = reconnectedMemberRoom;
+    const reconnectedExpeditionStates: any[] = [];
+    memberRoom.onMessage('expeditionState', payload => reconnectedExpeditionStates.push(payload?.state));
+    memberRoom.send('expeditionState');
+    const reconnectedExpedition = await waitFor(
+      () => reconnectedExpeditionStates.find(state => state?.groupId === JSON.parse(readPlayers(join(dataDir, 'players.json'))[memberId].quests).expedition.groupId || state?.groupId === JSON.parse(readFileSync(join(dataDir, 'hunt_groups.json'), 'utf8'))[0]?.id),
+      'reconnected member expedition state matches restored group roster',
+    );
+    assert.equal(reconnectedExpedition.groupId, JSON.parse(readFileSync(join(dataDir, 'hunt_groups.json'), 'utf8'))[0].id,
+      'reconnected member expedition state must restore its persisted group association');
+
+    const restoredLeaderNotices: string[] = [];
+    leaderRoom.onMessage('notice', payload => restoredLeaderNotices.push(String(payload?.text || '')));
+
+    // Leave the second member offline: the leader must still be able to leave,
+    // and the disband must clear the offline member's persisted group association.
+    await memberRoom.leave();
+    await waitFor(() => {
+      const roster = JSON.parse(readFileSync(join(dataDir, 'hunt_groups.json'), 'utf8'));
+      const saved = readPlayers(join(dataDir, 'players.json'));
+      const memberExpedition = JSON.parse(saved[memberId].quests).expedition;
+      return roster.length === 1 && roster[0].members.length === 2 &&
+        memberExpedition.state === 'idle' && memberExpedition.groupId === '' ? true : undefined;
+    }, 'offline member remains reserved before leader leaves');
+
+    leaderRoom.send('huntGroupLeave');
+    await waitFor(() => restoredLeaderNotices.find(message => message === 'Ты покинул охотничью группу.'), 'leader leaves and disbands the group');
+    const afterLeaderLeave = JSON.parse(readFileSync(join(dataDir, 'hunt_groups.json'), 'utf8'));
+    assert.deepEqual(afterLeaderLeave, [], 'a departing leader must disband the entire group without succession');
+    const afterLeaderPlayerSave = readPlayers(join(dataDir, 'players.json'));
+    assert.equal(JSON.parse(afterLeaderPlayerSave[leaderId].quests).expedition.groupId, '',
+      'departing leader expedition membership must be cleared in the same persisted snapshot');
+    assert.equal(JSON.parse(afterLeaderPlayerSave[memberId].quests).expedition.groupId, '',
+      'offline member expedition membership must be cleared in the same persisted snapshot');
+
+    const finalMemberRoom = await restartedClient.joinOrCreate('my_room', {
+      playerId: memberId, sessionToken: await guestToken(port, memberId),
+    });
+    rooms.push(finalMemberRoom);
+    const finalGroupStates: any[] = [];
+    finalMemberRoom.onMessage('huntGroupState', payload => finalGroupStates.push(payload));
+    finalMemberRoom.send('huntGroupList');
+    const finalGroupState = await waitFor(
+      () => finalGroupStates.find(payload => payload.group === null),
+      'offline member reconnects after the leader disbanded the group',
+    );
+    assert.equal(finalGroupState.group, null, 'reconnecting member must not be attached to a disbanded group');
   } finally {
-    for (const room of rooms) await room.leave().catch(() => undefined);
+    for (const room of rooms) await leaveRoomSafely(room);
     if (child) await stopServer(child);
     rmSync(dataDir, { recursive: true, force: true });
   }

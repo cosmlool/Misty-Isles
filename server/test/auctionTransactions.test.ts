@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict';
-import { mkdtempSync, mkdirSync, existsSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
+import { mkdtempSync, mkdirSync, existsSync, readFileSync, readdirSync, rmSync, writeFileSync } from 'node:fs';
 import { spawnSync } from 'node:child_process';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
@@ -36,6 +36,19 @@ test('commit atomically records the complete auction snapshot and removes the jo
     assert.deepEqual(readJson(f.auctionFile), snapshot.auction);
     assert.deepEqual(readJson(f.historyFile), snapshot.history);
     assert.equal(existsSync(f.store.journalFile), false);
+  } finally { f.cleanup(); }
+});
+
+test('auction player writes preserve the previous player save in a backup', () => {
+  const f = fixture();
+  try {
+    const previousPlayers = { buyer: { gold: 100, inventory: [] } };
+    writeFileSync(f.playersFile, JSON.stringify(previousPlayers));
+    f.store.commit(snapshot);
+    const backups = readdirSync(f.dataDir).filter(name => /^players\.json\..+\.bak$/.test(name));
+    assert.equal(backups.length, 1);
+    assert.deepEqual(readJson(join(f.dataDir, backups[0])), previousPlayers);
+    assert.deepEqual(readJson(f.playersFile), snapshot.players);
   } finally { f.cleanup(); }
 });
 

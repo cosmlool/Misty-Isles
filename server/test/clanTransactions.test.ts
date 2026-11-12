@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
-import { mkdtempSync, existsSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { spawnSync } from 'node:child_process';
+import { mkdtempSync, existsSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import test from 'node:test';
@@ -15,13 +15,9 @@ function fixture() {
     warsFile: join(dataDir, 'clan_wars.json'),
     territoriesFile: join(dataDir, 'clan_territories.json'),
   };
-  const store = createClanTransactionStore(paths);
-  return { ...paths, store, cleanup: () => rmSync(dataDir, { recursive: true, force: true }) };
+  return { ...paths, store: createClanTransactionStore(paths), cleanup: () => rmSync(dataDir, { recursive: true, force: true }) };
 }
-
-function readJson(file: string) {
-  return JSON.parse(readFileSync(file, 'utf8'));
-}
+function readJson(file: string) { return JSON.parse(readFileSync(file, 'utf8')); }
 
 const snapshot: ClanTransactionSnapshot = {
   players: { leader: { gold: 500, clan: 'clan_a' }, member: { gold: 200, clan: 'clan_a' } },
@@ -30,7 +26,7 @@ const snapshot: ClanTransactionSnapshot = {
   territories: [{ id: 'island_a', owner: 'clan_a' }],
 };
 
-test('commit atomically records player, clan, war and territory state', () => {
+test('commit writes player, clan, war and territory state and removes journal', () => {
   const f = fixture();
   try {
     f.store.commit(snapshot);
@@ -42,12 +38,11 @@ test('commit atomically records player, clan, war and territory state', () => {
   } finally { f.cleanup(); }
 });
 
-test('process crash between clan files is recovered from the write-ahead journal', () => {
+test('crash between file writes is recovered from the write-ahead journal', () => {
   const f = fixture();
   try {
     const previous = {
-      players: { leader: { gold: 1000, clan: '' } },
-      clans: {},
+      players: { leader: { gold: 1000, clan: '' } }, clans: {},
       wars: [{ id: 'war_old', status: 'active' }],
       territories: [{ id: 'island_a', owner: '' }],
     };
@@ -55,40 +50,28 @@ test('process crash between clan files is recovered from the write-ahead journal
     writeFileSync(f.clansFile, JSON.stringify(previous.clans));
     writeFileSync(f.warsFile, JSON.stringify(previous.wars));
     writeFileSync(f.territoriesFile, JSON.stringify(previous.territories));
-
     const moduleUrl = new URL('../src/clanTransactions.ts', import.meta.url).href;
     const childScript = `
       import { createClanTransactionStore } from ${JSON.stringify(moduleUrl)};
       const store = createClanTransactionStore({
-        dataDir: ${JSON.stringify(f.dataDir)},
-        playersFile: ${JSON.stringify(f.playersFile)},
-        clansFile: ${JSON.stringify(f.clansFile)},
-        warsFile: ${JSON.stringify(f.warsFile)},
+        dataDir: ${JSON.stringify(f.dataDir)}, playersFile: ${JSON.stringify(f.playersFile)},
+        clansFile: ${JSON.stringify(f.clansFile)}, warsFile: ${JSON.stringify(f.warsFile)},
         territoriesFile: ${JSON.stringify(f.territoriesFile)},
-        testHooks: {
-          afterTargetWrite(target) {
-            if (target === 'clans') process.exit(73);
-          },
-        },
+        testHooks: { afterTargetWrite(target) { if (target === 'clans') process.exit(73); } },
       });
       store.commit(${JSON.stringify(snapshot)});
       process.exit(0);
     `;
     const child = spawnSync(process.execPath, ['--import', 'tsx', '--input-type=module', '-e', childScript], {
-      cwd: process.cwd(),
-      encoding: 'utf8',
-      timeout: 10_000,
+      cwd: process.cwd(), encoding: 'utf8', timeout: 10_000,
     });
-
-    assert.equal(child.status, 73, 'child process must stop at the injected crash point');
-    assert.equal(existsSync(f.store.journalFile), true, 'journal must survive process termination');
+    assert.equal(child.status, 73, 'child process must stop after the clan file is written');
+    assert.equal(existsSync(f.store.journalFile), true, 'write-ahead journal must survive the crash');
     assert.deepEqual(readJson(f.playersFile), snapshot.players);
     assert.deepEqual(readJson(f.clansFile), snapshot.clans);
-    assert.deepEqual(readJson(f.warsFile), previous.wars, 'later files remain pre-transaction until recovery');
+    assert.deepEqual(readJson(f.warsFile), previous.wars, 'later files must remain unchanged until recovery');
     assert.deepEqual(readJson(f.territoriesFile), previous.territories);
-
-    const restarted = createClanTransactionStore(f);
-    assert.equal(restarted.recover(), true);
+    assert.equal(f.store.recover(), true);
     assert.deepEqual(readJson(f.playersFile), snapshot.players);
     assert.deepEqual(readJson(f.clansFile), snapshot.clans);
     assert.deepEqual(readJson(f.warsFile), snapshot.wars);
