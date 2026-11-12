@@ -170,3 +170,39 @@
 8. Только после миграции всех writers удалить legacy transaction stores и их startup recovery. Не удалять их раньше.
 
 **Важно:** наличие и unit-тесты shared transaction engine не означают, что production runtime уже защищён общим WAL. До завершения пунктов выше архитектура остаётся переходной и не готова к persistent mining jobs.
+
+## 10. Повторный аудит production integration — 12.11.2026
+
+Этот раздел заменяет устаревшие утверждения разделов 9.2–9.3 о прямых writers в production runtime.
+
+### 10.1 Текущее состояние
+
+- server/src/index.ts больше не вызывает savePlayers(), auctionTransactions.commit() или clanTransactions.commit(). Legacy createPlayerSaveStore().savePlayers() сохранён для совместимости и unit-тестов, но runtime импортирует только loadPlayers.
+- Обычный persistPlayers()/persistPlayer(), 30-секундный autosave, group roster, PvP list/challenge используют sharedStateRuntime.transact().
+- Auction sell/cancel/buy используют sharedStateRuntime.commitAuction(), который формирует snapshot внутри callback общего shared WAL.
+- Clan, war, territory и clan quest mutations используют transactClanMutation()/transactClanStateMutation() → sharedStateRuntime.commitClan().
+- В index.ts не обнаружены прямые вызовы saveClans(), saveTerritories(), saveAuction(), saveAuctionHistory() или saveWars(). loadTerritories() читает JSON с fallback только для отсутствующего файла; readJsonFile() не создаёт файл и не пишет defaults.
+- broadcastClanQuests() строит payload из клона clan object и не выполняет дисковую запись.
+- Startup создаёт все stores, затем запускает единый sharedStateRuntime.recoverPendingState() до восстановления hunt groups и до создания online Player objects/autosave.
+
+### 10.2 Исправление неоднозначных legacy WAL
+
+- Старые auction_transaction.json и clan_transaction.json содержат полные snapshots players.json, но не имеют общего transaction sequence/timestamp.
+- Если оба legacy journal остались одновременно, их порядок нельзя достоверно восстановить. Replay в произвольном порядке способен потерять player state.
+- Legacy stores теперь предоставляют hasPending(). Координатор проверяет оба journal до replay и при одновременном наличии обоих останавливается с ошибкой; ни один journal не применяется и никакая новая запись не начинается.
+- Если ожидает только один legacy journal, он replay-ится до shared WAL. Новая обычная транзакция формирует snapshot только после завершения recovery.
+- Startup больше не запускает legacy recover отдельно друг от друга: все три журнала проходят через единый recovery gate.
+
+### 10.3 Новые проверки
+
+- Coordinator unit test проверяет отказ до любого replay, если одновременно pending auction и clan journals.
+- Integration-style test с реальными legacy stores проверяет, что оба журнала остаются нетронутыми и target-файлы не изменяются при неоднозначном recovery.
+- Migration integration test теперь запускает обычную запись через coordinator при pending auction legacy journal + shared WAL и доказывает, что callback видит самый новый recovered player snapshot, а не старые данные.
+- sharedStateRuntime.test.ts добавлен в команду npm test.
+
+### 10.4 Что ещё не закрыто
+
+- Тесты, сборки и CI на актуальном head ещё не подтверждены; до появления результата нельзя считать миграцию прошедшей проверку.
+- Координатор синхронный и рассчитан на один процесс на DATA_DIR; межпроцессной блокировки нет. Второй серверный процесс с тем же DATA_DIR должен быть запрещён deployment-конфигурацией либо защищён отдельным lock-механизмом.
+- Старые legacy commit APIs и journal recovery оставлены только для миграции/совместимости; после отдельного срока совместимости их можно удалить вместе с тестами legacy commit, но не раньше, чем будет подтверждено отсутствие старых pending journals у существующих установок.
+- Нельзя начинать persisted mining jobs до прохождения полного server test suite, build и CI на новом head.
