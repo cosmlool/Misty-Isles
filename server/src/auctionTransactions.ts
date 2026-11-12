@@ -127,5 +127,7 @@ export function createAuctionTransactionStore(options: AuctionTransactionOptions
     }
   }
 
-  return { commit, recover, journalFile };
+  function hasPending(): boolean { return existsSync(journalFile); }
+
+  return { commit, recover, hasPending, journalFile };
 }
