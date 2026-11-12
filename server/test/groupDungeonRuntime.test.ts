@@ -145,13 +145,20 @@ test('group boss dungeon persists win rewards and loss costs for every participa
       connected[id].onMessage('combatResult', payload => results[id].push(payload));
       connected[id].onMessage('combatHistory', payload => histories[id].push(payload));
     }
-    connected[ids[0]].send('dungeonRun', { id: 'fl_dungeon_03' });
+    connected[ids[0]].send('dungeonRun', { id: 'fl_dungeon_03', requestId: 'group_dungeon_win_001' });
     const win = await waitFor(() => results[ids[0]][0], 'group boss dungeon win');
     const winMember = await waitFor(() => results[ids[1]][0], 'group member boss dungeon win');
     assert.equal(win.report.result, 'win');
     assert.equal(winMember.report.result, 'win');
 
-    connected[ids[2]].send('dungeonRun', { id: 'fl_dungeon_03' });
+    connected[ids[0]].send('dungeonRun', { id: 'fl_dungeon_03', requestId: 'group_dungeon_win_001' });
+    await waitFor(() => results[ids[0]].length === 2, 'idempotent replay of the same group dungeon request');
+    const afterReplay = readPlayers(join(dataDir, 'players.json'));
+    assert.equal(afterReplay[ids[0]].gold, 610, 'replaying a dungeon request must not duplicate gold');
+    assert.equal(afterReplay[ids[1]].gold, 610, 'replaying a group dungeon request must not duplicate member gold');
+    assert.equal(JSON.parse(afterReplay[ids[0]].quests).dungeonRuns, 3, 'replaying a dungeon request must not consume another attempt');
+
+    connected[ids[2]].send('dungeonRun', { id: 'fl_dungeon_03', requestId: 'group_dungeon_loss_001' });
     const loss = await waitFor(() => results[ids[2]][0], 'group boss dungeon loss');
     const lossMember = await waitFor(() => results[ids[3]][0], 'group member boss dungeon loss');
     assert.equal(loss.report.result, 'loss');
@@ -186,7 +193,7 @@ test('group boss dungeon persists win rewards and loss costs for every participa
     }
     const capNotices: string[] = [];
     connected[ids[0]].onMessage('notice', payload => capNotices.push(String(payload?.text || '')));
-    connected[ids[0]].send('dungeonRun', { id: 'fl_dungeon_03' });
+    connected[ids[0]].send('dungeonRun', { id: 'fl_dungeon_03', requestId: 'group_dungeon_cap_001' });
     await waitFor(() => capNotices.find(message => message.includes('на сегодня закончились попытки в подземельях')), 'group dungeon daily attempt cap');
     const afterCap = readPlayers(join(dataDir, 'players.json'));
     assert.equal(afterCap[ids[0]].gold, 610, 'a fourth daily group entry must not award more gold');
