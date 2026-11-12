@@ -79,7 +79,7 @@ Observed rules:
 - Group travel persistence runtime test covers saving group travel start/claim for every member.
 - Group boss-dungeon runtime test covers win rewards and loss costs for every participant.
 - Solo dungeon runtime test covers remaining daily entries and the three-entry cap.
-- Full group membership reconstruction after disconnect/restart remains unimplemented; orphaned active actions are safely reset. This remains open.
+- Persistent group roster recovery is implemented through the shared WAL; restart runtime coverage has been added but is not yet executed/CI-confirmed. Invitations remain session-only.
 
 #### Additional dungeon source inspection (server/src/index.ts, lines 502–536)
 - Group boss-dungeon entry requires the leader to start it, every member online, each member at the dungeon minimum level, and each member below the daily cap of three attempts.
@@ -94,13 +94,13 @@ Observed rules:
 - Group travel persistence runtime test covers saving group travel start/claim for every member.
 - Group boss-dungeon runtime test covers win rewards and loss costs for every participant.
 - Solo dungeon runtime test covers remaining daily entries and the three-entry cap.
-- Full group membership reconstruction after disconnect/restart remains unimplemented; orphaned active actions are safely reset. This remains open.
+- Persistent group roster recovery is implemented through the shared WAL; restart runtime coverage has been added but is not yet executed/CI-confirmed. Invitations remain session-only.
 - Dungeon rewards, duplicate/replay requests, balance, and edge cases still require deeper audit.
 
 ### Public-launch blockers / design decisions
 - Test admin handler remains openly callable in the inspected server source. Restore server-side authorization/allowlisting before public deployment.
 - Full CI for current branch head remains unconfirmed.
-- Full group restoration after disconnect/restart remains open.
+- Persistent group roster recovery is implemented; restart runtime coverage and CI confirmation remain pending.
 - Dungeon reward/replay/balance/edge-case audit remains open.
 - `statPoints` allocation design remains undecided.
 - Clan-war auto-settlement timer remains a design/implementation follow-up.
@@ -2647,3 +2647,13 @@ PEN-009 стоит 100 кристаллов и при максимальном �
 - Tests/builds remain unexecuted.
 
 - After hydration, onJoin() now reasserts the authenticated player ID from the verified session, so a malformed or mismatched stored id field cannot change the live character identity.
+
+
+### Hunt-group persistence — 2026-11-12
+- Added `hunt_groups.json` to the shared-state WAL, so group roster snapshots recover through the same journal as player and economy state.
+- Server startup validates persisted groups (unique IDs/members, one group per player, 1–3 members, leader included) and fails closed on ambiguous/corrupt group data.
+- Group creation, acceptance and explicit leave persist the roster. Invitations remain in-memory and expire on restart.
+- Disconnect no longer removes a member or transfers leadership. The offline member keeps their slot; the existing leader remains leader until explicitly leaving.
+- Added restart runtime coverage: restore a two-member group with one member offline, then verify both members reconnect into the same group.
+- The test has been authored but not executed in this environment; current-head CI is not yet reported.
+- Open behavior decision: an offline leader remains leader, so group actions requiring the leader wait until they reconnect or explicitly leave.
