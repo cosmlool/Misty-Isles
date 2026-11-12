@@ -92,3 +92,11 @@ Important limitation: the current boss dungeon handler is still synchronous and 
 - Inventory capacity is enforced at two scrolls; purchase deducts crystals and appends exactly one scroll.
 - Pure inventory helpers and tests cover purchase, capacity, city/active-run restrictions, and consuming exactly one scroll while preserving unrelated inventory.
 - Runtime resurrection is not yet wired: the synchronous dungeon handler still has no active-run action loop in which a participant can select a fallen ally. The consumption helper is prepared for the atomic revive transaction, but no claim is made that a player can use a scroll in combat yet.
+
+
+## Atomic resurrection snapshot preparation
+
+- Added `dungeonRevivalTransaction.ts` to prepare the rescuer's updated inventory and the revived dungeon participant state as a paired snapshot.
+- The helper validates the rescuer inventory, delegates party/status/duplicate-rescue checks to the dungeon state transition, and removes exactly one scroll without mutating the caller's input objects.
+- The caller must persist both returned snapshots (`players` and `dungeonRuns`) in the same shared-WAL transaction. A dedicated crash test interrupts the write after the player file and verifies restart replay restores both the consumed scroll and revived participant state.
+- This is transaction preparation and WAL-level recovery coverage, not yet a live combat command. The active dungeon handler remains synchronous; the next runtime step must create and advance durable run records before a player-facing revive action can be enabled.
