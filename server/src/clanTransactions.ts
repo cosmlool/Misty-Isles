@@ -9,18 +9,20 @@ export type ClanTransactionSnapshot = {
   territories: unknown[];
 };
 
-type Options = {
+type ClanTransactionOptions = {
   dataDir: string;
   playersFile: string;
   clansFile: string;
   warsFile: string;
   territoriesFile: string;
-  testHooks?: { afterTargetWrite?: (target: 'players' | 'clans' | 'wars' | 'territories') => void };
+  testHooks?: {
+    afterTargetWrite?: (target: 'players' | 'clans' | 'wars' | 'territories') => void;
+  };
 };
 
 type Journal = { version: 1; snapshot: ClanTransactionSnapshot };
 
-export function createClanTransactionStore(options: Options) {
+export function createClanTransactionStore(options: ClanTransactionOptions) {
   const journalFile = join(options.dataDir, 'clan_transaction.json');
   mkdirSync(options.dataDir, { recursive: true });
 
@@ -56,6 +58,8 @@ export function createClanTransactionStore(options: Options) {
   }
 
   function apply(snapshot: ClanTransactionSnapshot) {
+    // The journal is the commit record. Replaying the same complete snapshot
+    // safely finishes a transaction interrupted between any two data files.
     atomicWrite(options.playersFile, snapshot.players);
     options.testHooks?.afterTargetWrite?.('players');
     atomicWrite(options.clansFile, snapshot.clans);
@@ -69,8 +73,11 @@ export function createClanTransactionStore(options: Options) {
   function recover(): boolean {
     if (!existsSync(journalFile)) return false;
     let parsed: unknown;
-    try { parsed = JSON.parse(readFileSync(journalFile, 'utf8')); }
-    catch (error) { throw new Error(`Clan transaction journal is unreadable; refusing to continue: ${String(error)}`); }
+    try {
+      parsed = JSON.parse(readFileSync(journalFile, 'utf8'));
+    } catch (error) {
+      throw new Error(`Clan transaction journal is unreadable; refusing to continue: ${String(error)}`);
+    }
     validateJournal(parsed);
     apply(parsed.snapshot);
     unlinkSync(journalFile);
@@ -85,14 +92,13 @@ export function createClanTransactionStore(options: Options) {
       apply(snapshot);
       unlinkSync(journalFile);
     } catch (error) {
-      try { recover(); }
-      catch (recoveryError) {
+      try {
+        recover();
+      } catch (recoveryError) {
         throw new Error(`Clan transaction could not be fully written; recovery journal was retained: ${String(recoveryError)}`);
       }
     }
   }
 
-  function hasPending(): boolean { return existsSync(journalFile); }
-
-  return { commit, recover, hasPending, journalFile };
+  return { commit, recover, journalFile };
 }
