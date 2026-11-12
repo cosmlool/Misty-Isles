@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { canInviteToHuntGroup, checkExpeditionTravelConsistency, checkExpeditionTravelReadiness, checkExpeditionTravelStartReadiness, countHuntGroupInvites, invalidateHuntGroupInvites, isHuntGroupLevelRangeValid } from '../src/expeditionOperations.js';
+import { canInviteToHuntGroup, expireHuntGroupInvites, checkExpeditionTravelConsistency, checkExpeditionTravelReadiness, checkExpeditionTravelStartReadiness, countHuntGroupInvites, invalidateHuntGroupInvites, isHuntGroupLevelRangeValid } from '../src/expeditionOperations.js';
 
 test('group travel waits for the latest participant before any transition is applied', () => {
   const states = [
@@ -110,4 +110,24 @@ test('pending group invitations reserve the remaining member slots', () => {
   assert.equal(canInviteToHuntGroup(3, 0), false);
   assert.equal(canInviteToHuntGroup(0, 0), false);
   assert.equal(canInviteToHuntGroup(1, -1), false);
+});
+
+
+test('hunt group invitations expire after their deadline and release reserved slots', () => {
+  const invites = new Map([['player-a', 'group-a'], ['player-b', 'group-a'], ['player-c', 'group-b']]);
+  const expiries = new Map([['player-a', 5_000], ['player-b', 5_001], ['player-c', 9_000]]);
+  assert.equal(expireHuntGroupInvites(invites, expiries, 5_000), 1);
+  assert.deepEqual(Array.from(invites.entries()), [['player-b', 'group-a'], ['player-c', 'group-b']]);
+  assert.deepEqual(Array.from(expiries.entries()), [['player-b', 5_001], ['player-c', 9_000]]);
+  assert.equal(countHuntGroupInvites(invites, 'group-a'), 1);
+  assert.equal(expireHuntGroupInvites(invites, expiries, 5_001), 1);
+  assert.deepEqual(Array.from(invites.entries()), [['player-c', 'group-b']]);
+  assert.equal(expireHuntGroupInvites(invites, expiries, 10_000), 0);
+});
+
+test('expired invitations are removed even when their expiry record is invalid', () => {
+  const invites = new Map([['player-a', 'group-a']]);
+  const expiries = new Map([['player-a', Number.NaN]]);
+  assert.equal(expireHuntGroupInvites(invites, expiries, 1_000), 1);
+  assert.equal(invites.has('player-a'), false);
 });
