@@ -759,32 +759,35 @@ const ownMagic=p.profession==='Боевой маг';
       c.send('clanWarList',payload);
     });
     this.onAuthenticatedMessage('pvpList',(c)=>{if(!this.requireCharacter(c))return;
-      const p=this.state.player;
-      const now=Date.now();
-      const all=loadPlayers();
-      for(const [id,online] of ONLINE_PLAYERS) all[id]=online.toJSON();
-      all[this.playerId]=p.toJSON();
-      const questData=readObject(p.quests);
-      const state=questData.pvp&&typeof questData.pvp==='object'?questData.pvp:{};
-      const cooldown=pvpCooldownRemaining(p.lastPvpAt,now);
-      let offeredIds=Array.isArray(state.offeredIds)?state.offeredIds.filter((id:any)=>typeof id==='string'):[];
-      const offersExpireAt=Number(state.offersExpireAt||0);
-      if(cooldown===0&&(!offersExpireAt||offersExpireAt<=now||!offeredIds.length)){
-        const previousOfferedIds=Array.isArray(state.previousOfferedIds)?state.previousOfferedIds.filter((id:any)=>typeof id==='string'):[];
-        const selected=selectPvpOpponents(all,this.playerId,Number(p.level||1),now,Math.random,previousOfferedIds);
-        offeredIds=selected.map((candidate:any)=>String(candidate.id||'')).filter(Boolean);
-        state.offeredIds=offeredIds;
-        state.offersExpireAt=now+PVP_ATTACK_COOLDOWN_MS;
-        questData.pvp=state;
-        p.quests=JSON.stringify(questData);
+      const response=sharedStateRuntime.transact((hadRecovery)=>{
+        if(hadRecovery)syncOnlinePlayersAfterRecovery();
+        const p=this.state.player;
+        const now=Date.now();
+        const all=loadPlayers();
+        for(const [id,online] of ONLINE_PLAYERS) all[id]=online.toJSON();
         all[this.playerId]=p.toJSON();
-        savePlayers(all);
-      }
-      const players=cooldown>0?[]:offeredIds.map((id:string)=>({id,player:all[id]}))
-        .filter((entry:any)=>entry.player&&entry.player.race
-          &&pvpImmunityRemaining(entry.player,now)===0)
-        .map(({id,player}:any)=>({id:publicPlayerCode(id),name:player.name||'Путник',race:player.race||'?',profession:player.profession||'',level:Number(player.level||1),strength:Number(player.strength||10),defense:Number(player.defense||8),health:Number(player.health||100),maxHealth:Number(player.maxHealth||100),clan:player.clan||'',isBot:false}));
-      c.send('pvpList',{players,cooldownUntil:cooldown>0?now+cooldown:0,offersExpireAt:Number(state.offersExpireAt||0),immunityUntil:Number(readPvpStateSafe(p).immunityUntil||0)});
+        const questData=readObject(p.quests);
+        const state=questData.pvp&&typeof questData.pvp==='object'?questData.pvp:{};
+        const cooldown=pvpCooldownRemaining(p.lastPvpAt,now);
+        let offeredIds=Array.isArray(state.offeredIds)?state.offeredIds.filter((id:any)=>typeof id==='string'):[];
+        const offersExpireAt=Number(state.offersExpireAt||0);
+        if(cooldown===0&&(!offersExpireAt||offersExpireAt<=now||!offeredIds.length)){
+          const previousOfferedIds=Array.isArray(state.previousOfferedIds)?state.previousOfferedIds.filter((id:any)=>typeof id==='string'):[];
+          const selected=selectPvpOpponents(all,this.playerId,Number(p.level||1),now,Math.random,previousOfferedIds);
+          offeredIds=selected.map((candidate:any)=>String(candidate.id||'')).filter(Boolean);
+          state.offeredIds=offeredIds;
+          state.offersExpireAt=now+PVP_ATTACK_COOLDOWN_MS;
+          questData.pvp=state;
+          p.quests=JSON.stringify(questData);
+          all[this.playerId]=p.toJSON();
+        }
+        const players=cooldown>0?[]:offeredIds.map((id:string)=>({id,player:all[id]}))
+          .filter((entry:any)=>entry.player&&entry.player.race
+            &&pvpImmunityRemaining(entry.player,now)===0)
+          .map(({id,player}:any)=>({id:publicPlayerCode(id),name:player.name||'Путник',race:player.race||'?',profession:player.profession||'',level:Number(player.level||1),strength:Number(player.strength||10),defense:Number(player.defense||8),health:Number(player.health||100),maxHealth:Number(player.maxHealth||100),clan:player.clan||'',isBot:false}));
+        return {files:{players:all},result:{players,cooldownUntil:cooldown>0?now+cooldown:0,offersExpireAt:Number(state.offersExpireAt||0),immunityUntil:Number(readPvpStateSafe(p).immunityUntil||0)}};
+      });
+      c.send('pvpList',response);
     });
     this.onAuthenticatedMessage('pvpChallenge',(c,d:any)=>{if(!this.requireCharacter(c))return;const p=this.state.player;const requestedTargetId=String(d?.targetId||'');const targetId=resolvePublicPlayerCode(requestedTargetId,loadPlayers());if(!targetId||targetId===this.playerId)return this.notice(c,'Выбери другого соперника.');const all=loadPlayersWithOnline();const onlineTarget=ONLINE_PLAYERS.get(targetId);let target=onlineTarget?onlineTarget.toJSON():all[targetId];const isBot=false;if(!target||!target.race)return this.notice(c,'Соперник не найден или ещё не сохранён.');const now=Date.now();const attackerQuestData=readObject(p.quests);const attackerPvpState=attackerQuestData.pvp&&typeof attackerQuestData.pvp==='object'?attackerQuestData.pvp:{};const cooldown=pvpCooldownRemaining(p.lastPvpAt,now);if(!isBot&&cooldown>0)return this.notice(c,`Следующая атака через ${Math.ceil(cooldown/60000)} мин.`);if(!isBot&&(!Number(attackerPvpState.offersExpireAt)||Number(attackerPvpState.offersExpireAt)<=now))return this.notice(c,'Список соперников устарел. Обнови его перед атакой.');if(!isBot&&!isPvpTargetOffered(attackerPvpState.offeredIds,targetId))return this.notice(c,'Этот соперник не входит в твой текущий список. Обнови список соперников.');const targetQuestData=readObject(target.quests||'{}');const targetPvpState=targetQuestData.pvp&&typeof targetQuestData.pvp==='object'?targetQuestData.pvp:{};if(!isBot&&Number(targetPvpState.immunityUntil||0)>now)return this.notice(c,`Персонаж под защитой ещё ${Math.ceil((Number(targetPvpState.immunityUntil)-now)/60000)} мин.`);if(!isBot){p.lastPvpAt=now;p.battles++;}const eq=readObject(p.equipment);const w=ITEMS.find(i=>i.id===eq.weapon),a=ITEMS.find(i=>i.id===eq.armor);const upgrades=readObject(p.equipmentEnhancements);const wl=Number(upgrades[`weapon:${eq.weapon}`]||0),al=Number(upgrades[`armor:${eq.armor}`]||0);const teq=readObject(target.equipment||'{}');const tu=readObject(target.equipmentEnhancements||'{}');const twl=Number(tu[`weapon:${teq.weapon}`]||0),tal=Number(tu[`armor:${teq.armor}`]||0);const tw=ITEMS.find(i=>i.id===teq.weapon),ta=ITEMS.find(i=>i.id===teq.armor);const ownProps=readObject(p.collections).equipmentProperties||{};const targetProps=readObject(target.collections||'{}').equipmentProperties||{};const ownSets=resolvePvpSetBonuses([eq.weapon,eq.armor,eq.amulet],EQUIPMENT_SETS);const targetSets=resolvePvpSetBonuses([teq.weapon,teq.armor,teq.amulet],EQUIPMENT_SETS);const ownAttackRoll=rand(0,10),targetAttackRoll=rand(0,10),ownScoreRoll=rand(0,20),targetScoreRoll=rand(0,20);
       const ownCombat=calculatePvpCombatStats({
@@ -813,6 +816,7 @@ const ownMagic=p.profession==='Боевой маг';
 function safeId(v:any){return String(v||'').replace(/[^a-zA-Z0-9_-]/g,'').slice(0,64)||`guest_${Date.now()}`;}
 
 function loadPlayersWithOnline():Record<string,any>{const all=loadPlayers();for(const player of Object.values(all))normalizePlayerProfessionData(player);for(const [id,online] of ONLINE_PLAYERS){normalizePlayerProfessionData(online);all[id]=online.toJSON();}return all;}
+function syncOnlinePlayersAfterRecovery(){const recovered=loadPlayers();for(const [id,online] of ONLINE_PLAYERS){const saved=recovered[id];if(saved)applyPlayerSave(online as any,saved);}}
 function loadPlayersForAuction():Record<string,any>{return loadPlayersWithOnline();}
 function persistPlayers(players:Player[]){sharedStateRuntime.transact((hadRecovery)=>{if(hadRecovery){const recovered=loadPlayers();for(const [id,online] of ONLINE_PLAYERS){const saved=recovered[id];if(saved)applyPlayerSave(online as any,saved);}}for(const online of ONLINE_PLAYERS.values())normalizePlayerProfessionData(online);const all=loadPlayers();for(const player of Object.values(all))normalizePlayerProfessionData(player);for(const [id,online] of ONLINE_PLAYERS)all[id]=online.toJSON();if(!hadRecovery)for(const p of players)if(p?.id)all[p.id]=p.toJSON();return {files:{players:all},result:undefined};});}
 function persistPlayer(p:Player){if(!p?.id)return;persistPlayers([p]);}
