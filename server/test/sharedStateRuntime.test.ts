@@ -15,7 +15,7 @@ function fixture() {
       if (recovered) { events.push('shared.replay'); sharedPending = false; }
       return recovered;
     },
-    transact<T>(prepare: () => { files: SharedStateSnapshot; result: T }): T {
+    transact<T>(prepare: () => { files: SharedStateSnapshot; result: T; skipWrite?: boolean }): T {
       events.push('shared.transact');
       this.recover();
       const prepared = prepare();
