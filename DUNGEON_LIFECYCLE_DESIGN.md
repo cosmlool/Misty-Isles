@@ -137,8 +137,10 @@ Important limitation: the current boss dungeon handler is still synchronous and 
 - This is a formula extraction and test seam only. The handler still executes the whole encounter synchronously; no durable round commits, reward timing, loot timing, or client round actions are wired yet.
 
 
-## Shared-WAL dungeon round commit boundary
+## Shared-WAL dungeon round and player-health commit boundary
 
-- Added `commitDungeonRunRound`: it validates the stored run, checks the expected round index, resolves exactly one preplanned round, validates the resulting run, and commits the updated `dungeonRuns` snapshot through the shared WAL.
-- A retry using an old round index is rejected, so a caller cannot accidentally apply the same round damage twice. If shared-state recovery occurred during the operation, the helper refuses stale in-memory state and requires a reload.
-- This transaction boundary currently commits the authoritative dungeon encounter snapshot only. It does not yet mutate player HP, grant rewards/loot, send round events, or replace the synchronous live handler. Those must be integrated together in a later runtime stage.
+- `commitDungeonRunRound` validates the stored run, checks the expected round index, resolves exactly one preplanned round, and commits both the updated `dungeonRuns` and matching `players` snapshots through one shared WAL transaction.
+- Participant HP is copied from the resolved durable run into the corresponding player snapshots. Missing player snapshots or invalid HP fail closed before the WAL is written.
+- A retry using an old round index is rejected, preventing duplicate round damage. If shared-state recovery occurred during the operation, the helper refuses stale in-memory state and requires both player and run snapshots to be reloaded.
+- Crash coverage interrupts execution after the player snapshot write and verifies journal replay restores both player HP and dungeon encounter progress.
+- Scope limitation: this is an atomic persistence boundary and test foundation, not production runtime wiring. The synchronous `runExpeditionDungeon()` handler still does not create/advance durable rounds through this helper. Reward/loot finalization, idempotent event delivery, and live handler replacement remain outstanding; no claim is made that dungeon rounds are now restart-resumable in production.
