@@ -45,6 +45,18 @@ test('one journal atomically applies a transaction spanning player, auction and 
   } finally { f.cleanup(); }
 });
 
+test('a recovered no-op transaction skips journal, player backup and target writes', () => {
+  const f = fixture();
+  try {
+    writeFileSync(f.files.players, JSON.stringify({ p1: { gold: 15 } }));
+    const result = f.store.transact(() => ({ files: {}, result: 'unchanged', skipWrite: true }));
+    assert.equal(result, 'unchanged');
+    assert.deepEqual(readJson(f.files.players), { p1: { gold: 15 } });
+    assert.equal(existsSync(f.store.journalFile), false);
+    assert.equal(readdirSync(f.dataDir).filter(name => /^players\\.json\\..+\\.bak$/.test(name)).length, 0);
+  } finally { f.cleanup(); }
+});
+
 test('snapshot preparation runs only after a pending journal has been recovered', () => {
   const f = fixture();
   try {
