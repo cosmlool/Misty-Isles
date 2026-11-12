@@ -6,8 +6,15 @@ import type { SharedStateSnapshot } from '../src/sharedStateTransactions.js';
 function fixture() {
   const events: string[] = [];
   let sharedPending = false;
+  let auctionPending = false;
+  let clansPending = false;
   const shared = {
-    recover() { events.push('shared.recover'); if (sharedPending) { events.push('shared.replay'); sharedPending = false; } return true; },
+    recover() {
+      events.push('shared.recover');
+      const recovered = sharedPending;
+      if (recovered) { events.push('shared.replay'); sharedPending = false; }
+      return recovered;
+    },
     transact<T>(prepare: () => { files: SharedStateSnapshot; result: T }): T {
       events.push('shared.transact');
       this.recover();
@@ -17,27 +24,47 @@ function fixture() {
     },
   };
   const auction = {
-    recover() { events.push('auction.recover'); return true; },
+    recover() { events.push('auction.recover'); const recovered = auctionPending; auctionPending = false; return recovered; },
     commit(snapshot: unknown) { events.push('auction.commit:' + JSON.stringify(snapshot)); },
   };
   const clans = {
-    recover() { events.push('clans.recover'); return true; },
+    recover() { events.push('clans.recover'); const recovered = clansPending; clansPending = false; return recovered; },
     commit(snapshot: unknown) { events.push('clans.commit:' + JSON.stringify(snapshot)); },
   };
-  return { events, shared, auction, clans, runtime: createSharedStateRuntime({ shared, auction, clans }) };
+  return {
+    events, shared, auction, clans,
+    setPending(values: { shared?: boolean; auction?: boolean; clans?: boolean }) {
+      sharedPending = Boolean(values.shared); auctionPending = Boolean(values.auction); clansPending = Boolean(values.clans);
+    },
+    runtime: createSharedStateRuntime({ shared, auction, clans }),
+  };
 }
 
-test('shared transactions recover both legacy journals before preparing a fresh snapshot', () => {
+test('shared transaction recovers legacy and shared journals before preparing its snapshot', () => {
   const f = fixture();
-  const result = f.runtime.transact(() => {
+  f.setPending({ auction: true, shared: true });
+  let recoveredDuringPrepare = false;
+  const result = f.runtime.transact(recovered => {
+    recoveredDuringPrepare = recovered;
     f.events.push('prepare');
     return { files: { players: { p1: { gold: 90 } } }, result: 'ok' };
   });
   assert.equal(result, 'ok');
+  assert.equal(recoveredDuringPrepare, true);
   assert.deepEqual(f.events, [
-    'auction.recover', 'clans.recover', 'shared.transact',
-    'shared.recover', 'prepare', 'shared.commit',
+    'auction.recover', 'clans.recover', 'shared.recover', 'shared.replay',
+    'shared.transact', 'shared.recover', 'prepare', 'shared.commit',
   ]);
+});
+
+test('ordinary shared transaction reports no recovery so live in-memory changes are preserved', () => {
+  const f = fixture();
+  let recoveredDuringPrepare = true;
+  f.runtime.transact(recovered => {
+    recoveredDuringPrepare = recovered;
+    return { files: { players: { p1: { gold: 90 } } }, result: undefined };
+  });
+  assert.equal(recoveredDuringPrepare, false);
 });
 
 test('legacy auction writes recover every journal before building their snapshot', () => {
