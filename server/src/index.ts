@@ -633,7 +633,7 @@ class GameRoom extends Room<RoomState> {
     this.onAuthenticatedMessage('clanCreate',(c,d:any)=>{
       if(!this.requireCharacter(c))return;
       const name=String(d?.name||'').trim().replace(/[<>]/g,'').slice(0,24);
-      const result=transactClanMutation(({p,clans})=>{
+      const result=transactClanMutation(this.playerId,({p,clans})=>{
         if(p.level<20)return {error:'Создать клан можно с 20 уровня.'};
         if(p.clan)return {error:'Ты уже состоишь в клане.'};
         if(name.length<3)return {error:'Название клана должно содержать 3–24 символа.'};
@@ -653,7 +653,7 @@ class GameRoom extends Room<RoomState> {
     this.onAuthenticatedMessage('clanJoin',(c,d:any)=>{
       if(!this.requireCharacter(c))return;
       const clanId=String(d?.id||'');
-      const result=transactClanMutation(({p,clans})=>{
+      const result=transactClanMutation(this.playerId,({p,clans})=>{
         if(p.level<20)return {error:'Вступить в клан можно с 20 уровня.'};
         if(p.clan)return {error:'Сначала выйди из текущего клана.'};
         const clan=clans[clanId];
@@ -898,12 +898,10 @@ function loadClans():Record<string,any>{return readPersistentJson<Record<string,
 function loadTerritories():any[]{const defaults=TERRITORIES.map(t=>({...t,owner:'',ownerName:'',capturedAt:0,defense:0}));const list=readPersistentJson<any[]>(TERRITORY_FILE,defaults,value=>Array.isArray(value)&&value.every(isPlainObject));if(!existsSync(TERRITORY_FILE))saveTerritories(list);return list;}
 function saveTerritories(list:any[]){writeJsonAtomic(TERRITORY_FILE,list);}
 function isClanMember(clan:any,playerId:string):boolean{return !!clan&&Array.isArray(clan.members)&&clan.members.some((member:any)=>member?.id===playerId);}
-function transactClanMutation<T>(prepare:(state:{p:Player;clans:Record<string,any>;wars:any[];territories:any[]})=>T):T{
+function transactClanMutation<T>(playerId:string,prepare:(state:{p:Player;clans:Record<string,any>;wars:any[];territories:any[]})=>T):T{
   return sharedStateRuntime.commitClan((hadRecovery)=>{
     if(hadRecovery)syncOnlinePlayersAfterRecovery();
-    const p=ONLINE_PLAYERS.get(String((prepare as any).playerId||'')) as Player|undefined;
-    // The caller supplies the authenticated player's ID through the active room context.
-    const player=p;
+    const player=ONLINE_PLAYERS.get(playerId);
     if(!player)throw new Error('Authenticated player is not online.');
     const clans=loadClans(),wars=loadWars(),territories=loadTerritories();
     const result=prepare({p:player,clans,wars,territories});
