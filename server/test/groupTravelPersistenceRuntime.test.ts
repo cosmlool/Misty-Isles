@@ -276,7 +276,15 @@ test('group expedition travel start and claim persist every member together', { 
     });
     rooms.push(reconnectedMemberRoom);
     memberRoom = reconnectedMemberRoom;
-
+    const reconnectedExpeditionStates: any[] = [];
+    memberRoom.onMessage('expeditionState', payload => reconnectedExpeditionStates.push(payload?.state));
+    memberRoom.send('expeditionState');
+    const reconnectedExpedition = await waitFor(
+      () => reconnectedExpeditionStates.find(state => state?.groupId === JSON.parse(readPlayers(join(dataDir, 'players.json'))[memberId].quests).expedition.groupId || state?.groupId === JSON.parse(readFileSync(join(dataDir, 'hunt_groups.json'), 'utf8'))[0]?.id),
+      'reconnected member expedition state matches restored group roster',
+    );
+    assert.equal(reconnectedExpedition.groupId, JSON.parse(readFileSync(join(dataDir, 'hunt_groups.json'), 'utf8'))[0].id,
+      'reconnected member expedition state must restore its persisted group association');
 
     const memberNotices: string[] = [];
     const restoredLeaderNotices: string[] = [];
