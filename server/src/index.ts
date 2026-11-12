@@ -20,6 +20,7 @@ import { createAuctionTransactionStore } from './auctionTransactions.js';
 import { createClanTransactionStore } from './clanTransactions.js';
 import { createSharedStateTransactionStore } from './sharedStateTransactions.js';
 import { createSharedStateRuntime } from './sharedStateRuntime.js';
+import { validateDungeonRunStore, type DungeonRunRecord } from './dungeonRunState.js';
 import { buyAuctionItem, cancelAuctionItem, listAuctionItem } from './auctionOperations.js';
 import { cancelCraftJob, claimCraftJob, startCraftJob } from './craftingQueue.js';
 import { calculateClanWarDamage, clanWarCooldownRemaining, disbandClanState, recordClanWarDamage, settleExpiredClanWars } from './clanWarOperations.js';
@@ -55,6 +56,7 @@ const AUCTION_HISTORY_FILE = join(DATA_DIR, 'auction_history.json');
 const WAR_FILE = join(DATA_DIR, 'clan_wars.json');
 const TERRITORY_FILE = join(DATA_DIR, 'clan_territories.json');
 const HUNT_GROUP_FILE = join(DATA_DIR, 'hunt_groups.json');
+const DUNGEON_RUN_FILE = join(DATA_DIR, 'dungeon_runs.json');
 const ACCOUNT_FILE = join(DATA_DIR, 'accounts.json');
 const SESSION_FILE = join(DATA_DIR, 'sessions.json');
 const GUEST_CREDENTIAL_FILE = join(DATA_DIR, 'guest_credentials.json');
@@ -72,12 +74,18 @@ const sharedStateTransactions = createSharedStateTransactionStore({
     wars: WAR_FILE,
     territories: TERRITORY_FILE,
     huntGroups: HUNT_GROUP_FILE,
+    dungeonRuns: DUNGEON_RUN_FILE,
   },
 });
 // One recovery gate handles legacy migration and the shared WAL. If both legacy
 // journals exist, the coordinator refuses to guess which full players snapshot is newer.
 const sharedStateRuntime = createSharedStateRuntime({ shared: sharedStateTransactions, auction: auctionTransactions, clans: clanTransactions });
 sharedStateRuntime.recoverPendingState();
+// Active dungeon records are restored only after the shared WAL has replayed.
+// Invalid snapshots fail closed instead of silently resetting a paid attempt.
+const ACTIVE_DUNGEON_RUNS = new Map<string, DungeonRunRecord>(
+  Object.entries(validateDungeonRunStore(existsSync(DUNGEON_RUN_FILE) ? JSON.parse(readFileSync(DUNGEON_RUN_FILE, 'utf8')) : {})),
+);
 function restoreHuntGroupsFromDisk(){
   HUNT_GROUPS.clear();
   PLAYER_GROUP.clear();
