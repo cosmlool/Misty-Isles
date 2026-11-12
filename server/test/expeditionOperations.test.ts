@@ -124,7 +124,9 @@ test('hunt group invitations expire after their deadline and release reserved sl
   assert.equal(countHuntGroupInvites(invites, 'group-a'), 1);
   assert.equal(expireHuntGroupInvites(invites, expiries, 5_001), 1);
   assert.deepEqual(Array.from(invites.entries()), [['player-c', 'group-b']]);
-  assert.equal(expireHuntGroupInvites(invites, expiries, 10_000), 0);
+  assert.equal(expireHuntGroupInvites(invites, expiries, 10_000), 1);
+  assert.deepEqual(Array.from(invites.entries()), []);
+  assert.deepEqual(Array.from(expiries.entries()), []);
 });
 
 test('expired invitations are removed even when their expiry record is invalid', () => {
