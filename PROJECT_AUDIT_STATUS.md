@@ -2762,3 +2762,11 @@ PEN-009 стоит 100 кристаллов и при максимальном �
 - Причина установлена по коду: auction store экспортировал `hasPending()`, clan store — нет. Общий recovery gate трактовал отсутствие метода как `false`, не обнаруживал одновременно ожидающие auction и clan journals и продолжал recovery. Это дефект production recovery gate, а не только теста.
 - Исправлено в `server/src/clanTransactions.ts`: добавлен `hasPending(): boolean { return existsSync(journalFile); }` и метод экспортирован из store. Commit: `bf097e28ef8b1bfdd6b9c84c2471125a9600835d`.
 - Статус исправления: внесено, но ещё НЕ проверено новым CI. Следующий обязательный шаг — дождаться новых workflow runs на новом HEAD, подтвердить 268/268 server tests, server build и все остальные jobs. До этого считать серверный контур непроверенным; PR не объединять.
+
+
+### Административная авторизация и CI — 2026-11-12
+- Найден критический дефект: обработчик `admin` принимал команды любого авторизованного игрока; старый комментарий обещал ограничение, которого фактически не было.
+- Исправлено: сервер разбирает allowlist точных player ID из `MISTY_ADMIN_PLAYER_IDS`; без переменной список пуст и административные команды закрыты. До исполнения команды проверяется allowlist и наличие созданного персонажа.
+- Добавлены unit-тесты парсера allowlist и runtime-регрессия: незанесённый в allowlist гость не может выполнить admin-команду.
+- Подтверждение на точном code HEAD `e1328083b1bf735c7fba99a2df860283247a51ef`: Quality Gate push run `43182193156` SUCCESS; Quality Gate pull_request run `43182468883` SUCCESS; Server checks run `43182468784` SUCCESS. В Quality Gate прошли server tests/build, client build, data/docs/project audit и Playwright; отдельный Server checks также прошёл тесты и сборку.
+- PR #15 остаётся Draft и не объединён. После этого документального коммита потребуется новый CI на обновлённом HEAD.
