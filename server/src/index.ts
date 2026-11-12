@@ -524,6 +524,7 @@ class GameRoom extends Room<RoomState> {
   private sessionToken = '';
   onCreate() { (this as any).maxClients = 1; this.setState(new RoomState()); this.registerHandlers(); this.clock.setInterval(() => applyHealthRegeneration(this.state.player), 1000); }
   onJoin(client: Client, options?: any) {
+    recoverPlayerStateBeforeMutation();
     const requestedPlayerId=safeId(options?.playerId);const session=verifySession(String(options?.sessionToken||''));
     if(!session||session.playerId!==requestedPlayerId) throw new Error('Требуется войти в аккаунт.');
     if (ONLINE_PLAYERS.has(session.playerId)) throw new Error('Этот персонаж уже находится в игре.');
@@ -545,8 +546,8 @@ class GameRoom extends Room<RoomState> {
     client.send('catalog', { items: ITEMS, shopItems:shopCatalogForPlayer(player), zones: EXPEDITION_DATA.zones, expedition:EXPEDITION_DATA, neutralCities: NEUTRAL_CITIES, professions: PROFESSIONS, recipes: RECIPES, guildSkills: GUILD_SKILLS, cityLocations: CITY_LOCS, cityNpcs:CITY_NPCS, bossCatalog: EXPEDITION_BESTIARY, raceCityInfo: RACE_CITY_INFO, raceDailyQuests: RACE_DAILY_QUESTS, rareProperties: RARE_PROPERTIES, professionSkills: PROFESSION_SKILLS, dungeons: DUNGEONS, equipmentSets: EQUIPMENT_SETS });
     client.send('notice', { text: this.state.player.race ? `С возвращением, ${this.state.player.name}!` : 'Выбери расу, чтобы начать приключение.' });
   }
-  onLeave(client: Client) { if (!isCurrentRoomSession({player:ONLINE_PLAYERS.get(this.playerId),client:ONLINE_CLIENTS.get(this.playerId),sessionHash:ONLINE_SESSION_HASHES.get(this.playerId)}, {player:this.state.player,client,sessionHash:tokenDigest(this.sessionToken)})) return; ONLINE_PLAYERS.delete(this.playerId); ONLINE_CLIENTS.delete(this.playerId); ONLINE_SESSION_HASHES.delete(this.playerId); const q=readObject(this.state.player.quests);if(q.expedition){if(q.expedition.groupId&&['searching','moving'].includes(q.expedition.state)){q.expedition.state='idle';q.expedition.endsAt=0;delete q.expedition.targetZoneId;}q.expedition.groupId='';this.state.player.quests=JSON.stringify(q);}const gid=PLAYER_GROUP.get(this.playerId),g=gid?HUNT_GROUPS.get(gid):undefined;if(g){g.members=g.members.filter(id=>id!==this.playerId);PLAYER_GROUP.delete(this.playerId);if(g.leader===this.playerId&&g.members.length)g.leader=g.members[0];if(!g.members.length)HUNT_GROUPS.delete(g.id);else for(const id of g.members)ONLINE_CLIENTS.get(id)?.send('huntGroupState',{group:groupSnapshot(id)});} this.save(); }
-  onDispose() { this.save(); }
+  onLeave(client: Client) { recoverPlayerStateBeforeMutation(); if (!isCurrentRoomSession({player:ONLINE_PLAYERS.get(this.playerId),client:ONLINE_CLIENTS.get(this.playerId),sessionHash:ONLINE_SESSION_HASHES.get(this.playerId)}, {player:this.state.player,client,sessionHash:tokenDigest(this.sessionToken)})) return; ONLINE_PLAYERS.delete(this.playerId); ONLINE_CLIENTS.delete(this.playerId); ONLINE_SESSION_HASHES.delete(this.playerId); const q=readObject(this.state.player.quests);if(q.expedition){if(q.expedition.groupId&&['searching','moving'].includes(q.expedition.state)){q.expedition.state='idle';q.expedition.endsAt=0;delete q.expedition.targetZoneId;}q.expedition.groupId='';this.state.player.quests=JSON.stringify(q);}const gid=PLAYER_GROUP.get(this.playerId),g=gid?HUNT_GROUPS.get(gid):undefined;if(g){g.members=g.members.filter(id=>id!==this.playerId);PLAYER_GROUP.delete(this.playerId);if(g.leader===this.playerId&&g.members.length)g.leader=g.members[0];if(!g.members.length)HUNT_GROUPS.delete(g.id);else for(const id of g.members)ONLINE_CLIENTS.get(id)?.send('huntGroupState',{group:groupSnapshot(id)});} this.save(); }
+  onDispose() { recoverPlayerStateBeforeMutation(); this.save(); }
   private save() { if (!this.playerId || !canSaveRoomPlayerSnapshot(ONLINE_PLAYERS.get(this.playerId), this.state.player)) return; this.state.player.lastSeenAt=Date.now(); persistPlayers([this.state.player]); }
   private notice(c: Client, text: string) { c.send('notice', { text }); this.save(); }
   private requireCharacter(c: Client) { if(ONLINE_CLIENTS.get(this.playerId)!==c){c.leave(4021);return false;}const p=this.state.player; if(!p.race){this.notice(c,'Сначала создай персонажа.');return false;} return true; }
@@ -562,7 +563,7 @@ class GameRoom extends Room<RoomState> {
     const players=Array.from(ONLINE_PLAYERS.entries()).filter(([id])=>id!==this.playerId).map(([id,v])=>{const vc=readObject(v.collections);const mutual=friends.includes(id)&&Array.isArray(vc.friends)&&vc.friends.includes(this.playerId);const sameClan=!!p.clan&&p.clan===v.clan;return {id:publicPlayerCode(id),name:v.name||'Путник',level:v.level||1,profession:v.profession||'',clan:v.clan||'',sameClan,friend:mutual,canInvite:sameClan||mutual};});
     c.send('huntGroupPlayers',{players}); c.send('huntGroupState',{group:groupSnapshot(this.playerId)});
   }
-  private onAuthenticatedMessage(type:string,handler:(client:Client,payload:any)=>void) { this.onMessage(type,(client,payload)=>{const session=verifySession(this.sessionToken);if(!session||session.playerId!==this.playerId||ONLINE_CLIENTS.get(this.playerId)!==client){client.leave(4021);return;}handler(client,payload);}); }
+  private onAuthenticatedMessage(type:string,handler:(client:Client,payload:any)=>void) { this.onMessage(type,(client,payload)=>{const session=verifySession(this.sessionToken);if(!session||session.playerId!==this.playerId||ONLINE_CLIENTS.get(this.playerId)!==client){client.leave(4021);return;}recoverPlayerStateBeforeMutation();handler(client,payload);}); }
   private registerHandlers() {
     this.onAuthenticatedMessage('huntGroupList',(c)=>this.sendHuntGroupPlayers(c,this.state.player));
     this.onAuthenticatedMessage('friendRequest',(c,d:any)=>{if(!this.requireCharacter(c))return;const targetId=resolvePublicPlayerCode(String(d?.targetId||''));if(!targetId||targetId===this.playerId)return this.notice(c,'Укажи другого игрока.');const target=ONLINE_CLIENTS.get(targetId);if(!target)return this.notice(c,'Игрок должен быть в сети, чтобы принять запрос.');const requests=FRIEND_REQUESTS.get(targetId)||new Set<string>();requests.add(this.playerId);FRIEND_REQUESTS.set(targetId,requests);target.send('friendInvite',{fromId:publicPlayerCode(this.playerId),fromName:this.state.player.name||'Путник'});this.notice(c,'Запрос в друзья отправлен.');});
@@ -1084,7 +1085,8 @@ function safeId(v:any){return String(v||'').replace(/[^a-zA-Z0-9_-]/g,'').slice(
 function loadPlayersWithOnline():Record<string,any>{const all=loadPlayers();for(const player of Object.values(all))normalizePlayerProfessionData(player);for(const [id,online] of ONLINE_PLAYERS){normalizePlayerProfessionData(online);all[id]=online.toJSON();}return all;}
 function syncOnlinePlayersAfterRecovery(){const recovered=loadPlayers();for(const [id,online] of ONLINE_PLAYERS){const saved=recovered[id];if(saved)applyPlayerSave(online as any,saved);}}
 function loadPlayersForAuction():Record<string,any>{return loadPlayersWithOnline();}
-function persistPlayers(players:Player[]){sharedStateRuntime.transact((hadRecovery)=>{if(hadRecovery){const recovered=loadPlayers();for(const [id,online] of ONLINE_PLAYERS){const saved=recovered[id];if(saved)applyPlayerSave(online as any,saved);}}for(const online of ONLINE_PLAYERS.values())normalizePlayerProfessionData(online);const all=loadPlayers();for(const player of Object.values(all))normalizePlayerProfessionData(player);for(const [id,online] of ONLINE_PLAYERS)all[id]=online.toJSON();if(!hadRecovery)for(const p of players)if(p?.id)all[p.id]=p.toJSON();return {files:{players:all},result:undefined};});}
+function recoverPlayerStateBeforeMutation(){const recovered=sharedStateRuntime.recoverPendingState();if(recovered)syncOnlinePlayersAfterRecovery();return recovered;}
+function persistPlayers(players:Player[]){sharedStateRuntime.transact((hadRecovery)=>{if(hadRecovery)throw new Error('Player state was recovered during a mutation; retry the action after state synchronization.');for(const online of ONLINE_PLAYERS.values())normalizePlayerProfessionData(online);const all=loadPlayers();for(const player of Object.values(all))normalizePlayerProfessionData(player);for(const [id,online] of ONLINE_PLAYERS)all[id]=online.toJSON();for(const p of players)if(p?.id)all[p.id]=p.toJSON();return {files:{players:all},result:undefined};});}
 function persistPlayer(p:Player){if(!p?.id)return;persistPlayers([p]);}
 function loadClans():Record<string,any>{return readPersistentJson<Record<string,any>>(CLAN_FILE,{},value=>isPlainObject(value)&&Object.values(value).every(isPlainObject));}
 function loadTerritories():any[]{const defaults=TERRITORIES.map(t=>({...t,owner:'',ownerName:'',capturedAt:0,defense:0}));const list=readPersistentJson<any[]>(TERRITORY_FILE,defaults,value=>Array.isArray(value)&&value.every(isPlainObject));if(!existsSync(TERRITORY_FILE))saveTerritories(list);return list;}
@@ -1248,7 +1250,10 @@ const httpServer=createServer(authHttpHandler);const gameServer=new Server({tran
 startPlayerAutosave({
   intervalMs: 30_000,
   save: () => {
-    if (ONLINE_PLAYERS.size) persistPlayers(Array.from(ONLINE_PLAYERS.values()));
+    if (ONLINE_PLAYERS.size) {
+      recoverPlayerStateBeforeMutation();
+      persistPlayers(Array.from(ONLINE_PLAYERS.values()));
+    }
   },
   onError: error => console.error('Periodic player autosave failed:', error),
 });
