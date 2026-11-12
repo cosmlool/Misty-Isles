@@ -1,6 +1,6 @@
 # Единый координатор сохранения игроков
 
-Статус: shared transaction engine реализован и покрыт unit-тестами; production writers ещё не мигрированы.  
+Статус: shared transaction engine реализован; production player/auction/clan writers в `index.ts` переведены на `sharedStateRuntime` и общий WAL. Полный прогон тестов, сборки и CI на актуальном head не подтверждён.  
 Дата аудита: 12.11.2026.  
 Базовый commit: `f92f28b4907e369ef60a95e65a2e03d820fbe090`.
 
