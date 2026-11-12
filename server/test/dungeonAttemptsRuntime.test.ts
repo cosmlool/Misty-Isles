@@ -156,8 +156,10 @@ test('solo Forgotten Lands boss dungeon reports remaining daily entries and enfo
         const resultsBeforeReplay = results.filter(entry => entry.requestId === requestId).length;
         assert.equal(resultsBeforeReplay, 1, 'the original request must emit exactly one combat result');
         room.send('dungeonRun', { id: 'fl_dungeon_03', requestId });
-        await waitFor(() => results.filter(entry => entry.requestId === requestId).length > resultsBeforeReplay,
-          'idempotent replay of the first dungeon attempt');
+        await waitFor(() => {
+          const replayCount = results.filter(entry => entry.requestId === requestId).length;
+          return replayCount > resultsBeforeReplay ? replayCount : undefined;
+        }, 'idempotent replay of the first dungeon attempt');
         assert.equal(results.filter(entry => entry.requestId === requestId).length, 2,
           'one explicit replay must return exactly one saved result');
         const saved = readJson(join(dataDir, 'players.json'))[playerId];
