@@ -1,6 +1,6 @@
 # Единый координатор сохранения игроков
 
-Статус: техническая спецификация, реализация не начата.  
+Статус: shared transaction engine реализован и покрыт unit-тестами; production writers ещё не мигрированы.  
 Дата аудита: 12.11.2026.  
 Базовый commit: `f92f28b4907e369ef60a95e65a2e03d820fbe090`.
 
@@ -132,3 +132,41 @@
 - Добавить тест, что простое чтение/открытие экрана клановых заданий не создаёт несогласованную запись поверх транзакции.
 - Bootstrap обязан завершить общий recovery до загрузки online Player objects, и только после этого запускать комнаты/autosave.
 - Проверить все call sites функций save* по всему серверному каталогу, а не только определения и прямые вызовы в `index.ts`.
+
+
+## 9. Повторная проверка реализации на commit 6092bc9 (12.11.2026)
+
+### 9.1 Что уже существует
+
+- `server/src/sharedStateTransactions.ts` реализует единый WAL и callback API `transact(prepareAfterRecovery)`.
+- Callback подготовки вызывается только после `recover()`, поэтому snapshot можно собирать из актуальных файлов.
+- Есть allowlist targets, atomic replace, backup `players.json`, fail-closed при ошибке recovery и fault-injection hooks.
+- `server/test/sharedStateTransactions.test.ts` покрывает общий commit, подготовку после recovery, crash между target writes, legacy recovery order, повреждённый WAL, fail-closed, backup и rotation.
+
+### 9.2 Production integration всё ещё отсутствует
+
+Проверено в `server/src/index.ts`:
+
+- Startup по-прежнему восстанавливает legacy auction и clan WAL, затем shared WAL. Этот порядок сохраняет совместимость с переходным периодом.
+- `GameRoom.save()` всё ещё вызывает прямой `savePlayers(all)`.
+- `pvpList` всё ещё вызывает прямой `savePlayers(all)` при обновлении списка соперников.
+- `pvpChallenge` всё ещё вызывает прямой `savePlayers(all)` после боя.
+- `persistPlayers()` всё ещё вызывает прямой `savePlayers(all)`; через него проходит 30-секундный autosave и другие игровые сохранения.
+- `auctionSell`, `auctionCancel`, `auctionBuy` всё ещё вызывают `auctionTransactions.commit()`.
+- `commitClanState()` всё ещё вызывает `clanTransactions.commit()`.
+- Вызовы `loadPlayersWithOnline()` и `loadPlayersForAuction()` формируют online snapshot до общей транзакции; после recovery нужно синхронизировать уже загруженные объекты `ONLINE_PLAYERS` с восстановленным player snapshot до включения их в новый snapshot.
+- `loadTerritories()` может создавать defaults прямой записью через `saveTerritories()`; это bootstrap-путь, который нужно перенести под контролируемую инициализацию до запуска игровых writers.
+- 30-секундный autosave оставляется без изменений.
+
+### 9.3 Обязательный порядок следующей миграции
+
+1. На старте выполнить recovery legacy auction WAL, затем legacy clan WAL, затем shared WAL — до загрузки/создания online Player objects и запуска autosave.
+2. Сделать единый helper подготовки player snapshot, который вызывается только внутри `sharedStateTransactions.transact()`; после recovery он перечитывает disk state и синхронизирует online Player objects перед merge.
+3. Перевести `GameRoom.save()`, `persistPlayers()`, `pvpList` и `pvpChallenge` на shared transaction callback.
+4. Перевести auction sell/cancel/buy на shared transaction; их бизнес-операции должны вычислять snapshot внутри callback, а не до него.
+5. Перевести все clan/war/territory writers на shared transaction; `commitClanState` не должен использовать legacy WAL.
+6. Запретить прямые runtime writes для players, auction, auction history, clans, wars и territories; сохранить только строго контролируемую bootstrap-инициализацию defaults.
+7. Добавить runtime fault tests для stale online Player object, каждой legacy WAL + обычного save, auction + clan cross-write, и всех существующих write call sites.
+8. Только после миграции всех writers удалить legacy transaction stores и их startup recovery. Не удалять их раньше.
+
+**Важно:** наличие и unit-тесты shared transaction engine не означают, что production runtime уже защищён общим WAL. До завершения пунктов выше архитектура остаётся переходной и не готова к persistent mining jobs.
