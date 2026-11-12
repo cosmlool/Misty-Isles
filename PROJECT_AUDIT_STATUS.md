@@ -2657,3 +2657,11 @@ PEN-009 стоит 100 кристаллов и при максимальном �
 - Added restart runtime coverage: restore a two-member group with one member offline, then verify both members reconnect into the same group.
 - The test has been authored but not executed in this environment; current-head CI is not yet reported.
 - Open behavior decision: an offline leader remains leader, so group actions requiring the leader wait until they reconnect or explicitly leave.
+
+
+### Hunt-group transaction hardening — 2026-11-12
+- Group roster mutations now snapshot both `players.json` and `hunt_groups.json` in one shared WAL transaction. Explicit leave, including leader transfer/disband, commits the departing player's cleared expedition group reference with the new roster.
+- If the leave transaction fails, the in-memory player quest JSON is rolled back; the group helper restores the in-memory roster from the persisted snapshot.
+- Extended shared WAL crash test: process exits immediately after the player target write while the journal also contains a new hunt-group roster; restart recovery must replay the missing group target.
+- Extended group runtime test: after restart/reconnect, leader leaves and leadership transfers to the remaining member; the final member leaves and the persisted group file becomes empty.
+- Tests are authored but not executed in this environment; CI confirmation remains pending.
