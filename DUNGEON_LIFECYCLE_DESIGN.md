@@ -109,3 +109,11 @@ Important limitation: the current boss dungeon handler is still synchronous and 
 - `resolveNextDungeonRunRound` applies exactly one saved slice, advances the round cursor, updates participant HP/status and boss HP, and returns a new immutable run snapshot. A serialized snapshot resumes from the next unresolved round.
 - Tests cover exact damage conservation, one-round-at-a-time progression, serialization/recovery between rounds, terminal exhaustion, and malformed plans.
 - Scope limitation: this is the deterministic resumable round engine and persisted plan format. The production `runExpeditionDungeon()` handler still resolves the encounter synchronously and does not yet create/commit this plan or expose a round action to clients. Runtime wiring and preserving the current reward/loot/idempotency behavior remain the next integration task.
+
+
+## Atomic dungeon entry preparation
+
+- Added `dungeonRunStartTransaction.ts` as a pure preparation layer for the entry transaction. It freezes the participant roster in a validated run record and prepares the matching player snapshots with daily attempt and battle counters updated together.
+- A repeated request with the same durable run identity returns the existing run without incrementing attempts or battles again. Reusing a request ID for a different run, overlapping an active run, malformed player snapshots, or exhausted daily attempts rejects the entire preparation.
+- Tests cover daily reset, party-wide attempt charging, retry idempotency, active-run overlap, attempt limits, and input immutability.
+- The helper is not yet called by `runExpeditionDungeon()`; production entry remains synchronous until the runtime integration stage. The next step is to wire this preparation into the shared WAL and then add durable round continuation/finalization without changing combat or reward formulas.
