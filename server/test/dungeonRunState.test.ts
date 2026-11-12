@@ -136,11 +136,11 @@ test('deterministic round plan preserves aggregate damage exactly and resumes at
   const plan = createDungeonRoundPlan({
     totalRounds: 3,
     totalBossDamage: 101,
-    totalDamageByParticipant: { p1: 10, p2: 5 },
+    totalIncomingDamageByParticipant: { p1: 10, p2: 5 },
   });
   assert.equal(plan.bossDamageByRound.reduce((sum, value) => sum + value, 0), 101);
-  assert.equal(plan.participantDamageByRound.p1.reduce((sum, value) => sum + value, 0), 10);
-  assert.equal(plan.participantDamageByRound.p2.reduce((sum, value) => sum + value, 0), 5);
+  assert.equal(plan.incomingDamageByRound.p1.reduce((sum, value) => sum + value, 0), 10);
+  assert.equal(plan.incomingDamageByRound.p2.reduce((sum, value) => sum + value, 0), 5);
 
   const base = run();
   const withPlan = { ...base, encounter: { ...base.encounter, bossHealth: 101, bossMaxHealth: 101 }, roundPlan: plan };
@@ -170,13 +170,13 @@ test('round plan validation rejects incomplete or non-finite participant schedul
       totalRounds: 2,
       nextRoundIndex: 0,
       bossDamageByRound: [5, 5],
-      participantDamageByRound: { p1: [1, 1] },
+      incomingDamageByRound: { p1: [1, 1] },
     },
   };
   assert.throws(() => validateDungeonRunStore({ run_001: state }), /incomplete round plan/);
   assert.throws(() => createDungeonRoundPlan({
     totalRounds: 2,
     totalBossDamage: 10,
-    totalDamageByParticipant: { p1: 1, p2: Number.NaN },
+    totalIncomingDamageByParticipant: { p1: 1, p2: Number.NaN },
   }), /Invalid deterministic dungeon round plan/);
 });
