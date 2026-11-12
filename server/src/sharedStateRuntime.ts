@@ -46,10 +46,11 @@ export function createSharedStateRuntime(options: Options) {
     });
   }
 
-  function commitClan<T>(prepareAfterRecovery: (recovered: boolean) => { snapshot: unknown; result: T }): T {
+  function commitClan<T>(prepareAfterRecovery: (recovered: boolean) => { snapshot: unknown; result: T; skipWrite?: boolean }): T {
     const recovered = recoverPendingState();
     return options.shared.transact(() => {
       const prepared = prepareAfterRecovery(recovered);
+      if (prepared.skipWrite) return { files: {}, result: prepared.result, skipWrite: true };
       const snapshot = prepared.snapshot as { players: unknown; clans: unknown; wars: unknown[]; territories: unknown[] };
       return {
         files: { players: snapshot.players, clans: snapshot.clans, wars: snapshot.wars, territories: snapshot.territories },
