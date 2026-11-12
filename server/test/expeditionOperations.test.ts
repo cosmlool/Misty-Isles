@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { checkExpeditionTravelConsistency, checkExpeditionTravelReadiness, checkExpeditionTravelStartReadiness, isHuntGroupLevelRangeValid } from '../src/expeditionOperations.js';
+import { checkExpeditionTravelConsistency, checkExpeditionTravelReadiness, checkExpeditionTravelStartReadiness, invalidateHuntGroupInvites, isHuntGroupLevelRangeValid } from '../src/expeditionOperations.js';
 
 test('group travel waits for the latest participant before any transition is applied', () => {
   const states = [
@@ -86,4 +86,13 @@ test('hunt group levels stay within five levels of the leader, inclusively', () 
   assert.equal(isHuntGroupLevelRangeValid(35, [35, Number.NaN]), false);
   assert.equal(isHuntGroupLevelRangeValid(Number.NaN, [35]), false);
   assert.equal(isHuntGroupLevelRangeValid(35, []), false);
+});
+
+
+test('leadership change invalidates every pending invitation for the old group', () => {
+  const invites = new Map([['player-a', 'group-a'], ['player-b', 'group-b'], ['player-c', 'group-a']]);
+  assert.equal(invalidateHuntGroupInvites(invites, 'group-a'), 2);
+  assert.deepEqual(Array.from(invites.entries()), [['player-b', 'group-b']]);
+  assert.equal(invalidateHuntGroupInvites(invites, 'group-a'), 0);
+  assert.equal(invalidateHuntGroupInvites(invites, ''), 0);
 });
