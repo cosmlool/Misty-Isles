@@ -18,6 +18,7 @@ import { filterAvailableUniqueItems, isLastEquippedCopy, ownsItemCopy, removeInv
 import { readPlayerArray as readArray, readPlayerObject as readObject } from './playerJson.js';
 import { createAuctionTransactionStore } from './auctionTransactions.js';
 import { createClanTransactionStore } from './clanTransactions.js';
+import { createSharedStateTransactionStore } from './sharedStateTransactions.js';
 import { buyAuctionItem, cancelAuctionItem, listAuctionItem } from './auctionOperations.js';
 import { cancelCraftJob, claimCraftJob, startCraftJob } from './craftingQueue.js';
 import { calculateClanWarDamage, clanWarCooldownRemaining, disbandClanState, recordClanWarDamage, settleExpiredClanWars } from './clanWarOperations.js';
@@ -56,6 +57,20 @@ const auctionTransactions = createAuctionTransactionStore({ dataDir: DATA_DIR, p
 auctionTransactions.recover();
 const clanTransactions = createClanTransactionStore({ dataDir: DATA_DIR, playersFile: SAVE_FILE, clansFile: CLAN_FILE, warsFile: WAR_FILE, territoriesFile: TERRITORY_FILE });
 clanTransactions.recover();
+// Legacy journals must be replayed first. A shared-state journal represents a
+// later transaction and therefore must be applied last during the transition.
+const sharedStateTransactions = createSharedStateTransactionStore({
+  dataDir: DATA_DIR,
+  files: {
+    players: SAVE_FILE,
+    auction: AUCTION_FILE,
+    auctionHistory: AUCTION_HISTORY_FILE,
+    clans: CLAN_FILE,
+    wars: WAR_FILE,
+    territories: TERRITORY_FILE,
+  },
+});
+sharedStateTransactions.recover();
 const EXPEDITION_DATA:any = JSON.parse(readFileSync(join(DATA_DIR,'forgotten_lands.json'),'utf8'));
 const EXPEDITION_BESTIARY:any[] = EXPEDITION_DATA.monsters
   .filter((monster:any)=>['rare','elite','guardian','boss','finalBoss'].includes(monster.rank))

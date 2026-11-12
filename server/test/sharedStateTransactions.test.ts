@@ -5,6 +5,8 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import test from 'node:test';
 import { createSharedStateTransactionStore } from '../src/sharedStateTransactions.js';
+import { createAuctionTransactionStore } from '../src/auctionTransactions.js';
+import { createClanTransactionStore } from '../src/clanTransactions.js';
 
 function fixture(testHooks?: any) {
   const dataDir = mkdtempSync(join(tmpdir(), 'misty-shared-state-'));
@@ -97,6 +99,52 @@ test('a process crash between target writes is replayed from the single shared j
     assert.deepEqual(readJson(f.files.clans), { c1: { vault: 40 } });
     assert.equal(existsSync(restarted.journalFile), false);
     assert.equal(restarted.recover(), false);
+  } finally { f.cleanup(); }
+});
+
+test('startup migration recovery replays legacy journals before the newer shared journal', () => {
+  const f = fixture();
+  try {
+    const auction = createAuctionTransactionStore({
+      dataDir: f.dataDir, playersFile: f.files.players,
+      auctionFile: f.files.auction, historyFile: f.files.auctionHistory,
+    });
+    const clans = createClanTransactionStore({
+      dataDir: f.dataDir, playersFile: f.files.players,
+      clansFile: f.files.clans, warsFile: f.files.wars,
+      territoriesFile: f.files.territories,
+    });
+
+    writeFileSync(auction.journalFile, JSON.stringify({
+      version: 1,
+      snapshot: { players: { p1: { gold: 10 } }, auction: [{ id: 'legacy_lot' }], history: [] },
+    }));
+    writeFileSync(clans.journalFile, JSON.stringify({
+      version: 1,
+      snapshot: {
+        players: { p1: { gold: 20 } }, clans: { c1: { vault: 1 } },
+        wars: [], territories: [],
+      },
+    }));
+    writeFileSync(f.store.journalFile, JSON.stringify({
+      version: 1,
+      files: {
+        players: { p1: { gold: 30 } }, auction: [{ id: 'shared_lot' }],
+        auctionHistory: [{ id: 'shared_tx' }], clans: { c1: { vault: 2 } },
+      },
+    }));
+
+    assert.equal(auction.recover(), true);
+    assert.equal(clans.recover(), true);
+    assert.equal(f.store.recover(), true);
+
+    assert.equal(readJson(f.files.players).p1.gold, 30);
+    assert.deepEqual(readJson(f.files.auction), [{ id: 'shared_lot' }]);
+    assert.deepEqual(readJson(f.files.auctionHistory), [{ id: 'shared_tx' }]);
+    assert.deepEqual(readJson(f.files.clans), { c1: { vault: 2 } });
+    assert.equal(existsSync(auction.journalFile), false);
+    assert.equal(existsSync(clans.journalFile), false);
+    assert.equal(existsSync(f.store.journalFile), false);
   } finally { f.cleanup(); }
 });
 
