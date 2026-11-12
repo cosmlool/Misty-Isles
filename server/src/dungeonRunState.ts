@@ -64,7 +64,9 @@ export function validateDungeonRunStore(value: unknown): DungeonRunStore {
         !['alive', 'spectator', 'revived'].includes(participant.status) ||
         !Number.isFinite(participant.health) || !Number.isFinite(participant.maxHealth) ||
         !Number.isFinite(participant.lastActivityAt) ||
-        !Array.isArray(participant.resurrectedPlayerIds)) {
+        !Array.isArray(participant.resurrectedPlayerIds) ||
+        new Set(participant.resurrectedPlayerIds).size !== participant.resurrectedPlayerIds.length ||
+        participant.resurrectedPlayerIds.some((id: unknown) => typeof id !== 'string' || id === playerId || !raw.participantIds.includes(id))) {
         throw new Error(`dungeon_runs.json contains invalid participant state for ${playerId} in ${key}.`);
       }
     }
@@ -176,4 +178,79 @@ export function finishDungeonRun(
     updatedAt: now,
     terminalResult: { outcome, committedAt: now, requestId: current.requestId },
   };
+}
+
+
+/** A death moves the participant to spectator state; the group roster is unchanged. */
+export function markDungeonParticipantDead(
+  current: DungeonRunRecord,
+  playerId: string,
+  now: number,
+): DungeonRunRecord {
+  if (current.status !== 'active') throw new Error('Cannot change participants in a terminal dungeon run.');
+  const participant = current.participants[playerId];
+  if (!participant) throw new Error(`Unknown dungeon participant: ${playerId}.`);
+  if (!Number.isFinite(now)) throw new Error('Invalid participant activity timestamp.');
+  if (participant.status === 'spectator') return current;
+  return {
+    ...current,
+    updatedAt: now,
+    participants: {
+      ...current.participants,
+      [playerId]: { ...participant, status: 'spectator', health: 0, lastActivityAt: now },
+    },
+  };
+}
+
+/**
+ * One scroll revives one other participant. The caller owns the real inventory
+ * mutation; this transition returns the remaining scroll count so both changes
+ * can be committed together by the runtime transaction.
+ */
+export function reviveDungeonParticipant(
+  current: DungeonRunRecord,
+  input: {
+    rescuerId: string;
+    targetId: string;
+    availableScrolls: number;
+    reviveHealth: number;
+    now: number;
+  },
+): { run: DungeonRunRecord; scrollsRemaining: number } {
+  if (current.status !== 'active') throw new Error('Cannot revive participants in a terminal dungeon run.');
+  const rescuer = current.participants[input.rescuerId];
+  const target = current.participants[input.targetId];
+  if (!rescuer || !target) throw new Error('Rescuer and target must belong to this dungeon party.');
+  if (input.rescuerId === input.targetId) throw new Error('A participant cannot revive themselves.');
+  if (rescuer.status === 'spectator') throw new Error('A spectator cannot use a resurrection scroll.');
+  if (target.status !== 'spectator') throw new Error('Only a fallen spectator can be revived.');
+  if (!Number.isInteger(input.availableScrolls) || input.availableScrolls < 1) {
+    throw new Error('A resurrection scroll is required.');
+  }
+  if (rescuer.resurrectedPlayerIds.includes(input.targetId)) {
+    throw new Error('This rescuer has already revived this participant during the expedition.');
+  }
+  if (!Number.isFinite(input.now) || !Number.isFinite(input.reviveHealth) ||
+    input.reviveHealth <= 0 || input.reviveHealth > target.maxHealth) {
+    throw new Error('Invalid resurrection health or timestamp.');
+  }
+  const next: DungeonRunRecord = {
+    ...current,
+    updatedAt: input.now,
+    participants: {
+      ...current.participants,
+      [input.rescuerId]: {
+        ...rescuer,
+        lastActivityAt: input.now,
+        resurrectedPlayerIds: [...rescuer.resurrectedPlayerIds, input.targetId],
+      },
+      [input.targetId]: {
+        ...target,
+        status: 'revived',
+        health: input.reviveHealth,
+        lastActivityAt: input.now,
+      },
+    },
+  };
+  return { run: next, scrollsRemaining: input.availableScrolls - 1 };
 }
