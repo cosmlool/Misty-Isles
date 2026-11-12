@@ -126,3 +126,12 @@ Important limitation: the current boss dungeon handler is still synchronous and 
 - Idempotent retries of the same request do not write a second attempt charge. Invalid battle counters are rejected before serialization.
 - A process-crash test interrupts the WAL after the player file is written and verifies recovery restores both the attempt charge and active dungeon run.
 - The runtime transaction helper is still not called by `runExpeditionDungeon()`. The live handler remains synchronous; this stage hardens the durable transaction boundary and tests it without claiming the production dungeon has become resumable.
+
+
+## Extracted deterministic combat calculation
+
+- Added `dungeonCombatMath.ts` as a pure calculation boundary for the existing boss-dungeon combat formula.
+- The live handler now supplies already-resolved passive, weakness, profession, and evasion multipliers to that helper; it still uses the same attack/defense coefficients, party scaling, Knight guard, three-round victory condition, incoming-damage floor, and HP comparison.
+- The helper returns the original round count, incoming damage per participant, victory decision, and each participant's aggregate outgoing damage. Combat reports now read their damage value from this shared result rather than duplicating the formula.
+- Dedicated tests cover the legacy calculation, party scaling, damage flooring, and strict survival threshold.
+- This is a formula extraction and test seam only. The handler still executes the whole encounter synchronously; no durable round commits, reward timing, loot timing, or client round actions are wired yet.
