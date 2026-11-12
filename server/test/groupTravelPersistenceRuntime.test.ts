@@ -251,6 +251,29 @@ test('group expedition travel start and claim persist every member together', { 
       'restored group after both members reconnect',
     );
     assert.equal(restoredWithBothOnline.group.leader, publicCode(leaderId));
+
+    const memberNotices: string[] = [];
+    const restoredLeaderNotices: string[] = [];
+    memberRoom.onMessage('notice', payload => memberNotices.push(String(payload?.text || '')));
+    leaderRoom.onMessage('notice', payload => restoredLeaderNotices.push(String(payload?.text || '')));
+
+    leaderRoom.send('huntGroupLeave');
+    await waitFor(() => restoredLeaderNotices.find(message => message === 'Ты покинул охотничью группу.'), 'leader leaves and transfers leadership');
+    const afterLeaderLeave = JSON.parse(readFileSync(join(dataDir, 'hunt_groups.json'), 'utf8'));
+    assert.equal(afterLeaderLeave.length, 1);
+    assert.equal(afterLeaderLeave[0].leader, memberId, 'remaining member must become the new leader');
+    assert.deepEqual(afterLeaderLeave[0].members, [memberId]);
+    const afterLeaderPlayerSave = readPlayers(join(dataDir, 'players.json'));
+    assert.equal(JSON.parse(afterLeaderPlayerSave[leaderId].quests).expedition.groupId, '',
+      'departing leader expedition membership must be cleared in the same persisted snapshot');
+
+    memberRoom.send('huntGroupLeave');
+    await waitFor(() => memberNotices.find(message => message === 'Ты покинул охотничью группу.'), 'last member leaves and disbands group');
+    const afterDisband = JSON.parse(readFileSync(join(dataDir, 'hunt_groups.json'), 'utf8'));
+    assert.deepEqual(afterDisband, [], 'last explicit leave must persist an empty group roster');
+    const afterMemberSave = readPlayers(join(dataDir, 'players.json'));
+    assert.equal(JSON.parse(afterMemberSave[memberId].quests).expedition.groupId, '',
+      'departing member expedition membership must be cleared');
   } finally {
     for (const room of rooms) await leaveRoomSafely(room);
     if (child) await stopServer(child);
