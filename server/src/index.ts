@@ -19,6 +19,7 @@ import { readPlayerArray as readArray, readPlayerObject as readObject } from './
 import { createAuctionTransactionStore } from './auctionTransactions.js';
 import { createClanTransactionStore } from './clanTransactions.js';
 import { createSharedStateTransactionStore } from './sharedStateTransactions.js';
+import { createSharedStateRuntime } from './sharedStateRuntime.js';
 import { buyAuctionItem, cancelAuctionItem, listAuctionItem } from './auctionOperations.js';
 import { cancelCraftJob, claimCraftJob, startCraftJob } from './craftingQueue.js';
 import { calculateClanWarDamage, clanWarCooldownRemaining, disbandClanState, recordClanWarDamage, settleExpiredClanWars } from './clanWarOperations.js';
@@ -71,6 +72,7 @@ const sharedStateTransactions = createSharedStateTransactionStore({
   },
 });
 sharedStateTransactions.recover();
+const sharedStateRuntime = createSharedStateRuntime({ shared: sharedStateTransactions, auction: auctionTransactions, clans: clanTransactions });
 const EXPEDITION_DATA:any = JSON.parse(readFileSync(join(DATA_DIR,'forgotten_lands.json'),'utf8'));
 const EXPEDITION_BESTIARY:any[] = EXPEDITION_DATA.monsters
   .filter((monster:any)=>['rare','elite','guardian','boss','finalBoss'].includes(monster.rank))
@@ -545,7 +547,7 @@ class GameRoom extends Room<RoomState> {
   }
   onLeave(client: Client) { if (!isCurrentRoomSession({player:ONLINE_PLAYERS.get(this.playerId),client:ONLINE_CLIENTS.get(this.playerId),sessionHash:ONLINE_SESSION_HASHES.get(this.playerId)}, {player:this.state.player,client,sessionHash:tokenDigest(this.sessionToken)})) return; ONLINE_PLAYERS.delete(this.playerId); ONLINE_CLIENTS.delete(this.playerId); ONLINE_SESSION_HASHES.delete(this.playerId); const q=readObject(this.state.player.quests);if(q.expedition){if(q.expedition.groupId&&['searching','moving'].includes(q.expedition.state)){q.expedition.state='idle';q.expedition.endsAt=0;delete q.expedition.targetZoneId;}q.expedition.groupId='';this.state.player.quests=JSON.stringify(q);}const gid=PLAYER_GROUP.get(this.playerId),g=gid?HUNT_GROUPS.get(gid):undefined;if(g){g.members=g.members.filter(id=>id!==this.playerId);PLAYER_GROUP.delete(this.playerId);if(g.leader===this.playerId&&g.members.length)g.leader=g.members[0];if(!g.members.length)HUNT_GROUPS.delete(g.id);else for(const id of g.members)ONLINE_CLIENTS.get(id)?.send('huntGroupState',{group:groupSnapshot(id)});} this.save(); }
   onDispose() { this.save(); }
-  private save() { if (!this.playerId || !canSaveRoomPlayerSnapshot(ONLINE_PLAYERS.get(this.playerId), this.state.player)) return; this.state.player.lastSeenAt=Date.now(); const all = loadPlayersWithOnline(); all[this.playerId] = this.state.player.toJSON(); savePlayers(all); }
+  private save() { if (!this.playerId || !canSaveRoomPlayerSnapshot(ONLINE_PLAYERS.get(this.playerId), this.state.player)) return; this.state.player.lastSeenAt=Date.now(); persistPlayers([this.state.player]); }
   private notice(c: Client, text: string) { c.send('notice', { text }); this.save(); }
   private requireCharacter(c: Client) { if(ONLINE_CLIENTS.get(this.playerId)!==c){c.leave(4021);return false;}const p=this.state.player; if(!p.race){this.notice(c,'Сначала создай персонажа.');return false;} return true; }
   private addXp(p: Player, amount: number) { p.experience += amount; while(p.experience>=xpNeed(p.level)){p.experience-=xpNeed(p.level);p.level++;p.statPoints+=3;p.experienceToNext=xpNeed(p.level);const healthIncrease=18+p.vitality*0.5;p.maxHealth+=healthIncrease;p.health=Math.min(effectiveMaxHealth(p),p.health+healthIncrease);} }
@@ -812,7 +814,7 @@ function safeId(v:any){return String(v||'').replace(/[^a-zA-Z0-9_-]/g,'').slice(
 
 function loadPlayersWithOnline():Record<string,any>{const all=loadPlayers();for(const player of Object.values(all))normalizePlayerProfessionData(player);for(const [id,online] of ONLINE_PLAYERS){normalizePlayerProfessionData(online);all[id]=online.toJSON();}return all;}
 function loadPlayersForAuction():Record<string,any>{return loadPlayersWithOnline();}
-function persistPlayers(players:Player[]){const all=loadPlayersWithOnline();for(const p of players)if(p?.id)all[p.id]=p.toJSON();savePlayers(all);}
+function persistPlayers(players:Player[]){sharedStateRuntime.transact(()=>{const recovered=loadPlayers();for(const [id,online] of ONLINE_PLAYERS){const saved=recovered[id];if(saved)applyPlayerSave(online as any,saved);normalizePlayerProfessionData(online);}const all=loadPlayers();for(const player of Object.values(all))normalizePlayerProfessionData(player);for(const [id,online] of ONLINE_PLAYERS)all[id]=online.toJSON();for(const p of players)if(p?.id)all[p.id]=p.toJSON();return {files:{players:all},result:undefined};});}
 function persistPlayer(p:Player){if(!p?.id)return;persistPlayers([p]);}
 function loadClans():Record<string,any>{return readPersistentJson<Record<string,any>>(CLAN_FILE,{},value=>isPlainObject(value)&&Object.values(value).every(isPlainObject));}
 function loadTerritories():any[]{const defaults=TERRITORIES.map(t=>({...t,owner:'',ownerName:'',capturedAt:0,defense:0}));const list=readPersistentJson<any[]>(TERRITORY_FILE,defaults,value=>Array.isArray(value)&&value.every(isPlainObject));if(!existsSync(TERRITORY_FILE))saveTerritories(list);return list;}
