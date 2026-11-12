@@ -645,7 +645,7 @@ class GameRoom extends Room<RoomState> {
         p.gold-=cost;p.goldSpent+=cost;p.clan=id;
         return {clanName:name};
       });
-      if(result.error)return this.notice(c,result.error);
+      if('error' in result)return this.notice(c,result.error);
       const clans=loadClans();
       broadcastClanOverview(clans);broadcastClanQuests(clans);
       this.notice(c,`Клан «${result.clanName}» создан. В казну внесено 0 золота; создание стоило 5000.`);
@@ -664,7 +664,7 @@ class GameRoom extends Room<RoomState> {
         p.clan=clan.id;
         return {clanName:clan.name};
       });
-      if(result.error)return this.notice(c,result.error);
+      if('error' in result)return this.notice(c,result.error);
       const clans=loadClans();
       broadcastClanOverview(clans);broadcastClanQuests(clans);
       this.notice(c,`Ты вступил в клан «${result.clanName}».`);
