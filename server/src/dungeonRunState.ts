@@ -13,7 +13,7 @@ export type DungeonRoundPlan = {
   totalRounds: number;
   nextRoundIndex: number;
   bossDamageByRound: number[];
-  participantDamageByRound: Record<string, number[]>;
+  incomingDamageByRound: Record<string, number[]>;
 };
 
 export type DungeonRunRecord = {
@@ -70,16 +70,16 @@ export function validateDungeonRunStore(value: unknown): DungeonRunStore {
         !Array.isArray(raw.roundPlan.bossDamageByRound) ||
         raw.roundPlan.bossDamageByRound.length !== raw.roundPlan.totalRounds ||
         raw.roundPlan.bossDamageByRound.some((damage: unknown) => !Number.isFinite(damage) || Number(damage) < 0) ||
-        !isRecord(raw.roundPlan.participantDamageByRound))) ||
+        !isRecord(raw.roundPlan.incomingDamageByRound))) ||
       !isRecord(raw.participants) || !isRecord(raw.encounter)) {
       throw new Error(`dungeon_runs.json contains an invalid run record: ${key}.`);
     }
-    if (raw.roundPlan && Object.keys(raw.roundPlan.participantDamageByRound).length !== raw.participantIds.length) {
+    if (raw.roundPlan && Object.keys(raw.roundPlan.incomingDamageByRound).length !== raw.participantIds.length) {
       throw new Error(`dungeon_runs.json contains an incomplete round plan for ${key}.`);
     }
     if (raw.roundPlan) {
       for (const playerId of raw.participantIds) {
-        const schedule = raw.roundPlan.participantDamageByRound[playerId];
+        const schedule = raw.roundPlan.incomingDamageByRound[playerId];
         if (!Array.isArray(schedule) || schedule.length !== raw.roundPlan.totalRounds ||
           schedule.some((damage: unknown) => !Number.isFinite(damage) || Number(damage) < 0)) {
           throw new Error(`dungeon_runs.json contains an invalid damage schedule for ${playerId} in ${key}.`);
@@ -171,12 +171,12 @@ export function createDungeonRunRecord(input: {
 export function createDungeonRoundPlan(input: {
   totalRounds: number;
   totalBossDamage: number;
-  totalDamageByParticipant: Record<string, number>;
+  totalIncomingDamageByParticipant: Record<string, number>;
 }): DungeonRoundPlan {
-  const ids = Object.keys(input.totalDamageByParticipant);
+  const ids = Object.keys(input.totalIncomingDamageByParticipant);
   if (!Number.isInteger(input.totalRounds) || input.totalRounds < 1 ||
     !Number.isFinite(input.totalBossDamage) || input.totalBossDamage < 0 ||
-    ids.length < 1 || ids.some(id => !id || !Number.isFinite(input.totalDamageByParticipant[id]) || input.totalDamageByParticipant[id] < 0)) {
+    ids.length < 1 || ids.some(id => !id || !Number.isFinite(input.totalIncomingDamageByParticipant[id]) || input.totalIncomingDamageByParticipant[id] < 0)) {
     throw new Error('Invalid deterministic dungeon round plan.');
   }
   const split = (total: number) => Array.from({ length: input.totalRounds }, (_, index) =>
@@ -185,7 +185,7 @@ export function createDungeonRoundPlan(input: {
     totalRounds: input.totalRounds,
     nextRoundIndex: 0,
     bossDamageByRound: split(input.totalBossDamage),
-    participantDamageByRound: Object.fromEntries(ids.map(id => [id, split(input.totalDamageByParticipant[id])])),
+    incomingDamageByRound: Object.fromEntries(ids.map(id => [id, split(input.totalIncomingDamageByParticipant[id])])),
   };
 }
 
@@ -205,13 +205,13 @@ export function resolveNextDungeonRunRound(
       participantHealth[playerId] = 0;
       continue;
     }
-    const damage = plan.participantDamageByRound[playerId][plan.nextRoundIndex];
-    participantHealth[playerId] = Math.max(0, participant.health - damage);
-    if (participantHealth[playerId] === 0) {
-      participants[playerId] = { ...participant, status: 'spectator', health: 0, lastActivityAt: now };
-    } else {
-      participants[playerId] = { ...participant, health: participantHealth[playerId] };
-    }
+    const damage = plan.incomingDamageByRound[playerId][plan.nextRoundIndex];
+    // The existing dungeon resolver never kills a participant during the
+    // aggregate encounter: it clamps the final HP to 1 on both wins and losses.
+    // Preserve that contract while distributing the same incoming total over
+    // durable rounds; death/spectator transitions remain explicit game actions.
+    participantHealth[playerId] = Math.max(1, participant.health - damage);
+    participants[playerId] = { ...participant, health: participantHealth[playerId] };
   }
   const nextBossHealth = Math.max(0, current.encounter.bossHealth - plan.bossDamageByRound[plan.nextRoundIndex]);
   const nextPlan = { ...plan, nextRoundIndex: plan.nextRoundIndex + 1 };

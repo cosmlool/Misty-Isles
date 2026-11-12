@@ -25,7 +25,7 @@ function createRun() {
     roundPlan: createDungeonRoundPlan({
       totalRounds: 2,
       totalBossDamage: 200,
-      totalDamageByParticipant: { p1: 40, p2: 20 },
+      totalIncomingDamageByParticipant: { p1: 40, p2: 20 },
     }),
   };
 }
@@ -63,6 +63,41 @@ test('one dungeon round is committed atomically and stale retry cannot apply dam
   }
 });
 
+test('round slices preserve the legacy minimum-one-HP loss outcome instead of creating a spectator', () => {
+  const base = createRun();
+  const lowHealthRun = {
+    ...base,
+    participants: {
+      ...base.participants,
+      p1: { ...base.participants.p1, health: 10 },
+    },
+    roundPlan: createDungeonRoundPlan({
+      totalRounds: 2,
+      totalBossDamage: 200,
+      totalIncomingDamageByParticipant: { p1: 20, p2: 0 },
+    }),
+  };
+  const storeDir = mkdtempSync(join(tmpdir(), 'misty-dungeon-round-floor-'));
+  const files = { dungeonRuns: join(storeDir, 'dungeon_runs.json') };
+  try {
+    const runtime = runtimeFor(createSharedStateTransactionStore({ dataDir: storeDir, files }));
+    const first = commitDungeonRunRound({
+      runtime, runId: lowHealthRun.runId, expectedRoundIndex: 0,
+      runs: { [lowHealthRun.runId]: lowHealthRun }, now: 200,
+    });
+    assert.equal(first.run.participants.p1.health, 1);
+    assert.equal(first.run.participants.p1.status, 'alive');
+    const second = commitDungeonRunRound({
+      runtime, runId: lowHealthRun.runId, expectedRoundIndex: 1,
+      runs: { [lowHealthRun.runId]: first.run }, now: 300,
+    });
+    assert.equal(second.run.participants.p1.health, 1);
+    assert.equal(second.run.participants.p1.status, 'alive');
+  } finally {
+    rmSync(storeDir, { recursive: true, force: true });
+  }
+});
+
 test('a round journal recovers the whole committed round after process interruption', () => {
   const dataDir = mkdtempSync(join(tmpdir(), 'misty-dungeon-round-crash-'));
   const files = { dungeonRuns: join(dataDir, 'dungeon_runs.json') };
@@ -88,7 +123,7 @@ test('a round journal recovers the whole committed round after process interrupt
         bossId: 'boss_20', bossHealth: 500, seed: 'seed_round_wal', now: 100,
       });
       const run = { ...base, roundPlan: createDungeonRoundPlan({
-        totalRounds: 2, totalBossDamage: 200, totalDamageByParticipant: { p1: 40, p2: 20 },
+        totalRounds: 2, totalBossDamage: 200, totalIncomingDamageByParticipant: { p1: 40, p2: 20 },
       }) };
       const store = createSharedStateTransactionStore({
         dataDir, files,

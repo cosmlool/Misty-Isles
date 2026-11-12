@@ -104,9 +104,9 @@ Important limitation: the current boss dungeon handler is still synchronous and 
 
 ## Deterministic resumable round plan
 
-- The durable run model now optionally carries a validated round plan: total rounds, next unresolved round, boss-damage slices, and per-participant damage slices.
+- The durable run model now optionally carries a validated round plan: total rounds, next unresolved round, boss-damage slices, and per-participant incoming-damage slices.
 - Aggregate integer damage is divided deterministically across rounds using cumulative floors. The sum of all slices is exactly the original aggregate damage; no combat coefficient or total damage is changed by the split.
-- `resolveNextDungeonRunRound` applies exactly one saved slice, advances the round cursor, updates participant HP/status and boss HP, and returns a new immutable run snapshot. A serialized snapshot resumes from the next unresolved round.
+- `resolveNextDungeonRunRound` applies exactly one saved slice, advances the round cursor, updates participant HP and boss HP, and returns a new immutable run snapshot. A serialized snapshot resumes from the next unresolved round.
 - Tests cover exact damage conservation, one-round-at-a-time progression, serialization/recovery between rounds, terminal exhaustion, and malformed plans.
 - Scope limitation: this is the deterministic resumable round engine and persisted plan format. The production `runExpeditionDungeon()` handler still resolves the encounter synchronously and does not yet create/commit this plan or expose a round action to clients. Runtime wiring and preserving the current reward/loot/idempotency behavior remain the next integration task.
 
