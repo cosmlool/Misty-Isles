@@ -772,12 +772,13 @@ class GameRoom extends Room<RoomState> {
         const p=ONLINE_PLAYERS.get(this.playerId);
         const clan=p?.clan?clans[p.clan]:null;
         if(!clan||!isClanMember(clan,this.playerId)){
-          return {quests:[],upgrades:{barracks:0,treasury:0,banner:0},clans};
+          return {quests:[],upgrades:{barracks:0,treasury:0,banner:0},clans,changed:false};
         }
         clan.upgrades=clan.upgrades||{barracks:0,treasury:0,banner:0};
+        const before=JSON.stringify(clan);
         const quests=ensureClanQuests(clan);
-        return {quests,upgrades:clan.upgrades,clans};
-      });
+        return {quests,upgrades:clan.upgrades,clans,changed:JSON.stringify(clan)!==before};
+      },result=>result.changed);
       c.send('clanQuests',{quests:response.quests,upgrades:response.upgrades,season:clanSeasonBoard(response.clans)});
     });
     this.onAuthenticatedMessage('clanTerritories',(c)=>{const clans=loadClans();const names=new Map(Object.values(clans).map((x:any)=>[x.id,x.name]));c.send('clanTerritories',{territories:loadTerritories().map((t:any)=>({...t,ownerName:names.get(t.owner)||t.ownerName||''}))});});
@@ -885,7 +886,7 @@ class GameRoom extends Room<RoomState> {
         Object.assign(clans,settled.clans);
         wars.splice(0,wars.length,...settled.wars);
         return settled.changed||questsChanged;
-      });
+      },changed=>changed);
       const clans=loadClans(),currentWars=loadWars();
       if(changed){broadcastClanOverview(clans);broadcastClanQuests(clans);}
       const payload=broadcastClanWarList(currentWars,clans);
@@ -1089,12 +1090,12 @@ function loadClans():Record<string,any>{return readPersistentJson<Record<string,
 function loadTerritories():any[]{const defaults=TERRITORIES.map(t=>({...t,owner:'',ownerName:'',capturedAt:0,defense:0}));const list=readPersistentJson<any[]>(TERRITORY_FILE,defaults,value=>Array.isArray(value)&&value.every(isPlainObject));if(!existsSync(TERRITORY_FILE))saveTerritories(list);return list;}
 function saveTerritories(list:any[]){writeJsonAtomic(TERRITORY_FILE,list);}
 function isClanMember(clan:any,playerId:string):boolean{return !!clan&&Array.isArray(clan.members)&&clan.members.some((member:any)=>member?.id===playerId);}
-function transactClanStateMutation<T>(prepare:(state:{clans:Record<string,any>;wars:any[];territories:any[]})=>T):T{
+function transactClanStateMutation<T>(prepare:(state:{clans:Record<string,any>;wars:any[];territories:any[]})=>T,shouldCommit:(result:T)=>boolean=()=>true):T{
   return sharedStateRuntime.commitClan((hadRecovery)=>{
     if(hadRecovery)syncOnlinePlayersAfterRecovery();
     const clans=loadClans(),wars=loadWars(),territories=loadTerritories();
     const result=prepare({clans,wars,territories});
-    return {snapshot:{players:loadPlayersWithOnline(),clans,wars,territories},result};
+    return {snapshot:{players:loadPlayersWithOnline(),clans,wars,territories},result,skipWrite:!shouldCommit(result)};
   });
 }
 function transactClanMutation<T>(playerId:string,prepare:(state:{p:Player;clans:Record<string,any>;wars:any[];territories:any[]})=>T):T{
