@@ -10,7 +10,7 @@ test('production runtime has no direct player or legacy subsystem writer bypasse
     /\b(?:auctionTransactions|clanTransactions)\.commit\s*\(/,
     /\b(?:saveClans|saveTerritories|saveAuction|saveAuctionHistory|saveWars)\s*\(/,
   ]) {
-    assert.equal(pattern.test(source), false, \`forbidden direct persistence writer found: \${pattern}\`);
+    assert.equal(pattern.test(source), false, 'forbidden direct persistence writer found: ' + pattern);
   }
 });
 
