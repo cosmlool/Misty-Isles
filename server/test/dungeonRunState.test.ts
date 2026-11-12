@@ -130,14 +130,15 @@ test('deterministic round plan preserves aggregate damage exactly and resumes at
   assert.equal(plan.participantDamageByRound.p1.reduce((sum, value) => sum + value, 0), 10);
   assert.equal(plan.participantDamageByRound.p2.reduce((sum, value) => sum + value, 0), 5);
 
-  const withPlan = { ...run(), roundPlan: plan };
+  const base = run();
+  const withPlan = { ...base, encounter: { ...base.encounter, bossHealth: 101, bossMaxHealth: 101 }, roundPlan: plan };
   const firstRound = resolveNextDungeonRunRound(withPlan, 2000);
   const restored = validateDungeonRunStore(JSON.parse(JSON.stringify({
     run_001: firstRound,
   }))).run_001;
   assert.equal(restored.roundIndex, 1);
   assert.equal(restored.roundPlan?.nextRoundIndex, 1);
-  assert.equal(restored.encounter.bossHealth, 67);
+  assert.equal(restored.encounter.bossHealth, 68);
   assert.equal(restored.participants.p1.health, 97);
   assert.equal(restored.participants.p2.health, 89);
 
