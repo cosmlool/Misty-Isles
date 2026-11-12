@@ -142,24 +142,30 @@ test('solo Forgotten Lands boss dungeon reports remaining daily entries and enfo
     room.onMessage('notice', payload => notices.push(String(payload?.text || '')));
 
     for (let attempt = 1; attempt <= 3; attempt++) {
-      const before = results.length;
-      room.send('dungeonRun', { id: 'fl_dungeon_03', requestId: `solo_dungeon_attempt_${attempt}` });
-      const result = await waitFor(() => results[before], `dungeon attempt ${attempt}`);
+      const requestId = `solo_dungeon_attempt_${attempt}`;
+      room.send('dungeonRun', { id: 'fl_dungeon_03', requestId });
+      const result = await waitFor(() => results.find(entry => entry.requestId === requestId), `dungeon attempt ${attempt}`);
       assert.equal(result.report.result, 'win');
-      if (attempt === 1) assert.equal(result.requestId, 'solo_dungeon_attempt_1');
-      if (attempt === 1) {
-        room.send('dungeonRun', { id: 'fl_dungeon_03', requestId: 'solo_dungeon_attempt_1' });
-        await waitFor(() => results.length === 2, 'idempotent replay of the first dungeon attempt');
-        assert.equal(readJson(join(dataDir, 'players.json'))[playerId].gold, 720, 'replaying the same request must not duplicate dungeon gold');
-        assert.equal(JSON.parse(readJson(join(dataDir, 'players.json'))[playerId].quests).dungeonRuns, 1, 'replaying the same request must not consume another attempt');
-        assert.equal(JSON.parse(readJson(join(dataDir, 'players.json'))[playerId].quests).dungeonRequestHistory[0].id, 'solo_dungeon_attempt_1', 'the request receipt must be persisted with player state');
-      }
+      assert.equal(result.requestId, requestId);
       assert.equal(result.report.maxHealth, 1_089, 'legacy health amulet must contribute its listed +8% maximum health');
       assert.equal(result.report.hpAfter, 1_089, 'vampire healing must preserve the amulet health bonus');
       const persistedRuns = Number(JSON.parse(readJson(join(dataDir, 'players.json'))[playerId].quests).dungeonRuns);
       assert.equal(persistedRuns, attempt, 'each distinct dungeon request must consume exactly one daily attempt');
-      assert.equal(result.requestId, `solo_dungeon_attempt_${attempt}`, `attempt ${attempt} must receive its own result, not a delayed replay`);
       assert.ok(result.text.includes(`Осталось входов сегодня: ${3 - attempt}.`), `attempt ${attempt} expected ${3 - attempt} remaining entries; got: ${String(result.text)}`);
+      if (attempt === 1) {
+        const resultsBeforeReplay = results.filter(entry => entry.requestId === requestId).length;
+        assert.equal(resultsBeforeReplay, 1, 'the original request must emit exactly one combat result');
+        room.send('dungeonRun', { id: 'fl_dungeon_03', requestId });
+        await waitFor(() => results.filter(entry => entry.requestId === requestId).length > resultsBeforeReplay,
+          'idempotent replay of the first dungeon attempt');
+        assert.equal(results.filter(entry => entry.requestId === requestId).length, 2,
+          'one explicit replay must return exactly one saved result');
+        const saved = readJson(join(dataDir, 'players.json'))[playerId];
+        assert.equal(saved.gold, 720, 'replaying the same request must not duplicate dungeon gold');
+        assert.equal(JSON.parse(saved.quests).dungeonRuns, 1, 'replaying the same request must not consume another attempt');
+        assert.equal(JSON.parse(saved.quests).dungeonRequestHistory[0].id, requestId,
+          'the request receipt must be persisted with player state');
+      }
     }
 
     const beforeRejectedAttempt = results.length;
