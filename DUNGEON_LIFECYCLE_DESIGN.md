@@ -53,7 +53,7 @@ The party roster must not be used as the source of truth for participants in an 
 
 The run record, participant state, player snapshots, party changes, attempt consumption, and terminal rewards must commit through one recoverable transaction boundary. A process restart must never resume an ambiguous partially-applied encounter or award twice.
 
-Restart policy for an active run is not yet approved. Do not silently choose whether to resume or abort active runs after a server crash; decide this before wiring startup recovery.
+Approved restart policy: an active run resumes from its latest committed snapshot after a process restart. It is not restarted from round zero, and a committed daily attempt is not charged a second time.
 
 ## AFK signal requirements
 
@@ -83,3 +83,12 @@ Implementation foundation added:
 - Unit tests cover frozen rosters, per-participant round snapshots, exact serialization/recovery, terminal idempotency, and invalid-state rejection. Shared-WAL crash recovery now also verifies replay of a dungeon snapshot written in the same transaction as player/group state.
 
 Important limitation: the current boss dungeon handler is still synchronous and has not yet been refactored to create, advance, and commit these records. The new durable model is the foundation, not a claim that active dungeons already resume in production. Next implementation step is to replace the one-shot handler with a deterministic round/step resolver that commits the entire game snapshot after each step before exposing it to clients.
+
+
+## Resurrection scroll shop integration
+
+- Added the resurrection scroll as a 100-crystal shop item.
+- The server purchase path allows purchase only while the character is in a city and not listed in an active dungeon run.
+- Inventory capacity is enforced at two scrolls; purchase deducts crystals and appends exactly one scroll.
+- Pure inventory helpers and tests cover purchase, capacity, city/active-run restrictions, and consuming exactly one scroll while preserving unrelated inventory.
+- Runtime resurrection is not yet wired: the synchronous dungeon handler still has no active-run action loop in which a participant can select a fallen ally. The consumption helper is prepared for the atomic revive transaction, but no claim is made that a player can use a scroll in combat yet.
