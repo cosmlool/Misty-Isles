@@ -154,3 +154,24 @@ test('commit rejects malformed snapshots before writing a journal', () => {
     assert.equal(existsSync(f.store.journalFile), false);
   } finally { f.cleanup(); }
 });
+
+test('legacy auction recovery fsyncs target publication and journal removal', () => {
+  const f = fixture();
+  try {
+    const events: string[] = [];
+    const store = createAuctionTransactionStore({
+      dataDir: f.dataDir,
+      playersFile: f.playersFile,
+      auctionFile: f.auctionFile,
+      historyFile: f.historyFile,
+      testHooks: { afterSync: path => events.push(path) },
+    });
+    writeFileSync(f.store.journalFile, JSON.stringify({ version: 1, snapshot }));
+    assert.equal(store.recover(), true);
+    const playerTempSync = events.findIndex(path => path.startsWith(f.playersFile + '.'));
+    const firstDirectorySync = events.indexOf(f.dataDir);
+    assert.ok(playerTempSync >= 0, 'recovered player snapshot temp file must be fsynced');
+    assert.ok(firstDirectorySync > playerTempSync, 'target directory entry must be fsynced after rename');
+    assert.equal(events.at(-1), f.dataDir, 'journal removal must be followed by a directory fsync');
+  } finally { f.cleanup(); }
+});
