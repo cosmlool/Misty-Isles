@@ -187,3 +187,13 @@ Regression tests: `server/test/dungeonRequestRecovery.test.ts` — unknown reque
 
 
 - CI на HEAD `59a7af4b` выявил ошибку в новом regression-test, не в реализации WAL: тест сравнивал fsync временного файла с конечным именем журнала, хотя `atomicWrite` корректно fsync-ит temp-файл до rename. Исправлено условие теста: проверяется временный файл с префиксом имени WAL, затем directory sync и только после этого target write. Изменение теста: `779a8b815a140a364e27b7d85dfc6e69506a30df`. Требуется полный повтор CI на новом HEAD.
+
+
+## Legacy transaction recovery durability audit — 2026-11-14
+
+- The production coordinator no longer creates legacy auction/clan journals, but startup still replays journals left by older versions. These recovery paths were therefore included in the crash-durability audit.
+- Found that legacy auction and clan stores used temp-file + rename during replay without fsyncing file contents or parent-directory entries; journal deletion was also not directory-synced.
+- Updated both recovery stores to fsync each temp snapshot before rename, fsync the target directory after publication, and fsync the data directory after removing a recovered journal. Auction player backups are also fsynced before publication.
+- Added an `afterSync` test hook and regression tests for both legacy recovery paths, checking file-sync → directory-sync ordering and the final directory sync after journal removal.
+- These stores remain recovery-only in production; no new runtime writes were routed back to their legacy commit methods. Transaction contents, game data, economy rules, and player/clan state semantics were not changed.
+- Full CI on the resulting HEAD is pending. Do not treat this stage as complete until server tests/build and the full Quality Gate pass.
