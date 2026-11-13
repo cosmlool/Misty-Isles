@@ -200,3 +200,16 @@ PR #15 остаётся Draft/open и не объединён. Слияние б
 - Текущий PR #15 HEAD после этих коммитов требует нового полного CI. Не считать исправление подтверждённым до успешного server test suite/build и всех Quality Gate jobs.
 - Следующий шаг: проверить свежие workflow runs на HEAD, получить logs при любой ошибке; только после зелёного CI продолжить следующий этап технической декомпозиции.
 - PR #15 остаётся Draft/open, merged=false; не объединять. Полная durable dungeon lifecycle integration всё ещё НЕ подключена.
+
+
+## Исправление дневной статистики наград подземелья — 2026-11-13
+
+- На PR #15 HEAD `1d4dcaadbdc9cb405ff0651a594f50a5fd8e8a11` Quality Gate run `43494016696` и Server checks run `43494016684` завершились с одним и тем же падением теста `groupDungeonRuntime.test.ts`: ожидалось `activityToday.gold === 110`, фактически было `0`; 367/368 server tests прошли. Клиентская сборка, структура/данные и Playwright прошли.
+- Точная причина: `prepareDungeonMemberQuestSettlement` увеличивал `activityToday.dungeons`, но не суммировал `activity.gold` и `activity.xp`. В результате награды были корректно начислены игрокам (gold 610 / XP 420), но дневные агрегаты оставались нулевыми.
+- Исправлено: helper теперь добавляет персональные `activity.gold` и `activity.xp` к дневным итогам. Это значения из уже рассчитанного `actualRewards[i]`, с учётом модификаторов; loss ветка по-прежнему передаёт нули.
+- Обновлены unit expectations: rollover даёт 50 gold / 100 XP, same-day totals накапливают 57 gold / 109 XP. Group runtime assertions 110 gold / 420 XP сохранены.
+- Обновлён `DUNGEON_LIVE_HANDLER_INTEGRATION.md`.
+- Commits: helper `a787f8c70b4a22a48712e930e3a6d855d5101eba`; unit tests `b235e6b4fbb57a8b07c8d6463ec8bccee581a078`; integration docs `e162fdd646dd30ddcc214fbaaf3fa8d3a87d8a4d`.
+- Новый HEAD ещё требует полного Server checks и Quality Gate. Не считать исправление подтверждённым до успешного CI.
+- Не менялись combat formulas, RNG, начисление XP/gold игроку, HP, inventory, drops, reports, request replay/outbox или persistence boundary. Live dungeon handler остаётся legacy; полная durable dungeon lifecycle integration НЕ подключена.
+- PR #15 остаётся Draft/open, merged=false; не объединять.
