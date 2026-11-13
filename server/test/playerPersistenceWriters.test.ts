@@ -47,3 +47,12 @@ test('room leave does not overwrite persistence recovery with a stale quest snap
   assert.match(leave, /persistPlayers\(affectedPlayers\.length\?affectedPlayers:\[this\.state\.player\]\)/);
   assert.doesNotMatch(leave, /previousQuests|catch\(error\)[\s\S]*?player\.quests=previous/);
 });
+
+test('local save directory does not redirect bundled static game data', () => {
+  assert.match(source, /const GAME_DATA_DIR = join\(process\.cwd\(\), 'data'\)/);
+  for (const filename of ['forgotten_lands.json', 'city_npcs.json', 'equipment_catalog.json']) {
+    assert.ok(source.includes(`join(GAME_DATA_DIR,'${filename}')`), filename + ' must load from bundled server/data');
+    assert.equal(source.includes(`join(DATA_DIR,'${filename}')`), false, filename + ' must not load from the isolated save directory');
+  }
+  assert.match(source, /const SAVE_FILE = join\(DATA_DIR, 'players\.json'\)/);
+});
