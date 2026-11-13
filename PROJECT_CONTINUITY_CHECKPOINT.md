@@ -144,3 +144,20 @@ PR #15 остаётся Draft/open и не объединён. Слияние б
 - Текущий этап ожидает новый CI на свежем HEAD. До завершения CI не вносить новые кодовые изменения.
 - Изменение не затрагивает combat formulas, RNG calls/order, reward calculation, player HP/inventory, request history, outbox или момент persistence.
 - Live `runExpeditionDungeon()` остаётся legacy; detached settlement и полная durable lifecycle integration не подключены. PR #15 оставить Draft/open, не объединять без разрешения.
+
+
+## Контрольная точка — 2026-11-13 (дневные попытки подземелья)
+
+- Перед этапом проверен PR #15: HEAD `cf8239d0e8f9a9389ba6f48df9473ca8a7882a62`, Draft/open, merged=false.
+- Повторный запуск серверного job после прежнего нестабильного PvP-теста завершился success: run `43469653763`, attempt 3; все 4 Quality Gate jobs success. Это подтверждает повторный прогон, но само по себе не доказывает устранение причины первоначального race; PvP-код не менялся.
+- Извлечён pure helper `server/src/dungeonAttemptPreparation.ts`:
+  - `getDungeonRunsForDay` учитывает сохранённый счётчик только при совпадении дневного ключа.
+  - `consumeDungeonAttemptForDay` возвращает новый quest object, обновляет день и увеличивает счётчик, сохраняя остальные поля.
+  - Сохранена legacy coercion `Number(value || 0)`; helper не мутирует вход.
+- Live `runExpeditionDungeon()` использует helper в проверке лимита и при списании попытки. Сохранены лимит 3, UTC day key и исходная точка списания попытки до боя.
+- Добавлены 4 regression tests в `server/test/dungeonAttemptPreparation.test.ts`; тест включён в `server/package.json`.
+- Кодовые commits: handler `1eb841c60a97d39880d0d4d233a5a8d1abcc9816`, helper `1e1a6affb0de703c14a43418cc55951cc6b6a508`, tests `69f384798f7d5d980902aff88a6d40348c57957e`, test script `668c3395d9907d77df734049cedcec6935da8cf9`; integration doc `60f7c7ff0bcd8f2fa717652ea06ee0252c398f0b`.
+- Новый HEAD требует полного CI. Не считать этап подтверждённым до server tests/build и всех Quality Gate jobs.
+- Не менялись combat formulas, RNG, XP/gold, HP, inventory, reports, request history, outbox и момент persistence. Live dungeon handler остаётся legacy; detached settlement и полная durable lifecycle integration НЕ подключены.
+- PR #15 оставить Draft/open; не объединять без отдельного разрешения.
+- Следующая подзадача после CI: продолжить изоляцию detached settlement небольшими pure helper-ами, сохраняя legacy порядок и точные persisted payloads; не включать частичную durable orchestration.
