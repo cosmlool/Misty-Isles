@@ -213,3 +213,13 @@ PR #15 остаётся Draft/open и не объединён. Слияние б
 - Новый HEAD ещё требует полного Server checks и Quality Gate. Не считать исправление подтверждённым до успешного CI.
 - Не менялись combat formulas, RNG, начисление XP/gold игроку, HP, inventory, drops, reports, request replay/outbox или persistence boundary. Live dungeon handler остаётся legacy; полная durable dungeon lifecycle integration НЕ подключена.
 - PR #15 остаётся Draft/open, merged=false; не объединять.
+
+
+## Подтверждение исправления дневной статистики — CI success (2026-11-13)
+
+- На HEAD `d0d9acf6779f5a9bcd5ae7447e51fee01af50db9` Server checks run `43494861789` завершился успешно: isolated player-save tests и server build — success.
+- Quality Gate run `43494862108` завершился успешно, все 4 jobs success: Client TypeScript/Vite build, Server TypeScript build + transaction recovery tests, Data/docs/project structure, Playwright browser smoke tests.
+- Исправление дневных итогов dungeon gold/xp подтверждено полным CI на указанном HEAD.
+- Это подтверждает текущий этап, но не означает завершение всего технического аудита или подключение durable dungeon lifecycle.
+- PR #15 остаётся Draft/open, merged=false; merge не выполнять.
+- Контрольная точка зафиксирована отдельным commit; новый HEAD после неё требует повторного CI.
