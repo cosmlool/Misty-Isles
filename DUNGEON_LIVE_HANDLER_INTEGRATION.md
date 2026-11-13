@@ -101,3 +101,14 @@ Regression tests: `server/test/dungeonRequestRecovery.test.ts` — unknown reque
 - Добавлены 4 regression tests: совпадающий/другой день, rollover, инкремент, отсутствие мутации и legacy numeric coercion. Тест включён в server test script.
 - Не менялись UTC day key, combat plan, RNG, rewards, HP, inventory, reports, request history, outbox или persistence boundary.
 - Это изоляция только дневного счётчика; live dungeon handler остаётся legacy, detached player settlement и durable lifecycle integration не подключены.
+
+
+## Этап: подготовка replay history и outbox event (2026-11-13)
+
+- Добавлен pure helper `server/src/dungeonRequestResultPreparation.ts`.
+- Helper формирует detached quest snapshot с `dungeonRequestHistory` и `dungeonLastRequest`, удаляет прежнюю запись с тем же request ID и сохраняет последние 5 записей.
+- Одновременно формируется legacy outbox event с прежними `eventId`, `runId`, `playerId`, `messageType` и payload.
+- Обе ветки live handler (победа и поражение) используют один helper; прежний формат результата и event identity сохранены.
+- Добавлены 4 regression tests: повторный request ID/лимит истории, точная event identity, некорректная история и отсутствие мутации исходного quest snapshot. Тест включён в server test script.
+- Helper и тесты пока не меняют durable lifecycle: live handler по-прежнему сохраняет результат через существующий `persistDungeonResultPlayers()`; полноценная detached settlement и durable recovery integration не подключены.
+- CI для нового HEAD ожидает проверки.
