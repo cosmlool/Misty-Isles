@@ -1297,12 +1297,9 @@ function persistDungeonResultPlayers(players:Player[],events:Array<{eventId:stri
   }catch(error){
     const journalPending=existsSync(sharedStateTransactions.journalFile);
     if(journalPending){
-      try{sharedStateRuntime.recoverPendingState();}
-      catch(recoveryError){console.error('Dungeon player state recovery remains pending after persistence failure:',recoveryError);}
       // Whether replay succeeds or remains blocked, mirror the players snapshot
       // currently on disk; never leave the live roster at an uncommitted result.
-      try{syncOnlinePlayersAfterRecovery();}
-      catch(syncError){console.error('Could not synchronize online players after dungeon persistence failure:',syncError);}
+      reconcileOnlinePlayersAfterPersistenceFailure();
     }else{
       // Preparation/validation/journal-write failed before a transaction existed.
       for(let i=0;i<players.length;i++)applyPlayerSave(players[i] as any,rollbackSnapshots[i]);
@@ -1314,9 +1311,18 @@ function safeId(v:any){return String(v||'').replace(/[^a-zA-Z0-9_-]/g,'').slice(
 
 function loadPlayersWithOnline():Record<string,any>{const all=loadPlayers();for(const player of Object.values(all))normalizePlayerProfessionData(player);for(const [id,online] of ONLINE_PLAYERS){normalizePlayerProfessionData(online);all[id]=online.toJSON();}return all;}
 function syncOnlinePlayersAfterRecovery(){const recovered=loadPlayers();for(const [id,online] of ONLINE_PLAYERS){const saved=recovered[id];if(saved)applyPlayerSave(online as any,saved);}}
+function reconcileOnlinePlayersAfterPersistenceFailure(){
+  try{sharedStateRuntime.recoverPendingState();}
+  catch(error){console.error('Shared-state recovery remains pending after player persistence failure:',error);}
+  try{syncOnlinePlayersAfterRecovery();}
+  catch(error){console.error('Could not synchronize online players after persistence failure:',error);}
+}
 function loadPlayersForAuction():Record<string,any>{return loadPlayersWithOnline();}
 function recoverPlayerStateBeforeMutation(){const recovered=sharedStateRuntime.recoverPendingState();if(recovered)syncOnlinePlayersAfterRecovery();return recovered;}
-function persistPlayers(players:Player[]){sharedStateRuntime.transact((hadRecovery)=>{if(hadRecovery)throw new Error('Player state was recovered during a mutation; retry the action after state synchronization.');for(const online of ONLINE_PLAYERS.values())normalizePlayerProfessionData(online);const all=loadPlayers();for(const player of Object.values(all))normalizePlayerProfessionData(player);for(const [id,online] of ONLINE_PLAYERS)all[id]=online.toJSON();for(const p of players)if(p?.id)all[p.id]=p.toJSON();return {files:{players:all},result:undefined};});}
+function persistPlayers(players:Player[]){
+  try{sharedStateRuntime.transact((hadRecovery)=>{if(hadRecovery)throw new Error('Player state was recovered during a mutation; retry the action after state synchronization.');for(const online of ONLINE_PLAYERS.values())normalizePlayerProfessionData(online);const all=loadPlayers();for(const player of Object.values(all))normalizePlayerProfessionData(player);for(const [id,online] of ONLINE_PLAYERS)all[id]=online.toJSON();for(const p of players)if(p?.id)all[p.id]=p.toJSON();return {files:{players:all},result:undefined};});}
+  catch(error){reconcileOnlinePlayersAfterPersistenceFailure();throw error;}
+}
 function persistPlayer(p:Player){if(!p?.id)return;persistPlayers([p]);}
 function loadClans():Record<string,any>{return readPersistentJson<Record<string,any>>(CLAN_FILE,{},value=>isPlainObject(value)&&Object.values(value).every(isPlainObject));}
 function loadTerritories():any[]{const defaults=TERRITORIES.map(t=>({...t,owner:'',ownerName:'',capturedAt:0,defense:0}));return readPersistentJson<any[]>(TERRITORY_FILE,defaults,value=>Array.isArray(value)&&value.every(isPlainObject));}
@@ -1330,14 +1336,15 @@ function transactClanStateMutation<T>(prepare:(state:{clans:Record<string,any>;w
   });
 }
 function transactClanMutation<T>(playerId:string,prepare:(state:{p:Player;clans:Record<string,any>;wars:any[];territories:any[]})=>T):T{
-  return sharedStateRuntime.commitClan((hadRecovery)=>{
+  try{return sharedStateRuntime.commitClan((hadRecovery)=>{
     if(hadRecovery)syncOnlinePlayersAfterRecovery();
     const player=ONLINE_PLAYERS.get(playerId);
     if(!player)throw new Error('Authenticated player is not online.');
     const clans=loadClans(),wars=loadWars(),territories=loadTerritories();
     const result=prepare({p:player,clans,wars,territories});
     return {snapshot:{players:loadPlayersWithOnline(),clans,wars,territories},result};
-  });
+  });}
+  catch(error){reconcileOnlinePlayersAfterPersistenceFailure();throw error;}
 }
 function ensureAllClanQuests(clans:Record<string,any>):boolean{const before=JSON.stringify(clans);for(const clan of Object.values(clans))ensureClanQuests(clan);return JSON.stringify(clans)!==before;}
 function ensureClanQuests(clan:any):any[]{const day=Math.floor(Date.now()/(24*60*60*1000));if(!clan.questDay||clan.questDay!==day){clan.questDay=day;clan.questProgress={donate:0,raid:0,war:0,territory:0};clan.quests=[{id:'donate',name:'Общая казна',desc:'Внесите вместе 2 000 золота в казну клана',goal:2000,progress:0,claimed:false},{id:'raid',name:'Экспедиция гильдии',desc:'Успешно завершите 2 клановых похода',goal:2,progress:0,claimed:false},{id:'war',name:'Защитники знамени',desc:'Выиграйте 3 клановые войны',goal:3,progress:0,claimed:false},{id:'territory',name:'Расширение владений',desc:'Захватите 1 новую территорию',goal:1,progress:0,claimed:false}];}const progress=clan.questProgress||{};for(const q of clan.quests||[]){q.progress=Math.min(q.goal,Number(progress[q.id]||0));}return clan.quests||[];}
