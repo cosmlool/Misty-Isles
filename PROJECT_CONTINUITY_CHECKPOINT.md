@@ -75,3 +75,17 @@
 ## PR
 
 PR #15 остаётся Draft/open и не объединён. Слияние без отдельного разрешения пользователя запрещено.
+
+
+## Актуальная контрольная точка — 2026-11-13 (после CI)
+
+- PR #15 head на момент проверки: `1811b12e14ed6e07f409f241f3670cf00fed550d`; Draft/open, merged=false. Не объединять без разрешения.
+- Последний code commit для recovery routing: `6fd854595c38b9d64dde52aa7e1f7850f1eb658a`; последующий checkpoint commit `1811b12...` включает документацию и контрольную точку.
+- CI на точном PR head `1811b12...` полностью зелёный:
+  - Quality Gate run `43458901750`: все 4 jobs success — client TypeScript/Vite, data/docs/structure, server transaction recovery tests + TypeScript build, Playwright browser smoke tests.
+  - Server checks run `43458901733`: job success — isolated player-save tests и server build.
+- Старые runs `43458804854` / `43458815818` содержали отменённые jobs из-за конкурирующих запусков; они заменены успешной полной проверкой на актуальном HEAD.
+- Документ интеграции обновлён commit `8e02f6f9022a052e57c4fcea696cf87d08aed1eb`.
+- Следующий кодовый этап: выделить из монолитного `Room.runExpeditionDungeon()` чистую preparation-функцию, которая работает с detached Player snapshots и фиксирует все текущие результаты (combat, drops/recipients, HP/healing, XP/gold, counters, inventory, activity, reports и outbox payloads), не меняя live Player. Сохранить без изменений формулы, порядок random rolls и распределение наград.
+- Только после regression-тестов preparation boundary подключать durable start → prepared encounter commit → finalization/replay. Не включать live handler на частичную durable-схему: это может потерять попытки/награды или повторно выполнить бой.
+- `runExpeditionDungeon()` пока legacy; recovery helper пока не подключён к live handler. Полная durable integration НЕ завершена.
