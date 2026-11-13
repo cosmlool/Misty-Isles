@@ -33,3 +33,34 @@ export function dispatchPendingDungeonResultEvents(input: {
   }
   return delivered;
 }
+
+
+export function enqueueDungeonResultEvents(input: {
+  outbox: DungeonResultDeliveryOutbox;
+  events: Array<{eventId:string;runId:string;playerId:string;messageType:string;payload:Record<string,unknown>}>;
+  now: number;
+}): DungeonResultDeliveryOutbox {
+  if (!Number.isFinite(input.now) || !input.outbox || typeof input.outbox !== 'object' || Array.isArray(input.outbox)) {
+    throw new Error('Invalid dungeon result enqueue request.');
+  }
+  const next = { ...input.outbox };
+  const seen = new Set<string>();
+  for (const event of input.events) {
+    if (!event || !event.eventId || !event.runId || !event.playerId || !event.messageType ||
+        !event.eventId.startsWith(`dungeon:${event.runId}:`) || !event.payload ||
+        typeof event.payload !== 'object' || Array.isArray(event.payload) || seen.has(event.eventId)) {
+      throw new Error('Dungeon result event is invalid or duplicated.');
+    }
+    seen.add(event.eventId);
+    const existing = next[event.eventId];
+    if (existing) {
+      if (existing.runId !== event.runId || existing.playerId !== event.playerId ||
+          existing.messageType !== event.messageType || JSON.stringify(existing.payload) !== JSON.stringify(event.payload)) {
+        throw new Error('Dungeon result event ID is already bound to a different payload.');
+      }
+      continue;
+    }
+    next[event.eventId] = { ...event, status: 'pending', createdAt: input.now };
+  }
+  return next;
+}

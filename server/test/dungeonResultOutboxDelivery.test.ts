@@ -31,3 +31,19 @@ test('ignores malformed event IDs and events belonging to another recipient',()=
   assert.equal(count,0);
   assert.deepEqual(calls,[]);
 });
+
+
+test('enqueue creates durable pending events and preserves identical retries',()=>{
+  const event={eventId:'dungeon:run_1:p1:combatResult',runId:'run_1',playerId:'p1',messageType:'combatResult',payload:{requestId:'req1'}};
+  const first=enqueueDungeonResultEvents({outbox:{},events:[event],now:10});
+  assert.equal(first[event.eventId].status,'pending');
+  assert.equal(first[event.eventId].createdAt,10);
+  const retry=enqueueDungeonResultEvents({outbox:first,events:[event],now:20});
+  assert.deepEqual(retry,first);
+});
+
+test('enqueue rejects an event ID reused for a different payload',()=>{
+  const event={eventId:'dungeon:run_1:p1:combatResult',runId:'run_1',playerId:'p1',messageType:'combatResult',payload:{requestId:'req1'}};
+  const first=enqueueDungeonResultEvents({outbox:{},events:[event],now:10});
+  assert.throws(()=>enqueueDungeonResultEvents({outbox:first,events:[{...event,payload:{requestId:'other'}}],now:20}),/already bound/);
+});
