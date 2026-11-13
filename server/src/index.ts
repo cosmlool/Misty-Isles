@@ -22,6 +22,8 @@ import { createClanTransactionStore } from './clanTransactions.js';
 import { createSharedStateTransactionStore } from './sharedStateTransactions.js';
 import { createSharedStateRuntime } from './sharedStateRuntime.js';
 import { validateDungeonRunStore, type DungeonRunRecord } from './dungeonRunState.js';
+import { markDungeonResultEventDelivered, type DungeonResultOutbox } from './dungeonRunFinalizationRuntime.js';
+import { dispatchPendingDungeonResultEvents } from './dungeonResultOutboxDelivery.js';
 import { calculateDungeonCombatPlan } from './dungeonCombatMath.js';
 import { buyAuctionItem, cancelAuctionItem, listAuctionItem } from './auctionOperations.js';
 import { cancelCraftJob, claimCraftJob, startCraftJob } from './craftingQueue.js';
@@ -600,6 +602,7 @@ class GameRoom extends Room<RoomState> {
     ONLINE_SESSION_HASHES.set(this.playerId, tokenDigest(this.sessionToken));
     const initialQuests=readObject(player.quests); if(!initialQuests.expedition) initialQuests.expedition={branchId:'forgotten_lands',currentZoneId:'el1',opened:1,cleared:[],seen:{},state:'idle'};const persistedGroupId=PLAYER_GROUP.get(this.playerId)||'';if(initialQuests.expedition.groupId!==persistedGroupId){initialQuests.expedition.groupId=persistedGroupId;if(!persistedGroupId&&['searching','moving'].includes(initialQuests.expedition.state)){initialQuests.expedition.state='idle';initialQuests.expedition.endsAt=0;delete initialQuests.expedition.targetZoneId;}} player.quests=JSON.stringify(initialQuests); const normalizedEquipment=readObject(player.equipment); for(const slot of ['weapon','helmet','armor','gloves','boots','cloak','amulet']) if(normalizedEquipment[slot]===undefined) normalizedEquipment[slot]=''; player.equipment=JSON.stringify(normalizedEquipment);
     client.send('hello', { message: 'Соединение установлено.' });
+    try { dispatchPendingDungeonResultEvents({ playerId: this.playerId, outbox: loadDungeonResultOutbox(), send: (type,payload) => client.send(type,payload), acknowledge: (eventId) => markDungeonResultEventDelivered({ runtime: sharedStateRuntime, outbox: loadDungeonResultOutbox(), eventId, now: Date.now() }) }); } catch (error) { console.error('Dungeon result outbox delivery deferred:', error); }
     client.send('combatHistory', { history: (readObject(player.quests).combatHistory || []).slice(0, 20) });
     client.send('expeditionState',{state:readObject(player.quests).expedition,branch:EXPEDITION_DATA});
     client.send('huntGroupState',{group:groupSnapshot(this.playerId)});
@@ -1257,6 +1260,13 @@ return {files:{players:all},result:{history:savedCombatHistory,resultPayload,win
     this.onAuthenticatedMessage('admin',(c,d:any)=>{if(!ADMIN_PLAYER_IDS.has(this.playerId))return this.notice(c,'Нет прав для выполнения этой команды.');if(!this.requireCharacter(c))return;const p=this.state.player;const action=String(d?.action||'');const amount=Math.max(1,Math.min(100000000,Math.floor(Number(d?.amount)||1)));if(action==='gold'){p.gold+=amount;p.goldEarned+=amount;}else if(action==='crystals')p.crystals+=amount;else if(action==='gems')p.gems+=amount;else if(action==='xp')this.addXp(p,amount);else if(action==='level'){p.level=amount;p.experience=0;p.experienceToNext=xpNeed(p.level);p.maxHealth=100+p.level*18+p.vitality*2;p.health=effectiveMaxHealth(p);}else if(action==='heal')p.health=effectiveMaxHealth(p);else if(action==='stats'){p.strength+=100;p.defense+=100;p.vitality+=100;p.dexterity+=100;p.intelligence+=100;p.luck+=100;p.stamina+=100;p.accuracy+=100;}else if(action==='materials'){const inv=readArray(p.inventory);inv.push('wood_material','wood_material','herb_material','herb_material','herb_bundle','rune_shard','venom_gland','crystal_shard','ash_ore','abyss_shard','relic_fragment');p.inventory=JSON.stringify(inv);}else if(action==='profession'){if(p.level<20)p.level=20;const available=PROFESSIONS[p.race]||[];p.profession=available[0]||'';}else if(action==='resetDaily'){p.lastDailyAt=0;p.lastFountainAt=0;p.daily='{}';}else if(action==='resetCharacter'){p.level=1;p.experience=0;p.experienceToNext=xpNeed(1);p.strength=10;p.defense=8;p.vitality=10;p.dexterity=10;p.intelligence=10;p.luck=5;p.stamina=10;p.accuracy=10;p.statPoints=0;p.health=p.maxHealth=100;p.gold=250;p.crystals=0;p.gems=0;p.inventory=JSON.stringify(['wood_sword','health_potion']);p.equipment=JSON.stringify({weapon:'wood_sword',helmet:'',armor:'',gloves:'',boots:'',cloak:'',amulet:''});p.equipmentEnhancements='{}';p.profession='';}else return this.notice(c,'Неизвестная команда.');this.notice(c,`Админ-команда выполнена: ${action}.`);});
     this.onAuthenticatedMessage('rename',(c,d:any)=>{if(!this.requireCharacter(c))return;const name=String(d?.name||'').trim().slice(0,24);if(name.length<2)return this.notice(c,'Имя должно содержать минимум 2 символа.');this.state.player.name=name;this.notice(c,`Имя изменено на ${name}.`);});
   }
+}
+
+function loadDungeonResultOutbox():DungeonResultOutbox {
+  if(!existsSync(DUNGEON_OUTBOX_FILE))return {};
+  const parsed:unknown=JSON.parse(readFileSync(DUNGEON_OUTBOX_FILE,'utf8'));
+  if(!parsed||typeof parsed!=='object'||Array.isArray(parsed))throw new Error('dungeon_outbox.json must contain an object keyed by event ID.');
+  return parsed as DungeonResultOutbox;
 }
 function safeId(v:any){return String(v||'').replace(/[^a-zA-Z0-9_-]/g,'').slice(0,64)||`guest_${Date.now()}`;}
 

@@ -159,5 +159,6 @@ Important limitation: the current boss dungeon handler is still synchronous and 
 
 - The shared WAL now supports `dungeon_outbox.json`; terminal run state, post-reward player snapshots, and queued result messages can be committed in the same transaction.
 - Result events have deterministic IDs bound to the run and recipient. Repeated finalization cannot enqueue a second copy or replace an existing event payload.
-- Delivery acknowledgement is persisted separately after transport send. This is at-least-once delivery: a crash between socket send and acknowledgement can replay an event. A future client receiver must deduplicate by `eventId`.
-- The outbox is persistence infrastructure only. The current synchronous live dungeon handler still sends directly and does not enqueue through this outbox. No live dispatch worker, reconnect replay, client deduplication, or reward formula change is included in this stage.
+- Delivery acknowledgement is persisted separately after transport send. The new reconnect dispatcher filters by recipient, sends only pending events, and acknowledges only after `client.send` returns. A fresh outbox snapshot is loaded before each acknowledgement to avoid overwriting newer event state.
+- Delivery is at-least-once: a crash between socket send and acknowledgement can replay an event. Client deduplication by `eventId` is still outstanding.
+- The dispatcher is wired to player join/reconnect, but the live synchronous `runExpeditionDungeon()` handler still does not enqueue through this outbox. This stage delivers queued events but does not yet make the live dungeon producer use the queue. No reward formula or balance change is included.
