@@ -86,6 +86,10 @@ export function createPreparedDungeonEncounter(input: PreparedDungeonEncounter):
     throw new Error('Prepared dungeon encounter must contain one result and player snapshot per participant.');
   }
 
+  if (!input.combat.win && input.drops.length > 0) {
+    throw new Error('A losing dungeon encounter cannot contain victory drops.');
+  }
+
   const drops = input.drops.map(drop => {
     if (!isRecord(drop) || typeof drop.itemId !== 'string' || !drop.itemId ||
         typeof drop.recipientId !== 'string' || !ids.includes(drop.recipientId)) {
