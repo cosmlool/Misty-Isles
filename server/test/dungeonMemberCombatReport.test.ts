@@ -29,7 +29,7 @@ test('builds an individual victory report with floored combat stats and personal
     ...baseReport,
     profession: 'Рыцарь', level: 25, attack: 12, defense: 8, damage: 42,
     received: 11, hpBefore: 100, hpAfter: 95, maxHealth: 120,
-    rewards: { xp: 500, gold: 110, loot: 'Перo' },
+    rewards: { xp: 500, gold: 110, loot: 'Перо' },
   });
   assert.notEqual(report.rewards, baseReport.rewards);
 });
