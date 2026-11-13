@@ -38,3 +38,12 @@ test('player persistence failures reconcile live state with the last durable sna
   assert.match(source, /if\(journalPending\)[\s\S]*?reconcileOnlinePlayersAfterPersistenceFailure\(\)[\s\S]*?else\{[\s\S]*?applyPlayerSave\(players\[i\] as any,rollbackSnapshots\[i\]\)/);
   assert.match(source, /function transactClanMutation[\s\S]*?catch\(error\)\{reconcileOnlinePlayersAfterPersistenceFailure\(\);throw error;\}/);
 });
+
+test('room leave does not overwrite persistence recovery with a stale quest snapshot', () => {
+  const start = source.indexOf('  onLeave(client: Client)');
+  const end = source.indexOf('  onDispose()', start);
+  assert.ok(start >= 0 && end > start, 'room leave lifecycle must be present');
+  const leave = source.slice(start, end);
+  assert.match(leave, /persistPlayers\(affectedPlayers\.length\?affectedPlayers:\[this\.state\.player\]\)/);
+  assert.doesNotMatch(leave, /previousQuests|catch\(error\)[\s\S]*?player\.quests=previous/);
+});
