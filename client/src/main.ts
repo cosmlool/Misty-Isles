@@ -29,7 +29,7 @@ let dungeonRunRecovery:AnyObj|null=null; let client: Client; let room: any; let 
 const playerIdKey='mist_isles_player_id';const guestProofKey='mist_isles_guest_proof';
 let playerId=localStorage.getItem(playerIdKey)||'';
 let guestProof=localStorage.getItem(guestProofKey)||'';
-const sessionKey='mist_isles_session';const accountNameKey='mist_isles_account_name';const SERVER_HTTP=`${window.location.protocol==='https:'?'https':'http'}://${window.location.hostname}:2567`;let authToken=localStorage.getItem(sessionKey)||'';let guestLinkToken='';let accountUsername=localStorage.getItem(accountNameKey)||'';let authMode:'login'|'register'='login';let authBusy=false;let manualLogout=false;let renderQueued=false;
+const sessionKey='mist_isles_session';const accountNameKey='mist_isles_account_name';const SERVER_HTTP=import.meta.env.VITE_SERVER_URL?.trim()||`${window.location.protocol==='https:'?'https':'http'}://${window.location.hostname}:2567`;let authToken=localStorage.getItem(sessionKey)||'';let guestLinkToken='';let accountUsername=localStorage.getItem(accountNameKey)||'';let authMode:'login'|'register'='login';let authBusy=false;let manualLogout=false;let renderQueued=false;
 const esc=(v:any)=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]!));
 const money=(n:any)=>Number(n||0).toLocaleString('ru-RU');
 const parse=(s:any,fallback:any={})=>{try{return JSON.parse(String(s));}catch{return fallback;}};
