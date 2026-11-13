@@ -267,3 +267,14 @@ PR #15 остаётся Draft/open и не объединён. Слияние б
 - Добавлен regression assertion для `onLeave()` в `server/test/playerPersistenceWriters.test.ts`.
 - Прочие call sites проверены: expedition/room saves проходят через `persistPlayers`; friend save через `persistPlayer`; clan mutations через `transactClanMutation`; auction использует detached snapshots и применяет их после успешного commit. Других stale rollback overrides в просмотренных местах не найдено.
 - Новый HEAD после исправления и теста: `e0f0fe214d87a92f6036a658fe5560532f3ee2fa`. Полный CI ожидает запуска/завершения. PR #15 остаётся Draft/open, merged=false.
+
+
+## Этап: долговечность shared-state WAL (2026-11-14)
+
+- На HEAD `a6b089aa91076b06318992b531d9fe7efe37b8c2` полный CI завершился успешно: Server checks — success; Quality Gate — 4/4 (server transaction recovery/build, client build, data/docs/structure, Playwright).
+- В `sharedStateTransactions.ts` найден пробел durability: атомарные временные файлы публиковались через rename без `fsync`. Это защищало от частичной записи, но не гарантировало сохранность WAL/target directory entries при внезапном отключении питания.
+- Исправлено: содержимое временного файла fsync-ится до rename; затем fsync-ится родительская директория. Для backup players.json применяется тот же порядок. Удаление WAL также синхронизирует директорию. WAL directory barrier завершается до первого изменения transaction targets.
+- Добавлен test hook `afterSync` и 2 regression tests: проверка порядка journal-file sync → directory sync → target write; имитация ошибки directory sync, подтверждающая отсутствие target writes и последующее восстановление из оставшегося журнала.
+- Игровые данные, формат журнала, ключи транзакций, combat/reward formulas и порядок применения файлов не менялись.
+- Коммиты: fsync implementation `c1314ab50ceda181bc0063acddd30eee3147bf23`; test hook `6a0e8a565fa47a89779a5d4dcbd95955faa8e5e8`; regression tests `9b9c463599b859cfabffc5e9bb41679fffe3a0a4`.
+- Новый HEAD требует полного CI. Не считать этап подтверждённым до завершения Server checks и всех Quality Gate jobs. PR #15 остаётся Draft/open, merged=false; не объединять.
