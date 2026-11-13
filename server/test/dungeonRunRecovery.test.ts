@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import { createDungeonRunRecord, type DungeonRunStore } from '../src/dungeonRunState.js';
-import { createDungeonRunRecoveryView, findActiveDungeonRunForParticipant, findActiveDungeonRunForParticipants } from '../src/dungeonRunRecovery.js';
+import { assertNoOverlappingActiveDungeonRuns, createDungeonRunRecoveryView, findActiveDungeonRunForParticipant, findActiveDungeonRunForParticipants } from '../src/dungeonRunRecovery.js';
 
 function activeRun(runId='run-1', participantIds=['p1','p2']) {
   return createDungeonRunRecord({ runId, requestId:'request_'+runId, dungeonId:'dungeon-20', groupId:'group-1', leaderId:participantIds[0], participants:participantIds.map(playerId=>({playerId,health:80,maxHealth:100})), bossId:'boss-1', bossHealth:500, seed:'seed-1', now:100 });
@@ -44,4 +44,24 @@ test('party entry validation rejects duplicate or empty participant IDs',()=>{
   const store:DungeonRunStore={};
   assert.throws(()=>findActiveDungeonRunForParticipants(store,['p1','p1']),/unique non-empty/);
   assert.throws(()=>findActiveDungeonRunForParticipants(store,['p1','']),/unique non-empty/);
+});
+
+
+test('startup rejects a durable store with overlapping active participant rosters',()=>{
+  const first=activeRun('run-1',['p1','p2']);
+  const second=activeRun('run-2',['p2','p3']);
+  assert.throws(
+    ()=>assertNoOverlappingActiveDungeonRuns({[first.runId]:first,[second.runId]:second}),
+    /p2 belongs to overlapping active dungeon runs/
+  );
+});
+
+test('startup accepts disjoint active runs and ignores terminal history',()=>{
+  const first=activeRun('run-1',['p1','p2']);
+  const second=activeRun('run-2',['p3']);
+  const terminal=activeRun('old',['p2']);
+  const completed={...terminal,status:'completed' as const,terminalResult:{outcome:'win' as const,committedAt:200,requestId:terminal.requestId}};
+  assert.doesNotThrow(()=>assertNoOverlappingActiveDungeonRuns({
+    [first.runId]:first,[second.runId]:second,[completed.runId]:completed
+  }));
 });

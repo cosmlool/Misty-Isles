@@ -44,3 +44,23 @@ export function findActiveDungeonRunForParticipants(
   }
   return null;
 }
+
+
+/**
+ * Validates the global active-run roster invariant during startup. A player
+ * must never be restored into two active runs, even if no client has joined yet.
+ */
+export function assertNoOverlappingActiveDungeonRuns(runs: DungeonRunStore): void {
+  const validated = validateDungeonRunStore(runs);
+  const ownerByPlayer = new Map<string, string>();
+  for (const run of Object.values(validated)) {
+    if (run.status !== 'active') continue;
+    for (const playerId of run.participantIds) {
+      const previousRunId = ownerByPlayer.get(playerId);
+      if (previousRunId) {
+        throw new Error(`Player ${playerId} belongs to overlapping active dungeon runs ${previousRunId} and ${run.runId}.`);
+      }
+      ownerByPlayer.set(playerId, run.runId);
+    }
+  }
+}

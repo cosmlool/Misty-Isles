@@ -181,3 +181,11 @@ Important limitation: the current boss dungeon handler is still synchronous and 
 - A party is rejected if any member is already present in an active durable dungeon run. The notice identifies the blocked member; the existing cached-request replay path remains ahead of this guard so an idempotent retry can still return its saved result.
 - Added validation for unique, non-empty party IDs and tests proving a non-leader's active run blocks the whole new party.
 - This closes an overlap hole in the reconnect visibility foundation. It does not change the current synchronous combat handler or claim that live combat is resumable; production durable entry/round integration remains outstanding.
+
+
+## Startup validation for overlapping active dungeon runs
+
+- Startup now validates the complete recovered dungeon-run store for cross-run participant overlap after shared-WAL replay and before accepting sessions.
+- If a player appears in two active durable runs, the server fails closed immediately rather than waiting for that player to reconnect and discovering the ambiguity later.
+- Completed/aborted history does not block a new active run. Tests cover both overlapping active records and valid disjoint/terminal records.
+- This is a recovery-integrity guard; it does not yet connect durable entry, round advancement, or finalization to the live synchronous dungeon handler.

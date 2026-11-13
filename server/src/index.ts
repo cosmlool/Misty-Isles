@@ -22,7 +22,7 @@ import { createClanTransactionStore } from './clanTransactions.js';
 import { createSharedStateTransactionStore } from './sharedStateTransactions.js';
 import { createSharedStateRuntime } from './sharedStateRuntime.js';
 import { validateDungeonRunStore, type DungeonRunRecord } from './dungeonRunState.js';
-import { createDungeonRunRecoveryView, findActiveDungeonRunForParticipant, findActiveDungeonRunForParticipants } from './dungeonRunRecovery.js';
+import { assertNoOverlappingActiveDungeonRuns, createDungeonRunRecoveryView, findActiveDungeonRunForParticipant, findActiveDungeonRunForParticipants } from './dungeonRunRecovery.js';
 import { markDungeonResultEventDelivered, type DungeonResultOutbox } from './dungeonRunFinalizationRuntime.js';
 import { dispatchPendingDungeonResultEvents, enqueueDungeonResultEvents } from './dungeonResultOutboxDelivery.js';
 import { calculateDungeonCombatPlan } from './dungeonCombatMath.js';
@@ -90,9 +90,9 @@ const sharedStateRuntime = createSharedStateRuntime({ shared: sharedStateTransac
 sharedStateRuntime.recoverPendingState();
 // Active dungeon records are restored only after the shared WAL has replayed.
 // Invalid snapshots fail closed instead of silently resetting a paid attempt.
-const ACTIVE_DUNGEON_RUNS = new Map<string, DungeonRunRecord>(
-  Object.entries(validateDungeonRunStore(existsSync(DUNGEON_RUN_FILE) ? JSON.parse(readFileSync(DUNGEON_RUN_FILE, 'utf8')) : {})),
-);
+const restoredDungeonRuns = validateDungeonRunStore(existsSync(DUNGEON_RUN_FILE) ? JSON.parse(readFileSync(DUNGEON_RUN_FILE, 'utf8')) : {});
+assertNoOverlappingActiveDungeonRuns(restoredDungeonRuns);
+const ACTIVE_DUNGEON_RUNS = new Map<string, DungeonRunRecord>(Object.entries(restoredDungeonRuns));
 function restoreHuntGroupsFromDisk(){
   HUNT_GROUPS.clear();
   PLAYER_GROUP.clear();
