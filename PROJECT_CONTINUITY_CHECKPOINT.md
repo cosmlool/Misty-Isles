@@ -223,3 +223,16 @@ PR #15 остаётся Draft/open и не объединён. Слияние б
 - Это подтверждает текущий этап, но не означает завершение всего технического аудита или подключение durable dungeon lifecycle.
 - PR #15 остаётся Draft/open, merged=false; merge не выполнять.
 - Контрольная точка зафиксирована отдельным commit; новый HEAD после неё требует повторного CI.
+
+
+## Этап: изоляция расчёта HP участника подземелья (2026-11-13)
+
+- Добавлен pure helper `server/src/dungeonMemberHealthOutcome.ts`: `prepareDungeonMemberHealthOutcome()` рассчитывает HP после входящего урона, вампиризма и группового лечения Баффера.
+- Ветка победы использует helper вместо последовательной прямой записи HP; ветка поражения использует тот же helper только для урона и минимального HP=1.
+- Сохранён порядок legacy-операций: сначала урон с нижней границей 1, затем вампиризм с верхней границей maxHealth, затем лечение Баффера (4% maxHealth × healingMultiplier) с верхней границей maxHealth.
+- Коэффициенты, округление Math.floor, maxHealth, условия профессии и входные значения не изменялись.
+- Добавлены 4 unit tests: порядок урона/лечения, нижняя и верхняя границы HP, общий healing multiplier, отсутствие лечения при поражении. Тест включён в server test script.
+- Изменение ограничено подготовкой итогового HP. Остальные Player поля по-прежнему мутируются legacy handler; transaction/persistence boundary не менялась.
+- Кодовые commits: helper `b9c118df6c377fb2c57c4296b66dff3f83235cce`; tests `368d94e3d0f927c3e2bc69d06ddc9d6cec76d3cf`; test script `ac51746324f6c29e3580cd0080cd4859e6c2bc54`; test expectation correction `49d29134212ce6367b15fc6df5ed0a19b53a3f66`; handler `308acb9359dcca4b713b1e0911df55e7d7b4bbb0`.
+- Новый HEAD требует полного CI подтверждения. До завершения CI не начинать следующий кодовый этап.
+- PR #15 остаётся Draft/open, merged=false; merge не выполнять. Полная durable dungeon lifecycle integration НЕ подключена.
