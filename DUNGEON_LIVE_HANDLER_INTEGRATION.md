@@ -1,6 +1,6 @@
 # Интеграция durable dungeon в live handler
 
-Статус: аудит границ завершён; pure recovery routing helper добавлен, live handler ещё не переключён.
+Статус: CI подтверждён зелёным на checkpoint HEAD `1811b12e14ed6e07f409f241f3670cf00fed550d`; pure recovery routing helper добавлен, live handler ещё не переключён.
 Ветка: `stage29/clean-validation-recovery`.
 
 ## Добавленное recovery routing
@@ -13,7 +13,7 @@
 
 Helper проверяет полную identity запроса (dungeon/group/leader/roster), отклоняет повторный request ID с другой identity и обнаруживает дубли request ID в durable store. Он не выполняет combat, не бросает random и не списывает попытки.
 
-Regression tests: `server/test/dungeonRequestRecovery.test.ts` — unknown request, active/no encounter, committed encounter, terminal replay, identity mismatch и duplicate durable request IDs. CI для коммита `6fd854595c38b9d64dde52aa7e1f7850f1eb658a` ещё выполняется; до зелёного результата тесты не считать подтверждёнными.
+Regression tests: `server/test/dungeonRequestRecovery.test.ts` — unknown request, active/no encounter, committed encounter, terminal replay, identity mismatch и duplicate durable request IDs. Проверка helper подтверждена полным CI на checkpoint HEAD `1811b12e14ed6e07f409f241f3670cf00fed550d`: Quality Gate run `43458901750` — все 4 jobs success (client build, data/docs, server TS build + transaction recovery tests, Playwright); Server checks run `43458901733` — success. Предыдущие отменённые дублирующие runs не считаются результатом.
 
 ## Что происходит сейчас
 
