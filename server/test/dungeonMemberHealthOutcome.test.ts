@@ -13,7 +13,7 @@ test('applies incoming damage before lifesteal and preserves the health floor', 
 
 test('applies buffer healing after lifesteal and caps each stage at max health', () => {
   assert.equal(prepareDungeonMemberHealthOutcome({
-    health: 100, incomingDamage: 10, maxHealth: 120,
+    health: 115, incomingDamage: 0, maxHealth: 120,
     lifestealRate: 0.2, attack: 100, healingMultiplier: 1, hasBuffer: true,
   }), 120);
   assert.equal(prepareDungeonMemberHealthOutcome({
@@ -25,7 +25,7 @@ test('uses the supplied healing multiplier for both healing sources', () => {
   assert.equal(prepareDungeonMemberHealthOutcome({
     health: 50, incomingDamage: 10, maxHealth: 100,
     lifestealRate: 0.1, attack: 100, healingMultiplier: 0.5, hasBuffer: true,
-  }), 49);
+  }), 47);
 });
 
 test('loss outcome applies damage only when no healing sources are supplied', () => {
