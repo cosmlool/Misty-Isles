@@ -103,3 +103,15 @@ PR #15 остаётся Draft/open и не объединён. Слияние б
 - Требуется дождаться CI на новом HEAD. Не считать этот этап подтверждённым до server build/test и полного Quality Gate.
 - Следующая подзадача: вынести подготовку snapshot-отчётов и per-player settlement payload из handler, сохраняя точные legacy значения; затем покрыть это тестами до включения durable orchestration.
 - Всё ещё НЕ реализовано: detached player settlement end-to-end; подключение `resolveDungeonRequestRecovery` к live handler; full durable commit/replay. PR #15 не сливать.
+
+
+## Контрольная точка — 2026-11-13 (извлечение отчётов участников подземелья)
+
+- Helper: `server/src/dungeonMemberCombatReport.ts`; live win/loss ветки `runExpeditionDungeon()` используют `buildDungeonMemberCombatReport`.
+- Helper копирует базовый report, выставляет прежние participant поля, применяет `Math.floor` к attack/defense/damage и fallback профессии `Без профессии`. Победа получает персональные XP/gold/loot; поражение оставляет нулевые rewards базового report.
+- Тесты: `server/test/dungeonMemberCombatReport.test.ts` — 3 проверки; добавлен в server test script.
+- Коммиты: helper `c38f93d6f8ddede836bd1fa4ae865129643ae837`; handler `4fe39e369c68c2ec77aa5d5529f1833824466a1e`; test `3371f27b25cf9911333ac4e27844afe340ace562`; package script `f03d8837b0baa6961ef04354acc4329dcb4541e0`; integration doc `022aa4b3ec39a55cc9402b7cb465b70a04fc105b`.
+- До этого полный Quality Gate на HEAD `73c63f001dfaf47df992052ad6f6bc6d25b304b3` прошёл 4/4 jobs. Новый HEAD пока ожидает полного CI.
+- Следующий шаг после CI: проверить тесты/сборку на новом HEAD; исправить обнаруженное. Затем продолжить декомпозицию legacy handler малыми чистыми helper-ами без изменения combat/reward formulas, RNG порядка, persisted state и outbox semantics.
+- Не включать частичную durable интеграцию. `runExpeditionDungeon()` всё ещё legacy; recovery routing helper не подключён; полная durable lifecycle integration не завершена.
+- PR #15 остаётся Draft/open; не объединять без отдельного разрешения.
