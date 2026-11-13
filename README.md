@@ -1,6 +1,6 @@
 # Misty Isles — Stage 28: Checkpoint 3 / Corrective Update 1
 
-Текущая рабочая база — Stage 28 Checkpoint 3. Corrective Update 1 вносит исправления HP, тестовых таймингов, магазина, NPC и компоновки персонажа. Stage 27 остаётся нетронутым; Stage 29 не начинать до проверки CU1. Подробности — в `README_STAGE28_CORRECTIVE_UPDATE_1.md` и `/docs/`.
+Текущая рабочая база — Stage 28 Checkpoint 3. Corrective Update 1 вносит исправления HP, тестовых таймингов, магазина, NPC и компоновки персонажа. Stage 27 остаётся нетронутым; Stage 29 не начинать до проверки CU1. Подробности — в `README_STAGE28_CORRECTIVE_UPDATE_1.md` и `/docs/`. Техническая карта проекта и полный порядок проверок: `PROJECT_TECHNICAL_PASSPORT.md`.
 
 **Сохранения:** не заменяй локальную папку `server/data`. В ZIP входят статические каталоги, но не входят персональные сохранения, аккаунты и сессии.
 

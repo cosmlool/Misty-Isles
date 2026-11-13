@@ -88,7 +88,7 @@ test('logout revokes a valid session, closes its active WebSocket and rejects fu
     let groupListResponses = 0;
     room.onMessage('notice', payload => notices.push(String(payload?.text || '')));
     room.onMessage('huntGroupPlayers', () => { groupListResponses++; });
-    room.send('createCharacter', { race: 'Кот', name: 'LogoutTestHero' });
+    room.send('createCharacter', { race: 'Кот', gender: 'male', name: 'LogoutTestHero' });
     await waitFor(() => notices.find(message => message.includes('Персонаж создан')), 'character creation before logout');
     const left = new Promise<number>(resolve => room!.onLeave(code => { leaveCode = code; resolve(code); }));
 
