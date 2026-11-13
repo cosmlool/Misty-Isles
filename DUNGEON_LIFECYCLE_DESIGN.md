@@ -199,3 +199,40 @@ Important limitation: the current boss dungeon handler is still synchronous and 
 - Run timestamps cannot move backward from start to update time. New run creation rejects participant HP outside the valid positive range.
 - Added regression tests for cursor drift, extra participant entries, impossible participant/boss HP, and invalid initial health.
 - This strengthens persisted-state validation only. It does not wire the synchronous production dungeon handler to durable entry/round/finalization, and it does not change combat or reward calculations.
+
+
+## Live-handler integration audit — 2026-11-13
+
+The current `runExpeditionDungeon()` implementation was re-read at the production call site before attempting runtime wiring. The following ordering is confirmed:
+
+1. It validates the leader, online party roster, request ID, cached result, existing active-run guard, leader level, group level range, and daily attempt availability.
+2. It resolves the boss, participant combat stats, passive/weakness multipliers, and calls `calculateDungeonCombatPlan()`. That pure function returns the aggregate round count, incoming damage, victory flag, and aggregate outgoing damage.
+3. It rolls optional boss drops with `Math.random()` and chooses the recipient of every drop with `rand()`. The guaranteed dungeon resource is also added to the pending drop list.
+4. It increments each online participant's daily dungeon-attempt counter and battle counter in memory.
+5. It applies the entire aggregate incoming damage in one operation. On victory only, it then applies lifesteal/Buffer healing, kill counters, XP/gold, activity history, and loot inventory changes. On loss, it applies damage and loss activity without victory rewards.
+6. It builds per-player reports and cached request history, then calls `persistDungeonResultPlayers()` to commit player snapshots and result outbox events. Client notifications are sent after persistence.
+
+### Integration blockers confirmed in code
+
+- The production handler does not call `commitDungeonRunStart()`, `commitDungeonRunRound()`, or `commitDungeonRunFinalization()`. The durable helpers remain separate from the live encounter path.
+- `DungeonRoundPlan` currently stores only boss-damage slices and incoming-damage slices. It does not freeze the already-calculated `win` decision, post-damage healing, or terminal settlement data.
+- The durable run's `encounter.seed` is currently an opaque persisted string. The live drop roll and loot-recipient selection use `Math.random()`; they are not derived from that seed and are not stored in the run.
+- `commitDungeonRunRound()` synchronizes participant HP into player snapshots, but it intentionally does not apply the live handler's victory counters, healing, XP, gold, inventory, reports, or quest history. Advancing rounds through it and then invoking the old handler would therefore be an unsafe mixed execution path.
+- `commitDungeonRunFinalization()` is a transaction boundary, not a reward engine: it accepts caller-prepared player snapshots and outbox events. The caller must calculate and freeze the exact legacy settlement before committing it.
+- The live handler increments attempts in its in-memory player objects before the final persistence call. If a durable entry transaction is added without removing/replacing that mutation path, attempts and battle counters can be charged twice. Conversely, persisting entry and then allowing the old handler to complete independently can leave an orphan active run or conflicting terminal state.
+
+### Required shape of the next implementation
+
+Do not add a partial call to the durable entry helper to the current handler. Before runtime wiring, introduce one explicit immutable encounter/settlement preparation boundary that captures, at minimum:
+
+- the original request identity and ordered participant roster;
+- the exact legacy combat result (`rounds`, `win`, aggregate incoming damage, and aggregate outgoing damage);
+- all random outcomes that affect the result, including selected drop IDs and each drop recipient;
+- the legacy post-combat healing and resulting per-player HP;
+- the exact per-player XP/gold and victory counters, plus the resulting inventory/quest/report/outbox payloads needed for terminal commit.
+
+The durable start transaction must consume the daily attempts exactly once together with this prepared run. Round commits must advance only the saved plan. Finalization must apply only the frozen settlement and terminal marker in one WAL transaction. A retry must load the committed request/run state rather than reroll drops, recalculate against changed equipment/buffs, or apply rewards again.
+
+### Safe boundary for the current stage
+
+This stage is an implementation audit and sequencing correction only. It changes no combat formula, drop chance, loot distribution rule, reward amount, attempt limit, or live dungeon behavior. The next code change should first add and test the immutable preparation/settlement model against the existing synchronous handler's outputs; only after parity is demonstrated should the handler be switched to durable entry/round/finalization transactions.
