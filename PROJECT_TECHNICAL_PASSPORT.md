@@ -111,8 +111,8 @@ CI — окончательная проверка изменения. Пуст�
 ## 7. Открытые технические задачи
 
 - Сверять исторические записи в `PROJECT_AUDIT_STATUS.md` с актуальным PR и SHA: документ содержит checkpoint разных веток и периодов.
-- Надёжная доставка сохранённых dungeon outbox events при входе/переподключении: pending-события, ACK после успешной доставки, дедупликация повторной доставки и crash/reconnect-тесты. Сам outbox WAL и атомарная запись результата уже созданы; доставка в клиентский канал — следующий dungeon runtime этап.
-- Live `runExpeditionDungeon()` ранее оставался синхронным legacy handler; наличие durable start/round/finalization helpers само по себе не означает, что production flow полностью переключён на них.
+- Dungeon outbox delivery уже подключён: pending events отправляются при подключении и после результата; сервер отмечает событие delivered после успешного `client.send`, клиент подавляет дубликаты по `eventId` через localStorage. Unit и restart/replay tests покрывают порядок send/ack, сбои и дедупликацию. Это transport ACK после вызова send, не отдельное подтверждение браузера.
+- Следующая крупная dungeon-задача: интегрировать immutable prepared encounter и durable start/round/finalization в live `runExpeditionDungeon()`. Сейчас live handler остаётся синхронным legacy flow; подготовка боя, случайные исходы и награды всё ещё рассчитываются/применяются внутри него. Не менять боевые формулы или баланс при интеграции.
 - Реальные правила AFK лидера, spectator lifecycle и воскрешения должны проверяться отдельно по `DUNGEON_LIFECYCLE_DESIGN.md`; не считать их реализованными только по наличию документа.
 - Не менять балансные коэффициенты, цены и шансы без полного аудита и согласования.
 
