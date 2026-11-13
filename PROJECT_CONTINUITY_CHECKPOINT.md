@@ -89,3 +89,17 @@ PR #15 остаётся Draft/open и не объединён. Слияние б
 - Следующий кодовый этап: выделить из монолитного `Room.runExpeditionDungeon()` чистую preparation-функцию, которая работает с detached Player snapshots и фиксирует все текущие результаты (combat, drops/recipients, HP/healing, XP/gold, counters, inventory, activity, reports и outbox payloads), не меняя live Player. Сохранить без изменений формулы, порядок random rolls и распределение наград.
 - Только после regression-тестов preparation boundary подключать durable start → prepared encounter commit → finalization/replay. Не включать live handler на частичную durable-схему: это может потерять попытки/награды или повторно выполнить бой.
 - `runExpeditionDungeon()` пока legacy; recovery helper пока не подключён к live handler. Полная durable integration НЕ завершена.
+
+
+## Контрольная точка — 2026-11-13 (извлечение добычи подземелья)
+
+- Новый код: `server/src/dungeonDropPreparation.ts`.
+- Live handler `Room.runExpeditionDungeon()` теперь вызывает `rollDungeonDropIds` и `allocateDungeonDropRecipients` вместо inline циклов.
+- Сохранены формула dropBonus и cap 95%; гарантированный dungeon resource; исходный порядок бросков optional drops; recipient selection выполняется на прежнем участке после начисления XP/золота; каждый предмет назначается ровно одному участнику.
+- RNG инъецируется из handler (`Math.random` и существующий `rand`), helper не создаёт собственный random stream.
+- Регрессии: `server/test/dungeonDropPreparation.test.ts` — 4 теста; подключён в server test script.
+- Кодовые commits: handler `0b59f851fd61d2e6316fb9c01234292b18a030cb`, helper `f9b7f481538e459161afe8ac2af7de033fda0d06`, tests `265e47d41cbf4a1de02d3dff92264dc99416a831`, test script `c52786ea0f20d3ff6df48e48696cb2747eab1a09`.
+- Документация интеграции: `4c31d4a4a885ccaf0fa5a1628cd6ae8862b816c8`.
+- Требуется дождаться CI на новом HEAD. Не считать этот этап подтверждённым до server build/test и полного Quality Gate.
+- Следующая подзадача: вынести подготовку snapshot-отчётов и per-player settlement payload из handler, сохраняя точные legacy значения; затем покрыть это тестами до включения durable orchestration.
+- Всё ещё НЕ реализовано: detached player settlement end-to-end; подключение `resolveDungeonRequestRecovery` к live handler; full durable commit/replay. PR #15 не сливать.
