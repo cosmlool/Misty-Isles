@@ -11,13 +11,14 @@ export function claimDungeonResultEvent(
   playerId: string,
   eventId: unknown,
   storage?: DungeonResultEventStorage,
+  sessionClaims: Set<string> = claimedInSession,
 ): boolean {
   if (typeof eventId !== 'string' || !eventId.trim()) return true;
   const normalizedPlayerId = String(playerId || '').trim();
   if (!normalizedPlayerId) return true;
 
   const memoryKey = `${normalizedPlayerId}:${eventId}`;
-  if (claimedInSession.has(memoryKey)) return false;
+  if (sessionClaims.has(memoryKey)) return false;
 
   const storageKey = `misty_dungeon_result_events_${normalizedPlayerId}`;
   let remembered: string[] = [];
@@ -31,7 +32,7 @@ export function claimDungeonResultEvent(
   }
 
   if (remembered.includes(eventId)) {
-    claimedInSession.add(memoryKey);
+    sessionClaims.add(memoryKey);
     return false;
   }
 

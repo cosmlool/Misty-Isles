@@ -18,7 +18,7 @@ test('persists event IDs so reconnect or page reload replay is suppressed',()=>{
   assert.equal(claimDungeonResultEvent('reload-player','event-reload',local),true);
   // A different player ID represents a separate browser account namespace.
   assert.equal(claimDungeonResultEvent('other-player','event-reload',local),true);
-  assert.equal(claimDungeonResultEvent('reload-player','event-reload',local),false);
+  assert.equal(claimDungeonResultEvent('reload-player','event-reload',local,new Set()),false);
 });
 
 test('accepts distinct events and keeps player namespaces isolated',()=>{
@@ -34,6 +34,11 @@ test('recovers from malformed persisted history and bounds its size',()=>{
   assert.equal(claimDungeonResultEvent('p1','recovered-event',local),true);
   const stored=JSON.parse(local.getItem('misty_dungeon_result_events_p1')||'[]');
   assert.deepEqual(stored,['recovered-event']);
+  for(let i=0;i<505;i++) claimDungeonResultEvent('bounded-player',`event-${i}`,local,new Set());
+  const bounded=JSON.parse(local.getItem('misty_dungeon_result_events_bounded-player')||'[]');
+  assert.equal(bounded.length,500);
+  assert.equal(bounded[0],'event-5');
+  assert.equal(bounded[499],'event-504');
 });
 
 test('events without stable IDs remain processable for legacy messages',()=>{
