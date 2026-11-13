@@ -281,3 +281,16 @@ PR #15 остаётся Draft/open и не объединён. Слияние б
 
 
 - CI на HEAD `59a7af4b` выявил ошибку в новом regression-test, не в реализации WAL: тест сравнивал fsync временного файла с конечным именем журнала, хотя `atomicWrite` корректно fsync-ит temp-файл до rename. Исправлено условие теста: проверяется временный файл с префиксом имени WAL, затем directory sync и только после этого target write. Изменение теста: `779a8b815a140a364e27b7d85dfc6e69506a30df`. Требуется полный повтор CI на новом HEAD.
+
+
+## Контрольная точка — 2026-11-14 (durability старых transaction recovery paths)
+
+- Предыдущий HEAD `a85f48c2cb57f7bdd97f34da5c7190fcf224e504` прошёл оба workflow полностью: Quality Gate — 4/4 jobs success (server transaction recovery/build, Playwright, client build, data/docs/structure); Server checks — success (player-save tests + server build).
+- Продолжен аудит восстановления legacy-журналов. Хотя production runtime больше не создаёт новые auction/clan legacy journals, startup coordinator обязан завершать replay журналов, оставшихся от старых версий.
+- Найдено: legacy auction/clan recovery использовали temp-file + rename без fsync содержимого и directory entry; удаление восстановленного журнала также не синхронизировало директорию.
+- Исправлено в `auctionTransactions.ts` и `clanTransactions.ts`: fsync temp file до rename, fsync target directory после rename, fsync data directory после удаления журнала; auction player backup тоже fsync-ится до публикации.
+- Добавлены hooks `afterSync` и regression tests для обоих recovery paths: проверка file sync → directory sync и финального directory sync после удаления журнала.
+- Новые legacy commit methods не возвращены в production runtime; они остаются recovery-only. Transaction contents, player/clan/economy state и игровые правила не менялись.
+- Commits: auction durability `9aa4d598cedfcd041005ab073a6da17abed1963a`; clan durability `cf9d49874f70caba7ebcd7f1193c367232f09a7b`; auction regression test `fe4bd1e2eaa969bd1cd7b517716bbc6e76a31e40`; clan regression test `d23468c8a7b9b46c78219114b85d4cb887707409`; integration docs `538df1f6262f245657bc12e5c057a6f1aba5bd87`.
+- Новый HEAD после checkpoint update требует полного CI. Следующий шаг — проверить workflow; при ошибках получить job logs и исправить их до продолжения аудита.
+- PR #15 остаётся Draft/open, merged=false; не объединять. Полная durable dungeon lifecycle integration НЕ подключена.
