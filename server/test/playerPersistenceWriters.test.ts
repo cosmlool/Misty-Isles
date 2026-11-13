@@ -28,3 +28,13 @@ test('startup recovery finishes before hunt-group restore and autosave startup',
   assert.ok(groupRestore > recovery, 'group restore must happen after recovery');
   assert.ok(autosave > recovery, 'autosave must start after recovery');
 });
+
+test('player persistence failures reconcile live state with the last durable snapshot', () => {
+  assert.match(source, /function reconcileOnlinePlayersAfterPersistenceFailure\s*\(/);
+  assert.match(source, /catch\(error\)\{reconcileOnlinePlayersAfterPersistenceFailure\(\);throw error;\}/);
+  assert.match(source, /function persistDungeonResultPlayers[\s\S]*?rollbackSnapshots/);
+  assert.match(source, /const rollbackSnapshots=players\.map\(player=>player!\.toJSON\(\)\)/);
+  assert.equal((source.match(/persistDungeonResultPlayers\(players as Player\[\],dungeonResultEvents,rollbackSnapshots\)/g) || []).length, 2);
+  assert.match(source, /if\(journalPending\)[\s\S]*?reconcileOnlinePlayersAfterPersistenceFailure\(\)[\s\S]*?else\{[\s\S]*?applyPlayerSave\(players\[i\] as any,rollbackSnapshots\[i\]\)/);
+  assert.match(source, /function transactClanMutation[\s\S]*?catch\(error\)\{reconcileOnlinePlayersAfterPersistenceFailure\(\);throw error;\}/);
+});
