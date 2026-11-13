@@ -239,10 +239,10 @@ test('the WAL file and directory are synced before the first transaction target 
       players: { p1: { gold: 20 } },
       auction: [{ id: 'durable_lot' }],
     }, result: null }));
-    const journalFileSync = events.indexOf('sync:' + f.store.journalFile);
+    const journalFileSync = events.findIndex(event => event.startsWith('sync:' + f.store.journalFile + '.'));
     const journalDirectorySync = events.indexOf('sync:' + f.dataDir);
     const firstTargetWrite = events.indexOf('write:players');
-    assert.ok(journalFileSync >= 0, 'journal contents must be fsynced');
+    assert.ok(journalFileSync >= 0, 'journal temporary file contents must be fsynced before rename');
     assert.ok(journalDirectorySync > journalFileSync, 'journal rename must be fsynced in its directory');
     assert.ok(firstTargetWrite > journalDirectorySync, 'no target may be applied before the durable journal barrier');
   } finally { f.cleanup(); }
