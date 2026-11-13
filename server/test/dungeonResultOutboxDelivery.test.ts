@@ -4,7 +4,7 @@ import { dispatchPendingDungeonResultEvents, enqueueDungeonResultEvents } from '
 
 function event(eventId:string,playerId:string,status:'pending'|'delivered'='pending',createdAt=1){return {eventId,playerId,messageType:'combatResult',payload:{requestId:eventId,text:'done'},status,createdAt};}
 
-test("dispatches only this player's pending events in stable order and acknowledges after send',()=>{
+test("dispatches only this player's pending events in stable order and acknowledges after send",()=>{
   const outbox={e2:event('e2','p1','pending',2),e1:event('e1','p1','pending',1),other:event('other','p2'),done:event('done','p1','delivered')};
   const calls:string[]=[];
   const count=dispatchPendingDungeonResultEvents({playerId:'p1',outbox,send:(type,payload)=>{calls.push('send:'+String(payload.requestId));},acknowledge:id=>calls.push('ack:'+id)});
