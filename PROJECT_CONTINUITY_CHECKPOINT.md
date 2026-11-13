@@ -132,3 +132,15 @@ PR #15 остаётся Draft/open и не объединён. Слияние б
 - Test-only commit: `77122fa3e1b8e1a2ae279313186bb91acd24f53a`.
 - Требуется полный CI на новом HEAD; до его завершения Quality Gate не считать зелёным.
 - PR #15 остаётся Draft/open, merged=false. Durable dungeon lifecycle по-прежнему не подключён.
+
+
+## Контрольная точка — 2026-11-13 (общий отчёт подземелья)
+
+- Извлечён pure helper `server/src/dungeonGroupCombatReport.ts`; победа и поражение в `Room.runExpeditionDungeon()` используют `buildDungeonGroupCombatReport()`.
+- Сохранены точные поля/значения общего report, win/loss rewards и порядок/тексты `lines`. Время передаётся явно через `at: Date.now()` в прежнем месте вызова; helper не вызывает часы сам.
+- Regression tests: `server/test/dungeonGroupCombatReport.test.ts` — точный win report, loss report, rewards, строки, timestamp и отсутствие мутации входа. Тест включён в server test script.
+- Коммиты: helper `1411e5ef5cd1905cbf9583dde60cd0a4593603e2`; tests `435795b92790b3ef9a8b5de4d4142921371e4471`; test script `fb829d37d90aab489310294c0ca5f6434e6d1e40`; handler `caea5971af97a51648a648b3581242af0ff5824b`; integration doc `197268322234a8456455fe0d4ea74c38ec576043`.
+- На предыдущем HEAD `ebb8991953548e21463bf7f069c473af73b4b933` все server checks и все 4 Quality Gate jobs завершились успешно. Эти результаты не относятся к новым коммитам.
+- Текущий этап ожидает новый CI на свежем HEAD. До завершения CI не вносить новые кодовые изменения.
+- Изменение не затрагивает combat formulas, RNG calls/order, reward calculation, player HP/inventory, request history, outbox или момент persistence.
+- Live `runExpeditionDungeon()` остаётся legacy; detached settlement и полная durable lifecycle integration не подключены. PR #15 оставить Draft/open, не объединять без разрешения.
