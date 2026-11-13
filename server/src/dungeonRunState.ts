@@ -1,3 +1,5 @@
+import { validatePreparedDungeonEncounter, type PreparedDungeonEncounter } from './dungeonEncounterPreparation.js';
+
 export type DungeonParticipantStatus = 'alive' | 'spectator' | 'revived';
 
 export type DungeonRunParticipant = {
@@ -29,6 +31,7 @@ export type DungeonRunRecord = {
   updatedAt: number;
   roundIndex: number;
   roundPlan?: DungeonRoundPlan;
+  preparedEncounter?: PreparedDungeonEncounter;
   participants: Record<string, DungeonRunParticipant>;
   encounter: {
     bossId: string;
@@ -121,6 +124,16 @@ export function validateDungeonRunStore(value: unknown): DungeonRunStore {
       raw.terminalResult.requestId !== raw.requestId ||
       (raw.terminalResult.claimId !== undefined && raw.terminalResult.claimId !== `dungeon:${key}:${raw.requestId}:${raw.terminalResult.outcome}`))) {
       throw new Error(`dungeon_runs.json contains a terminal run without a durable terminal result: ${key}.`);
+    }
+    if (raw.preparedEncounter !== undefined) {
+      const prepared = validatePreparedDungeonEncounter(raw.preparedEncounter);
+      if (prepared.runId !== raw.runId || prepared.requestId !== raw.requestId ||
+        prepared.dungeonId !== raw.dungeonId || prepared.bossId !== raw.encounter.bossId ||
+        JSON.stringify(prepared.participantIds) !== JSON.stringify(raw.participantIds) ||
+        prepared.preparedAt < raw.startedAt) {
+        throw new Error(`dungeon_runs.json contains a prepared encounter that does not match run ${key}.`);
+      }
+      raw.preparedEncounter = prepared;
     }
     result[key] = raw as DungeonRunRecord;
   }
