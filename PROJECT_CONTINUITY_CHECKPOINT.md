@@ -122,3 +122,13 @@ PR #15 остаётся Draft/open и не объединён. Слияние б
 - На HEAD `db44014009810f45c07122594d56d3d8c8351a47` server checks завершились: все 354 теста прошли, но TypeScript build выявил ошибку вывода типа в `dungeonMemberCombatReport.ts` (поле `rewards` не было доступно на выведенном типе объекта).
 - Исправлено в commit `1abc30687bc0d2f8cd981407f2124712bf7a57a1`: локальная переменная результата теперь явно типизирована как `Record<string, any>`; поведение helper не менялось.
 - Требуется повторный полный CI на новом HEAD. Не считать исправление подтверждённым до успешного server build и Quality Gate.
+
+
+## CI follow-up — 2026-11-13 (race equipment persistence assertion)
+
+- На PR #15 HEAD `e2256dc80a5acbd5210e781597553815f920a001` server checks прошли: isolated player-save tests и TypeScript build — success.
+- Quality Gate: client build, data/docs/structure audit и Playwright smoke tests прошли. Server TypeScript build job остановился на одном runtime-тесте из 354: `raceEquipmentRuntime.test.ts`, проверка экипировки Лучника сразу после сообщения об успешной экипировке прочитала сохранение до завершения асинхронной записи (`''` вместо `WPN-ЛУЧ-025`). Остальные 353 теста прошли.
+- Исправлен только тест: добавлено ожидание фактического появления экипированного оружия в `players.json` перед проверкой. Игровая логика и правила экипировки не менялись.
+- Test-only commit: `77122fa3e1b8e1a2ae279313186bb91acd24f53a`.
+- Требуется полный CI на новом HEAD; до его завершения Quality Gate не считать зелёным.
+- PR #15 остаётся Draft/open, merged=false. Durable dungeon lifecycle по-прежнему не подключён.
