@@ -115,3 +115,10 @@ PR #15 остаётся Draft/open и не объединён. Слияние б
 - Следующий шаг после CI: проверить тесты/сборку на новом HEAD; исправить обнаруженное. Затем продолжить декомпозицию legacy handler малыми чистыми helper-ами без изменения combat/reward formulas, RNG порядка, persisted state и outbox semantics.
 - Не включать частичную durable интеграцию. `runExpeditionDungeon()` всё ещё legacy; recovery routing helper не подключён; полная durable lifecycle integration не завершена.
 - PR #15 остаётся Draft/open; не объединять без отдельного разрешения.
+
+
+## CI correction — 2026-11-13
+
+- На HEAD `db44014009810f45c07122594d56d3d8c8351a47` server checks завершились: все 354 теста прошли, но TypeScript build выявил ошибку вывода типа в `dungeonMemberCombatReport.ts` (поле `rewards` не было доступно на выведенном типе объекта).
+- Исправлено в commit `1abc30687bc0d2f8cd981407f2124712bf7a57a1`: локальная переменная результата теперь явно типизирована как `Record<string, any>`; поведение helper не менялось.
+- Требуется повторный полный CI на новом HEAD. Не считать исправление подтверждённым до успешного server build и Quality Gate.
