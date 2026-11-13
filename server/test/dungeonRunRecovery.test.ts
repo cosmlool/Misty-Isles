@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { createDungeonRunRecord, type DungeonRunStore } from '../src/dungeonRunState.js';
+import { createDungeonRoundPlan, createDungeonRunRecord, resolveNextDungeonRunRound, validateDungeonRunStore, type DungeonRunStore } from '../src/dungeonRunState.js';
 import { assertNoOverlappingActiveDungeonRuns, createDungeonRunRecoveryView, findActiveDungeonRunForParticipant, findActiveDungeonRunForParticipants } from '../src/dungeonRunRecovery.js';
 
 function activeRun(runId='run-1', participantIds=['p1','p2']) {
@@ -25,6 +25,20 @@ test('recovery view includes durable progress but excludes the private encounter
 test('rejects multiple active runs instead of choosing one arbitrarily',()=>{
   const first=activeRun('run-1',['p1']); const second=activeRun('run-2',['p1']);
   assert.throws(()=>findActiveDungeonRunForParticipant({[first.runId]:first,[second.runId]:second},'p1'),/multiple active dungeon runs/);
+});
+
+test('reconnect projection resumes from a serialized committed round without exposing private plan data',()=>{
+  const initial=activeRun();
+  const planned={...initial,roundPlan:createDungeonRoundPlan({totalRounds:2,totalBossDamage:100,totalIncomingDamageByParticipant:{p1:10,p2:20}})};
+  const committed=resolveNextDungeonRunRound(planned,200);
+  const restored=validateDungeonRunStore(JSON.parse(JSON.stringify({[committed.runId]:committed})));
+  const view=createDungeonRunRecoveryView(restored[committed.runId],'p2');
+  assert.equal(view?.roundIndex,1);
+  assert.equal(view?.totalRounds,2);
+  assert.equal(view?.participants.find(p=>p.playerId==='p1')?.health,75);
+  assert.equal(view?.participants.find(p=>p.playerId==='p2')?.health,70);
+  assert.equal(JSON.stringify(view).includes('seed-1'),false);
+  assert.equal(JSON.stringify(view).includes('incomingDamageByRound'),false);
 });
 
 test('does not expose a run to a non-participant',()=>{
