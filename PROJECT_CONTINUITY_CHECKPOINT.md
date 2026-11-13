@@ -161,3 +161,17 @@ PR #15 остаётся Draft/open и не объединён. Слияние б
 - Не менялись combat formulas, RNG, XP/gold, HP, inventory, reports, request history, outbox и момент persistence. Live dungeon handler остаётся legacy; detached settlement и полная durable lifecycle integration НЕ подключены.
 - PR #15 оставить Draft/open; не объединять без отдельного разрешения.
 - Следующая подзадача после CI: продолжить изоляцию detached settlement небольшими pure helper-ами, сохраняя legacy порядок и точные persisted payloads; не включать частичную durable orchestration.
+
+
+## Контрольная точка — 2026-11-13 (подготовка replay history и outbox event)
+
+- CI предыдущего HEAD `6bb2a2bc6fcae4fcffbd8d15c6a6072fab3e774d` завершился полностью успешно: Quality Gate run `43481584530` — 4/4 jobs success; Server workflow run `43481590002` — success.
+- Добавлен pure helper `server/src/dungeonRequestResultPreparation.ts` (`prepareDungeonRequestResult`): возвращает новый quest snapshot и точный legacy outbox event.
+- Сохранена семантика request history: удалить запись с текущим request ID, добавить актуальный report/text, оставить последние 5; обновить `dungeonLastRequest`.
+- Сохранены event ID `dungeon:legacy_<requestId>:<playerId>:combatResult`, run ID, player ID, message type и payload.
+- Обе live ветки (win/loss) переведены на helper; исходный quest object не мутируется.
+- Добавлены 4 regression tests и регистрация в `server/package.json`.
+- Commits: helper `03a0b319d553a8ee06c6e74d59a4828e66e56a37`; tests `26af6293c9d39ec95ecf0b398a8480693d0df071`; handler `d62d54f8a8cab431c7bc3e3ec0088366528ce909`; test script `fe367c225a0bd64d022a1244559065f634f13630`; integration doc `9b493b9ba14c3f36a92976146daead9308c38e45`.
+- Новый HEAD требует полного CI. Не считать этап подтверждённым до успешных server tests/build и всех Quality Gate jobs.
+- Не менялись combat formulas, RNG, награды, HP, inventory, report contents, request ID semantics, event IDs, outbox delivery или persistence boundary. Полная durable dungeon lifecycle integration по-прежнему НЕ подключена.
+- PR #15 остаётся Draft/open, merged=false; не объединять без отдельного разрешения.
