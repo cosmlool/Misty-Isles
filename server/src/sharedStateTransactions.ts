@@ -34,6 +34,7 @@ type Options = {
   testHooks?: {
     afterJournalPersisted?: () => void;
     afterTargetWrite?: (key: SharedStateKey) => void;
+    afterSync?: (path: string) => void;
   };
 };
 
@@ -66,7 +67,7 @@ export function createSharedStateTransactionStore(options: Options) {
 
   function syncPath(path: string) {
     const descriptor = openSync(path, 'r');
-    try { fsyncSync(descriptor); }
+    try { fsyncSync(descriptor); options.testHooks?.afterSync?.(path); }
     finally { closeSync(descriptor); }
   }
 
