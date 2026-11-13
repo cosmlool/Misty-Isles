@@ -1,7 +1,19 @@
 # Интеграция durable dungeon в live handler
 
-Статус: аудит границ завершён, кодовая интеграция ещё не начата.
+Статус: аудит границ завершён; pure recovery routing helper добавлен, live handler ещё не переключён.
 Ветка: `stage29/clean-validation-recovery`.
+
+## Добавленное recovery routing
+
+`server/src/dungeonRequestRecovery.ts` классифицирует повторный request ID без изменения игроков:
+- `not-found` — запрос ещё не начинался;
+- `prepare-encounter` — active run без сохранённого encounter, можно продолжить подготовку без повторного входа;
+- `finalize-committed-encounter` — encounter уже сохранён, разрешена только финализация из snapshot;
+- `replay-terminal-result` — забег завершён, требуется воспроизвести сохранённый результат.
+
+Helper проверяет полную identity запроса (dungeon/group/leader/roster), отклоняет повторный request ID с другой identity и обнаруживает дубли request ID в durable store. Он не выполняет combat, не бросает random и не списывает попытки.
+
+Regression tests: `server/test/dungeonRequestRecovery.test.ts` — unknown request, active/no encounter, committed encounter, terminal replay, identity mismatch и duplicate durable request IDs. CI для коммита `6fd854595c38b9d64dde52aa7e1f7850f1eb658a` ещё выполняется; до зелёного результата тесты не считать подтверждёнными.
 
 ## Что происходит сейчас
 
@@ -23,6 +35,7 @@
 - `dungeonEncounterPreparation.ts`: `createPreparedDungeonEncounter()` — проверяет и замораживает combat result, drops/recipients, participant results и полные player snapshots.
 - `dungeonEncounterCommitRuntime.ts`: `commitPreparedDungeonEncounter()` — сохраняет неизменяемый encounter в run через WAL.
 - `dungeonPreparedEncounterFinalizationRuntime.ts`: `commitCommittedDungeonEncounterFinalization()` — берёт только ранее сохранённый encounter и атомарно пишет player snapshots, terminal run и outbox.
+- `dungeonRequestRecovery.ts`: pure recovery routing для повторного request ID; пока не подключён к live handler.
 - `dungeonResultOutboxDelivery.ts`: уже используется для последующей доставки событий.
 
 Важное различие: `commitDungeonRunRound()` — инфраструктура для поэтапного раунда. Текущий live handler рассчитывает весь бой целиком. Не нужно искусственно разбивать его на раунды при первой интеграции; сначала сохранить прежнюю семантику боя.
@@ -30,7 +43,7 @@
 ## План безопасного подключения
 
 1. **Durable entry.** После всех проверок и до боевого расчёта создать стабильный run ID и записать active run + расход попытки одной WAL-транзакцией. Убрать старое повторное увеличение `dungeonRuns`.
-2. **Recovery routing.** Повтор того же request ID должен находить run. Если encounter уже committed — только финализировать из него. Если run активен, но encounter отсутствует, продолжить подготовку без повторного списания попытки. Другой запрос при active run отклонять.
+2. **Recovery routing.** Подключить pure helper выше: committed encounter — только финализировать из него; active без encounter — продолжить подготовку без повторного списания попытки. Другой запрос при active run отклонять.
 3. **Pure preparation boundary.** Сохранить прежние формулы и порядок вычислений, но собирать все изменения в detached player snapshots. Все случайные drop rolls и recipients выбрать ровно один раз; не менять живые Player до durable commit.
 4. **Encounter commit.** Записать frozen prepared encounter. После этого любые retry/restart используют только сохранённый snapshot.
 5. **Finalization.** Из committed encounter атомарно применить полные player snapshots, terminal marker и outbox events. Затем обновить ONLINE_PLAYERS из committed snapshots и отправить outbox.
