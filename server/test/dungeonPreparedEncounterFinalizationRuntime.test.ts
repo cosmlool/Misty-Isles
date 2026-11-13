@@ -22,16 +22,16 @@ function fixture(win = true) {
     version: 1, runId: 'run_frozen', requestId: 'req_frozen', dungeonId: 'dungeon_frozen',
     bossId: 'boss_frozen', preparedAt: 150, participantIds: ['p1', 'p2'],
     combat: { rounds: 2, incoming: [10, 20], win, damageByParticipant: [50, 40] },
-    drops: [{ itemId: 'trophy_1', recipientId: 'p2' }],
+    drops: win ? [{ itemId: 'trophy_1', recipientId: 'p2' }] : [],
     participants: {
       p1: { playerId: 'p1', hpBefore: 100, hpAfter: 95, incomingDamage: 10, outgoingDamage: 50,
         xp: win ? 100 : 0, gold: win ? 20 : 0, lootIds: [], report: { rounds: 2 }, resultText: win ? 'Victory' : 'Defeat' },
       p2: { playerId: 'p2', hpBefore: 90, hpAfter: 80, incomingDamage: 20, outgoingDamage: 40,
-        xp: win ? 100 : 0, gold: win ? 20 : 0, lootIds: ['trophy_1'], report: { rounds: 2 }, resultText: win ? 'Victory' : 'Defeat' },
+        xp: win ? 100 : 0, gold: win ? 20 : 0, lootIds: win ? ['trophy_1'] : [], report: { rounds: 2 }, resultText: win ? 'Victory' : 'Defeat' },
     },
     playerSnapshots: {
       p1: { id: 'p1', health: 95, gold: win ? 120 : 100, inventory: '[]' },
-      p2: { id: 'p2', health: 80, gold: win ? 220 : 200, inventory: '[{"id":"trophy_1"}]' },
+      p2: { id: 'p2', health: 80, gold: win ? 220 : 200, inventory: win ? '[{"id":"trophy_1"}]' : '[]' },
     },
   });
   const attached = commitPreparedDungeonEncounter({
