@@ -1,5 +1,6 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
+import { createPreparedDungeonEncounter } from '../src/dungeonEncounterPreparation.js';
 import { createDungeonRunRecord, type DungeonRunRecord } from '../src/dungeonRunState.js';
 import { resolveDungeonRequestRecovery } from '../src/dungeonRequestRecovery.js';
 
@@ -31,16 +32,20 @@ test('active run without committed encounter resumes preparation without another
 });
 
 test('active run with committed encounter routes only to finalization', () => {
-  const prepared = {
-    ...run(),
-    preparedEncounter: {
-      runId: 'run_001', requestId: 'dungeon_req_001', dungeonId: 'fl_dungeon_03',
-      bossId: 'boss_03', participantIds: ['p1', 'p2'], preparedAt: 1001,
-    } as any,
-  };
-  // The store validator also validates the full prepared snapshot; use a minimal
-  // typed stub only to prove the routing branch after a valid persisted record.
-  const result = resolveDungeonRequestRecovery({ identity, runs: { run_001: prepared } });
+  const base = run();
+  const encounter = createPreparedDungeonEncounter({
+    version: 1, runId: base.runId, requestId: base.requestId, dungeonId: base.dungeonId,
+    bossId: base.encounter.bossId, preparedAt: 1001, participantIds: ['p1', 'p2'],
+    combat: { rounds: 2, incoming: [5, 6], win: true, damageByParticipant: [10, 12] },
+    drops: [{ itemId: 'dungeon_resource', recipientId: 'p1' }],
+    participants: {
+      p1: { playerId: 'p1', hpBefore: 100, hpAfter: 95, incomingDamage: 5, outgoingDamage: 10, xp: 100, gold: 50, lootIds: ['dungeon_resource'], report: {}, resultText: 'win' },
+      p2: { playerId: 'p2', hpBefore: 90, hpAfter: 84, incomingDamage: 6, outgoingDamage: 12, xp: 100, gold: 50, lootIds: [], report: {}, resultText: 'win' },
+    },
+    playerSnapshots: { p1: { health: 95 }, p2: { health: 84 } },
+  });
+  const preparedRun = { ...base, preparedEncounter: encounter, updatedAt: 1001 };
+  const result = resolveDungeonRequestRecovery({ identity, runs: { run_001: preparedRun } });
   assert.equal(result.kind, 'finalize-committed-encounter');
 });
 
