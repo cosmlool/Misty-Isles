@@ -39,10 +39,14 @@ export function prepareDungeonRunStart(input: {
   if (existingByRequest) {
     const sameRun = existingByRequest.runId === run.runId &&
       existingByRequest.dungeonId === run.dungeonId &&
+      existingByRequest.encounter.bossId === run.encounter.bossId &&
       existingByRequest.groupId === run.groupId &&
       existingByRequest.leaderId === run.leaderId &&
       JSON.stringify(existingByRequest.participantIds) === JSON.stringify(run.participantIds);
     if (!sameRun) throw new Error('Dungeon request ID is already bound to a different run.');
+    if (existingByRequest.status !== 'active') {
+      throw new Error('Dungeon request already belongs to a terminal run; replay the saved result instead of starting combat again.');
+    }
     return {
       run: existingByRequest,
       players: input.players,
