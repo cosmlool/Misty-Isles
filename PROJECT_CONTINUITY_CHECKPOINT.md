@@ -247,3 +247,14 @@ PR #15 остаётся Draft/open и не объединён. Слияние б
 - Новый HEAD после checkpoint commit требует полного CI; до его завершения код не менять.
 - Следующая проверка: после CI продолжить аудит целостности settlement/persistence всей dungeon подсистемы, включая поведение при ошибке WAL commit и отсутствие побочных эффектов. Не считать durable lifecycle подключённым.
 - PR #15 остаётся Draft/open, merged=false. Не сливать.
+
+## Контрольная точка — 2026-11-13 (rollback online players при ошибке persistence)
+
+- Quality Gate на HEAD `82f6abf6ab45b08f8cf20396df7579db81cbdc81` завершился успешно: 4/4 jobs (Server TypeScript + transaction recovery tests, Client TypeScript/Vite, Data/docs/structure, Playwright).
+- В `sharedStateTransactions.transact()` подтверждена граница: подготовка snapshot, validation и запись WAL выполняются до внутреннего try/catch replay. При отказе на этих этапах транзакция не committed, но dungeon live handler уже мог мутировать online Player objects.
+- Исправлено в `server/src/index.ts`: `runExpeditionDungeon()` снимает detached `toJSON()` snapshots всех участников до любых игровых мутаций. `persistDungeonResultPlayers()` при ошибке до создания WAL восстанавливает эти snapshots; если WAL существует — пытается replay и синхронизирует online players с durable `players.json`, не удаляя заблокированный journal.
+- Добавлена общая reconciliation после persistence errors в `persistPlayers()` и `transactClanMutation()`. Это покрывает live Player mutations в обычных сохранениях и clan mutation callback; auction операции остаются detached.
+- Добавлены тест отказа при записи WAL в `sharedStateTransactions.test.ts` и source regression assertions в `playerPersistenceWriters.test.ts`.
+- Combat/RNG/reward/drop/report/outbox semantics и WAL ordering не менялись. Полная durable dungeon lifecycle integration НЕ подключена.
+- Коммиты: handler `182508dca291049046ef9f6e68907edde35b2d37`; reconciliation `dc552de102a3bef126f809162cc13535c036339f`; WAL failure test `8f4107feae5317deadf272cfa9e00852364de509`; regression assertions `0996aa3f96a83c1a3b79f3d6e833f635d6333f58`.
+- Текущий HEAD после документации/checkpoint требует полного CI. PR #15 остаётся Draft/open, merged=false; не объединять.
