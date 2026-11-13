@@ -60,6 +60,18 @@
 - На момент checkpoint workflow/status для тестового коммита ещё не вернули CI results. Не считать тесты прошедшими; проверить CI на актуальном HEAD перед следующим кодовым этапом.
 - Это защитное улучшение helper-уровня, не полная интеграция durable entry в `runExpeditionDungeon()`. Live handler пока legacy; не заявлять, что интеграция завершена.
 
+## Recovery routing — 2026-11-13
+
+- Добавлен `server/src/dungeonRequestRecovery.ts` (commit `956ca04e493993f325158aca16cb74cbab1fdcf1`): pure resolver повторного request ID.
+- Состояния: `not-found`, `prepare-encounter` (active без committed encounter), `finalize-committed-encounter` (active с committed encounter), `replay-terminal-result` (terminal).
+- Resolver проверяет dungeon/group/leader/participant roster, отклоняет identity mismatch и duplicate request IDs. Не меняет игроков, не рассчитывает бой, не бросает random и не списывает попытки.
+- Regression tests: `server/test/dungeonRequestRecovery.test.ts` (commit `6fd854595c38b9d64dde52aa7e1f7850f1eb658a`).
+- Документация обновлена: `DUNGEON_LIVE_HANDLER_INTEGRATION.md` (commit `cd61fd4de8fbbea46e8a910435eb00e4513507b1`).
+- CI для code commit `6fd8545` запущен: Server checks run `43458815754`, job `server` ID `131999962446` был `in_progress` при последней проверке. Обязательно дождаться результата и исправить возможные ошибки.
+- ВАЖНО: helper пока не подключён к `runExpeditionDungeon()`; live handler остаётся legacy. Не заявлять о завершённой интеграции.
+- Последний известный code HEAD на момент записи: `6fd854595c38b9d64dde52aa7e1f7850f1eb658a`; затем docs commit `cd61fd4...`. Перед продолжением проверить PR head и CI.
+- PR #15 остаётся Draft/open; не объединять без разрешения.
+
 ## PR
 
 PR #15 остаётся Draft/open и не объединён. Слияние без отдельного разрешения пользователя запрещено.
