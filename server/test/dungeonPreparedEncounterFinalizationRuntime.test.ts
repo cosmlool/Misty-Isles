@@ -57,6 +57,13 @@ test('finalization derives exact outcome and player snapshots from the committed
   assert.equal(result.encounter.combat.win, true);
 });
 
+test('a losing encounter cannot persist victory drops', () => {
+  const { encounter } = fixture(true);
+  const invalid = JSON.parse(JSON.stringify(encounter));
+  invalid.combat.win = false;
+  assert.throws(() => createPreparedDungeonEncounter(invalid), /cannot contain victory drops/);
+});
+
 test('loss finalization uses frozen loss snapshots and cannot be changed to a win by caller input', () => {
   const { runs } = fixture(false);
   const result = prepareCommittedDungeonEncounterFinalization({ runId: 'run_frozen', runs, now: 200 });
