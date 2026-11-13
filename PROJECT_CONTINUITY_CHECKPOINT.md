@@ -50,6 +50,16 @@
 - Следующий этап начат: добавлен `DUNGEON_LIVE_HANDLER_INTEGRATION.md` (commit `28f368fe96172558c8768ebf8bea55a2c014151d`). В документе зафиксированы legacy handler, готовые durable helpers, границы транзакций и безопасная последовательность интеграции.
 - Перед следующим кодовым изменением перепроверить актуальный HEAD и CI. PR #15 оставить Draft.
 
+## Durable dungeon entry — защита от повторного запуска
+
+- На ветке добавлена защита в `server/src/dungeonRunStartTransaction.ts`.
+- Повторный `requestId` теперь сверяет не только run/dungeon/group/leader/roster, но и boss ID.
+- Если существующий run уже terminal (`completed` или `aborted`), повторный запуск отклоняется с требованием воспроизвести сохранённый результат, а не запускать бой заново.
+- Добавлены regression tests в `server/test/dungeonRunStartTransaction.test.ts`: terminal replay и повторное использование request ID с другим boss.
+- Коммиты: `d9273c6846923b40aa4c730c44a047dac705fd3c` (fix), `aa68ddeb71b8bfe3ad53f625057e8e358b86df3a` (tests).
+- На момент checkpoint workflow/status для тестового коммита ещё не вернули CI results. Не считать тесты прошедшими; проверить CI на актуальном HEAD перед следующим кодовым этапом.
+- Это защитное улучшение helper-уровня, не полная интеграция durable entry в `runExpeditionDungeon()`. Live handler пока legacy; не заявлять, что интеграция завершена.
+
 ## PR
 
 PR #15 остаётся Draft/open и не объединён. Слияние без отдельного разрешения пользователя запрещено.
