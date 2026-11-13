@@ -70,7 +70,7 @@ test('finalization commits terminal result and every post-reward player snapshot
     assert.equal(result.claimId, 'dungeon:run_finalize_wal:request_finalize_wal:win');
     assert.equal(readJson(files.dungeonRuns)[run.runId].status, 'completed');
     assert.equal(readJson(files.players).p1.gold, 600);
-    assert.deepEqual(readJson(files.players).p1.inventory, ['dungeon_resource']);
+    assert.deepEqual(JSON.parse(readJson(files.players).p1.inventory), ['dungeon_resource']);
     assert.equal(readJson(files.players).p2.gold, 450);
     const outbox = readJson(files.dungeonOutbox);
     const eventId = `dungeon:${run.runId}:p1:combatResult`;
@@ -137,7 +137,7 @@ test('finalization rejects stale run snapshots and unresolved planned rounds', (
       runtime, runId: run.runId, expectedRoundIndex: 2, expectedUpdatedAt: 200,
       outcome: 'win', players: players(), runs: { [run.runId]: unfinished }, now: 300,
     }), /unresolved/);
-    assert.deepEqual(readJson(files.dungeonRuns), {});
+    assert.equal(existsSync(files.dungeonRuns), false);
   } finally {
     rmSync(dataDir, { recursive: true, force: true });
   }
@@ -219,7 +219,7 @@ test('a finalization journal recovers terminal state and all player rewards afte
     assert.equal(recoveredRun.status, 'completed');
     assert.equal(recoveredRun.terminalResult.outcome, 'win');
     assert.equal(readJson(files.players).p1.gold, 600);
-    assert.deepEqual(readJson(files.players).p1.inventory, ['dungeon_resource']);
+    assert.deepEqual(JSON.parse(readJson(files.players).p1.inventory), ['dungeon_resource']);
     assert.equal(readJson(files.players).p2.gold, 450);
     assert.equal(existsSync(join(dataDir, 'shared_state_transaction.json')), false);
   } finally {
