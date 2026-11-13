@@ -1,5 +1,5 @@
 import { randomBytes } from 'node:crypto';
-import { copyFileSync, existsSync, mkdirSync, readFileSync, readdirSync, renameSync, unlinkSync, writeFileSync } from 'node:fs';
+import { closeSync, copyFileSync, existsSync, fsyncSync, mkdirSync, openSync, readFileSync, readdirSync, renameSync, unlinkSync, writeFileSync } from 'node:fs';
 import { dirname, isAbsolute, relative, resolve } from 'node:path';
 
 /**
@@ -64,13 +64,23 @@ export function createSharedStateTransactionStore(options: Options) {
     throw new Error('At least one shared-state target file must be configured.');
   }
 
+  function syncPath(path: string) {
+    const descriptor = openSync(path, 'r');
+    try { fsyncSync(descriptor); }
+    finally { closeSync(descriptor); }
+  }
+
   function atomicWrite(file: string, value: unknown) {
     const serialized = JSON.stringify(value, null, 2);
     if (serialized === undefined) throw new Error('Shared-state transaction contains a non-serializable value.');
     const temp = `${file}.${process.pid}.${Date.now()}.${randomBytes(4).toString('hex')}.tmp`;
     try {
       writeFileSync(temp, serialized, { encoding: 'utf8', flag: 'wx' });
+      // Persist file contents before publishing the new directory entry.
+      syncPath(temp);
       renameSync(temp, file);
+      // The journal rename must be durable before any transaction target is applied.
+      syncPath(dirname(file));
     } catch (error) {
       try { if (existsSync(temp)) unlinkSync(temp); } catch {}
       throw error;
@@ -109,7 +119,9 @@ export function createSharedStateTransactionStore(options: Options) {
     const backupTemp = backupFile + '.tmp';
     try {
       copyFileSync(target, backupTemp);
+      syncPath(backupTemp);
       renameSync(backupTemp, backupFile);
+      syncPath(dataDir);
       return backupFile;
     } catch (error) {
       try { if (existsSync(backupTemp)) unlinkSync(backupTemp); } catch {}
@@ -149,6 +161,7 @@ export function createSharedStateTransactionStore(options: Options) {
     validateJournal(parsed);
     apply(parsed.files);
     unlinkSync(journalFile);
+    syncPath(dataDir);
     return true;
   }
 
@@ -169,6 +182,7 @@ export function createSharedStateTransactionStore(options: Options) {
       options.testHooks?.afterJournalPersisted?.();
       apply(prepared.files);
       unlinkSync(journalFile);
+      syncPath(dataDir);
     } catch (error) {
       // A successful replay means the journaled transaction committed despite
       // the interrupted first attempt. If replay fails, keep the journal and
