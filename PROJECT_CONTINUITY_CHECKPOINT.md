@@ -188,3 +188,15 @@ PR #15 остаётся Draft/open и не объединён. Слияние б
 - Изменение не трогает combat formulas, RNG, XP/gold, HP, inventory, report contents, request ID semantics, outbox delivery и persistence boundary.
 - Новый HEAD ещё не прошёл CI. Следующий шаг — дождаться полного Quality Gate и server checks; до этого не делать новых кодовых изменений.
 - Важно: это detached preparation только quest state. Live handler всё ещё мутирует остальные поля Player напрямую и сохраняет через `persistDungeonResultPlayers()`; полная durable dungeon lifecycle integration НЕ подключена. PR #15 не сливать.
+
+
+## Исправление dungeon win settlement — 2026-11-13
+
+- На HEAD `323c20370d3c1bf2a4d58e5470c82a0d84b70c06` CI завершился с двумя ошибками runtime-интеграции: solo boss dungeon и group boss dungeon не получили combatResult. Ошибки указывали на timeout ожидания результата; 366/368 server tests прошли, остальные quality jobs (client build, data/docs/structure, Playwright) прошли.
+- Причина найдена в win branch `Room.runExpeditionDungeon()`: `xpGain` и `goldGain` были объявлены как block-scoped `const` внутри первого цикла участников, но использовались во втором цикле при подготовке activity settlement. Это вызывало ReferenceError до сохранения/отправки результата и объясняло оба timeout.
+- Исправление в `server/src/index.ts`: activity теперь читает уже сохранённые персональные значения `actualRewards[i].xp` и `actualRewards[i].gold`. Это точные reward values после pendant/active buff modifiers, уже используемые report/player state; combat/reward formulas и RNG не менялись.
+- Добавлены прямые regression assertions в `server/test/groupDungeonRuntime.test.ts`: `activityToday.gold === 110` и `activityToday.xp === 420` для каждого участника победившей группы.
+- Commits: handler fix `a6bcc88db556f68a86803cd97d5b154dcae38a6e`; regression assertions `9ad55913a8ec3f1e404ab944a585f84ad66c5dbc`.
+- Текущий PR #15 HEAD после этих коммитов требует нового полного CI. Не считать исправление подтверждённым до успешного server test suite/build и всех Quality Gate jobs.
+- Следующий шаг: проверить свежие workflow runs на HEAD, получить logs при любой ошибке; только после зелёного CI продолжить следующий этап технической декомпозиции.
+- PR #15 остаётся Draft/open, merged=false; не объединять. Полная durable dungeon lifecycle integration всё ещё НЕ подключена.
