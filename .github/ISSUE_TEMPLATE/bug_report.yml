@@ -1,0 +1,36 @@
+name: Bug report
+description: Report a reproducible Misty Isles defect
+title: "[BUG] "
+labels: ["bug"]
+body:
+  - type: textarea
+    id: summary
+    attributes:
+      label: Что произошло?
+      description: Кратко опишите фактическое поведение.
+    validations:
+      required: true
+  - type: textarea
+    id: reproduce
+    attributes:
+      label: Как воспроизвести?
+      description: Шаги по порядку, включая входные данные и состояние персонажа, если важно.
+      placeholder: |
+        1. ...
+        2. ...
+        3. ...
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: Ожидаемое поведение
+    validations:
+      required: true
+  - type: textarea
+    id: evidence
+    attributes:
+      label: Логи, скриншоты и дополнительные сведения
+      description: Удалите из логов пароли, токены и персональные данные.
+    validations:
+      required: false
