@@ -16,7 +16,7 @@ export type DungeonMemberCombatReportInput = {
 
 /** Builds the existing per-member report shape without mutating the shared report. */
 export function buildDungeonMemberCombatReport(input: DungeonMemberCombatReportInput): Record<string, any> {
-  const report = {
+  const report: Record<string, any> = {
     ...input.baseReport,
     profession: input.profession || 'Без профессии',
     level: input.level,
