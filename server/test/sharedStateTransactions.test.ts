@@ -226,6 +226,48 @@ test('target write failure retains the journal and blocks a later transaction un
 });
 
 
+
+test('the WAL file and directory are synced before the first transaction target is written', () => {
+  const events: string[] = [];
+  const f = fixture({
+    afterSync(path: string) { events.push('sync:' + path); },
+    afterTargetWrite(key: string) { events.push('write:' + key); },
+  });
+  try {
+    writeFileSync(f.files.players, JSON.stringify({ p1: { gold: 10 } }));
+    f.store.transact(() => ({ files: {
+      players: { p1: { gold: 20 } },
+      auction: [{ id: 'durable_lot' }],
+    }, result: null }));
+    const journalFileSync = events.indexOf('sync:' + f.store.journalFile);
+    const journalDirectorySync = events.indexOf('sync:' + f.dataDir);
+    const firstTargetWrite = events.indexOf('write:players');
+    assert.ok(journalFileSync >= 0, 'journal contents must be fsynced');
+    assert.ok(journalDirectorySync > journalFileSync, 'journal rename must be fsynced in its directory');
+    assert.ok(firstTargetWrite > journalDirectorySync, 'no target may be applied before the durable journal barrier');
+  } finally { f.cleanup(); }
+});
+
+test('a failed journal directory sync blocks target writes and leaves recovery data', () => {
+  const f = fixture({
+    afterSync(path: string) {
+      if (path === f.dataDir) throw new Error('simulated journal directory sync failure');
+    },
+  });
+  try {
+    writeFileSync(f.files.players, JSON.stringify({ p1: { gold: 10 } }));
+    assert.throws(() => f.store.transact(() => ({
+      files: { players: { p1: { gold: 999 } } },
+      result: null,
+    })), /simulated journal directory sync failure/);
+    assert.deepEqual(readJson(f.files.players), { p1: { gold: 10 } });
+    assert.equal(existsSync(f.store.journalFile), true, 'published journal must be retained for recovery');
+    const restarted = createSharedStateTransactionStore({ dataDir: f.dataDir, files: f.files });
+    assert.equal(restarted.recover(), true);
+    assert.deepEqual(readJson(f.files.players), { p1: { gold: 999 } });
+  } finally { f.cleanup(); }
+});
+
 test('shared player writes preserve the previous save in a backup', () => {
   const f = fixture();
   try {
