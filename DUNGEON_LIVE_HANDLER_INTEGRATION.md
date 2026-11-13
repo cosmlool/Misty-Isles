@@ -79,3 +79,15 @@ Regression tests: `server/test/dungeonRequestRecovery.test.ts` — unknown reque
 - Кодовые commits: helper `c38f93d6f8ddede836bd1fa4ae865129643ae837`, handler `4fe39e369c68c2ec77aa5d5529f1833824466a1e`, tests `3371f27b25cf9911333ac4e27844afe340ace562`, test script `f03d8837b0baa6961ef04354acc4329dcb4541e0`.
 - Предыдущий Quality Gate на HEAD `73c63f001dfaf47df992052ad6f6bc6d25b304b3` завершился успешно по всем 4 jobs. Новый HEAD требует отдельного полного CI подтверждения.
 - Это изоляция подготовки отчёта, а не подключение durable run lifecycle или изменение игровых правил.
+
+
+## Этап: извлечение общего отчёта подземелья (2026-11-13)
+
+- Добавлен pure helper `server/src/dungeonGroupCombatReport.ts`: `buildDungeonGroupCombatReport()` строит общий report для победы и поражения без доступа к runtime state.
+- Обе ветки `runExpeditionDungeon()` используют helper. Вызов по-прежнему происходит в прежней точке каждой ветки, а `at: Date.now()` вычисляется непосредственно при вызове, без дополнительного чтения времени внутри helper.
+- Сохранены точные ключи и значения report, win/loss rewards, порядок и текст строк `lines`. Для поражения XP/gold/loot остаются нулевыми/пустыми; для победы сохраняются исходные dungeon XP, разделённое золото и список выпавших предметов.
+- Добавлены regression tests для точного win/loss report, rewards, line order, timestamp и отсутствия мутации входа. Тест включён в `server/package.json`.
+- Изменены только подготовка общего report и тестовая инфраструктура. Combat plan, RNG, награды игроков, HP, inventory, request history, outbox и момент сохранения не менялись.
+- Helper commit: `1411e5ef5cd1905cbf9583dde60cd0a4593603e2`; tests: `435795b92790b3ef9a8b5de4d4142921371e4471`; test script: `fb829d37d90aab489310294c0ca5f6434e6d1e40`; handler: `caea5971af97a51648a648b3581242af0ff5824b`.
+- Новый HEAD требует полного CI. Не считать этап подтверждённым до успешных server tests/build и Quality Gate.
+- Live handler по-прежнему legacy; detached settlement и durable live lifecycle integration не подключены.
