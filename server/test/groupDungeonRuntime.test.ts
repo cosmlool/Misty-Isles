@@ -181,6 +181,8 @@ test('group boss dungeon persists win rewards and loss costs for every participa
       assert.equal(saved[id].bossesKilled, 1);
       assert.ok(saved[id].health < 1_000);
       assert.equal(JSON.parse(saved[id].quests).activityToday.dungeons, 1);
+      assert.equal(JSON.parse(saved[id].quests).activityToday.gold, 110, 'win activity must record the participant gold reward');
+      assert.equal(JSON.parse(saved[id].quests).activityToday.xp, 420, 'win activity must record the participant XP reward');
       assert.equal(JSON.parse(saved[id].quests).activityLog[0].outcome, 'win');
     }
     for (const id of ids.slice(2)) {
