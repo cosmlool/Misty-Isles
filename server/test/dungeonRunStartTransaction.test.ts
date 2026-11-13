@@ -56,6 +56,38 @@ test('a request ID cannot be reused for a different run', () => {
   }), /already bound/);
 });
 
+test('a terminal run cannot be reopened by replaying its request ID', () => {
+  const first = prepareDungeonRunStart({
+    run: createRun(), players: players(), runs: {}, day: '2026-11-12',
+  });
+  const terminal = {
+    ...first.runs.run_001,
+    status: 'completed' as const,
+    terminalResult: {
+      outcome: 'win' as const,
+      committedAt: 2000,
+      requestId: 'dungeon_req_001',
+      claimId: 'dungeon:run_001:dungeon_req_001:win',
+    },
+  };
+  assert.throws(() => prepareDungeonRunStart({
+    run: createRun(), players: first.players, runs: { run_001: terminal }, day: '2026-11-12',
+  }), /terminal run; replay the saved result/);
+});
+
+test('same request ID cannot be rebound to another boss', () => {
+  const first = prepareDungeonRunStart({
+    run: createRun(), players: players(), runs: {}, day: '2026-11-12',
+  });
+  const changedBoss = {
+    ...createRun(),
+    encounter: { ...createRun().encounter, bossId: 'different_boss' },
+  };
+  assert.throws(() => prepareDungeonRunStart({
+    run: changedBoss, players: first.players, runs: first.runs, day: '2026-11-12',
+  }), /already bound to a different run/);
+});
+
 test('active run overlap and exhausted daily attempts reject the whole entry', () => {
   const first = prepareDungeonRunStart({
     run: createRun(), players: players(), runs: {}, day: '2026-11-12',
