@@ -34,6 +34,7 @@ const required = [
   'tools/Stop-Game.ps1',
   'tools/Check-Game.ps1',
   'e2e/package.json',
+  'e2e/package-lock.json',
   'e2e/playwright.config.ts',
   'e2e/tests/game-smoke.spec.ts',
   'tools/verify-all.mjs',
@@ -61,13 +62,18 @@ function walk(dir) {
 }
 walk(root);
 
-for (const rel of ['client/package-lock.json', 'server/package-lock.json']) {
+for (const rel of ['client/package-lock.json', 'server/package-lock.json', 'e2e/package-lock.json']) {
   const lockPath = path.join(root, rel);
   if (!fs.existsSync(lockPath)) continue;
   try {
     const lock = JSON.parse(fs.readFileSync(lockPath, 'utf8'));
     if (lock.lockfileVersion !== 3) warnings.push(`${rel}: lockfileVersion is ${lock.lockfileVersion}; npm ci will validate compatibility.`);
     if (!lock.packages || !lock.packages['']) errors.push(`${rel}: missing root package metadata.`);
+    const packagePath = path.join(root, path.dirname(rel), 'package.json');
+    const pkg = JSON.parse(fs.readFileSync(packagePath, 'utf8'));
+    if (lock.name !== pkg.name || lock.version !== pkg.version) {
+      errors.push(`${rel}: root name/version do not match package.json.`);
+    }
   } catch { /* JSON parse error already reported above. */ }
 }
 
