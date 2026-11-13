@@ -62,7 +62,8 @@ export function validateDungeonRunStore(value: unknown): DungeonRunStore {
       new Set(raw.participantIds).size !== raw.participantIds.length ||
       !raw.participantIds.includes(raw.leaderId) ||
       !['active', 'completed', 'aborted'].includes(raw.status) ||
-      !Number.isFinite(raw.startedAt) || !Number.isFinite(raw.updatedAt) ||
+      typeof raw.groupId !== 'string' ||
+      !Number.isFinite(raw.startedAt) || !Number.isFinite(raw.updatedAt) || raw.startedAt > raw.updatedAt ||
       !Number.isInteger(raw.roundIndex) || raw.roundIndex < 0 ||
       (raw.roundPlan !== undefined && (!isRecord(raw.roundPlan) ||
         !Number.isInteger(raw.roundPlan.totalRounds) || raw.roundPlan.totalRounds < 1 ||
@@ -75,8 +76,20 @@ export function validateDungeonRunStore(value: unknown): DungeonRunStore {
       !isRecord(raw.participants) || !isRecord(raw.encounter)) {
       throw new Error(`dungeon_runs.json contains an invalid run record: ${key}.`);
     }
-    if (raw.roundPlan && Object.keys(raw.roundPlan.incomingDamageByRound).length !== raw.participantIds.length) {
-      throw new Error(`dungeon_runs.json contains an incomplete round plan for ${key}.`);
+    if (raw.roundPlan && (Object.keys(raw.roundPlan.incomingDamageByRound).length !== raw.participantIds.length ||
+      raw.roundPlan.nextRoundIndex !== raw.roundIndex)) {
+      throw new Error(`dungeon_runs.json contains an incomplete or misaligned round plan for ${key}.`);
+    }
+    if (Object.keys(raw.participants).length !== raw.participantIds.length ||
+      raw.participantIds.some((id: unknown) => typeof id !== 'string' || !id)) {
+      throw new Error(`dungeon_runs.json contains an incomplete participant map for ${key}.`);
+    }
+    if (typeof raw.encounter.bossId !== 'string' || !raw.encounter.bossId ||
+      typeof raw.encounter.seed !== 'string' || !raw.encounter.seed ||
+      !Number.isFinite(raw.encounter.bossHealth) || raw.encounter.bossHealth < 0 ||
+      !Number.isFinite(raw.encounter.bossMaxHealth) || raw.encounter.bossMaxHealth <= 0 ||
+      raw.encounter.bossHealth > raw.encounter.bossMaxHealth) {
+      throw new Error(`dungeon_runs.json contains an invalid boss snapshot for ${key}.`);
     }
     if (raw.roundPlan) {
       for (const playerId of raw.participantIds) {
@@ -91,7 +104,10 @@ export function validateDungeonRunStore(value: unknown): DungeonRunStore {
       const participant = raw.participants[playerId];
       if (!isRecord(participant) || participant.playerId !== playerId ||
         !['alive', 'spectator', 'revived'].includes(participant.status) ||
-        !Number.isFinite(participant.health) || !Number.isFinite(participant.maxHealth) ||
+        !Number.isFinite(participant.health) || participant.health < 0 ||
+        !Number.isFinite(participant.maxHealth) || participant.maxHealth <= 0 ||
+        participant.health > participant.maxHealth ||
+        (participant.status === 'spectator' ? participant.health !== 0 : participant.health <= 0) ||
         !Number.isFinite(participant.lastActivityAt) ||
         !Array.isArray(participant.resurrectedPlayerIds) ||
         new Set(participant.resurrectedPlayerIds).size !== participant.resurrectedPlayerIds.length ||
@@ -135,7 +151,8 @@ export function createDungeonRunRecord(input: {
   }
   const participants: Record<string, DungeonRunParticipant> = {};
   for (const p of input.participants) {
-    if (!Number.isFinite(p.health) || !Number.isFinite(p.maxHealth) || p.maxHealth <= 0) {
+    if (!Number.isFinite(p.health) || p.health <= 0 ||
+      !Number.isFinite(p.maxHealth) || p.maxHealth <= 0 || p.health > p.maxHealth) {
       throw new Error(`Invalid health snapshot for ${p.playerId}.`);
     }
     participants[p.playerId] = {

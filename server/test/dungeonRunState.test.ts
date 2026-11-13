@@ -163,6 +163,35 @@ test('deterministic round plan preserves aggregate damage exactly and resumes at
   assert.throws(() => resolveNextDungeonRunRound(finalRound, 5000), /No unresolved dungeon round/);
 });
 
+test('startup validation rejects round cursor drift, impossible health and malformed encounter snapshots', () => {
+  const state = run();
+  const plan = createDungeonRoundPlan({
+    totalRounds: 2,
+    totalBossDamage: 100,
+    totalIncomingDamageByParticipant: { p1: 10, p2: 10 },
+  });
+  assert.throws(() => validateDungeonRunStore({
+    run_001: { ...state, roundPlan: { ...plan, nextRoundIndex: 1 }, roundIndex: 0 },
+  }), /misaligned round plan/);
+  assert.throws(() => validateDungeonRunStore({
+    run_001: { ...state, participants: { ...state.participants, p1: { ...state.participants.p1, health: 121 } } },
+  }), /invalid participant state/);
+  assert.throws(() => validateDungeonRunStore({
+    run_001: { ...state, participants: { ...state.participants, p1: { ...state.participants.p1, health: 0 } } },
+  }), /invalid participant state/);
+  assert.throws(() => validateDungeonRunStore({
+    run_001: { ...state, encounter: { ...state.encounter, bossHealth: 501 } },
+  }), /invalid boss snapshot/);
+  assert.throws(() => validateDungeonRunStore({
+    run_001: { ...state, participants: { ...state.participants, rogue: { ...state.participants.p1, playerId: 'rogue' } } },
+  }), /incomplete participant map/);
+  assert.throws(() => createDungeonRunRecord({
+    runId: 'bad_hp', requestId: 'bad_hp_request', dungeonId: 'dungeon', leaderId: 'p1',
+    participants: [{ playerId: 'p1', health: 121, maxHealth: 120 }],
+    bossId: 'boss', bossHealth: 10, seed: 'seed', now: 1,
+  }), /Invalid health snapshot/);
+});
+
 test('round plan validation rejects incomplete or non-finite participant schedules', () => {
   const state = {
     ...run(),
