@@ -164,3 +164,12 @@ Regression tests: `server/test/dungeonRequestRecovery.test.ts` — unknown reque
 - Добавлен тест отказа при создании WAL: target files должны остаться без изменений. Добавлены regression assertions на snapshot capture/rollback и recovery branch.
 - Не менялись combat formulas, RNG, попытки, rewards, inventory allocation, report, outbox identity или transaction commit semantics. Это защита live memory consistency при persistence failure, а не подключение durable dungeon lifecycle.
 - Новый HEAD требует полного CI; PR #15 остаётся Draft/open, merged=false.
+
+## Дополнительная проверка persistence callers: room leave (2026-11-14)
+
+- После успешного CI на HEAD `73b22a783b65911513aa910edf13ee4d68405498` просмотрены все call sites `persistPlayers`, `persistPlayer`, `persistDungeonResultPlayers`, `transactClanMutation` и прямые `applySaved` в `server/src/index.ts`.
+- Найдено пересечение старого и нового rollback поведения в `Room.onLeave()`: `persistPlayers()` теперь при ошибке сам восстанавливает online players из durable snapshot, но локальный catch затем повторно записывал в `player.quests` устаревшие значения, снятые до persistence. Это могло частично отменить reconciliation.
+- Удалён устаревший локальный rollback. `onLeave()` теперь полагается на единый reconciliation path `persistPlayers()`; если запись не удалась, ошибка продолжает пробрасываться, а live objects не перезаписываются устаревшим quest snapshot.
+- Добавлен source regression test, который проверяет lifecycle section и запрещает повторный stale rollback.
+- Другие проверенные call sites: expedition mutations идут через `persistPlayers`; friend acceptance через `persistPlayer` (который сохраняет весь online snapshot); clan mutations через guarded `transactClanMutation`; auction commits строят detached snapshots и применяют их только после успешного commit. Не найдено второго локального rollback, который перезаписывает reconciliation.
+- Новые изменения требуют полного CI. PR #15 остаётся Draft/open, merged=false.
