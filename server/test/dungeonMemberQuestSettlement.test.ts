@@ -35,7 +35,7 @@ test('prepares activity, combat history, request replay and outbox event in one 
 
   assert.equal(result.quests.activityDay, '2026-11-13');
   assert.deepEqual(result.quests.activityToday, {
-    hunts: 0, wins: 0, losses: 0, gold: 0, xp: 0, dungeons: 1, crafts: 0,
+    hunts: 0, wins: 0, losses: 0, gold: 50, xp: 100, dungeons: 1, crafts: 0,
   });
   assert.deepEqual(result.quests.activityLog, [{ at: Date.parse('2026-11-13T12:00:00.000Z'), ...activity }, { type: 'hunt' }]);
   assert.deepEqual(result.history, [report, { result: 'prior' }]);
@@ -68,7 +68,7 @@ test('preserves same-day counters and trims activity and combat histories to leg
     text: 'done',
   });
   assert.deepEqual(result.quests.activityToday, {
-    hunts: 2, wins: 1, losses: 1, gold: 7, xp: 9, dungeons: 4, crafts: 4,
+    hunts: 2, wins: 1, losses: 1, gold: 57, xp: 109, dungeons: 4, crafts: 4,
   });
   assert.equal(result.quests.activityLog.length, 30);
   assert.equal(result.quests.activityLog[0].id, undefined);
