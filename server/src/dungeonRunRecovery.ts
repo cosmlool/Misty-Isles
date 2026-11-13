@@ -23,3 +23,24 @@ export function createDungeonRunRecoveryView(run: DungeonRunRecord | null, playe
     participants: run.participantIds.map(id => ({ playerId: id, status: run.participants[id].status, health: run.participants[id].health, maxHealth: run.participants[id].maxHealth })),
   };
 }
+
+/**
+ * Blocks a new party entry when any frozen roster member already belongs to an
+ * active durable run. Each participant is checked independently so a member
+ * who is not the requesting leader cannot be pulled into overlapping runs.
+ */
+export function findActiveDungeonRunForParticipants(
+  runs: DungeonRunStore,
+  playerIds: string[],
+): { playerId: string; run: DungeonRunRecord } | null {
+  if (!Array.isArray(playerIds) || playerIds.some(id => typeof id !== 'string' || !id) ||
+      new Set(playerIds).size !== playerIds.length) {
+    throw new Error('Dungeon entry participant IDs must be unique non-empty strings.');
+  }
+  const validated = validateDungeonRunStore(runs);
+  for (const playerId of playerIds) {
+    const run = findActiveDungeonRunForParticipant(validated, playerId);
+    if (run) return { playerId, run };
+  }
+  return null;
+}

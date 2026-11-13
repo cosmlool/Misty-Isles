@@ -173,3 +173,11 @@ Important limitation: the current boss dungeon handler is still synchronous and 
 - Multiple active records for one participant fail closed instead of selecting an arbitrary run. The recovery projection is available only to a participant in that run.
 - Tests cover active/terminal lookup, privacy of the projection, and ambiguous active-run rejection.
 - Important limitation: the production synchronous dungeon handler still does not create/advance durable run records. This stage makes already-persisted active runs visible and prevents duplicate entry if one exists; it does not yet resume combat rounds or turn a restored run into a playable encounter. The next stage is live entry/round integration with the existing WAL start and round commit helpers.
+
+
+## Party-wide active-run entry guard
+
+- Strengthened the server-side dungeon-entry guard to inspect every frozen party member, not only the requesting leader.
+- A party is rejected if any member is already present in an active durable dungeon run. The notice identifies the blocked member; the existing cached-request replay path remains ahead of this guard so an idempotent retry can still return its saved result.
+- Added validation for unique, non-empty party IDs and tests proving a non-leader's active run blocks the whole new party.
+- This closes an overlap hole in the reconnect visibility foundation. It does not change the current synchronous combat handler or claim that live combat is resumable; production durable entry/round integration remains outstanding.

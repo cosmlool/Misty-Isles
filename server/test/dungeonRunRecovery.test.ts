@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import { createDungeonRunRecord, type DungeonRunStore } from '../src/dungeonRunState.js';
-import { createDungeonRunRecoveryView, findActiveDungeonRunForParticipant } from '../src/dungeonRunRecovery.js';
+import { createDungeonRunRecoveryView, findActiveDungeonRunForParticipant, findActiveDungeonRunForParticipants } from '../src/dungeonRunRecovery.js';
 
 function activeRun(runId='run-1', participantIds=['p1','p2']) {
   return createDungeonRunRecord({ runId, requestId:'request_'+runId, dungeonId:'dungeon-20', groupId:'group-1', leaderId:participantIds[0], participants:participantIds.map(playerId=>({playerId,health:80,maxHealth:100})), bossId:'boss-1', bossHealth:500, seed:'seed-1', now:100 });
@@ -29,4 +29,19 @@ test('rejects multiple active runs instead of choosing one arbitrarily',()=>{
 
 test('does not expose a run to a non-participant',()=>{
   assert.throws(()=>createDungeonRunRecoveryView(activeRun(),'outsider'),/only available to an active run participant/);
+});
+
+test('party entry is blocked when a non-leader member already belongs to an active run',()=>{
+  const existing=activeRun('existing-run',['p2','p3']);
+  const candidate=activeRun('candidate-run',['p1','p2']);
+  const match=findActiveDungeonRunForParticipants({[existing.runId]:existing},candidate.participantIds);
+  assert.equal(match?.playerId,'p2');
+  assert.equal(match?.run.runId,'existing-run');
+  assert.equal(findActiveDungeonRunForParticipants({[existing.runId]:existing},['p1']),null);
+});
+
+test('party entry validation rejects duplicate or empty participant IDs',()=>{
+  const store:DungeonRunStore={};
+  assert.throws(()=>findActiveDungeonRunForParticipants(store,['p1','p1']),/unique non-empty/);
+  assert.throws(()=>findActiveDungeonRunForParticipants(store,['p1','']),/unique non-empty/);
 });
