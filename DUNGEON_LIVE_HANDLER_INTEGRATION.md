@@ -112,3 +112,14 @@ Regression tests: `server/test/dungeonRequestRecovery.test.ts` — unknown reque
 - Добавлены 4 regression tests: повторный request ID/лимит истории, точная event identity, некорректная история и отсутствие мутации исходного quest snapshot. Тест включён в server test script.
 - Helper и тесты пока не меняют durable lifecycle: live handler по-прежнему сохраняет результат через существующий `persistDungeonResultPlayers()`; полноценная detached settlement и durable recovery integration не подключены.
 - CI для нового HEAD ожидает проверки.
+
+
+## Этап: detached подготовка quest settlement участника (2026-11-13)
+
+- Добавлен pure helper `server/src/dungeonMemberQuestSettlement.ts`: одним новым quest snapshot объединяет dungeon activity, combat history и request replay/outbox event.
+- Сохранены legacy правила: дневной rollover activity, инкремент `activityToday.dungeons`, порядок/лимит activity log (30), combat history (20), request history (5), `dungeonLastRequest` и прежняя event identity/payload.
+- `now` для activity по-прежнему захватывается в исходной точке ветки победы/поражения; helper не вызывает часы самостоятельно.
+- Обе ветки live handler теперь формируют quest snapshot без промежуточных мутаций `member.quests`, затем присваивают его один раз. История для клиента берётся из подготовленного snapshot.
+- Добавлены 3 regression tests: дневной rollover, сохранение same-day counters, лимиты логов, replay/outbox и отсутствие мутации исходного quest object. Тест зарегистрирован в server test script.
+- Изменение не меняет combat formulas, RNG, rewards, HP, inventory, report contents, request ID, outbox delivery или transaction boundary.
+- Это только detached preparation quest state, не durable dungeon lifecycle integration. `runExpeditionDungeon()` по-прежнему использует legacy прямые player mutations и `persistDungeonResultPlayers()`.
