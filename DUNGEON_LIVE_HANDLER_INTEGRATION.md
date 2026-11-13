@@ -123,3 +123,11 @@ Regression tests: `server/test/dungeonRequestRecovery.test.ts` — unknown reque
 - Добавлены 3 regression tests: дневной rollover, сохранение same-day counters, лимиты логов, replay/outbox и отсутствие мутации исходного quest object. Тест зарегистрирован в server test script.
 - Изменение не меняет combat formulas, RNG, rewards, HP, inventory, report contents, request ID, outbox delivery или transaction boundary.
 - Это только detached preparation quest state, не durable dungeon lifecycle integration. `runExpeditionDungeon()` по-прежнему использует legacy прямые player mutations и `persistDungeonResultPlayers()`.
+
+
+## Исправление дневной статистики наград подземелья (2026-11-13)
+
+- Интеграционный тест на PR HEAD `1d4dcaad` выявил, что detached settlement увеличивал `activityToday.dungeons`, но не суммировал фактически выданные золото и опыт.
+- `prepareDungeonMemberQuestSettlement` теперь добавляет `activity.gold` и `activity.xp` к дневным итогам. Используются персональные значения после модификаторов; поражение добавляет нули.
+- Исправлены unit expectations для rollover и same-day накопления; групповой runtime test проверяет 110 gold и 420 XP на участника.
+- Это исправление отображаемой дневной статистики; боевые формулы, начисление наград игроку и persistence boundary не меняются.
