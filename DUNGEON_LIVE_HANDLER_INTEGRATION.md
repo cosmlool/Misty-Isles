@@ -184,3 +184,6 @@ Regression tests: `server/test/dungeonRequestRecovery.test.ts` — unknown reque
 - Игровые данные, формат журнала, ключи транзакций, combat/reward formulas и порядок применения файлов не менялись.
 - Коммиты: fsync implementation `c1314ab50ceda181bc0063acddd30eee3147bf23`; test hook `6a0e8a565fa47a89779a5d4dcbd95955faa8e5e8`; regression tests `9b9c463599b859cfabffc5e9bb41679fffe3a0a4`.
 - Новый HEAD требует полного CI. Не считать этап подтверждённым до завершения Server checks и всех Quality Gate jobs. PR #15 остаётся Draft/open, merged=false; не объединять.
+
+
+- CI на HEAD `59a7af4b` выявил ошибку в новом regression-test, не в реализации WAL: тест сравнивал fsync временного файла с конечным именем журнала, хотя `atomicWrite` корректно fsync-ит temp-файл до rename. Исправлено условие теста: проверяется временный файл с префиксом имени WAL, затем directory sync и только после этого target write. Изменение теста: `779a8b815a140a364e27b7d85dfc6e69506a30df`. Требуется полный повтор CI на новом HEAD.
