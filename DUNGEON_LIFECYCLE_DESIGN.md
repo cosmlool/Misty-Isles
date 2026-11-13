@@ -162,3 +162,14 @@ Important limitation: the current boss dungeon handler is still synchronous and 
 - Delivery acknowledgement is persisted separately after transport send. The new reconnect dispatcher filters by recipient, sends only pending events, and acknowledges only after `client.send` returns. A fresh outbox snapshot is loaded before each acknowledgement to avoid overwriting newer event state.
 - Delivery is at-least-once: a crash between socket send and acknowledgement can replay an event. Client deduplication by `eventId` is still outstanding.
 - The dispatcher is wired to player join/reconnect. The live synchronous `runExpeditionDungeon()` handler now writes each participant's `combatResult` event to the outbox in the same shared-WAL transaction as the updated player snapshots, then dispatches pending events and acknowledges them after send. The newer durable dungeon-run round/finalization helpers remain a separate foundation not yet used by the live combat calculation. At-least-once replay still requires client-side deduplication by `eventId`. No reward formula or balance change is included.
+
+
+
+## Reconnect visibility and duplicate-entry guard
+
+- Added a participant-scoped recovery projection for an active durable run. It exposes the run/dungeon identifiers, leader flag, committed round cursor, timestamps, and participant HP/status; it does not expose the encounter seed or internal round damage plan.
+- On authenticated join, the server sends the recovered run projection (or an explicit null) so a reconnecting client can clear stale UI state and show the saved run.
+- The dungeon screen displays the saved run and disables new dungeon-entry buttons while that projection is present. The server independently rejects a second entry for a participant already present in an active durable run.
+- Multiple active records for one participant fail closed instead of selecting an arbitrary run. The recovery projection is available only to a participant in that run.
+- Tests cover active/terminal lookup, privacy of the projection, and ambiguous active-run rejection.
+- Important limitation: the production synchronous dungeon handler still does not create/advance durable run records. This stage makes already-persisted active runs visible and prevents duplicate entry if one exists; it does not yet resume combat rounds or turn a restored run into a playable encounter. The next stage is live entry/round integration with the existing WAL start and round commit helpers.
