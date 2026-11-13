@@ -189,6 +189,21 @@ test('corrupt or unconfigured journal entries fail closed and preserve the journ
   } finally { f.cleanup(); }
 });
 
+test('failure to persist the journal leaves every target file unchanged', () => {
+  const f = fixture();
+  try {
+    writeFileSync(f.files.players, JSON.stringify({ p1: { gold: 15 } }));
+    mkdirSync(f.store.journalFile);
+    assert.throws(() => f.store.transact(() => ({
+      files: { players: { p1: { gold: 999 } }, dungeonOutbox: { event_1: { delivered: false } } },
+      result: null,
+    })));
+    assert.deepEqual(readJson(f.files.players), { p1: { gold: 15 } });
+    assert.equal(existsSync(f.files.dungeonOutbox), false);
+    assert.equal(existsSync(f.store.journalFile), true, 'the blocking directory must remain; no journal file was created');
+  } finally { f.cleanup(); }
+});
+
 test('target write failure retains the journal and blocks a later transaction until recovery succeeds', () => {
   const f = fixture();
   try {
