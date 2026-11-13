@@ -132,9 +132,9 @@ test('finalization rejects stale run snapshots and unresolved planned rounds', (
       runtime, runId: run.runId, expectedRoundIndex: 1, expectedUpdatedAt: 200,
       outcome: 'win', players: players(), runs: { [run.runId]: run }, now: 300,
     }), /stale/);
-    const unfinished = { ...run, roundPlan: { ...run.roundPlan!, nextRoundIndex: 1 } };
+    const unfinished = { ...run, roundIndex: 1, roundPlan: { ...run.roundPlan!, nextRoundIndex: 1 } };
     assert.throws(() => commitDungeonRunFinalization({
-      runtime, runId: run.runId, expectedRoundIndex: 2, expectedUpdatedAt: 200,
+      runtime, runId: run.runId, expectedRoundIndex: 1, expectedUpdatedAt: 200,
       outcome: 'win', players: players(), runs: { [run.runId]: unfinished }, now: 300,
     }), /unresolved/);
     assert.equal(existsSync(files.dungeonRuns), false);
@@ -150,11 +150,12 @@ test('leader abort outcomes can finalize before all planned combat rounds resolv
     const run = createRun();
     const interruptedRun = {
       ...run,
+      roundIndex: 1,
       roundPlan: { ...run.roundPlan!, nextRoundIndex: 1 },
     };
     const runtime = runtimeFor(createSharedStateTransactionStore({ dataDir, files }));
     const result = commitDungeonRunFinalization({
-      runtime, runId: run.runId, expectedRoundIndex: 2, expectedUpdatedAt: 200,
+      runtime, runId: run.runId, expectedRoundIndex: 1, expectedUpdatedAt: 200,
       outcome: 'leader_afk', players: players(), runs: { [run.runId]: interruptedRun }, now: 300,
     });
     assert.equal(result.run.status, 'aborted');
