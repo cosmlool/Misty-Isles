@@ -202,7 +202,7 @@ test('round plan validation rejects incomplete or non-finite participant schedul
       incomingDamageByRound: { p1: [1, 1] },
     },
   };
-  assert.throws(() => validateDungeonRunStore({ run_001: state }), /incomplete round plan/);
+  assert.throws(() => validateDungeonRunStore({ run_001: state }), /incomplete or misaligned round plan/);
   assert.throws(() => createDungeonRoundPlan({
     totalRounds: 2,
     totalBossDamage: 10,
