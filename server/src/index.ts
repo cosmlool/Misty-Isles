@@ -628,7 +628,6 @@ class GameRoom extends Room<RoomState> {
     const group=groupId?HUNT_GROUPS.get(groupId):undefined;
     const affectedPlayers=(group?.members||[this.playerId]).map(id=>ONLINE_PLAYERS.get(id)).filter((player):player is Player=>!!player);
     const hasActiveGroupAction=affectedPlayers.some(player=>['searching','moving'].includes(String(readObject(player.quests).expedition?.state||'')));
-    const previousQuests=new Map(affectedPlayers.map(player=>[player.id,player.quests]));
     for(const player of affectedPlayers){
       const quests=readObject(player.quests);
       if(!quests.expedition)continue;
@@ -643,15 +642,7 @@ class GameRoom extends Room<RoomState> {
       player.quests=JSON.stringify(quests);
     }
     this.state.player.lastSeenAt=Date.now();
-    try{
-      persistPlayers(affectedPlayers.length?affectedPlayers:[this.state.player]);
-    }catch(error){
-      for(const player of affectedPlayers){
-        const previous=previousQuests.get(player.id);
-        if(previous!==undefined)player.quests=previous;
-      }
-      throw error;
-    }
+    persistPlayers(affectedPlayers.length?affectedPlayers:[this.state.player]);
     ONLINE_PLAYERS.delete(this.playerId);
     ONLINE_CLIENTS.delete(this.playerId);
     ONLINE_SESSION_HASHES.delete(this.playerId);
