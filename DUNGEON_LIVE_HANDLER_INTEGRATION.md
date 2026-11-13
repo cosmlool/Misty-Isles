@@ -67,3 +67,15 @@ Regression tests: `server/test/dungeonRequestRecovery.test.ts` — unknown reque
 - Добавлены 4 теста: порядок и число RNG-вызовов, 95% cap, сохранение порядка распределения и отклонение недопустимого индекса/повторного roster ID.
 - Тест добавлен в `server/package.json`.
 - Это только извлечение подзадач. Игроки всё ещё мутируются legacy handler напрямую; detached settlement snapshots и durable live recovery не подключены.
+
+
+## Этап: извлечение подготовки отчётов участников (2026-11-13)
+
+- Добавлен pure helper `server/src/dungeonMemberCombatReport.ts`; обе ветки победы и поражения в `runExpeditionDungeon()` используют его для построения индивидуального combat report.
+- Сохранены прежние поля и значения: fallback профессии `Без профессии`, округление `Math.floor` для attack/defense/damage, HP до/после, incoming damage, maxHealth.
+- Победа передаёт персональные XP/gold/loot; поражение сохраняет нулевые награды базового отчёта. Общий report не мутируется, вложенный объект rewards для победителя копируется.
+- Добавлены 3 regression tests: win/personal rewards/rounding, loss/zero rewards, profession fallback/base immutability. Тест включён в server test script.
+- RNG, combat plan, начисления, инвентарь, request history, outbox payloads и порядок выполнения не менялись.
+- Кодовые commits: helper `c38f93d6f8ddede836bd1fa4ae865129643ae837`, handler `4fe39e369c68c2ec77aa5d5529f1833824466a1e`, tests `3371f27b25cf9911333ac4e27844afe340ace562`, test script `f03d8837b0baa6961ef04354acc4329dcb4541e0`.
+- Предыдущий Quality Gate на HEAD `73c63f001dfaf47df992052ad6f6bc6d25b304b3` завершился успешно по всем 4 jobs. Новый HEAD требует отдельного полного CI подтверждения.
+- Это изоляция подготовки отчёта, а не подключение durable run lifecycle или изменение игровых правил.
