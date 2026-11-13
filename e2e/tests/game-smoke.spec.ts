@@ -1,5 +1,17 @@
 import { expect, test } from '@playwright/test';
 
+async function createCatGuestCharacter(page: import('@playwright/test').Page) {
+  await page.locator('[data-race="Кот"]').click();
+  const maleOption = page.locator('[data-action="selectCreationGender"][data-gender="male"]');
+  await expect(maleOption).toBeVisible();
+  await maleOption.click();
+
+  const createButton = page.locator('[data-action="create"][data-race="Кот"]');
+  await expect(createButton).toBeEnabled();
+  await createButton.click();
+  await expect(page.locator('.sidebar-identity strong')).toHaveText('Путник-Кот', { timeout: 15_000 });
+}
+
 test('a guest can create a character, hunt, and keep progress after reconnecting', async ({ page }, testInfo) => {
   const pageErrors: string[] = [];
   page.on('pageerror', error => pageErrors.push(error.message));
@@ -20,10 +32,8 @@ test('a guest can create a character, hunt, and keep progress after reconnecting
     fullPage: true
   });
 
-  // Use the real UI action. The server assigns the deterministic guest name.
-  await page.locator('[data-race="Кот"]').click();
-
-  await expect(page.locator('.sidebar-identity strong')).toHaveText('Путник-Кот', { timeout: 15_000 });
+  // Use the full real UI flow: race, cosmetic gender, then character creation.
+  await createCatGuestCharacter(page);
   await expect(page.locator('.sidebar-identity')).toContainText('Кот');
   await expect(page.locator('.sidebar-identity')).toContainText('Уровень 1');
   await expect(page.locator('.top-location')).toContainText('Сумеречный приют');
@@ -140,8 +150,7 @@ test('all main game sections render on a narrow mobile viewport without page err
   await page.goto('/');
   await page.getByRole('button', { name: 'Продолжить без регистрации' }).click();
   await expect(page.locator('[data-race="Кот"]')).toBeVisible({ timeout: 25_000 });
-  await page.locator('[data-race="Кот"]').click();
-  await expect(page.locator('.sidebar-identity strong')).toHaveText('Путник-Кот', { timeout: 15_000 });
+  await createCatGuestCharacter(page);
 
   for (const tab of tabs) {
     const button = page.locator(`.quick-nav [data-tab="${tab}"]`);
