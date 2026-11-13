@@ -21,7 +21,7 @@ export function prepareDungeonMemberQuestSettlement(input: {
     quests.activityToday = { hunts: 0, wins: 0, losses: 0, gold: 0, xp: 0, dungeons: 0, crafts: 0 };
   }
 
-  const stats = { ...(quests.activityToday || { hunts: 0, wins: 0, losses: 0, gold: 0, xp: 0, dungeons: 0, crafts: 0 }) };
+  const stats = { ...((quests.activityToday || { hunts: 0, wins: 0, losses: 0, gold: 0, xp: 0, dungeons: 0, crafts: 0 }) as Record<string, number>) };
   stats.dungeons += 1;
   quests.activityToday = stats;
 
