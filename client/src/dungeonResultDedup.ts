@@ -36,7 +36,7 @@ export function claimDungeonResultEvent(
     return false;
   }
 
-  claimedInSession.add(memoryKey);
+  sessionClaims.add(memoryKey);
   if (storage) {
     try {
       const next = [...remembered.filter(value => value !== eventId), eventId]
