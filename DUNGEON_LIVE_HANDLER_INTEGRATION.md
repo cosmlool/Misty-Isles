@@ -91,3 +91,13 @@ Regression tests: `server/test/dungeonRequestRecovery.test.ts` — unknown reque
 - Helper commit: `1411e5ef5cd1905cbf9583dde60cd0a4593603e2`; tests: `435795b92790b3ef9a8b5de4d4142921371e4471`; test script: `fb829d37d90aab489310294c0ca5f6434e6d1e40`; handler: `caea5971af97a51648a648b3581242af0ff5824b`.
 - Новый HEAD требует полного CI. Не считать этап подтверждённым до успешных server tests/build и Quality Gate.
 - Live handler по-прежнему legacy; detached settlement и durable live lifecycle integration не подключены.
+
+
+## Этап: извлечение дневного счётчика попыток (2026-11-13)
+
+- Добавлен pure helper `server/src/dungeonAttemptPreparation.ts`: `getDungeonRunsForDay` читает число попыток только для совпадающего ключа дня; `consumeDungeonAttemptForDay` возвращает новый quest snapshot с увеличенным счётчиком.
+- Live handler использует helper и при проверке лимита, и при списании попытки. Сохранены прежняя числовая coercion `Number(value || 0)`, дневной rollover, значение лимита 3 и момент списания до результата боя.
+- Входной quest object не мутируется; остальные quest-поля сохраняются.
+- Добавлены 4 regression tests: совпадающий/другой день, rollover, инкремент, отсутствие мутации и legacy numeric coercion. Тест включён в server test script.
+- Не менялись UTC day key, combat plan, RNG, rewards, HP, inventory, reports, request history, outbox или persistence boundary.
+- Это изоляция только дневного счётчика; live dungeon handler остаётся legacy, detached player settlement и durable lifecycle integration не подключены.
