@@ -175,3 +175,16 @@ PR #15 остаётся Draft/open и не объединён. Слияние б
 - Новый HEAD требует полного CI. Не считать этап подтверждённым до успешных server tests/build и всех Quality Gate jobs.
 - Не менялись combat formulas, RNG, награды, HP, inventory, report contents, request ID semantics, event IDs, outbox delivery или persistence boundary. Полная durable dungeon lifecycle integration по-прежнему НЕ подключена.
 - PR #15 остаётся Draft/open, merged=false; не объединять без отдельного разрешения.
+
+
+## Контрольная точка — 2026-11-13 (detached quest settlement участника подземелья)
+
+- Предыдущий PR CI на HEAD `cba6aae2c7b528223d033b5ba37e4612e83a2a94` завершился полностью успешно: run `43484270078`, 4/4 jobs success. PR #15 остаётся Draft/open, merged=false.
+- Добавлен pure helper `server/src/dungeonMemberQuestSettlement.ts`, объединяющий подготовку activity log, combat history, request replay history и outbox event в один detached quest snapshot.
+- Сохранены дневной rollover и счётчики activity, порядок и лимиты логов (30 activity / 20 combat / 5 request), `dungeonLastRequest`, event ID/run ID/payload.
+- Timestamp activity захватывается в прежней точке выполнения в win/loss ветках; helper не вызывает Date.now самостоятельно.
+- Обе ветки `runExpeditionDungeon()` теперь присваивают подготовленный quest snapshot один раз вместо последовательной мутации через `recordActivity`, `saveCombatReport` и отдельную request preparation.
+- Добавлены 3 regression tests; тест подключён к `server/package.json`. Обновлена `DUNGEON_LIVE_HANDLER_INTEGRATION.md`.
+- Изменение не трогает combat formulas, RNG, XP/gold, HP, inventory, report contents, request ID semantics, outbox delivery и persistence boundary.
+- Новый HEAD ещё не прошёл CI. Следующий шаг — дождаться полного Quality Gate и server checks; до этого не делать новых кодовых изменений.
+- Важно: это detached preparation только quest state. Live handler всё ещё мутирует остальные поля Player напрямую и сохраняет через `persistDungeonResultPlayers()`; полная durable dungeon lifecycle integration НЕ подключена. PR #15 не сливать.
