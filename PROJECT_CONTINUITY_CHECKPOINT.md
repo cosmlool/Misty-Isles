@@ -41,14 +41,14 @@
 - Требуемая интеграция: единая immutable preparation, фиксирующая roster, combat result, все random outcomes, healing, HP, XP/gold, counters, inventory, quest/report/outbox snapshots; durable start/round/finalization; повтор запроса должен читать уже сохранённый результат, а не пересчитывать бой и не повторять награды.
 - Не менять числовой баланс и не переписывать формулы боя в этом этапе. Сначала составить карту legacy handler → prepared snapshot → durable transaction, затем покрыть crash/retry tests на входе, раунде и финализации.
 
-## E2E lockfile — текущая инфраструктурная работа
+## E2E lockfile — завершено
 
-- На `915c1e90b451e9f464238c901fada8f2d609e350` оба workflow (Quality Gate и Server checks) прошли. Lockfile был создан npm 10 / Node 22 в CI и получен как artifact.
-- Добавлен `e2e/package-lock.json`; `tools/verify-all.mjs` требует lockfile и использует `npm ci`; `tools/qa-audit.mjs` проверяет наличие и согласованность трёх lockfiles; workflow переключён на `npm ci`; технический паспорт обновлён.
-- Первый committed lockfile имел ошибочный URL tarball для `@playwright/test`: `.../@playwright/test/-/playwright-1.56.1.tgz`, из-за чего чистый CI runner получил 404. Исправлен на проверенный npm tarball `.../@playwright/test/-/test-1.56.1.tgz` с integrity из опубликованных lockfiles.
-- Последний известный HEAD PR #15: `13e02902fe438bf5b69abc40fc53be6be743dee6`.
-- На этом SHA запущены Quality Gate push `43356830207`, Quality Gate pull_request `43356835205` и Server checks `43356835090`. На момент записи первые два были pending, Server checks — in_progress. Требуется дождаться всех jobs и подтвердить, что E2E `npm ci` теперь проходит на чистом runner.
-- Не начинать следующий кодовый этап до зелёного CI на актуальном HEAD. После него вернуться к durable live dungeon handler integration.
+- Исправлен Playwright tarball URL в `e2e/package-lock.json`; теперь E2E зависимости устанавливаются через `npm ci`.
+- Проверен точный commit `bf2781716fc9f2cb99cdf07d2fb44f49a0a0748e`.
+- Quality Gate run `43356896203`: success. Все 4 jobs прошли, включая Playwright browser smoke tests и чистую установку E2E lockfile.
+- Server checks run `43356896223`: success.
+- Следующий этап начат: добавлен `DUNGEON_LIVE_HANDLER_INTEGRATION.md` (commit `28f368fe96172558c8768ebf8bea55a2c014151d`). В документе зафиксированы legacy handler, готовые durable helpers, границы транзакций и безопасная последовательность интеграции.
+- Перед следующим кодовым изменением перепроверить актуальный HEAD и CI. PR #15 оставить Draft.
 
 ## PR
 
