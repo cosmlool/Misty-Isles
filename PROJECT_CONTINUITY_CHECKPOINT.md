@@ -258,3 +258,12 @@ PR #15 остаётся Draft/open и не объединён. Слияние б
 - Combat/RNG/reward/drop/report/outbox semantics и WAL ordering не менялись. Полная durable dungeon lifecycle integration НЕ подключена.
 - Коммиты: handler `182508dca291049046ef9f6e68907edde35b2d37`; reconciliation `dc552de102a3bef126f809162cc13535c036339f`; WAL failure test `8f4107feae5317deadf272cfa9e00852364de509`; regression assertions `0996aa3f96a83c1a3b79f3d6e833f635d6333f58`.
 - Текущий HEAD после документации/checkpoint требует полного CI. PR #15 остаётся Draft/open, merged=false; не объединять.
+
+## Контрольная точка — 2026-11-14 (проверка всех player persistence callers)
+
+- Для HEAD `73b22a783b65911513aa910edf13ee4d68405498` оба workflow завершились успешно: Server checks (isolated player-save tests + server build) и Quality Gate 4/4 (client build, data/docs/structure, Playwright, server transaction recovery + compile).
+- Проведён поиск call sites `persistPlayers`, `persistPlayer`, `persistDungeonResultPlayers`, `transactClanMutation`, `applySaved` в `server/src/index.ts`.
+- Найден и исправлен stale rollback в `Room.onLeave()`: после нового централизованного reconciliation в `persistPlayers()` локальный catch восстанавливал только `quests` из pre-save snapshot и тем самым мог испортить согласованное состояние. Локальный rollback удалён; ошибка persistence по-прежнему пробрасывается.
+- Добавлен regression assertion для `onLeave()` в `server/test/playerPersistenceWriters.test.ts`.
+- Прочие call sites проверены: expedition/room saves проходят через `persistPlayers`; friend save через `persistPlayer`; clan mutations через `transactClanMutation`; auction использует detached snapshots и применяет их после успешного commit. Других stale rollback overrides в просмотренных местах не найдено.
+- Новый HEAD после исправления и теста: `e0f0fe214d87a92f6036a658fe5560532f3ee2fa`. Полный CI ожидает запуска/завершения. PR #15 остаётся Draft/open, merged=false.
