@@ -1,6 +1,6 @@
 import { randomBytes } from 'node:crypto';
-import { copyFileSync, existsSync, mkdirSync, readFileSync, readdirSync, renameSync, unlinkSync, writeFileSync } from 'node:fs';
-import { join } from 'node:path';
+import { closeSync, copyFileSync, existsSync, fsyncSync, mkdirSync, openSync, readFileSync, readdirSync, renameSync, unlinkSync, writeFileSync } from 'node:fs';
+import { dirname, join } from 'node:path';
 
 export type AuctionSnapshot = {
   players: Record<string, unknown>;
@@ -17,6 +17,7 @@ type AuctionTransactionOptions = {
   testHooks?: {
     afterJournalPersisted?: () => void;
     afterTargetWrite?: (target: 'players' | 'auction' | 'history') => void;
+    afterSync?: (path: string) => void;
   };
 };
 
@@ -28,11 +29,19 @@ export function createAuctionTransactionStore(options: AuctionTransactionOptions
   const journalFile = join(options.dataDir, 'auction_transaction.json');
   mkdirSync(options.dataDir, { recursive: true });
 
+  function syncPath(path: string) {
+    const descriptor = openSync(path, 'r');
+    try { fsyncSync(descriptor); options.testHooks?.afterSync?.(path); }
+    finally { closeSync(descriptor); }
+  }
+
   function atomicWrite(file: string, value: unknown) {
     const temp = `${file}.${process.pid}.${Date.now()}.${randomBytes(4).toString('hex')}.tmp`;
     try {
       writeFileSync(temp, JSON.stringify(value, null, 2), { encoding: 'utf8', flag: 'wx' });
+      syncPath(temp);
       renameSync(temp, file);
+      syncPath(dirname(file));
     } catch (error) {
       try { if (existsSync(temp)) unlinkSync(temp); } catch {}
       throw error;
@@ -60,7 +69,9 @@ export function createAuctionTransactionStore(options: AuctionTransactionOptions
     const backupTemp = backupFile + '.tmp';
     try {
       copyFileSync(options.playersFile, backupTemp);
+      syncPath(backupTemp);
       renameSync(backupTemp, backupFile);
+      syncPath(options.dataDir);
     } catch (error) {
       try { if (existsSync(backupTemp)) unlinkSync(backupTemp); } catch {}
       throw new Error(`Could not create a backup of players.json; auction transaction write cancelled. ${String(error)}`);
@@ -100,6 +111,7 @@ export function createAuctionTransactionStore(options: AuctionTransactionOptions
     validateJournal(parsed);
     apply(parsed.snapshot);
     unlinkSync(journalFile);
+    syncPath(options.dataDir);
     return true;
   }
 
@@ -116,6 +128,7 @@ export function createAuctionTransactionStore(options: AuctionTransactionOptions
       options.testHooks?.afterJournalPersisted?.();
       apply(snapshot);
       unlinkSync(journalFile);
+      syncPath(options.dataDir);
     } catch (error) {
       // Retry the complete snapshot immediately. If storage is still failing,
       // keep the journal so the next startup can finish the transaction.
