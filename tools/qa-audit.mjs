@@ -33,6 +33,10 @@ const required = [
   'tools/Start-Game.ps1',
   'tools/Stop-Game.ps1',
   'tools/Check-Game.ps1',
+  'e2e/package.json',
+  'e2e/playwright.config.ts',
+  'e2e/tests/game-smoke.spec.ts',
+  'tools/verify-all.mjs',
   '.github/workflows/quality.yml',
 ];
 
