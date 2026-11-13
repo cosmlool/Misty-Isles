@@ -189,3 +189,13 @@ Important limitation: the current boss dungeon handler is still synchronous and 
 - If a player appears in two active durable runs, the server fails closed immediately rather than waiting for that player to reconnect and discovering the ambiguity later.
 - Completed/aborted history does not block a new active run. Tests cover both overlapping active records and valid disjoint/terminal records.
 - This is a recovery-integrity guard; it does not yet connect durable entry, round advancement, or finalization to the live synchronous dungeon handler.
+
+
+## Durable snapshot invariant hardening
+
+- Startup and transaction validation now require the round-plan cursor to match the committed run round index. A snapshot that claims different next-round positions is rejected rather than resumed ambiguously.
+- Participant snapshots must contain exactly the frozen roster: no missing participant and no extra player record. Health must remain within the participant's maximum; spectators must have zero HP, while alive/revived participants must have positive HP.
+- Boss snapshots now require a valid boss ID and deterministic seed, positive maximum HP, and current HP within the saved maximum.
+- Run timestamps cannot move backward from start to update time. New run creation rejects participant HP outside the valid positive range.
+- Added regression tests for cursor drift, extra participant entries, impossible participant/boss HP, and invalid initial health.
+- This strengthens persisted-state validation only. It does not wire the synchronous production dungeon handler to durable entry/round/finalization, and it does not change combat or reward calculations.
