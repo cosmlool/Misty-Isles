@@ -1,6 +1,6 @@
 import { randomBytes } from 'node:crypto';
-import { existsSync, mkdirSync, readFileSync, renameSync, unlinkSync, writeFileSync } from 'node:fs';
-import { join } from 'node:path';
+import { closeSync, existsSync, fsyncSync, mkdirSync, openSync, readFileSync, renameSync, unlinkSync, writeFileSync } from 'node:fs';
+import { dirname, join } from 'node:path';
 
 export type ClanTransactionSnapshot = {
   players: Record<string, unknown>;
@@ -17,6 +17,7 @@ type ClanTransactionOptions = {
   territoriesFile: string;
   testHooks?: {
     afterTargetWrite?: (target: 'players' | 'clans' | 'wars' | 'territories') => void;
+    afterSync?: (path: string) => void;
   };
 };
 
@@ -26,11 +27,19 @@ export function createClanTransactionStore(options: ClanTransactionOptions) {
   const journalFile = join(options.dataDir, 'clan_transaction.json');
   mkdirSync(options.dataDir, { recursive: true });
 
+  function syncPath(path: string) {
+    const descriptor = openSync(path, 'r');
+    try { fsyncSync(descriptor); options.testHooks?.afterSync?.(path); }
+    finally { closeSync(descriptor); }
+  }
+
   function atomicWrite(file: string, value: unknown) {
     const temp = `${file}.${process.pid}.${Date.now()}.${randomBytes(4).toString('hex')}.tmp`;
     try {
       writeFileSync(temp, JSON.stringify(value, null, 2), { encoding: 'utf8', flag: 'wx' });
+      syncPath(temp);
       renameSync(temp, file);
+      syncPath(dirname(file));
     } catch (error) {
       try { if (existsSync(temp)) unlinkSync(temp); } catch {}
       throw error;
@@ -81,6 +90,7 @@ export function createClanTransactionStore(options: ClanTransactionOptions) {
     validateJournal(parsed);
     apply(parsed.snapshot);
     unlinkSync(journalFile);
+    syncPath(options.dataDir);
     return true;
   }
 
@@ -91,6 +101,7 @@ export function createClanTransactionStore(options: ClanTransactionOptions) {
     try {
       apply(snapshot);
       unlinkSync(journalFile);
+      syncPath(options.dataDir);
     } catch (error) {
       try {
         recover();
@@ -100,5 +111,7 @@ export function createClanTransactionStore(options: ClanTransactionOptions) {
     }
   }
 
-  return { commit, recover, journalFile };
+  function hasPending(): boolean { return existsSync(journalFile); }
+
+  return { commit, recover, hasPending, journalFile };
 }

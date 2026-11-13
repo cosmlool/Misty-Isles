@@ -12,7 +12,14 @@
     "primaryAttribute": "+1 к выбранному основному атрибуту",
     "effects": "Нет",
     "description": "Простое оружие для первых вылазок. Рукоять уже пережила одного владельца.",
-    "legacy": false
+    "legacy": false,
+    "attributes": {
+      "stamina": 1
+    },
+    "combatStats": {
+      "accuracy": 0.002,
+      "physicalDamage": 0.006
+    }
   },
   {
     "id": "WPN-C-004",
@@ -27,7 +34,14 @@
     "primaryAttribute": "+1 к выбранному основному атрибуту",
     "effects": "Нет",
     "description": "Лёгкий посох с устойчивым магическим каналом.",
-    "legacy": false
+    "legacy": false,
+    "attributes": {
+      "stamina": 1
+    },
+    "combatStats": {
+      "accuracy": 0.003,
+      "physicalDamage": 0.008
+    }
   },
   {
     "id": "WPN-C-007",
@@ -42,7 +56,14 @@
     "primaryAttribute": "+2 к выбранному основному атрибуту",
     "effects": "Нет",
     "description": "Тяжёлое, но надёжное оружие начинающего искателя приключений.",
-    "legacy": false
+    "legacy": false,
+    "attributes": {
+      "stamina": 1
+    },
+    "combatStats": {
+      "accuracy": 0.003,
+      "physicalDamage": 0.008
+    }
   },
   {
     "id": "WPN-C-010",
@@ -57,7 +78,14 @@
     "primaryAttribute": "+2 к выбранному основному атрибуту",
     "effects": "Нет",
     "description": "Жезл с простым фокусирующим камнем.",
-    "legacy": false
+    "legacy": false,
+    "attributes": {
+      "stamina": 1
+    },
+    "combatStats": {
+      "accuracy": 0.003,
+      "physicalDamage": 0.009
+    }
   },
   {
     "id": "WPN-C-014",
@@ -72,7 +100,14 @@
     "primaryAttribute": "+3 к выбранному основному атрибуту",
     "effects": "Нет",
     "description": "Лук для коротких охотничьих вылазок.",
-    "legacy": false
+    "legacy": false,
+    "attributes": {
+      "stamina": 1
+    },
+    "combatStats": {
+      "accuracy": 0.003,
+      "physicalDamage": 0.009
+    }
   },
   {
     "id": "WPN-C-017",
@@ -87,7 +122,14 @@
     "primaryAttribute": "+4 к выбранному основному атрибуту",
     "effects": "Нет",
     "description": "Сбалансированный клинок для обучения основам боя.",
-    "legacy": false
+    "legacy": false,
+    "attributes": {
+      "stamina": 1
+    },
+    "combatStats": {
+      "accuracy": 0.004,
+      "physicalDamage": 0.011
+    }
   },
   {
     "id": "WPN-C-019",
@@ -102,7 +144,14 @@
     "primaryAttribute": "+5 к выбранному основному атрибуту",
     "effects": "Нет",
     "description": "Молот с грубой, но крепкой головкой.",
-    "legacy": false
+    "legacy": false,
+    "attributes": {
+      "stamina": 1
+    },
+    "combatStats": {
+      "accuracy": 0.004,
+      "physicalDamage": 0.011
+    }
   },
   {
     "id": "WPN-C-020",
@@ -117,7 +166,14 @@
     "primaryAttribute": "+6 к выбранному основному атрибуту",
     "effects": "Нет",
     "description": "Универсальное оружие для тех, кто пока не определился с карьерой.",
-    "legacy": false
+    "legacy": false,
+    "attributes": {
+      "stamina": 1
+    },
+    "combatStats": {
+      "accuracy": 0.004,
+      "physicalDamage": 0.011
+    }
   },
   {
     "id": "WPN-МАГ-025",
@@ -132,7 +188,13 @@
     "primaryAttribute": "+8 к Интеллект",
     "effects": "Нет",
     "description": "Профессиональное оружие школы «Маг». Усиливает магический урон и точность заклинаний.",
-    "legacy": false
+    "legacy": false,
+    "attributes": {
+      "stamina": 1
+    },
+    "combatStats": {
+      "magicDamage": 0.012
+    }
   },
   {
     "id": "WPN-МАГ-040",
@@ -147,7 +209,13 @@
     "primaryAttribute": "+12 к Интеллект",
     "effects": "Нет",
     "description": "Профессиональное оружие школы «Маг». Усиливает магический урон и точность заклинаний.",
-    "legacy": false
+    "legacy": false,
+    "attributes": {
+      "stamina": 1
+    },
+    "combatStats": {
+      "magicDamage": 0.015
+    }
   },
   {
     "id": "WPN-МАГ-055",
@@ -162,7 +230,13 @@
     "primaryAttribute": "+17 к Интеллект",
     "effects": "Нет",
     "description": "Профессиональное оружие школы «Маг». Усиливает магический урон и точность заклинаний.",
-    "legacy": false
+    "legacy": false,
+    "attributes": {
+      "stamina": 2
+    },
+    "combatStats": {
+      "magicDamage": 0.02
+    }
   },
   {
     "id": "WPN-МАГ-070",
@@ -177,7 +251,13 @@
     "primaryAttribute": "+23 к Интеллект",
     "effects": "+4% к профильной эффективности",
     "description": "Профессиональное оружие школы «Маг». Усиливает магический урон и точность заклинаний.",
-    "legacy": false
+    "legacy": false,
+    "attributes": {
+      "stamina": 2
+    },
+    "combatStats": {
+      "magicDamage": 0.023
+    }
   },
   {
     "id": "WPN-МАГ-085",
@@ -192,7 +272,13 @@
     "primaryAttribute": "+30 к Интеллект",
     "effects": "+5% к профильной эффективности",
     "description": "Профессиональное оружие школы «Маг». Усиливает магический урон и точность заклинаний.",
-    "legacy": false
+    "legacy": false,
+    "attributes": {
+      "stamina": 2
+    },
+    "combatStats": {
+      "magicDamage": 0.027
+    }
   },
   {
     "id": "WPN-МАГ-100",
@@ -207,7 +293,13 @@
     "primaryAttribute": "+38 к Интеллект",
     "effects": "+6% к профильной эффективности",
     "description": "Профессиональное оружие школы «Маг». Усиливает магический урон и точность заклинаний.",
-    "legacy": false
+    "legacy": false,
+    "attributes": {
+      "stamina": 3
+    },
+    "combatStats": {
+      "magicDamage": 0.03
+    }
   },
   {
     "id": "WPN-АСС-025",
@@ -222,7 +314,15 @@
     "primaryAttribute": "+8 к Ловкость",
     "effects": "Нет",
     "description": "Профессиональное оружие школы «Ассасин». Повышает точность быстрых атак и критический урон.",
-    "legacy": false
+    "legacy": false,
+    "attributes": {
+      "strength": 1
+    },
+    "combatStats": {
+      "physicalDamage": 0.012,
+      "critChance": 0.004
+    },
+    "weaponStyle": "dual-daggers"
   },
   {
     "id": "WPN-АСС-040",
@@ -237,7 +337,15 @@
     "primaryAttribute": "+12 к Ловкость",
     "effects": "Нет",
     "description": "Профессиональное оружие школы «Ассасин». Повышает точность быстрых атак и критический урон.",
-    "legacy": false
+    "legacy": false,
+    "attributes": {
+      "strength": 1
+    },
+    "combatStats": {
+      "physicalDamage": 0.015,
+      "critChance": 0.006
+    },
+    "weaponStyle": "dual-daggers"
   },
   {
     "id": "WPN-АСС-055",
@@ -252,7 +360,15 @@
     "primaryAttribute": "+17 к Ловкость",
     "effects": "Нет",
     "description": "Профессиональное оружие школы «Ассасин». Повышает точность быстрых атак и критический урон.",
-    "legacy": false
+    "legacy": false,
+    "attributes": {
+      "strength": 2
+    },
+    "combatStats": {
+      "physicalDamage": 0.02,
+      "critChance": 0.007
+    },
+    "weaponStyle": "dual-daggers"
   },
   {
     "id": "WPN-АСС-070",
@@ -267,7 +383,15 @@
     "primaryAttribute": "+23 к Ловкость",
     "effects": "+4% к профильной эффективности",
     "description": "Профессиональное оружие школы «Ассасин». Повышает точность быстрых атак и критический урон.",
-    "legacy": false
+    "legacy": false,
+    "attributes": {
+      "strength": 2
+    },
+    "combatStats": {
+      "physicalDamage": 0.023,
+      "critChance": 0.008
+    },
+    "weaponStyle": "dual-daggers"
   },
   {
     "id": "WPN-АСС-085",
@@ -282,7 +406,15 @@
     "primaryAttribute": "+30 к Ловкость",
     "effects": "+5% к профильной эффективности",
     "description": "Профессиональное оружие школы «Ассасин». Повышает точность быстрых атак и критический урон.",
-    "legacy": false
+    "legacy": false,
+    "attributes": {
+      "strength": 2
+    },
+    "combatStats": {
+      "physicalDamage": 0.027,
+      "critChance": 0.01
+    },
+    "weaponStyle": "dual-daggers"
   },
   {
     "id": "WPN-АСС-100",
@@ -297,7 +429,15 @@
     "primaryAttribute": "+38 к Ловкость",
     "effects": "+6% к профильной эффективности",
     "description": "Профессиональное оружие школы «Ассасин». Повышает точность быстрых атак и критический урон.",
-    "legacy": false
+    "legacy": false,
+    "attributes": {
+      "strength": 3
+    },
+    "combatStats": {
+      "physicalDamage": 0.03,
+      "critChance": 0.011
+    },
+    "weaponStyle": "dual-daggers"
   },
   {
     "id": "WPN-ВОИ-025",
@@ -307,12 +447,20 @@
     "price": 15000,
     "level": 25,
     "attack": 34,
-    "profession": "Воин",
+    "profession": "Рыцарь",
     "rarity": "Обычная",
     "primaryAttribute": "+8 к Сила",
     "effects": "Нет",
-    "description": "Профессиональное оружие школы «Воин». Усиливает физическую атаку и устойчивость в ближнем бою.",
-    "legacy": false
+    "description": "Профессиональное оружие школы «Рыцарь». Усиливает физическую атаку и устойчивость в ближнем бою.",
+    "legacy": false,
+    "attributes": {
+      "stamina": 1,
+      "vitality": 1
+    },
+    "combatStats": {
+      "physicalDamage": 0.012,
+      "critDamage": 0.004
+    }
   },
   {
     "id": "WPN-ВОИ-040",
@@ -322,12 +470,20 @@
     "price": 36000,
     "level": 40,
     "attack": 50,
-    "profession": "Воин",
+    "profession": "Рыцарь",
     "rarity": "Обычная",
     "primaryAttribute": "+12 к Сила",
     "effects": "Нет",
-    "description": "Профессиональное оружие школы «Воин». Усиливает физическую атаку и устойчивость в ближнем бою.",
-    "legacy": false
+    "description": "Профессиональное оружие школы «Рыцарь». Усиливает физическую атаку и устойчивость в ближнем бою.",
+    "legacy": false,
+    "attributes": {
+      "stamina": 1,
+      "vitality": 1
+    },
+    "combatStats": {
+      "physicalDamage": 0.015,
+      "critDamage": 0.006
+    }
   },
   {
     "id": "WPN-ВОИ-055",
@@ -337,12 +493,20 @@
     "price": 78000,
     "level": 55,
     "attack": 72,
-    "profession": "Воин",
+    "profession": "Рыцарь",
     "rarity": "Обычная",
     "primaryAttribute": "+17 к Сила",
     "effects": "Нет",
-    "description": "Профессиональное оружие школы «Воин». Усиливает физическую атаку и устойчивость в ближнем бою.",
-    "legacy": false
+    "description": "Профессиональное оружие школы «Рыцарь». Усиливает физическую атаку и устойчивость в ближнем бою.",
+    "legacy": false,
+    "attributes": {
+      "stamina": 2,
+      "vitality": 1
+    },
+    "combatStats": {
+      "physicalDamage": 0.02,
+      "critDamage": 0.007
+    }
   },
   {
     "id": "WPN-ВОИ-070",
@@ -352,12 +516,20 @@
     "price": 156000,
     "level": 70,
     "attack": 100,
-    "profession": "Воин",
+    "profession": "Рыцарь",
     "rarity": "Обычная",
     "primaryAttribute": "+23 к Сила",
     "effects": "+4% к профильной эффективности",
-    "description": "Профессиональное оружие школы «Воин». Усиливает физическую атаку и устойчивость в ближнем бою.",
-    "legacy": false
+    "description": "Профессиональное оружие школы «Рыцарь». Усиливает физическую атаку и устойчивость в ближнем бою.",
+    "legacy": false,
+    "attributes": {
+      "stamina": 2,
+      "vitality": 1
+    },
+    "combatStats": {
+      "physicalDamage": 0.023,
+      "critDamage": 0.008
+    }
   },
   {
     "id": "WPN-ВОИ-085",
@@ -367,12 +539,20 @@
     "price": 312000,
     "level": 85,
     "attack": 138,
-    "profession": "Воин",
+    "profession": "Рыцарь",
     "rarity": "Обычная",
     "primaryAttribute": "+30 к Сила",
     "effects": "+5% к профильной эффективности",
-    "description": "Профессиональное оружие школы «Воин». Усиливает физическую атаку и устойчивость в ближнем бою.",
-    "legacy": false
+    "description": "Профессиональное оружие школы «Рыцарь». Усиливает физическую атаку и устойчивость в ближнем бою.",
+    "legacy": false,
+    "attributes": {
+      "stamina": 2,
+      "vitality": 1
+    },
+    "combatStats": {
+      "physicalDamage": 0.027,
+      "critDamage": 0.01
+    }
   },
   {
     "id": "WPN-ВОИ-100",
@@ -382,12 +562,20 @@
     "price": 600000,
     "level": 100,
     "attack": 184,
-    "profession": "Воин",
+    "profession": "Рыцарь",
     "rarity": "Обычная",
     "primaryAttribute": "+38 к Сила",
     "effects": "+6% к профильной эффективности",
-    "description": "Профессиональное оружие школы «Воин». Усиливает физическую атаку и устойчивость в ближнем бою.",
-    "legacy": false
+    "description": "Профессиональное оружие школы «Рыцарь». Усиливает физическую атаку и устойчивость в ближнем бою.",
+    "legacy": false,
+    "attributes": {
+      "stamina": 3,
+      "vitality": 1
+    },
+    "combatStats": {
+      "physicalDamage": 0.03,
+      "critDamage": 0.011
+    }
   },
   {
     "id": "WPN-ПОД-025",
@@ -402,7 +590,13 @@
     "primaryAttribute": "+8 к Мудрость",
     "effects": "Нет",
     "description": "Профессиональное оружие школы «Поддержка». Повышает силу поддерживающих умений и эффективность лечения.",
-    "legacy": false
+    "legacy": false,
+    "attributes": {
+      "vitality": 1
+    },
+    "combatStats": {
+      "healing": 0.012
+    }
   },
   {
     "id": "WPN-ПОД-040",
@@ -417,7 +611,13 @@
     "primaryAttribute": "+12 к Мудрость",
     "effects": "Нет",
     "description": "Профессиональное оружие школы «Поддержка». Повышает силу поддерживающих умений и эффективность лечения.",
-    "legacy": false
+    "legacy": false,
+    "attributes": {
+      "vitality": 1
+    },
+    "combatStats": {
+      "healing": 0.015
+    }
   },
   {
     "id": "WPN-ПОД-055",
@@ -432,7 +632,13 @@
     "primaryAttribute": "+17 к Мудрость",
     "effects": "Нет",
     "description": "Профессиональное оружие школы «Поддержка». Повышает силу поддерживающих умений и эффективность лечения.",
-    "legacy": false
+    "legacy": false,
+    "attributes": {
+      "vitality": 2
+    },
+    "combatStats": {
+      "healing": 0.02
+    }
   },
   {
     "id": "WPN-ПОД-070",
@@ -447,7 +653,13 @@
     "primaryAttribute": "+23 к Мудрость",
     "effects": "+4% к профильной эффективности",
     "description": "Профессиональное оружие школы «Поддержка». Повышает силу поддерживающих умений и эффективность лечения.",
-    "legacy": false
+    "legacy": false,
+    "attributes": {
+      "vitality": 2
+    },
+    "combatStats": {
+      "healing": 0.023
+    }
   },
   {
     "id": "WPN-ПОД-085",
@@ -462,7 +674,13 @@
     "primaryAttribute": "+30 к Мудрость",
     "effects": "+5% к профильной эффективности",
     "description": "Профессиональное оружие школы «Поддержка». Повышает силу поддерживающих умений и эффективность лечения.",
-    "legacy": false
+    "legacy": false,
+    "attributes": {
+      "vitality": 2
+    },
+    "combatStats": {
+      "healing": 0.027
+    }
   },
   {
     "id": "WPN-ПОД-100",
@@ -477,7 +695,13 @@
     "primaryAttribute": "+38 к Мудрость",
     "effects": "+6% к профильной эффективности",
     "description": "Профессиональное оружие школы «Поддержка». Повышает силу поддерживающих умений и эффективность лечения.",
-    "legacy": false
+    "legacy": false,
+    "attributes": {
+      "vitality": 3
+    },
+    "combatStats": {
+      "healing": 0.03
+    }
   },
   {
     "id": "WPN-ЛУЧ-025",
@@ -492,7 +716,14 @@
     "primaryAttribute": "+8 к Ловкость",
     "effects": "Нет",
     "description": "Профессиональное оружие школы «Лучник». Увеличивает точность и урон дальних атак.",
-    "legacy": false
+    "legacy": false,
+    "attributes": {
+      "stamina": 1
+    },
+    "combatStats": {
+      "physicalDamage": 0.012,
+      "critChance": 0.004
+    }
   },
   {
     "id": "WPN-ЛУЧ-040",
@@ -507,7 +738,14 @@
     "primaryAttribute": "+12 к Ловкость",
     "effects": "Нет",
     "description": "Профессиональное оружие школы «Лучник». Увеличивает точность и урон дальних атак.",
-    "legacy": false
+    "legacy": false,
+    "attributes": {
+      "stamina": 1
+    },
+    "combatStats": {
+      "physicalDamage": 0.015,
+      "critChance": 0.006
+    }
   },
   {
     "id": "WPN-ЛУЧ-055",
@@ -522,7 +760,14 @@
     "primaryAttribute": "+17 к Ловкость",
     "effects": "Нет",
     "description": "Профессиональное оружие школы «Лучник». Увеличивает точность и урон дальних атак.",
-    "legacy": false
+    "legacy": false,
+    "attributes": {
+      "stamina": 2
+    },
+    "combatStats": {
+      "physicalDamage": 0.02,
+      "critChance": 0.007
+    }
   },
   {
     "id": "WPN-ЛУЧ-070",
@@ -537,7 +782,14 @@
     "primaryAttribute": "+23 к Ловкость",
     "effects": "+4% к профильной эффективности",
     "description": "Профессиональное оружие школы «Лучник». Увеличивает точность и урон дальних атак.",
-    "legacy": false
+    "legacy": false,
+    "attributes": {
+      "stamina": 2
+    },
+    "combatStats": {
+      "physicalDamage": 0.023,
+      "critChance": 0.008
+    }
   },
   {
     "id": "WPN-ЛУЧ-085",
@@ -552,7 +804,14 @@
     "primaryAttribute": "+30 к Ловкость",
     "effects": "+5% к профильной эффективности",
     "description": "Профессиональное оружие школы «Лучник». Увеличивает точность и урон дальних атак.",
-    "legacy": false
+    "legacy": false,
+    "attributes": {
+      "stamina": 2
+    },
+    "combatStats": {
+      "physicalDamage": 0.027,
+      "critChance": 0.01
+    }
   },
   {
     "id": "WPN-ЛУЧ-100",
@@ -567,7 +826,14 @@
     "primaryAttribute": "+38 к Ловкость",
     "effects": "+6% к профильной эффективности",
     "description": "Профессиональное оружие школы «Лучник». Увеличивает точность и урон дальних атак.",
-    "legacy": false
+    "legacy": false,
+    "attributes": {
+      "stamina": 3
+    },
+    "combatStats": {
+      "physicalDamage": 0.03,
+      "critChance": 0.011
+    }
   },
   {
     "id": "WPN-ВАМ-025",
@@ -582,7 +848,14 @@
     "primaryAttribute": "+8 к Выносливость",
     "effects": "Нет",
     "description": "Профессиональное оружие школы «Вампир». Усиливает боевой урон и эффективность восстановления.",
-    "legacy": false
+    "legacy": false,
+    "attributes": {
+      "vitality": 1
+    },
+    "combatStats": {
+      "physicalDamage": 0.012,
+      "lifesteal": 0.004
+    }
   },
   {
     "id": "WPN-ВАМ-040",
@@ -597,7 +870,14 @@
     "primaryAttribute": "+12 к Выносливость",
     "effects": "Нет",
     "description": "Профессиональное оружие школы «Вампир». Усиливает боевой урон и эффективность восстановления.",
-    "legacy": false
+    "legacy": false,
+    "attributes": {
+      "vitality": 1
+    },
+    "combatStats": {
+      "physicalDamage": 0.015,
+      "lifesteal": 0.006
+    }
   },
   {
     "id": "WPN-ВАМ-055",
@@ -612,7 +892,14 @@
     "primaryAttribute": "+17 к Выносливость",
     "effects": "Нет",
     "description": "Профессиональное оружие школы «Вампир». Усиливает боевой урон и эффективность восстановления.",
-    "legacy": false
+    "legacy": false,
+    "attributes": {
+      "vitality": 1
+    },
+    "combatStats": {
+      "physicalDamage": 0.02,
+      "lifesteal": 0.007
+    }
   },
   {
     "id": "WPN-ВАМ-070",
@@ -627,7 +914,14 @@
     "primaryAttribute": "+23 к Выносливость",
     "effects": "+4% к профильной эффективности",
     "description": "Профессиональное оружие школы «Вампир». Усиливает боевой урон и эффективность восстановления.",
-    "legacy": false
+    "legacy": false,
+    "attributes": {
+      "vitality": 1
+    },
+    "combatStats": {
+      "physicalDamage": 0.023,
+      "lifesteal": 0.008
+    }
   },
   {
     "id": "WPN-ВАМ-085",
@@ -642,7 +936,14 @@
     "primaryAttribute": "+30 к Выносливость",
     "effects": "+5% к профильной эффективности",
     "description": "Профессиональное оружие школы «Вампир». Усиливает боевой урон и эффективность восстановления.",
-    "legacy": false
+    "legacy": false,
+    "attributes": {
+      "vitality": 1
+    },
+    "combatStats": {
+      "physicalDamage": 0.027,
+      "lifesteal": 0.01
+    }
   },
   {
     "id": "WPN-ВАМ-100",
@@ -657,11 +958,18 @@
     "primaryAttribute": "+38 к Выносливость",
     "effects": "+6% к профильной эффективности",
     "description": "Профессиональное оружие школы «Вампир». Усиливает боевой урон и эффективность восстановления.",
-    "legacy": false
+    "legacy": false,
+    "attributes": {
+      "vitality": 1
+    },
+    "combatStats": {
+      "physicalDamage": 0.03,
+      "lifesteal": 0.011
+    }
   },
   {
     "id": "WPN-ДОБ-025",
-    "name": "Шахтёрский кирку",
+    "name": "Шахтёрская кирка",
     "kind": "weapon",
     "slot": "weapon",
     "price": 15000,
@@ -672,7 +980,14 @@
     "primaryAttribute": "+8 к Мудрость",
     "effects": "Нет",
     "description": "Профессиональное оружие школы «Добытчик». Поддерживает боевую эффективность и даёт небольшой бонус к добыче.",
-    "legacy": false
+    "legacy": false,
+    "attributes": {
+      "dexterity": 1
+    },
+    "combatStats": {
+      "physicalDamage": 0.012,
+      "loot": 0.016
+    }
   },
   {
     "id": "WPN-ДОБ-040",
@@ -687,7 +1002,14 @@
     "primaryAttribute": "+12 к Мудрость",
     "effects": "Нет",
     "description": "Профессиональное оружие школы «Добытчик». Поддерживает боевую эффективность и даёт небольшой бонус к добыче.",
-    "legacy": false
+    "legacy": false,
+    "attributes": {
+      "dexterity": 1
+    },
+    "combatStats": {
+      "physicalDamage": 0.015,
+      "loot": 0.02
+    }
   },
   {
     "id": "WPN-ДОБ-055",
@@ -702,7 +1024,14 @@
     "primaryAttribute": "+17 к Мудрость",
     "effects": "Нет",
     "description": "Профессиональное оружие школы «Добытчик». Поддерживает боевую эффективность и даёт небольшой бонус к добыче.",
-    "legacy": false
+    "legacy": false,
+    "attributes": {
+      "dexterity": 2
+    },
+    "combatStats": {
+      "physicalDamage": 0.02,
+      "loot": 0.026
+    }
   },
   {
     "id": "WPN-ДОБ-070",
@@ -717,7 +1046,14 @@
     "primaryAttribute": "+23 к Мудрость",
     "effects": "+4% к профильной эффективности",
     "description": "Профессиональное оружие школы «Добытчик». Поддерживает боевую эффективность и даёт небольшой бонус к добыче.",
-    "legacy": false
+    "legacy": false,
+    "attributes": {
+      "dexterity": 2
+    },
+    "combatStats": {
+      "physicalDamage": 0.023,
+      "loot": 0.03
+    }
   },
   {
     "id": "WPN-ДОБ-085",
@@ -732,7 +1068,14 @@
     "primaryAttribute": "+30 к Мудрость",
     "effects": "+5% к профильной эффективности",
     "description": "Профессиональное оружие школы «Добытчик». Поддерживает боевую эффективность и даёт небольшой бонус к добыче.",
-    "legacy": false
+    "legacy": false,
+    "attributes": {
+      "dexterity": 2
+    },
+    "combatStats": {
+      "physicalDamage": 0.027,
+      "loot": 0.036
+    }
   },
   {
     "id": "WPN-ДОБ-100",
@@ -747,7 +1090,14 @@
     "primaryAttribute": "+38 к Мудрость",
     "effects": "+6% к профильной эффективности",
     "description": "Профессиональное оружие школы «Добытчик». Поддерживает боевую эффективность и даёт небольшой бонус к добыче.",
-    "legacy": false
+    "legacy": false,
+    "attributes": {
+      "dexterity": 3
+    },
+    "combatStats": {
+      "physicalDamage": 0.03,
+      "loot": 0.04
+    }
   },
   {
     "id": "ARM-C-1-001",
@@ -765,7 +1115,13 @@
     "effects": "Нет",
     "description": "Шапка берегового дозорного. Надёжная экипировка ранних путешествий. Назначение: HP, интеллект и сопротивления.",
     "setBonus": "2/5: +1% HP; 3/5: +1% защиты; 4/5: +1% сопротивления; 5/5: +2% HP",
-    "legacy": false
+    "legacy": false,
+    "attributes": {
+      "strength": 1
+    },
+    "combatStats": {
+      "controlResistance": 0.004
+    }
   },
   {
     "id": "ARM-C-1-004",
@@ -783,7 +1139,13 @@
     "effects": "Нет",
     "description": "Капюшон солёного ветра. Надёжная экипировка ранних путешествий. Назначение: HP, интеллект и сопротивления.",
     "setBonus": "2/5: +1% HP; 3/5: +1% защиты; 4/5: +1% сопротивления; 5/5: +2% HP",
-    "legacy": false
+    "legacy": false,
+    "attributes": {
+      "strength": 1
+    },
+    "combatStats": {
+      "controlResistance": 0.005
+    }
   },
   {
     "id": "ARM-C-1-007",
@@ -801,7 +1163,13 @@
     "effects": "Нет",
     "description": "Шлем каменной тропы. Надёжная экипировка ранних путешествий. Назначение: HP, интеллект и сопротивления.",
     "setBonus": "2/5: +1% HP; 3/5: +1% защиты; 4/5: +1% сопротивления; 5/5: +2% HP",
-    "legacy": false
+    "legacy": false,
+    "attributes": {
+      "strength": 1
+    },
+    "combatStats": {
+      "controlResistance": 0.005
+    }
   },
   {
     "id": "ARM-C-1-010",
@@ -819,7 +1187,13 @@
     "effects": "Нет",
     "description": "Капюшон тихого следопыта. Надёжная экипировка ранних путешествий. Назначение: HP, интеллект и сопротивления.",
     "setBonus": "2/5: +1% HP; 3/5: +1% защиты; 4/5: +1% сопротивления; 5/5: +2% HP",
-    "legacy": false
+    "legacy": false,
+    "attributes": {
+      "strength": 1
+    },
+    "combatStats": {
+      "controlResistance": 0.006
+    }
   },
   {
     "id": "ARM-C-1-014",
@@ -837,7 +1211,13 @@
     "effects": "Нет",
     "description": "Шлем северного караула. Надёжная экипировка ранних путешествий. Назначение: HP, интеллект и сопротивления.",
     "setBonus": "2/5: +1% HP; 3/5: +1% защиты; 4/5: +1% сопротивления; 5/5: +2% HP",
-    "legacy": false
+    "legacy": false,
+    "attributes": {
+      "strength": 1
+    },
+    "combatStats": {
+      "controlResistance": 0.006
+    }
   },
   {
     "id": "ARM-C-1-017",
@@ -855,7 +1235,13 @@
     "effects": "+ к HP и сопротивлению контролю",
     "description": "Шлем серого прилива. Надёжная экипировка ранних путешествий. Назначение: HP, интеллект и сопротивления.",
     "setBonus": "2/5: +1% HP; 3/5: +1% защиты; 4/5: +1% сопротивления; 5/5: +2% HP",
-    "legacy": false
+    "legacy": false,
+    "attributes": {
+      "strength": 1
+    },
+    "combatStats": {
+      "controlResistance": 0.007
+    }
   },
   {
     "id": "ARM-C-1-019",
@@ -873,7 +1259,13 @@
     "effects": "+ к HP и сопротивлению контролю",
     "description": "Капюшон старого маяка. Надёжная экипировка ранних путешествий. Назначение: HP, интеллект и сопротивления.",
     "setBonus": "2/5: +1% HP; 3/5: +1% защиты; 4/5: +1% сопротивления; 5/5: +2% HP",
-    "legacy": false
+    "legacy": false,
+    "attributes": {
+      "strength": 1
+    },
+    "combatStats": {
+      "controlResistance": 0.007
+    }
   },
   {
     "id": "ARM-C-1-020",
@@ -891,7 +1283,13 @@
     "effects": "+ к HP и сопротивлению контролю",
     "description": "Корона первых туманов. Надёжная экипировка ранних путешествий. Назначение: HP, интеллект и сопротивления.",
     "setBonus": "2/5: +1% HP; 3/5: +1% защиты; 4/5: +1% сопротивления; 5/5: +2% HP",
-    "legacy": false
+    "legacy": false,
+    "attributes": {
+      "strength": 1
+    },
+    "combatStats": {
+      "controlResistance": 0.007
+    }
   },
   {
     "id": "ARM-C-2-001",
@@ -909,7 +1307,15 @@
     "effects": "Нет",
     "description": "Куртка начинающего путника. Надёжная экипировка ранних путешествий. Назначение: защита, HP и основной атрибут.",
     "setBonus": "2/5: +1% HP; 3/5: +1% защиты; 4/5: +1% сопротивления; 5/5: +2% HP",
-    "legacy": false
+    "legacy": false,
+    "attributes": {
+      "vitality": 1,
+      "stamina": 1
+    },
+    "combatStats": {
+      "resistance": 0.004,
+      "health": 0.002
+    }
   },
   {
     "id": "ARM-C-2-004",
@@ -927,7 +1333,15 @@
     "effects": "Нет",
     "description": "Кожаный панцирь солёной дороги. Надёжная экипировка ранних путешествий. Назначение: защита, HP и основной атрибут.",
     "setBonus": "2/5: +1% HP; 3/5: +1% защиты; 4/5: +1% сопротивления; 5/5: +2% HP",
-    "legacy": false
+    "legacy": false,
+    "attributes": {
+      "vitality": 1,
+      "stamina": 1
+    },
+    "combatStats": {
+      "resistance": 0.005,
+      "health": 0.003
+    }
   },
   {
     "id": "ARM-C-2-007",
@@ -945,7 +1359,15 @@
     "effects": "Нет",
     "description": "Доспех каменной тропы. Надёжная экипировка ранних путешествий. Назначение: защита, HP и основной атрибут.",
     "setBonus": "2/5: +1% HP; 3/5: +1% защиты; 4/5: +1% сопротивления; 5/5: +2% HP",
-    "legacy": false
+    "legacy": false,
+    "attributes": {
+      "vitality": 1,
+      "stamina": 1
+    },
+    "combatStats": {
+      "resistance": 0.005,
+      "health": 0.003
+    }
   },
   {
     "id": "ARM-C-2-010",
@@ -963,7 +1385,15 @@
     "effects": "Нет",
     "description": "Жилет дозорного мыса. Надёжная экипировка ранних путешествий. Назначение: защита, HP и основной атрибут.",
     "setBonus": "2/5: +1% HP; 3/5: +1% защиты; 4/5: +1% сопротивления; 5/5: +2% HP",
-    "legacy": false
+    "legacy": false,
+    "attributes": {
+      "vitality": 1,
+      "stamina": 1
+    },
+    "combatStats": {
+      "resistance": 0.006,
+      "health": 0.003
+    }
   },
   {
     "id": "ARM-C-2-014",
@@ -981,7 +1411,15 @@
     "effects": "Нет",
     "description": "Кираса северного караула. Надёжная экипировка ранних путешествий. Назначение: защита, HP и основной атрибут.",
     "setBonus": "2/5: +1% HP; 3/5: +1% защиты; 4/5: +1% сопротивления; 5/5: +2% HP",
-    "legacy": false
+    "legacy": false,
+    "attributes": {
+      "vitality": 1,
+      "stamina": 1
+    },
+    "combatStats": {
+      "resistance": 0.006,
+      "health": 0.003
+    }
   },
   {
     "id": "ARM-C-2-017",
@@ -999,7 +1437,15 @@
     "effects": "+ к HP и основному атрибуту",
     "description": "Панцирь серого прилива. Надёжная экипировка ранних путешествий. Назначение: защита, HP и основной атрибут.",
     "setBonus": "2/5: +1% HP; 3/5: +1% защиты; 4/5: +1% сопротивления; 5/5: +2% HP",
-    "legacy": false
+    "legacy": false,
+    "attributes": {
+      "vitality": 2,
+      "stamina": 1
+    },
+    "combatStats": {
+      "resistance": 0.007,
+      "health": 0.004
+    }
   },
   {
     "id": "ARM-C-2-019",
@@ -1017,7 +1463,15 @@
     "effects": "+ к HP и основному атрибуту",
     "description": "Доспех старого маяка. Надёжная экипировка ранних путешествий. Назначение: защита, HP и основной атрибут.",
     "setBonus": "2/5: +1% HP; 3/5: +1% защиты; 4/5: +1% сопротивления; 5/5: +2% HP",
-    "legacy": false
+    "legacy": false,
+    "attributes": {
+      "vitality": 2,
+      "stamina": 1
+    },
+    "combatStats": {
+      "resistance": 0.007,
+      "health": 0.004
+    }
   },
   {
     "id": "ARM-C-2-020",
@@ -1035,7 +1489,15 @@
     "effects": "+ к HP и основному атрибуту",
     "description": "Кираса первых туманов. Надёжная экипировка ранних путешествий. Назначение: защита, HP и основной атрибут.",
     "setBonus": "2/5: +1% HP; 3/5: +1% защиты; 4/5: +1% сопротивления; 5/5: +2% HP",
-    "legacy": false
+    "legacy": false,
+    "attributes": {
+      "vitality": 2,
+      "stamina": 1
+    },
+    "combatStats": {
+      "resistance": 0.007,
+      "health": 0.004
+    }
   },
   {
     "id": "ARM-C-3-001",
@@ -1053,7 +1515,13 @@
     "effects": "Нет",
     "description": "Перчатки дорожного мастера. Надёжная экипировка ранних путешествий. Назначение: атака, точность и критический урон.",
     "setBonus": "2/5: +1% HP; 3/5: +1% защиты; 4/5: +1% сопротивления; 5/5: +2% HP",
-    "legacy": false
+    "legacy": false,
+    "attributes": {
+      "strength": 1
+    },
+    "combatStats": {
+      "physicalDamage": 0.004
+    }
   },
   {
     "id": "ARM-C-3-004",
@@ -1071,7 +1539,13 @@
     "effects": "Нет",
     "description": "Кожаные рукавицы прилива. Надёжная экипировка ранних путешествий. Назначение: атака, точность и критический урон.",
     "setBonus": "2/5: +1% HP; 3/5: +1% защиты; 4/5: +1% сопротивления; 5/5: +2% HP",
-    "legacy": false
+    "legacy": false,
+    "attributes": {
+      "strength": 1
+    },
+    "combatStats": {
+      "physicalDamage": 0.005
+    }
   },
   {
     "id": "ARM-C-3-007",
@@ -1089,7 +1563,13 @@
     "effects": "Нет",
     "description": "Боевые перчатки каменной тропы. Надёжная экипировка ранних путешествий. Назначение: атака, точность и критический урон.",
     "setBonus": "2/5: +1% HP; 3/5: +1% защиты; 4/5: +1% сопротивления; 5/5: +2% HP",
-    "legacy": false
+    "legacy": false,
+    "attributes": {
+      "strength": 1
+    },
+    "combatStats": {
+      "physicalDamage": 0.005
+    }
   },
   {
     "id": "ARM-C-3-010",
@@ -1107,7 +1587,13 @@
     "effects": "Нет",
     "description": "Перчатки тихого следопыта. Надёжная экипировка ранних путешествий. Назначение: атака, точность и критический урон.",
     "setBonus": "2/5: +1% HP; 3/5: +1% защиты; 4/5: +1% сопротивления; 5/5: +2% HP",
-    "legacy": false
+    "legacy": false,
+    "attributes": {
+      "strength": 1
+    },
+    "combatStats": {
+      "physicalDamage": 0.006
+    }
   },
   {
     "id": "ARM-C-3-014",
@@ -1125,7 +1611,13 @@
     "effects": "Нет",
     "description": "Рукавицы северного караула. Надёжная экипировка ранних путешествий. Назначение: атака, точность и критический урон.",
     "setBonus": "2/5: +1% HP; 3/5: +1% защиты; 4/5: +1% сопротивления; 5/5: +2% HP",
-    "legacy": false
+    "legacy": false,
+    "attributes": {
+      "strength": 1
+    },
+    "combatStats": {
+      "physicalDamage": 0.006
+    }
   },
   {
     "id": "ARM-C-3-017",
@@ -1143,7 +1635,13 @@
     "effects": "+ к атаке и точности",
     "description": "Перчатки серого прилива. Надёжная экипировка ранних путешествий. Назначение: атака, точность и критический урон.",
     "setBonus": "2/5: +1% HP; 3/5: +1% защиты; 4/5: +1% сопротивления; 5/5: +2% HP",
-    "legacy": false
+    "legacy": false,
+    "attributes": {
+      "strength": 1
+    },
+    "combatStats": {
+      "physicalDamage": 0.007
+    }
   },
   {
     "id": "ARM-C-3-019",
@@ -1161,7 +1659,13 @@
     "effects": "+ к атаке и точности",
     "description": "Перчатки старого маяка. Надёжная экипировка ранних путешествий. Назначение: атака, точность и критический урон.",
     "setBonus": "2/5: +1% HP; 3/5: +1% защиты; 4/5: +1% сопротивления; 5/5: +2% HP",
-    "legacy": false
+    "legacy": false,
+    "attributes": {
+      "strength": 1
+    },
+    "combatStats": {
+      "physicalDamage": 0.007
+    }
   },
   {
     "id": "ARM-C-3-020",
@@ -1179,7 +1683,13 @@
     "effects": "+ к атаке и точности",
     "description": "Рукавицы первых туманов. Надёжная экипировка ранних путешествий. Назначение: атака, точность и критический урон.",
     "setBonus": "2/5: +1% HP; 3/5: +1% защиты; 4/5: +1% сопротивления; 5/5: +2% HP",
-    "legacy": false
+    "legacy": false,
+    "attributes": {
+      "strength": 1
+    },
+    "combatStats": {
+      "physicalDamage": 0.007
+    }
   },
   {
     "id": "ARM-C-4-001",
@@ -1197,7 +1707,14 @@
     "effects": "Нет",
     "description": "Сапоги берегового путника. Надёжная экипировка ранних путешествий. Назначение: ловкость, уклонение и восстановление.",
     "setBonus": "2/5: +1% HP; 3/5: +1% защиты; 4/5: +1% сопротивления; 5/5: +2% HP",
-    "legacy": false
+    "legacy": false,
+    "attributes": {
+      "dexterity": 1
+    },
+    "combatStats": {
+      "evasion": 0.004,
+      "attackSpeed": 0.002
+    }
   },
   {
     "id": "ARM-C-4-004",
@@ -1215,7 +1732,14 @@
     "effects": "Нет",
     "description": "Ботинки солёной дороги. Надёжная экипировка ранних путешествий. Назначение: ловкость, уклонение и восстановление.",
     "setBonus": "2/5: +1% HP; 3/5: +1% защиты; 4/5: +1% сопротивления; 5/5: +2% HP",
-    "legacy": false
+    "legacy": false,
+    "attributes": {
+      "dexterity": 1
+    },
+    "combatStats": {
+      "evasion": 0.005,
+      "attackSpeed": 0.003
+    }
   },
   {
     "id": "ARM-C-4-007",
@@ -1233,7 +1757,14 @@
     "effects": "Нет",
     "description": "Сапоги каменной тропы. Надёжная экипировка ранних путешествий. Назначение: ловкость, уклонение и восстановление.",
     "setBonus": "2/5: +1% HP; 3/5: +1% защиты; 4/5: +1% сопротивления; 5/5: +2% HP",
-    "legacy": false
+    "legacy": false,
+    "attributes": {
+      "dexterity": 1
+    },
+    "combatStats": {
+      "evasion": 0.005,
+      "attackSpeed": 0.003
+    }
   },
   {
     "id": "ARM-C-4-010",
@@ -1251,7 +1782,14 @@
     "effects": "Нет",
     "description": "Ботинки тихого следопыта. Надёжная экипировка ранних путешествий. Назначение: ловкость, уклонение и восстановление.",
     "setBonus": "2/5: +1% HP; 3/5: +1% защиты; 4/5: +1% сопротивления; 5/5: +2% HP",
-    "legacy": false
+    "legacy": false,
+    "attributes": {
+      "dexterity": 1
+    },
+    "combatStats": {
+      "evasion": 0.006,
+      "attackSpeed": 0.003
+    }
   },
   {
     "id": "ARM-C-4-014",
@@ -1269,7 +1807,14 @@
     "effects": "Нет",
     "description": "Сапоги северного караула. Надёжная экипировка ранних путешествий. Назначение: ловкость, уклонение и восстановление.",
     "setBonus": "2/5: +1% HP; 3/5: +1% защиты; 4/5: +1% сопротивления; 5/5: +2% HP",
-    "legacy": false
+    "legacy": false,
+    "attributes": {
+      "dexterity": 1
+    },
+    "combatStats": {
+      "evasion": 0.006,
+      "attackSpeed": 0.003
+    }
   },
   {
     "id": "ARM-C-4-017",
@@ -1287,7 +1832,14 @@
     "effects": "+ к ловкости и уклонению",
     "description": "Сапоги серого прилива. Надёжная экипировка ранних путешествий. Назначение: ловкость, уклонение и восстановление.",
     "setBonus": "2/5: +1% HP; 3/5: +1% защиты; 4/5: +1% сопротивления; 5/5: +2% HP",
-    "legacy": false
+    "legacy": false,
+    "attributes": {
+      "dexterity": 1
+    },
+    "combatStats": {
+      "evasion": 0.007,
+      "attackSpeed": 0.004
+    }
   },
   {
     "id": "ARM-C-4-019",
@@ -1305,7 +1857,14 @@
     "effects": "+ к ловкости и уклонению",
     "description": "Сапоги старого маяка. Надёжная экипировка ранних путешествий. Назначение: ловкость, уклонение и восстановление.",
     "setBonus": "2/5: +1% HP; 3/5: +1% защиты; 4/5: +1% сопротивления; 5/5: +2% HP",
-    "legacy": false
+    "legacy": false,
+    "attributes": {
+      "dexterity": 1
+    },
+    "combatStats": {
+      "evasion": 0.007,
+      "attackSpeed": 0.004
+    }
   },
   {
     "id": "ARM-C-4-020",
@@ -1323,7 +1882,14 @@
     "effects": "+ к ловкости и уклонению",
     "description": "Сапоги первых туманов. Надёжная экипировка ранних путешествий. Назначение: ловкость, уклонение и восстановление.",
     "setBonus": "2/5: +1% HP; 3/5: +1% защиты; 4/5: +1% сопротивления; 5/5: +2% HP",
-    "legacy": false
+    "legacy": false,
+    "attributes": {
+      "dexterity": 1
+    },
+    "combatStats": {
+      "evasion": 0.007,
+      "attackSpeed": 0.004
+    }
   },
   {
     "id": "ARM-C-5-001",
@@ -1341,7 +1907,14 @@
     "effects": "Нет",
     "description": "Плащ путника. Надёжная экипировка ранних путешествий. Назначение: сопротивления и специальные эффекты.",
     "setBonus": "2/5: +1% HP; 3/5: +1% защиты; 4/5: +1% сопротивления; 5/5: +2% HP",
-    "legacy": false
+    "legacy": false,
+    "attributes": {
+      "stamina": 1,
+      "vitality": 1
+    },
+    "combatStats": {
+      "controlResistance": 0.002
+    }
   },
   {
     "id": "ARM-C-5-004",
@@ -1359,7 +1932,14 @@
     "effects": "Нет",
     "description": "Накидка солёного ветра. Надёжная экипировка ранних путешествий. Назначение: сопротивления и специальные эффекты.",
     "setBonus": "2/5: +1% HP; 3/5: +1% защиты; 4/5: +1% сопротивления; 5/5: +2% HP",
-    "legacy": false
+    "legacy": false,
+    "attributes": {
+      "stamina": 1,
+      "vitality": 1
+    },
+    "combatStats": {
+      "controlResistance": 0.003
+    }
   },
   {
     "id": "ARM-C-5-007",
@@ -1377,7 +1957,14 @@
     "effects": "Нет",
     "description": "Плащ каменной тропы. Надёжная экипировка ранних путешествий. Назначение: сопротивления и специальные эффекты.",
     "setBonus": "2/5: +1% HP; 3/5: +1% защиты; 4/5: +1% сопротивления; 5/5: +2% HP",
-    "legacy": false
+    "legacy": false,
+    "attributes": {
+      "stamina": 1,
+      "vitality": 1
+    },
+    "combatStats": {
+      "controlResistance": 0.003
+    }
   },
   {
     "id": "ARM-C-5-010",
@@ -1395,7 +1982,14 @@
     "effects": "Нет",
     "description": "Накидка тихого следопыта. Надёжная экипировка ранних путешествий. Назначение: сопротивления и специальные эффекты.",
     "setBonus": "2/5: +1% HP; 3/5: +1% защиты; 4/5: +1% сопротивления; 5/5: +2% HP",
-    "legacy": false
+    "legacy": false,
+    "attributes": {
+      "stamina": 1,
+      "vitality": 1
+    },
+    "combatStats": {
+      "controlResistance": 0.003
+    }
   },
   {
     "id": "ARM-C-5-014",
@@ -1413,7 +2007,14 @@
     "effects": "Нет",
     "description": "Плащ северного караула. Надёжная экипировка ранних путешествий. Назначение: сопротивления и специальные эффекты.",
     "setBonus": "2/5: +1% HP; 3/5: +1% защиты; 4/5: +1% сопротивления; 5/5: +2% HP",
-    "legacy": false
+    "legacy": false,
+    "attributes": {
+      "stamina": 1,
+      "vitality": 1
+    },
+    "combatStats": {
+      "controlResistance": 0.003
+    }
   },
   {
     "id": "ARM-C-5-017",
@@ -1431,7 +2032,14 @@
     "effects": "+ к сопротивлению стихий и длительности отрицательных эффектов",
     "description": "Плащ серого прилива. Надёжная экипировка ранних путешествий. Назначение: сопротивления и специальные эффекты.",
     "setBonus": "2/5: +1% HP; 3/5: +1% защиты; 4/5: +1% сопротивления; 5/5: +2% HP",
-    "legacy": false
+    "legacy": false,
+    "attributes": {
+      "stamina": 1,
+      "vitality": 1
+    },
+    "combatStats": {
+      "controlResistance": 0.004
+    }
   },
   {
     "id": "ARM-C-5-019",
@@ -1449,7 +2057,14 @@
     "effects": "+ к сопротивлению стихий и длительности отрицательных эффектов",
     "description": "Мантия старого маяка. Надёжная экипировка ранних путешествий. Назначение: сопротивления и специальные эффекты.",
     "setBonus": "2/5: +1% HP; 3/5: +1% защиты; 4/5: +1% сопротивления; 5/5: +2% HP",
-    "legacy": false
+    "legacy": false,
+    "attributes": {
+      "stamina": 1,
+      "vitality": 1
+    },
+    "combatStats": {
+      "controlResistance": 0.004
+    }
   },
   {
     "id": "ARM-C-5-020",
@@ -1467,7 +2082,14 @@
     "effects": "+ к сопротивлению стихий и длительности отрицательных эффектов",
     "description": "Плащ первых туманов. Надёжная экипировка ранних путешествий. Назначение: сопротивления и специальные эффекты.",
     "setBonus": "2/5: +1% HP; 3/5: +1% защиты; 4/5: +1% сопротивления; 5/5: +2% HP",
-    "legacy": false
+    "legacy": false,
+    "attributes": {
+      "stamina": 1,
+      "vitality": 1
+    },
+    "combatStats": {
+      "controlResistance": 0.004
+    }
   },
   {
     "id": "ARM-МАГ-1-025",
@@ -1485,7 +2107,14 @@
     "effects": "Нет",
     "description": "Профессиональная часть комплекта «Маг». Создана для роли: HP, интеллект и сопротивления.",
     "setBonus": "2/5: +1% профильного параметра; 3/5: +1% Интеллект; 4/5: усиление роли; 5/5: уникальный пассивный эффект",
-    "legacy": false
+    "legacy": false,
+    "attributes": {
+      "intelligence": 1,
+      "stamina": 1
+    },
+    "combatStats": {
+      "accuracy": 0.008
+    }
   },
   {
     "id": "ARM-МАГ-1-040",
@@ -1503,7 +2132,14 @@
     "effects": "Нет",
     "description": "Профессиональная часть комплекта «Маг». Создана для роли: HP, интеллект и сопротивления.",
     "setBonus": "2/5: +2% профильного параметра; 3/5: +2% Интеллект; 4/5: усиление роли; 5/5: уникальный пассивный эффект",
-    "legacy": false
+    "legacy": false,
+    "attributes": {
+      "intelligence": 1,
+      "stamina": 1
+    },
+    "combatStats": {
+      "accuracy": 0.01
+    }
   },
   {
     "id": "ARM-МАГ-1-055",
@@ -1521,7 +2157,14 @@
     "effects": "+ к HP и сопротивлению контролю",
     "description": "Профессиональная часть комплекта «Маг». Создана для роли: HP, интеллект и сопротивления.",
     "setBonus": "2/5: +3% профильного параметра; 3/5: +3% Интеллект; 4/5: усиление роли; 5/5: уникальный пассивный эффект",
-    "legacy": false
+    "legacy": false,
+    "attributes": {
+      "intelligence": 1,
+      "stamina": 1
+    },
+    "combatStats": {
+      "accuracy": 0.013
+    }
   },
   {
     "id": "ARM-МАГ-1-070",
@@ -1539,7 +2182,14 @@
     "effects": "+ к HP и сопротивлению контролю",
     "description": "Профессиональная часть комплекта «Маг». Создана для роли: HP, интеллект и сопротивления.",
     "setBonus": "2/5: +4% профильного параметра; 3/5: +4% Интеллект; 4/5: усиление роли; 5/5: уникальный пассивный эффект",
-    "legacy": false
+    "legacy": false,
+    "attributes": {
+      "intelligence": 1,
+      "stamina": 1
+    },
+    "combatStats": {
+      "accuracy": 0.015
+    }
   },
   {
     "id": "ARM-МАГ-1-085",
@@ -1557,7 +2207,14 @@
     "effects": "+ к HP и сопротивлению контролю",
     "description": "Профессиональная часть комплекта «Маг». Создана для роли: HP, интеллект и сопротивления.",
     "setBonus": "2/5: +5% профильного параметра; 3/5: +5% Интеллект; 4/5: усиление роли; 5/5: уникальный пассивный эффект",
-    "legacy": false
+    "legacy": false,
+    "attributes": {
+      "intelligence": 1,
+      "stamina": 1
+    },
+    "combatStats": {
+      "accuracy": 0.018
+    }
   },
   {
     "id": "ARM-МАГ-1-100",
@@ -1575,7 +2232,14 @@
     "effects": "+ к HP и сопротивлению контролю",
     "description": "Профессиональная часть комплекта «Маг». Создана для роли: HP, интеллект и сопротивления.",
     "setBonus": "2/5: +6% профильного параметра; 3/5: +6% Интеллект; 4/5: усиление роли; 5/5: уникальный пассивный эффект",
-    "legacy": false
+    "legacy": false,
+    "attributes": {
+      "intelligence": 2,
+      "stamina": 1
+    },
+    "combatStats": {
+      "accuracy": 0.02
+    }
   },
   {
     "id": "ARM-МАГ-2-025",
@@ -1593,7 +2257,15 @@
     "effects": "Нет",
     "description": "Профессиональная часть комплекта «Маг». Создана для роли: защита, HP и основной атрибут.",
     "setBonus": "2/5: +1% профильного параметра; 3/5: +1% Интеллект; 4/5: усиление роли; 5/5: уникальный пассивный эффект",
-    "legacy": false
+    "legacy": false,
+    "attributes": {
+      "vitality": 1,
+      "stamina": 1
+    },
+    "combatStats": {
+      "resistance": 0.008,
+      "health": 0.004
+    }
   },
   {
     "id": "ARM-МАГ-2-040",
@@ -1611,7 +2283,15 @@
     "effects": "Нет",
     "description": "Профессиональная часть комплекта «Маг». Создана для роли: защита, HP и основной атрибут.",
     "setBonus": "2/5: +2% профильного параметра; 3/5: +2% Интеллект; 4/5: усиление роли; 5/5: уникальный пассивный эффект",
-    "legacy": false
+    "legacy": false,
+    "attributes": {
+      "vitality": 2,
+      "stamina": 1
+    },
+    "combatStats": {
+      "resistance": 0.01,
+      "health": 0.006
+    }
   },
   {
     "id": "ARM-МАГ-2-055",
@@ -1629,7 +2309,15 @@
     "effects": "+ к HP и основному атрибуту",
     "description": "Профессиональная часть комплекта «Маг». Создана для роли: защита, HP и основной атрибут.",
     "setBonus": "2/5: +3% профильного параметра; 3/5: +3% Интеллект; 4/5: усиление роли; 5/5: уникальный пассивный эффект",
-    "legacy": false
+    "legacy": false,
+    "attributes": {
+      "vitality": 2,
+      "stamina": 1
+    },
+    "combatStats": {
+      "resistance": 0.013,
+      "health": 0.007
+    }
   },
   {
     "id": "ARM-МАГ-2-070",
@@ -1647,7 +2335,15 @@
     "effects": "+ к HP и основному атрибуту",
     "description": "Профессиональная часть комплекта «Маг». Создана для роли: защита, HP и основной атрибут.",
     "setBonus": "2/5: +4% профильного параметра; 3/5: +4% Интеллект; 4/5: усиление роли; 5/5: уникальный пассивный эффект",
-    "legacy": false
+    "legacy": false,
+    "attributes": {
+      "vitality": 3,
+      "stamina": 2
+    },
+    "combatStats": {
+      "resistance": 0.015,
+      "health": 0.008
+    }
   },
   {
     "id": "ARM-МАГ-2-085",
@@ -1665,7 +2361,15 @@
     "effects": "+ к HP и основному атрибуту",
     "description": "Профессиональная часть комплекта «Маг». Создана для роли: защита, HP и основной атрибут.",
     "setBonus": "2/5: +5% профильного параметра; 3/5: +5% Интеллект; 4/5: усиление роли; 5/5: уникальный пассивный эффект",
-    "legacy": false
+    "legacy": false,
+    "attributes": {
+      "vitality": 3,
+      "stamina": 2
+    },
+    "combatStats": {
+      "resistance": 0.018,
+      "health": 0.01
+    }
   },
   {
     "id": "ARM-МАГ-2-100",
@@ -1683,7 +2387,15 @@
     "effects": "+ к HP и основному атрибуту",
     "description": "Профессиональная часть комплекта «Маг». Создана для роли: защита, HP и основной атрибут.",
     "setBonus": "2/5: +6% профильного параметра; 3/5: +6% Интеллект; 4/5: усиление роли; 5/5: уникальный пассивный эффект",
-    "legacy": false
+    "legacy": false,
+    "attributes": {
+      "vitality": 4,
+      "stamina": 2
+    },
+    "combatStats": {
+      "resistance": 0.02,
+      "health": 0.011
+    }
   },
   {
     "id": "ARM-МАГ-3-025",
@@ -1701,7 +2413,13 @@
     "effects": "Нет",
     "description": "Профессиональная часть комплекта «Маг». Создана для роли: атака, точность и критический урон.",
     "setBonus": "2/5: +1% профильного параметра; 3/5: +1% Интеллект; 4/5: усиление роли; 5/5: уникальный пассивный эффект",
-    "legacy": false
+    "legacy": false,
+    "attributes": {
+      "intelligence": 1
+    },
+    "combatStats": {
+      "magicDamage": 0.008
+    }
   },
   {
     "id": "ARM-МАГ-3-040",
@@ -1719,7 +2437,13 @@
     "effects": "Нет",
     "description": "Профессиональная часть комплекта «Маг». Создана для роли: атака, точность и критический урон.",
     "setBonus": "2/5: +2% профильного параметра; 3/5: +2% Интеллект; 4/5: усиление роли; 5/5: уникальный пассивный эффект",
-    "legacy": false
+    "legacy": false,
+    "attributes": {
+      "intelligence": 1
+    },
+    "combatStats": {
+      "magicDamage": 0.01
+    }
   },
   {
     "id": "ARM-МАГ-3-055",
@@ -1737,7 +2461,13 @@
     "effects": "+ к атаке и точности",
     "description": "Профессиональная часть комплекта «Маг». Создана для роли: атака, точность и критический урон.",
     "setBonus": "2/5: +3% профильного параметра; 3/5: +3% Интеллект; 4/5: усиление роли; 5/5: уникальный пассивный эффект",
-    "legacy": false
+    "legacy": false,
+    "attributes": {
+      "intelligence": 1
+    },
+    "combatStats": {
+      "magicDamage": 0.013
+    }
   },
   {
     "id": "ARM-МАГ-3-070",
@@ -1755,7 +2485,13 @@
     "effects": "+ к атаке и точности",
     "description": "Профессиональная часть комплекта «Маг». Создана для роли: атака, точность и критический урон.",
     "setBonus": "2/5: +4% профильного параметра; 3/5: +4% Интеллект; 4/5: усиление роли; 5/5: уникальный пассивный эффект",
-    "legacy": false
+    "legacy": false,
+    "attributes": {
+      "intelligence": 2
+    },
+    "combatStats": {
+      "magicDamage": 0.015
+    }
   },
   {
     "id": "ARM-МАГ-3-085",
@@ -1773,7 +2509,13 @@
     "effects": "+ к атаке и точности",
     "description": "Профессиональная часть комплекта «Маг». Создана для роли: атака, точность и критический урон.",
     "setBonus": "2/5: +5% профильного параметра; 3/5: +5% Интеллект; 4/5: усиление роли; 5/5: уникальный пассивный эффект",
-    "legacy": false
+    "legacy": false,
+    "attributes": {
+      "intelligence": 2
+    },
+    "combatStats": {
+      "magicDamage": 0.018
+    }
   },
   {
     "id": "ARM-МАГ-3-100",
@@ -1791,7 +2533,13 @@
     "effects": "+ к атаке и точности",
     "description": "Профессиональная часть комплекта «Маг». Создана для роли: атака, точность и критический урон.",
     "setBonus": "2/5: +6% профильного параметра; 3/5: +6% Интеллект; 4/5: усиление роли; 5/5: уникальный пассивный эффект",
-    "legacy": false
+    "legacy": false,
+    "attributes": {
+      "intelligence": 2
+    },
+    "combatStats": {
+      "magicDamage": 0.02
+    }
   },
   {
     "id": "ARM-МАГ-4-025",
@@ -1809,7 +2557,14 @@
     "effects": "Нет",
     "description": "Профессиональная часть комплекта «Маг». Создана для роли: ловкость, уклонение и восстановление.",
     "setBonus": "2/5: +1% профильного параметра; 3/5: +1% Интеллект; 4/5: усиление роли; 5/5: уникальный пассивный эффект",
-    "legacy": false
+    "legacy": false,
+    "attributes": {
+      "dexterity": 1
+    },
+    "combatStats": {
+      "evasion": 0.008,
+      "attackSpeed": 0.004
+    }
   },
   {
     "id": "ARM-МАГ-4-040",
@@ -1827,7 +2582,14 @@
     "effects": "Нет",
     "description": "Профессиональная часть комплекта «Маг». Создана для роли: ловкость, уклонение и восстановление.",
     "setBonus": "2/5: +2% профильного параметра; 3/5: +2% Интеллект; 4/5: усиление роли; 5/5: уникальный пассивный эффект",
-    "legacy": false
+    "legacy": false,
+    "attributes": {
+      "dexterity": 1
+    },
+    "combatStats": {
+      "evasion": 0.01,
+      "attackSpeed": 0.006
+    }
   },
   {
     "id": "ARM-МАГ-4-055",
@@ -1845,7 +2607,14 @@
     "effects": "+ к ловкости и уклонению",
     "description": "Профессиональная часть комплекта «Маг». Создана для роли: ловкость, уклонение и восстановление.",
     "setBonus": "2/5: +3% профильного параметра; 3/5: +3% Интеллект; 4/5: усиление роли; 5/5: уникальный пассивный эффект",
-    "legacy": false
+    "legacy": false,
+    "attributes": {
+      "dexterity": 2
+    },
+    "combatStats": {
+      "evasion": 0.013,
+      "attackSpeed": 0.007
+    }
   },
   {
     "id": "ARM-МАГ-4-070",
@@ -1863,7 +2632,14 @@
     "effects": "+ к ловкости и уклонению",
     "description": "Профессиональная часть комплекта «Маг». Создана для роли: ловкость, уклонение и восстановление.",
     "setBonus": "2/5: +4% профильного параметра; 3/5: +4% Интеллект; 4/5: усиление роли; 5/5: уникальный пассивный эффект",
-    "legacy": false
+    "legacy": false,
+    "attributes": {
+      "dexterity": 3
+    },
+    "combatStats": {
+      "evasion": 0.015,
+      "attackSpeed": 0.008
+    }
   },
   {
     "id": "ARM-МАГ-4-085",
@@ -1881,7 +2657,14 @@
     "effects": "+ к ловкости и уклонению",
     "description": "Профессиональная часть комплекта «Маг». Создана для роли: ловкость, уклонение и восстановление.",
     "setBonus": "2/5: +5% профильного параметра; 3/5: +5% Интеллект; 4/5: усиление роли; 5/5: уникальный пассивный эффект",
-    "legacy": false
+    "legacy": false,
+    "attributes": {
+      "dexterity": 3
+    },
+    "combatStats": {
+      "evasion": 0.018,
+      "attackSpeed": 0.01
+    }
   },
   {
     "id": "ARM-МАГ-4-100",
@@ -1899,7 +2682,14 @@
     "effects": "+ к ловкости и уклонению",
     "description": "Профессиональная часть комплекта «Маг». Создана для роли: ловкость, уклонение и восстановление.",
     "setBonus": "2/5: +6% профильного параметра; 3/5: +6% Интеллект; 4/5: усиление роли; 5/5: уникальный пассивный эффект",
-    "legacy": false
+    "legacy": false,
+    "attributes": {
+      "dexterity": 3
+    },
+    "combatStats": {
+      "evasion": 0.02,
+      "attackSpeed": 0.011
+    }
   },
   {
     "id": "ARM-МАГ-5-025",
@@ -1917,7 +2707,14 @@
     "effects": "Нет",
     "description": "Профессиональная часть комплекта «Маг». Создана для роли: сопротивления и специальные эффекты.",
     "setBonus": "2/5: +1% профильного параметра; 3/5: +1% Интеллект; 4/5: усиление роли; 5/5: уникальный пассивный эффект",
-    "legacy": false
+    "legacy": false,
+    "attributes": {
+      "stamina": 1,
+      "vitality": 1
+    },
+    "combatStats": {
+      "controlResistance": 0.004
+    }
   },
   {
     "id": "ARM-МАГ-5-040",
@@ -1935,7 +2732,14 @@
     "effects": "Нет",
     "description": "Профессиональная часть комплекта «Маг». Создана для роли: сопротивления и специальные эффекты.",
     "setBonus": "2/5: +2% профильного параметра; 3/5: +2% Интеллект; 4/5: усиление роли; 5/5: уникальный пассивный эффект",
-    "legacy": false
+    "legacy": false,
+    "attributes": {
+      "stamina": 1,
+      "vitality": 1
+    },
+    "combatStats": {
+      "controlResistance": 0.006
+    }
   },
   {
     "id": "ARM-МАГ-5-055",
@@ -1953,7 +2757,14 @@
     "effects": "Сопротивление магии; + к силе заклинаний",
     "description": "Профессиональная часть комплекта «Маг». Создана для роли: сопротивления и специальные эффекты.",
     "setBonus": "2/5: +3% профильного параметра; 3/5: +3% Интеллект; 4/5: усиление роли; 5/5: уникальный пассивный эффект",
-    "legacy": false
+    "legacy": false,
+    "attributes": {
+      "stamina": 2,
+      "vitality": 1
+    },
+    "combatStats": {
+      "controlResistance": 0.007
+    }
   },
   {
     "id": "ARM-МАГ-5-070",
@@ -1971,7 +2782,14 @@
     "effects": "Сопротивление магии; + к силе заклинаний",
     "description": "Профессиональная часть комплекта «Маг». Создана для роли: сопротивления и специальные эффекты.",
     "setBonus": "2/5: +4% профильного параметра; 3/5: +4% Интеллект; 4/5: усиление роли; 5/5: уникальный пассивный эффект",
-    "legacy": false
+    "legacy": false,
+    "attributes": {
+      "stamina": 2,
+      "vitality": 1
+    },
+    "combatStats": {
+      "controlResistance": 0.008
+    }
   },
   {
     "id": "ARM-МАГ-5-085",
@@ -1989,7 +2807,14 @@
     "effects": "Сопротивление магии; + к силе заклинаний",
     "description": "Профессиональная часть комплекта «Маг». Создана для роли: сопротивления и специальные эффекты.",
     "setBonus": "2/5: +5% профильного параметра; 3/5: +5% Интеллект; 4/5: усиление роли; 5/5: уникальный пассивный эффект",
-    "legacy": false
+    "legacy": false,
+    "attributes": {
+      "stamina": 2,
+      "vitality": 1
+    },
+    "combatStats": {
+      "controlResistance": 0.01
+    }
   },
   {
     "id": "ARM-МАГ-5-100",
@@ -2007,7 +2832,14 @@
     "effects": "Сопротивление магии; + к силе заклинаний",
     "description": "Профессиональная часть комплекта «Маг». Создана для роли: сопротивления и специальные эффекты.",
     "setBonus": "2/5: +6% профильного параметра; 3/5: +6% Интеллект; 4/5: усиление роли; 5/5: уникальный пассивный эффект",
-    "legacy": false
+    "legacy": false,
+    "attributes": {
+      "stamina": 3,
+      "vitality": 2
+    },
+    "combatStats": {
+      "controlResistance": 0.011
+    }
   },
   {
     "id": "ARM-АСС-1-025",
@@ -2025,7 +2857,14 @@
     "effects": "Нет",
     "description": "Профессиональная часть комплекта «Ассасин». Создана для роли: HP, интеллект и сопротивления.",
     "setBonus": "2/5: +1% профильного параметра; 3/5: +1% Ловкость; 4/5: усиление роли; 5/5: уникальный пассивный эффект",
-    "legacy": false
+    "legacy": false,
+    "attributes": {
+      "dexterity": 1
+    },
+    "combatStats": {
+      "accuracy": 0.008,
+      "critChance": 0.004
+    }
   },
   {
     "id": "ARM-АСС-1-040",
@@ -2043,7 +2882,14 @@
     "effects": "Нет",
     "description": "Профессиональная часть комплекта «Ассасин». Создана для роли: HP, интеллект и сопротивления.",
     "setBonus": "2/5: +2% профильного параметра; 3/5: +2% Ловкость; 4/5: усиление роли; 5/5: уникальный пассивный эффект",
-    "legacy": false
+    "legacy": false,
+    "attributes": {
+      "dexterity": 1
+    },
+    "combatStats": {
+      "accuracy": 0.01,
+      "critChance": 0.006
+    }
   },
   {
     "id": "ARM-АСС-1-055",
@@ -2061,7 +2907,14 @@
     "effects": "+ к HP и сопротивлению контролю",
     "description": "Профессиональная часть комплекта «Ассасин». Создана для роли: HP, интеллект и сопротивления.",
     "setBonus": "2/5: +3% профильного параметра; 3/5: +3% Ловкость; 4/5: усиление роли; 5/5: уникальный пассивный эффект",
-    "legacy": false
+    "legacy": false,
+    "attributes": {
+      "dexterity": 1
+    },
+    "combatStats": {
+      "accuracy": 0.013,
+      "critChance": 0.007
+    }
   },
   {
     "id": "ARM-АСС-1-070",
@@ -2079,7 +2932,14 @@
     "effects": "+ к HP и сопротивлению контролю",
     "description": "Профессиональная часть комплекта «Ассасин». Создана для роли: HP, интеллект и сопротивления.",
     "setBonus": "2/5: +4% профильного параметра; 3/5: +4% Ловкость; 4/5: усиление роли; 5/5: уникальный пассивный эффект",
-    "legacy": false
+    "legacy": false,
+    "attributes": {
+      "dexterity": 1
+    },
+    "combatStats": {
+      "accuracy": 0.015,
+      "critChance": 0.008
+    }
   },
   {
     "id": "ARM-АСС-1-085",
@@ -2097,7 +2957,14 @@
     "effects": "+ к HP и сопротивлению контролю",
     "description": "Профессиональная часть комплекта «Ассасин». Создана для роли: HP, интеллект и сопротивления.",
     "setBonus": "2/5: +5% профильного параметра; 3/5: +5% Ловкость; 4/5: усиление роли; 5/5: уникальный пассивный эффект",
-    "legacy": false
+    "legacy": false,
+    "attributes": {
+      "dexterity": 1
+    },
+    "combatStats": {
+      "accuracy": 0.018,
+      "critChance": 0.01
+    }
   },
   {
     "id": "ARM-АСС-1-100",
@@ -2115,7 +2982,14 @@
     "effects": "+ к HP и сопротивлению контролю",
     "description": "Профессиональная часть комплекта «Ассасин». Создана для роли: HP, интеллект и сопротивления.",
     "setBonus": "2/5: +6% профильного параметра; 3/5: +6% Ловкость; 4/5: усиление роли; 5/5: уникальный пассивный эффект",
-    "legacy": false
+    "legacy": false,
+    "attributes": {
+      "dexterity": 2
+    },
+    "combatStats": {
+      "accuracy": 0.02,
+      "critChance": 0.011
+    }
   },
   {
     "id": "ARM-АСС-2-025",
@@ -2133,7 +3007,15 @@
     "effects": "Нет",
     "description": "Профессиональная часть комплекта «Ассасин». Создана для роли: защита, HP и основной атрибут.",
     "setBonus": "2/5: +1% профильного параметра; 3/5: +1% Ловкость; 4/5: усиление роли; 5/5: уникальный пассивный эффект",
-    "legacy": false
+    "legacy": false,
+    "attributes": {
+      "vitality": 1,
+      "stamina": 1
+    },
+    "combatStats": {
+      "resistance": 0.008,
+      "health": 0.004
+    }
   },
   {
     "id": "ARM-АСС-2-040",
@@ -2151,7 +3033,15 @@
     "effects": "Нет",
     "description": "Профессиональная часть комплекта «Ассасин». Создана для роли: защита, HP и основной атрибут.",
     "setBonus": "2/5: +2% профильного параметра; 3/5: +2% Ловкость; 4/5: усиление роли; 5/5: уникальный пассивный эффект",
-    "legacy": false
+    "legacy": false,
+    "attributes": {
+      "vitality": 2,
+      "stamina": 1
+    },
+    "combatStats": {
+      "resistance": 0.01,
+      "health": 0.006
+    }
   },
   {
     "id": "ARM-АСС-2-055",
@@ -2169,7 +3059,15 @@
     "effects": "+ к HP и основному атрибуту",
     "description": "Профессиональная часть комплекта «Ассасин». Создана для роли: защита, HP и основной атрибут.",
     "setBonus": "2/5: +3% профильного параметра; 3/5: +3% Ловкость; 4/5: усиление роли; 5/5: уникальный пассивный эффект",
-    "legacy": false
+    "legacy": false,
+    "attributes": {
+      "vitality": 2,
+      "stamina": 1
+    },
+    "combatStats": {
+      "resistance": 0.013,
+      "health": 0.007
+    }
   },
   {
     "id": "ARM-АСС-2-070",
@@ -2187,7 +3085,15 @@
     "effects": "+ к HP и основному атрибуту",
     "description": "Профессиональная часть комплекта «Ассасин». Создана для роли: защита, HP и основной атрибут.",
     "setBonus": "2/5: +4% профильного параметра; 3/5: +4% Ловкость; 4/5: усиление роли; 5/5: уникальный пассивный эффект",
-    "legacy": false
+    "legacy": false,
+    "attributes": {
+      "vitality": 3,
+      "stamina": 2
+    },
+    "combatStats": {
+      "resistance": 0.015,
+      "health": 0.008
+    }
   },
   {
     "id": "ARM-АСС-2-085",
@@ -2205,7 +3111,15 @@
     "effects": "+ к HP и основному атрибуту",
     "description": "Профессиональная часть комплекта «Ассасин». Создана для роли: защита, HP и основной атрибут.",
     "setBonus": "2/5: +5% профильного параметра; 3/5: +5% Ловкость; 4/5: усиление роли; 5/5: уникальный пассивный эффект",
-    "legacy": false
+    "legacy": false,
+    "attributes": {
+      "vitality": 3,
+      "stamina": 2
+    },
+    "combatStats": {
+      "resistance": 0.018,
+      "health": 0.01
+    }
   },
   {
     "id": "ARM-АСС-2-100",
@@ -2223,7 +3137,15 @@
     "effects": "+ к HP и основному атрибуту",
     "description": "Профессиональная часть комплекта «Ассасин». Создана для роли: защита, HP и основной атрибут.",
     "setBonus": "2/5: +6% профильного параметра; 3/5: +6% Ловкость; 4/5: усиление роли; 5/5: уникальный пассивный эффект",
-    "legacy": false
+    "legacy": false,
+    "attributes": {
+      "vitality": 4,
+      "stamina": 2
+    },
+    "combatStats": {
+      "resistance": 0.02,
+      "health": 0.011
+    }
   },
   {
     "id": "ARM-АСС-3-025",
@@ -2241,7 +3163,14 @@
     "effects": "Нет",
     "description": "Профессиональная часть комплекта «Ассасин». Создана для роли: атака, точность и критический урон.",
     "setBonus": "2/5: +1% профильного параметра; 3/5: +1% Ловкость; 4/5: усиление роли; 5/5: уникальный пассивный эффект",
-    "legacy": false
+    "legacy": false,
+    "attributes": {
+      "dexterity": 1
+    },
+    "combatStats": {
+      "physicalDamage": 0.008,
+      "critDamage": 0.004
+    }
   },
   {
     "id": "ARM-АСС-3-040",
@@ -2259,7 +3188,14 @@
     "effects": "Нет",
     "description": "Профессиональная часть комплекта «Ассасин». Создана для роли: атака, точность и критический урон.",
     "setBonus": "2/5: +2% профильного параметра; 3/5: +2% Ловкость; 4/5: усиление роли; 5/5: уникальный пассивный эффект",
-    "legacy": false
+    "legacy": false,
+    "attributes": {
+      "dexterity": 1
+    },
+    "combatStats": {
+      "physicalDamage": 0.01,
+      "critDamage": 0.006
+    }
   },
   {
     "id": "ARM-АСС-3-055",
@@ -2277,7 +3213,14 @@
     "effects": "+ к атаке и точности",
     "description": "Профессиональная часть комплекта «Ассасин». Создана для роли: атака, точность и критический урон.",
     "setBonus": "2/5: +3% профильного параметра; 3/5: +3% Ловкость; 4/5: усиление роли; 5/5: уникальный пассивный эффект",
-    "legacy": false
+    "legacy": false,
+    "attributes": {
+      "dexterity": 1
+    },
+    "combatStats": {
+      "physicalDamage": 0.013,
+      "critDamage": 0.007
+    }
   },
   {
     "id": "ARM-АСС-3-070",
@@ -2295,7 +3238,14 @@
     "effects": "+ к атаке и точности",
     "description": "Профессиональная часть комплекта «Ассасин». Создана для роли: атака, точность и критический урон.",
     "setBonus": "2/5: +4% профильного параметра; 3/5: +4% Ловкость; 4/5: усиление роли; 5/5: уникальный пассивный эффект",
-    "legacy": false
+    "legacy": false,
+    "attributes": {
+      "dexterity": 1
+    },
+    "combatStats": {
+      "physicalDamage": 0.015,
+      "critDamage": 0.008
+    }
   },
   {
     "id": "ARM-АСС-3-085",
@@ -2313,7 +3263,14 @@
     "effects": "+ к атаке и точности",
     "description": "Профессиональная часть комплекта «Ассасин». Создана для роли: атака, точность и критический урон.",
     "setBonus": "2/5: +5% профильного параметра; 3/5: +5% Ловкость; 4/5: усиление роли; 5/5: уникальный пассивный эффект",
-    "legacy": false
+    "legacy": false,
+    "attributes": {
+      "dexterity": 1
+    },
+    "combatStats": {
+      "physicalDamage": 0.018,
+      "critDamage": 0.01
+    }
   },
   {
     "id": "ARM-АСС-3-100",
@@ -2331,7 +3288,14 @@
     "effects": "+ к атаке и точности",
     "description": "Профессиональная часть комплекта «Ассасин». Создана для роли: атака, точность и критический урон.",
     "setBonus": "2/5: +6% профильного параметра; 3/5: +6% Ловкость; 4/5: усиление роли; 5/5: уникальный пассивный эффект",
-    "legacy": false
+    "legacy": false,
+    "attributes": {
+      "dexterity": 1
+    },
+    "combatStats": {
+      "physicalDamage": 0.02,
+      "critDamage": 0.011
+    }
   },
   {
     "id": "ARM-АСС-4-025",
@@ -2349,7 +3313,14 @@
     "effects": "Нет",
     "description": "Профессиональная часть комплекта «Ассасин». Создана для роли: ловкость, уклонение и восстановление.",
     "setBonus": "2/5: +1% профильного параметра; 3/5: +1% Ловкость; 4/5: усиление роли; 5/5: уникальный пассивный эффект",
-    "legacy": false
+    "legacy": false,
+    "attributes": {
+      "dexterity": 1
+    },
+    "combatStats": {
+      "evasion": 0.008,
+      "attackSpeed": 0.004
+    }
   },
   {
     "id": "ARM-АСС-4-040",
@@ -2367,7 +3338,14 @@
     "effects": "Нет",
     "description": "Профессиональная часть комплекта «Ассасин». Создана для роли: ловкость, уклонение и восстановление.",
     "setBonus": "2/5: +2% профильного параметра; 3/5: +2% Ловкость; 4/5: усиление роли; 5/5: уникальный пассивный эффект",
-    "legacy": false
+    "legacy": false,
+    "attributes": {
+      "dexterity": 1
+    },
+    "combatStats": {
+      "evasion": 0.01,
+      "attackSpeed": 0.006
+    }
   },
   {
     "id": "ARM-АСС-4-055",
@@ -2385,7 +3363,14 @@
     "effects": "Уклонение; снижение заметности в охотничьих зонах",
     "description": "Профессиональная часть комплекта «Ассасин». Создана для роли: ловкость, уклонение и восстановление.",
     "setBonus": "2/5: +3% профильного параметра; 3/5: +3% Ловкость; 4/5: усиление роли; 5/5: уникальный пассивный эффект",
-    "legacy": false
+    "legacy": false,
+    "attributes": {
+      "dexterity": 2
+    },
+    "combatStats": {
+      "evasion": 0.013,
+      "attackSpeed": 0.007
+    }
   },
   {
     "id": "ARM-АСС-4-070",
@@ -2403,7 +3388,14 @@
     "effects": "Уклонение; снижение заметности в охотничьих зонах",
     "description": "Профессиональная часть комплекта «Ассасин». Создана для роли: ловкость, уклонение и восстановление.",
     "setBonus": "2/5: +4% профильного параметра; 3/5: +4% Ловкость; 4/5: усиление роли; 5/5: уникальный пассивный эффект",
-    "legacy": false
+    "legacy": false,
+    "attributes": {
+      "dexterity": 3
+    },
+    "combatStats": {
+      "evasion": 0.015,
+      "attackSpeed": 0.008
+    }
   },
   {
     "id": "ARM-АСС-4-085",
@@ -2421,7 +3413,14 @@
     "effects": "Уклонение; снижение заметности в охотничьих зонах",
     "description": "Профессиональная часть комплекта «Ассасин». Создана для роли: ловкость, уклонение и восстановление.",
     "setBonus": "2/5: +5% профильного параметра; 3/5: +5% Ловкость; 4/5: усиление роли; 5/5: уникальный пассивный эффект",
-    "legacy": false
+    "legacy": false,
+    "attributes": {
+      "dexterity": 3
+    },
+    "combatStats": {
+      "evasion": 0.018,
+      "attackSpeed": 0.01
+    }
   },
   {
     "id": "ARM-АСС-4-100",
@@ -2439,7 +3438,14 @@
     "effects": "Уклонение; снижение заметности в охотничьих зонах",
     "description": "Профессиональная часть комплекта «Ассасин». Создана для роли: ловкость, уклонение и восстановление.",
     "setBonus": "2/5: +6% профильного параметра; 3/5: +6% Ловкость; 4/5: усиление роли; 5/5: уникальный пассивный эффект",
-    "legacy": false
+    "legacy": false,
+    "attributes": {
+      "dexterity": 3
+    },
+    "combatStats": {
+      "evasion": 0.02,
+      "attackSpeed": 0.011
+    }
   },
   {
     "id": "ARM-АСС-5-025",
@@ -2457,7 +3463,14 @@
     "effects": "Нет",
     "description": "Профессиональная часть комплекта «Ассасин». Создана для роли: сопротивления и специальные эффекты.",
     "setBonus": "2/5: +1% профильного параметра; 3/5: +1% Ловкость; 4/5: усиление роли; 5/5: уникальный пассивный эффект",
-    "legacy": false
+    "legacy": false,
+    "attributes": {
+      "stamina": 1,
+      "vitality": 1
+    },
+    "combatStats": {
+      "controlResistance": 0.004
+    }
   },
   {
     "id": "ARM-АСС-5-040",
@@ -2475,7 +3488,14 @@
     "effects": "Нет",
     "description": "Профессиональная часть комплекта «Ассасин». Создана для роли: сопротивления и специальные эффекты.",
     "setBonus": "2/5: +2% профильного параметра; 3/5: +2% Ловкость; 4/5: усиление роли; 5/5: уникальный пассивный эффект",
-    "legacy": false
+    "legacy": false,
+    "attributes": {
+      "stamina": 1,
+      "vitality": 1
+    },
+    "combatStats": {
+      "controlResistance": 0.006
+    }
   },
   {
     "id": "ARM-АСС-5-055",
@@ -2493,7 +3513,14 @@
     "effects": "+ к сопротивлению стихий и длительности отрицательных эффектов",
     "description": "Профессиональная часть комплекта «Ассасин». Создана для роли: сопротивления и специальные эффекты.",
     "setBonus": "2/5: +3% профильного параметра; 3/5: +3% Ловкость; 4/5: усиление роли; 5/5: уникальный пассивный эффект",
-    "legacy": false
+    "legacy": false,
+    "attributes": {
+      "stamina": 2,
+      "vitality": 1
+    },
+    "combatStats": {
+      "controlResistance": 0.007
+    }
   },
   {
     "id": "ARM-АСС-5-070",
@@ -2511,7 +3538,14 @@
     "effects": "+ к сопротивлению стихий и длительности отрицательных эффектов",
     "description": "Профессиональная часть комплекта «Ассасин». Создана для роли: сопротивления и специальные эффекты.",
     "setBonus": "2/5: +4% профильного параметра; 3/5: +4% Ловкость; 4/5: усиление роли; 5/5: уникальный пассивный эффект",
-    "legacy": false
+    "legacy": false,
+    "attributes": {
+      "stamina": 2,
+      "vitality": 1
+    },
+    "combatStats": {
+      "controlResistance": 0.008
+    }
   },
   {
     "id": "ARM-АСС-5-085",
@@ -2529,7 +3563,14 @@
     "effects": "+ к сопротивлению стихий и длительности отрицательных эффектов",
     "description": "Профессиональная часть комплекта «Ассасин». Создана для роли: сопротивления и специальные эффекты.",
     "setBonus": "2/5: +5% профильного параметра; 3/5: +5% Ловкость; 4/5: усиление роли; 5/5: уникальный пассивный эффект",
-    "legacy": false
+    "legacy": false,
+    "attributes": {
+      "stamina": 2,
+      "vitality": 1
+    },
+    "combatStats": {
+      "controlResistance": 0.01
+    }
   },
   {
     "id": "ARM-АСС-5-100",
@@ -2547,7 +3588,14 @@
     "effects": "+ к сопротивлению стихий и длительности отрицательных эффектов",
     "description": "Профессиональная часть комплекта «Ассасин». Создана для роли: сопротивления и специальные эффекты.",
     "setBonus": "2/5: +6% профильного параметра; 3/5: +6% Ловкость; 4/5: усиление роли; 5/5: уникальный пассивный эффект",
-    "legacy": false
+    "legacy": false,
+    "attributes": {
+      "stamina": 3,
+      "vitality": 2
+    },
+    "combatStats": {
+      "controlResistance": 0.011
+    }
   },
   {
     "id": "ARM-ВОИ-1-025",
@@ -2560,12 +3608,19 @@
     "defense": 64,
     "health": 80,
     "attack": 0,
-    "profession": "Воин",
+    "profession": "Рыцарь",
     "rarity": "Обычная",
     "effects": "Нет",
-    "description": "Профессиональная часть комплекта «Воин». Создана для роли: HP, интеллект и сопротивления.",
+    "description": "Профессиональная часть комплекта «Рыцарь». Создана для роли: HP, интеллект и сопротивления.",
     "setBonus": "2/5: +1% профильного параметра; 3/5: +1% Сила; 4/5: усиление роли; 5/5: уникальный пассивный эффект",
-    "legacy": false
+    "legacy": false,
+    "attributes": {
+      "strength": 1
+    },
+    "combatStats": {
+      "controlResistance": 0.008
+    },
+    "setDisplayName": "Рыцарь-25"
   },
   {
     "id": "ARM-ВОИ-1-040",
@@ -2578,12 +3633,19 @@
     "defense": 86,
     "health": 110,
     "attack": 0,
-    "profession": "Воин",
+    "profession": "Рыцарь",
     "rarity": "Обычная",
     "effects": "Нет",
-    "description": "Профессиональная часть комплекта «Воин». Создана для роли: HP, интеллект и сопротивления.",
+    "description": "Профессиональная часть комплекта «Рыцарь». Создана для роли: HP, интеллект и сопротивления.",
     "setBonus": "2/5: +2% профильного параметра; 3/5: +2% Сила; 4/5: усиление роли; 5/5: уникальный пассивный эффект",
-    "legacy": false
+    "legacy": false,
+    "attributes": {
+      "strength": 1
+    },
+    "combatStats": {
+      "controlResistance": 0.01
+    },
+    "setDisplayName": "Рыцарь-40"
   },
   {
     "id": "ARM-ВОИ-1-055",
@@ -2596,12 +3658,19 @@
     "defense": 112,
     "health": 144,
     "attack": 0,
-    "profession": "Воин",
+    "profession": "Рыцарь",
     "rarity": "Обычная",
     "effects": "+ к HP и сопротивлению контролю",
-    "description": "Профессиональная часть комплекта «Воин». Создана для роли: HP, интеллект и сопротивления.",
+    "description": "Профессиональная часть комплекта «Рыцарь». Создана для роли: HP, интеллект и сопротивления.",
     "setBonus": "2/5: +3% профильного параметра; 3/5: +3% Сила; 4/5: усиление роли; 5/5: уникальный пассивный эффект",
-    "legacy": false
+    "legacy": false,
+    "attributes": {
+      "strength": 1
+    },
+    "combatStats": {
+      "controlResistance": 0.013
+    },
+    "setDisplayName": "Рыцарь-55"
   },
   {
     "id": "ARM-ВОИ-1-070",
@@ -2614,12 +3683,19 @@
     "defense": 142,
     "health": 184,
     "attack": 0,
-    "profession": "Воин",
+    "profession": "Рыцарь",
     "rarity": "Обычная",
     "effects": "+ к HP и сопротивлению контролю",
-    "description": "Профессиональная часть комплекта «Воин». Создана для роли: HP, интеллект и сопротивления.",
+    "description": "Профессиональная часть комплекта «Рыцарь». Создана для роли: HP, интеллект и сопротивления.",
     "setBonus": "2/5: +4% профильного параметра; 3/5: +4% Сила; 4/5: усиление роли; 5/5: уникальный пассивный эффект",
-    "legacy": false
+    "legacy": false,
+    "attributes": {
+      "strength": 1
+    },
+    "combatStats": {
+      "controlResistance": 0.015
+    },
+    "setDisplayName": "Рыцарь-70"
   },
   {
     "id": "ARM-ВОИ-1-085",
@@ -2632,12 +3708,19 @@
     "defense": 176,
     "health": 230,
     "attack": 0,
-    "profession": "Воин",
+    "profession": "Рыцарь",
     "rarity": "Обычная",
     "effects": "+ к HP и сопротивлению контролю",
-    "description": "Профессиональная часть комплекта «Воин». Создана для роли: HP, интеллект и сопротивления.",
+    "description": "Профессиональная часть комплекта «Рыцарь». Создана для роли: HP, интеллект и сопротивления.",
     "setBonus": "2/5: +5% профильного параметра; 3/5: +5% Сила; 4/5: усиление роли; 5/5: уникальный пассивный эффект",
-    "legacy": false
+    "legacy": false,
+    "attributes": {
+      "strength": 1
+    },
+    "combatStats": {
+      "controlResistance": 0.018
+    },
+    "setDisplayName": "Рыцарь-85"
   },
   {
     "id": "ARM-ВОИ-1-100",
@@ -2650,12 +3733,19 @@
     "defense": 216,
     "health": 280,
     "attack": 0,
-    "profession": "Воин",
+    "profession": "Рыцарь",
     "rarity": "Обычная",
     "effects": "+ к HP и сопротивлению контролю",
-    "description": "Профессиональная часть комплекта «Воин». Создана для роли: HP, интеллект и сопротивления.",
+    "description": "Профессиональная часть комплекта «Рыцарь». Создана для роли: HP, интеллект и сопротивления.",
     "setBonus": "2/5: +6% профильного параметра; 3/5: +6% Сила; 4/5: усиление роли; 5/5: уникальный пассивный эффект",
-    "legacy": false
+    "legacy": false,
+    "attributes": {
+      "strength": 2
+    },
+    "combatStats": {
+      "controlResistance": 0.02
+    },
+    "setDisplayName": "Рыцарь-100"
   },
   {
     "id": "ARM-ВОИ-2-025",
@@ -2668,12 +3758,21 @@
     "defense": 128,
     "health": 120,
     "attack": 0,
-    "profession": "Воин",
+    "profession": "Рыцарь",
     "rarity": "Обычная",
     "effects": "Нет",
-    "description": "Профессиональная часть комплекта «Воин». Создана для роли: защита, HP и основной атрибут.",
+    "description": "Профессиональная часть комплекта «Рыцарь». Создана для роли: защита, HP и основной атрибут.",
     "setBonus": "2/5: +1% профильного параметра; 3/5: +1% Сила; 4/5: усиление роли; 5/5: уникальный пассивный эффект",
-    "legacy": false
+    "legacy": false,
+    "attributes": {
+      "vitality": 1,
+      "stamina": 1
+    },
+    "combatStats": {
+      "resistance": 0.008,
+      "health": 0.004
+    },
+    "setDisplayName": "Рыцарь-25"
   },
   {
     "id": "ARM-ВОИ-2-040",
@@ -2686,12 +3785,21 @@
     "defense": 172,
     "health": 165,
     "attack": 0,
-    "profession": "Воин",
+    "profession": "Рыцарь",
     "rarity": "Обычная",
     "effects": "Нет",
-    "description": "Профессиональная часть комплекта «Воин». Создана для роли: защита, HP и основной атрибут.",
+    "description": "Профессиональная часть комплекта «Рыцарь». Создана для роли: защита, HP и основной атрибут.",
     "setBonus": "2/5: +2% профильного параметра; 3/5: +2% Сила; 4/5: усиление роли; 5/5: уникальный пассивный эффект",
-    "legacy": false
+    "legacy": false,
+    "attributes": {
+      "vitality": 2,
+      "stamina": 1
+    },
+    "combatStats": {
+      "resistance": 0.01,
+      "health": 0.006
+    },
+    "setDisplayName": "Рыцарь-40"
   },
   {
     "id": "ARM-ВОИ-2-055",
@@ -2704,12 +3812,21 @@
     "defense": 224,
     "health": 216,
     "attack": 0,
-    "profession": "Воин",
+    "profession": "Рыцарь",
     "rarity": "Обычная",
     "effects": "Дополнительное HP; устойчивость к контролю",
-    "description": "Профессиональная часть комплекта «Воин». Создана для роли: защита, HP и основной атрибут.",
+    "description": "Профессиональная часть комплекта «Рыцарь». Создана для роли: защита, HP и основной атрибут.",
     "setBonus": "2/5: +3% профильного параметра; 3/5: +3% Сила; 4/5: усиление роли; 5/5: уникальный пассивный эффект",
-    "legacy": false
+    "legacy": false,
+    "attributes": {
+      "vitality": 2,
+      "stamina": 1
+    },
+    "combatStats": {
+      "resistance": 0.013,
+      "health": 0.007
+    },
+    "setDisplayName": "Рыцарь-55"
   },
   {
     "id": "ARM-ВОИ-2-070",
@@ -2722,12 +3839,21 @@
     "defense": 284,
     "health": 276,
     "attack": 0,
-    "profession": "Воин",
+    "profession": "Рыцарь",
     "rarity": "Обычная",
     "effects": "Дополнительное HP; устойчивость к контролю",
-    "description": "Профессиональная часть комплекта «Воин». Создана для роли: защита, HP и основной атрибут.",
+    "description": "Профессиональная часть комплекта «Рыцарь». Создана для роли: защита, HP и основной атрибут.",
     "setBonus": "2/5: +4% профильного параметра; 3/5: +4% Сила; 4/5: усиление роли; 5/5: уникальный пассивный эффект",
-    "legacy": false
+    "legacy": false,
+    "attributes": {
+      "vitality": 3,
+      "stamina": 2
+    },
+    "combatStats": {
+      "resistance": 0.015,
+      "health": 0.008
+    },
+    "setDisplayName": "Рыцарь-70"
   },
   {
     "id": "ARM-ВОИ-2-085",
@@ -2740,12 +3866,21 @@
     "defense": 352,
     "health": 345,
     "attack": 0,
-    "profession": "Воин",
+    "profession": "Рыцарь",
     "rarity": "Обычная",
     "effects": "Дополнительное HP; устойчивость к контролю",
-    "description": "Профессиональная часть комплекта «Воин». Создана для роли: защита, HP и основной атрибут.",
+    "description": "Профессиональная часть комплекта «Рыцарь». Создана для роли: защита, HP и основной атрибут.",
     "setBonus": "2/5: +5% профильного параметра; 3/5: +5% Сила; 4/5: усиление роли; 5/5: уникальный пассивный эффект",
-    "legacy": false
+    "legacy": false,
+    "attributes": {
+      "vitality": 3,
+      "stamina": 2
+    },
+    "combatStats": {
+      "resistance": 0.018,
+      "health": 0.01
+    },
+    "setDisplayName": "Рыцарь-85"
   },
   {
     "id": "ARM-ВОИ-2-100",
@@ -2758,12 +3893,21 @@
     "defense": 432,
     "health": 420,
     "attack": 0,
-    "profession": "Воин",
+    "profession": "Рыцарь",
     "rarity": "Обычная",
     "effects": "Дополнительное HP; устойчивость к контролю",
-    "description": "Профессиональная часть комплекта «Воин». Создана для роли: защита, HP и основной атрибут.",
+    "description": "Профессиональная часть комплекта «Рыцарь». Создана для роли: защита, HP и основной атрибут.",
     "setBonus": "2/5: +6% профильного параметра; 3/5: +6% Сила; 4/5: усиление роли; 5/5: уникальный пассивный эффект",
-    "legacy": false
+    "legacy": false,
+    "attributes": {
+      "vitality": 4,
+      "stamina": 2
+    },
+    "combatStats": {
+      "resistance": 0.02,
+      "health": 0.011
+    },
+    "setDisplayName": "Рыцарь-100"
   },
   {
     "id": "ARM-ВОИ-3-025",
@@ -2776,12 +3920,19 @@
     "defense": 48,
     "health": 40,
     "attack": 38,
-    "profession": "Воин",
+    "profession": "Рыцарь",
     "rarity": "Обычная",
     "effects": "Нет",
-    "description": "Профессиональная часть комплекта «Воин». Создана для роли: атака, точность и критический урон.",
+    "description": "Профессиональная часть комплекта «Рыцарь». Создана для роли: атака, точность и критический урон.",
     "setBonus": "2/5: +1% профильного параметра; 3/5: +1% Сила; 4/5: усиление роли; 5/5: уникальный пассивный эффект",
-    "legacy": false
+    "legacy": false,
+    "attributes": {
+      "strength": 1
+    },
+    "combatStats": {
+      "physicalDamage": 0.008
+    },
+    "setDisplayName": "Рыцарь-25"
   },
   {
     "id": "ARM-ВОИ-3-040",
@@ -2794,12 +3945,19 @@
     "defense": 64,
     "health": 55,
     "attack": 52,
-    "profession": "Воин",
+    "profession": "Рыцарь",
     "rarity": "Обычная",
     "effects": "Нет",
-    "description": "Профессиональная часть комплекта «Воин». Создана для роли: атака, точность и критический урон.",
+    "description": "Профессиональная часть комплекта «Рыцарь». Создана для роли: атака, точность и критический урон.",
     "setBonus": "2/5: +2% профильного параметра; 3/5: +2% Сила; 4/5: усиление роли; 5/5: уникальный пассивный эффект",
-    "legacy": false
+    "legacy": false,
+    "attributes": {
+      "strength": 1
+    },
+    "combatStats": {
+      "physicalDamage": 0.01
+    },
+    "setDisplayName": "Рыцарь-40"
   },
   {
     "id": "ARM-ВОИ-3-055",
@@ -2812,12 +3970,19 @@
     "defense": 84,
     "health": 72,
     "attack": 67,
-    "profession": "Воин",
+    "profession": "Рыцарь",
     "rarity": "Обычная",
     "effects": "+ к атаке и точности",
-    "description": "Профессиональная часть комплекта «Воин». Создана для роли: атака, точность и критический урон.",
+    "description": "Профессиональная часть комплекта «Рыцарь». Создана для роли: атака, точность и критический урон.",
     "setBonus": "2/5: +3% профильного параметра; 3/5: +3% Сила; 4/5: усиление роли; 5/5: уникальный пассивный эффект",
-    "legacy": false
+    "legacy": false,
+    "attributes": {
+      "strength": 1
+    },
+    "combatStats": {
+      "physicalDamage": 0.013
+    },
+    "setDisplayName": "Рыцарь-55"
   },
   {
     "id": "ARM-ВОИ-3-070",
@@ -2830,12 +3995,19 @@
     "defense": 106,
     "health": 92,
     "attack": 85,
-    "profession": "Воин",
+    "profession": "Рыцарь",
     "rarity": "Обычная",
     "effects": "+ к атаке и точности",
-    "description": "Профессиональная часть комплекта «Воин». Создана для роли: атака, точность и критический урон.",
+    "description": "Профессиональная часть комплекта «Рыцарь». Создана для роли: атака, точность и критический урон.",
     "setBonus": "2/5: +4% профильного параметра; 3/5: +4% Сила; 4/5: усиление роли; 5/5: уникальный пассивный эффект",
-    "legacy": false
+    "legacy": false,
+    "attributes": {
+      "strength": 2
+    },
+    "combatStats": {
+      "physicalDamage": 0.015
+    },
+    "setDisplayName": "Рыцарь-70"
   },
   {
     "id": "ARM-ВОИ-3-085",
@@ -2848,12 +4020,19 @@
     "defense": 132,
     "health": 115,
     "attack": 106,
-    "profession": "Воин",
+    "profession": "Рыцарь",
     "rarity": "Обычная",
     "effects": "+ к атаке и точности",
-    "description": "Профессиональная часть комплекта «Воин». Создана для роли: атака, точность и критический урон.",
+    "description": "Профессиональная часть комплекта «Рыцарь». Создана для роли: атака, точность и критический урон.",
     "setBonus": "2/5: +5% профильного параметра; 3/5: +5% Сила; 4/5: усиление роли; 5/5: уникальный пассивный эффект",
-    "legacy": false
+    "legacy": false,
+    "attributes": {
+      "strength": 2
+    },
+    "combatStats": {
+      "physicalDamage": 0.018
+    },
+    "setDisplayName": "Рыцарь-85"
   },
   {
     "id": "ARM-ВОИ-3-100",
@@ -2866,12 +4045,19 @@
     "defense": 162,
     "health": 140,
     "attack": 130,
-    "profession": "Воин",
+    "profession": "Рыцарь",
     "rarity": "Обычная",
     "effects": "+ к атаке и точности",
-    "description": "Профессиональная часть комплекта «Воин». Создана для роли: атака, точность и критический урон.",
+    "description": "Профессиональная часть комплекта «Рыцарь». Создана для роли: атака, точность и критический урон.",
     "setBonus": "2/5: +6% профильного параметра; 3/5: +6% Сила; 4/5: усиление роли; 5/5: уникальный пассивный эффект",
-    "legacy": false
+    "legacy": false,
+    "attributes": {
+      "strength": 2
+    },
+    "combatStats": {
+      "physicalDamage": 0.02
+    },
+    "setDisplayName": "Рыцарь-100"
   },
   {
     "id": "ARM-ВОИ-4-025",
@@ -2884,12 +4070,21 @@
     "defense": 48,
     "health": 60,
     "attack": 0,
-    "profession": "Воин",
+    "profession": "Рыцарь",
     "rarity": "Обычная",
     "effects": "Нет",
-    "description": "Профессиональная часть комплекта «Воин». Создана для роли: ловкость, уклонение и восстановление.",
+    "description": "Профессиональная часть комплекта «Рыцарь». Создана для роли: ловкость, уклонение и восстановление.",
     "setBonus": "2/5: +1% профильного параметра; 3/5: +1% Сила; 4/5: усиление роли; 5/5: уникальный пассивный эффект",
-    "legacy": false
+    "legacy": false,
+    "attributes": {
+      "dexterity": 1,
+      "vitality": 1
+    },
+    "combatStats": {
+      "evasion": 0.008,
+      "attackSpeed": 0.004
+    },
+    "setDisplayName": "Рыцарь-25"
   },
   {
     "id": "ARM-ВОИ-4-040",
@@ -2902,12 +4097,21 @@
     "defense": 64,
     "health": 82,
     "attack": 0,
-    "profession": "Воин",
+    "profession": "Рыцарь",
     "rarity": "Обычная",
     "effects": "Нет",
-    "description": "Профессиональная часть комплекта «Воин». Создана для роли: ловкость, уклонение и восстановление.",
+    "description": "Профессиональная часть комплекта «Рыцарь». Создана для роли: ловкость, уклонение и восстановление.",
     "setBonus": "2/5: +2% профильного параметра; 3/5: +2% Сила; 4/5: усиление роли; 5/5: уникальный пассивный эффект",
-    "legacy": false
+    "legacy": false,
+    "attributes": {
+      "dexterity": 1,
+      "vitality": 1
+    },
+    "combatStats": {
+      "evasion": 0.01,
+      "attackSpeed": 0.006
+    },
+    "setDisplayName": "Рыцарь-40"
   },
   {
     "id": "ARM-ВОИ-4-055",
@@ -2920,12 +4124,21 @@
     "defense": 84,
     "health": 108,
     "attack": 0,
-    "profession": "Воин",
+    "profession": "Рыцарь",
     "rarity": "Обычная",
     "effects": "+ к ловкости и уклонению",
-    "description": "Профессиональная часть комплекта «Воин». Создана для роли: ловкость, уклонение и восстановление.",
+    "description": "Профессиональная часть комплекта «Рыцарь». Создана для роли: ловкость, уклонение и восстановление.",
     "setBonus": "2/5: +3% профильного параметра; 3/5: +3% Сила; 4/5: усиление роли; 5/5: уникальный пассивный эффект",
-    "legacy": false
+    "legacy": false,
+    "attributes": {
+      "dexterity": 2,
+      "vitality": 1
+    },
+    "combatStats": {
+      "evasion": 0.013,
+      "attackSpeed": 0.007
+    },
+    "setDisplayName": "Рыцарь-55"
   },
   {
     "id": "ARM-ВОИ-4-070",
@@ -2938,12 +4151,21 @@
     "defense": 106,
     "health": 138,
     "attack": 0,
-    "profession": "Воин",
+    "profession": "Рыцарь",
     "rarity": "Обычная",
     "effects": "+ к ловкости и уклонению",
-    "description": "Профессиональная часть комплекта «Воин». Создана для роли: ловкость, уклонение и восстановление.",
+    "description": "Профессиональная часть комплекта «Рыцарь». Создана для роли: ловкость, уклонение и восстановление.",
     "setBonus": "2/5: +4% профильного параметра; 3/5: +4% Сила; 4/5: усиление роли; 5/5: уникальный пассивный эффект",
-    "legacy": false
+    "legacy": false,
+    "attributes": {
+      "dexterity": 3,
+      "vitality": 1
+    },
+    "combatStats": {
+      "evasion": 0.015,
+      "attackSpeed": 0.008
+    },
+    "setDisplayName": "Рыцарь-70"
   },
   {
     "id": "ARM-ВОИ-4-085",
@@ -2956,12 +4178,21 @@
     "defense": 132,
     "health": 172,
     "attack": 0,
-    "profession": "Воин",
+    "profession": "Рыцарь",
     "rarity": "Обычная",
     "effects": "+ к ловкости и уклонению",
-    "description": "Профессиональная часть комплекта «Воин». Создана для роли: ловкость, уклонение и восстановление.",
+    "description": "Профессиональная часть комплекта «Рыцарь». Создана для роли: ловкость, уклонение и восстановление.",
     "setBonus": "2/5: +5% профильного параметра; 3/5: +5% Сила; 4/5: усиление роли; 5/5: уникальный пассивный эффект",
-    "legacy": false
+    "legacy": false,
+    "attributes": {
+      "dexterity": 3,
+      "vitality": 1
+    },
+    "combatStats": {
+      "evasion": 0.018,
+      "attackSpeed": 0.01
+    },
+    "setDisplayName": "Рыцарь-85"
   },
   {
     "id": "ARM-ВОИ-4-100",
@@ -2974,12 +4205,21 @@
     "defense": 162,
     "health": 210,
     "attack": 0,
-    "profession": "Воин",
+    "profession": "Рыцарь",
     "rarity": "Обычная",
     "effects": "+ к ловкости и уклонению",
-    "description": "Профессиональная часть комплекта «Воин». Создана для роли: ловкость, уклонение и восстановление.",
+    "description": "Профессиональная часть комплекта «Рыцарь». Создана для роли: ловкость, уклонение и восстановление.",
     "setBonus": "2/5: +6% профильного параметра; 3/5: +6% Сила; 4/5: усиление роли; 5/5: уникальный пассивный эффект",
-    "legacy": false
+    "legacy": false,
+    "attributes": {
+      "dexterity": 3,
+      "vitality": 1
+    },
+    "combatStats": {
+      "evasion": 0.02,
+      "attackSpeed": 0.011
+    },
+    "setDisplayName": "Рыцарь-100"
   },
   {
     "id": "ARM-ВОИ-5-025",
@@ -2992,12 +4232,20 @@
     "defense": 32,
     "health": 100,
     "attack": 0,
-    "profession": "Воин",
+    "profession": "Рыцарь",
     "rarity": "Обычная",
     "effects": "Нет",
-    "description": "Профессиональная часть комплекта «Воин». Создана для роли: сопротивления и специальные эффекты.",
+    "description": "Профессиональная часть комплекта «Рыцарь». Создана для роли: сопротивления и специальные эффекты.",
     "setBonus": "2/5: +1% профильного параметра; 3/5: +1% Сила; 4/5: усиление роли; 5/5: уникальный пассивный эффект",
-    "legacy": false
+    "legacy": false,
+    "attributes": {
+      "stamina": 1,
+      "vitality": 1
+    },
+    "combatStats": {
+      "controlResistance": 0.004
+    },
+    "setDisplayName": "Рыцарь-25"
   },
   {
     "id": "ARM-ВОИ-5-040",
@@ -3010,12 +4258,20 @@
     "defense": 43,
     "health": 138,
     "attack": 0,
-    "profession": "Воин",
+    "profession": "Рыцарь",
     "rarity": "Обычная",
     "effects": "Нет",
-    "description": "Профессиональная часть комплекта «Воин». Создана для роли: сопротивления и специальные эффекты.",
+    "description": "Профессиональная часть комплекта «Рыцарь». Создана для роли: сопротивления и специальные эффекты.",
     "setBonus": "2/5: +2% профильного параметра; 3/5: +2% Сила; 4/5: усиление роли; 5/5: уникальный пассивный эффект",
-    "legacy": false
+    "legacy": false,
+    "attributes": {
+      "stamina": 1,
+      "vitality": 1
+    },
+    "combatStats": {
+      "controlResistance": 0.006
+    },
+    "setDisplayName": "Рыцарь-40"
   },
   {
     "id": "ARM-ВОИ-5-055",
@@ -3028,12 +4284,20 @@
     "defense": 56,
     "health": 180,
     "attack": 0,
-    "profession": "Воин",
+    "profession": "Рыцарь",
     "rarity": "Обычная",
     "effects": "+ к сопротивлению стихий и длительности отрицательных эффектов",
-    "description": "Профессиональная часть комплекта «Воин». Создана для роли: сопротивления и специальные эффекты.",
+    "description": "Профессиональная часть комплекта «Рыцарь». Создана для роли: сопротивления и специальные эффекты.",
     "setBonus": "2/5: +3% профильного параметра; 3/5: +3% Сила; 4/5: усиление роли; 5/5: уникальный пассивный эффект",
-    "legacy": false
+    "legacy": false,
+    "attributes": {
+      "stamina": 2,
+      "vitality": 1
+    },
+    "combatStats": {
+      "controlResistance": 0.007
+    },
+    "setDisplayName": "Рыцарь-55"
   },
   {
     "id": "ARM-ВОИ-5-070",
@@ -3046,12 +4310,20 @@
     "defense": 71,
     "health": 230,
     "attack": 0,
-    "profession": "Воин",
+    "profession": "Рыцарь",
     "rarity": "Обычная",
     "effects": "+ к сопротивлению стихий и длительности отрицательных эффектов",
-    "description": "Профессиональная часть комплекта «Воин». Создана для роли: сопротивления и специальные эффекты.",
+    "description": "Профессиональная часть комплекта «Рыцарь». Создана для роли: сопротивления и специальные эффекты.",
     "setBonus": "2/5: +4% профильного параметра; 3/5: +4% Сила; 4/5: усиление роли; 5/5: уникальный пассивный эффект",
-    "legacy": false
+    "legacy": false,
+    "attributes": {
+      "stamina": 2,
+      "vitality": 1
+    },
+    "combatStats": {
+      "controlResistance": 0.008
+    },
+    "setDisplayName": "Рыцарь-70"
   },
   {
     "id": "ARM-ВОИ-5-085",
@@ -3064,12 +4336,20 @@
     "defense": 88,
     "health": 288,
     "attack": 0,
-    "profession": "Воин",
+    "profession": "Рыцарь",
     "rarity": "Обычная",
     "effects": "+ к сопротивлению стихий и длительности отрицательных эффектов",
-    "description": "Профессиональная часть комплекта «Воин». Создана для роли: сопротивления и специальные эффекты.",
+    "description": "Профессиональная часть комплекта «Рыцарь». Создана для роли: сопротивления и специальные эффекты.",
     "setBonus": "2/5: +5% профильного параметра; 3/5: +5% Сила; 4/5: усиление роли; 5/5: уникальный пассивный эффект",
-    "legacy": false
+    "legacy": false,
+    "attributes": {
+      "stamina": 2,
+      "vitality": 1
+    },
+    "combatStats": {
+      "controlResistance": 0.01
+    },
+    "setDisplayName": "Рыцарь-85"
   },
   {
     "id": "ARM-ВОИ-5-100",
@@ -3082,12 +4362,20 @@
     "defense": 108,
     "health": 350,
     "attack": 0,
-    "profession": "Воин",
+    "profession": "Рыцарь",
     "rarity": "Обычная",
     "effects": "+ к сопротивлению стихий и длительности отрицательных эффектов",
-    "description": "Профессиональная часть комплекта «Воин». Создана для роли: сопротивления и специальные эффекты.",
+    "description": "Профессиональная часть комплекта «Рыцарь». Создана для роли: сопротивления и специальные эффекты.",
     "setBonus": "2/5: +6% профильного параметра; 3/5: +6% Сила; 4/5: усиление роли; 5/5: уникальный пассивный эффект",
-    "legacy": false
+    "legacy": false,
+    "attributes": {
+      "stamina": 3,
+      "vitality": 2
+    },
+    "combatStats": {
+      "controlResistance": 0.011
+    },
+    "setDisplayName": "Рыцарь-100"
   },
   {
     "id": "ARM-ПОД-1-025",
@@ -3105,7 +4393,14 @@
     "effects": "Нет",
     "description": "Профессиональная часть комплекта «Поддержка». Создана для роли: HP, интеллект и сопротивления.",
     "setBonus": "2/5: +1% профильного параметра; 3/5: +1% Мудрость; 4/5: усиление роли; 5/5: уникальный пассивный эффект",
-    "legacy": false
+    "legacy": false,
+    "attributes": {
+      "intelligence": 1,
+      "stamina": 1
+    },
+    "combatStats": {
+      "controlResistance": 0.008
+    }
   },
   {
     "id": "ARM-ПОД-1-040",
@@ -3123,7 +4418,14 @@
     "effects": "Нет",
     "description": "Профессиональная часть комплекта «Поддержка». Создана для роли: HP, интеллект и сопротивления.",
     "setBonus": "2/5: +2% профильного параметра; 3/5: +2% Мудрость; 4/5: усиление роли; 5/5: уникальный пассивный эффект",
-    "legacy": false
+    "legacy": false,
+    "attributes": {
+      "intelligence": 1,
+      "stamina": 1
+    },
+    "combatStats": {
+      "controlResistance": 0.01
+    }
   },
   {
     "id": "ARM-ПОД-1-055",
@@ -3141,7 +4443,14 @@
     "effects": "+ к HP и сопротивлению контролю",
     "description": "Профессиональная часть комплекта «Поддержка». Создана для роли: HP, интеллект и сопротивления.",
     "setBonus": "2/5: +3% профильного параметра; 3/5: +3% Мудрость; 4/5: усиление роли; 5/5: уникальный пассивный эффект",
-    "legacy": false
+    "legacy": false,
+    "attributes": {
+      "intelligence": 1,
+      "stamina": 1
+    },
+    "combatStats": {
+      "controlResistance": 0.013
+    }
   },
   {
     "id": "ARM-ПОД-1-070",
@@ -3159,7 +4468,14 @@
     "effects": "+ к HP и сопротивлению контролю",
     "description": "Профессиональная часть комплекта «Поддержка». Создана для роли: HP, интеллект и сопротивления.",
     "setBonus": "2/5: +4% профильного параметра; 3/5: +4% Мудрость; 4/5: усиление роли; 5/5: уникальный пассивный эффект",
-    "legacy": false
+    "legacy": false,
+    "attributes": {
+      "intelligence": 1,
+      "stamina": 1
+    },
+    "combatStats": {
+      "controlResistance": 0.015
+    }
   },
   {
     "id": "ARM-ПОД-1-085",
@@ -3177,7 +4493,14 @@
     "effects": "+ к HP и сопротивлению контролю",
     "description": "Профессиональная часть комплекта «Поддержка». Создана для роли: HP, интеллект и сопротивления.",
     "setBonus": "2/5: +5% профильного параметра; 3/5: +5% Мудрость; 4/5: усиление роли; 5/5: уникальный пассивный эффект",
-    "legacy": false
+    "legacy": false,
+    "attributes": {
+      "intelligence": 1,
+      "stamina": 1
+    },
+    "combatStats": {
+      "controlResistance": 0.018
+    }
   },
   {
     "id": "ARM-ПОД-1-100",
@@ -3195,7 +4518,14 @@
     "effects": "+ к HP и сопротивлению контролю",
     "description": "Профессиональная часть комплекта «Поддержка». Создана для роли: HP, интеллект и сопротивления.",
     "setBonus": "2/5: +6% профильного параметра; 3/5: +6% Мудрость; 4/5: усиление роли; 5/5: уникальный пассивный эффект",
-    "legacy": false
+    "legacy": false,
+    "attributes": {
+      "intelligence": 2,
+      "stamina": 1
+    },
+    "combatStats": {
+      "controlResistance": 0.02
+    }
   },
   {
     "id": "ARM-ПОД-2-025",
@@ -3213,7 +4543,15 @@
     "effects": "Нет",
     "description": "Профессиональная часть комплекта «Поддержка». Создана для роли: защита, HP и основной атрибут.",
     "setBonus": "2/5: +1% профильного параметра; 3/5: +1% Мудрость; 4/5: усиление роли; 5/5: уникальный пассивный эффект",
-    "legacy": false
+    "legacy": false,
+    "attributes": {
+      "vitality": 1,
+      "stamina": 1
+    },
+    "combatStats": {
+      "resistance": 0.008,
+      "health": 0.004
+    }
   },
   {
     "id": "ARM-ПОД-2-040",
@@ -3231,7 +4569,15 @@
     "effects": "Нет",
     "description": "Профессиональная часть комплекта «Поддержка». Создана для роли: защита, HP и основной атрибут.",
     "setBonus": "2/5: +2% профильного параметра; 3/5: +2% Мудрость; 4/5: усиление роли; 5/5: уникальный пассивный эффект",
-    "legacy": false
+    "legacy": false,
+    "attributes": {
+      "vitality": 2,
+      "stamina": 1
+    },
+    "combatStats": {
+      "resistance": 0.01,
+      "health": 0.006
+    }
   },
   {
     "id": "ARM-ПОД-2-055",
@@ -3249,7 +4595,15 @@
     "effects": "+ к HP и основному атрибуту",
     "description": "Профессиональная часть комплекта «Поддержка». Создана для роли: защита, HP и основной атрибут.",
     "setBonus": "2/5: +3% профильного параметра; 3/5: +3% Мудрость; 4/5: усиление роли; 5/5: уникальный пассивный эффект",
-    "legacy": false
+    "legacy": false,
+    "attributes": {
+      "vitality": 2,
+      "stamina": 1
+    },
+    "combatStats": {
+      "resistance": 0.013,
+      "health": 0.007
+    }
   },
   {
     "id": "ARM-ПОД-2-070",
@@ -3267,7 +4621,15 @@
     "effects": "+ к HP и основному атрибуту",
     "description": "Профессиональная часть комплекта «Поддержка». Создана для роли: защита, HP и основной атрибут.",
     "setBonus": "2/5: +4% профильного параметра; 3/5: +4% Мудрость; 4/5: усиление роли; 5/5: уникальный пассивный эффект",
-    "legacy": false
+    "legacy": false,
+    "attributes": {
+      "vitality": 3,
+      "stamina": 2
+    },
+    "combatStats": {
+      "resistance": 0.015,
+      "health": 0.008
+    }
   },
   {
     "id": "ARM-ПОД-2-085",
@@ -3285,7 +4647,15 @@
     "effects": "+ к HP и основному атрибуту",
     "description": "Профессиональная часть комплекта «Поддержка». Создана для роли: защита, HP и основной атрибут.",
     "setBonus": "2/5: +5% профильного параметра; 3/5: +5% Мудрость; 4/5: усиление роли; 5/5: уникальный пассивный эффект",
-    "legacy": false
+    "legacy": false,
+    "attributes": {
+      "vitality": 3,
+      "stamina": 2
+    },
+    "combatStats": {
+      "resistance": 0.018,
+      "health": 0.01
+    }
   },
   {
     "id": "ARM-ПОД-2-100",
@@ -3303,7 +4673,15 @@
     "effects": "+ к HP и основному атрибуту",
     "description": "Профессиональная часть комплекта «Поддержка». Создана для роли: защита, HP и основной атрибут.",
     "setBonus": "2/5: +6% профильного параметра; 3/5: +6% Мудрость; 4/5: усиление роли; 5/5: уникальный пассивный эффект",
-    "legacy": false
+    "legacy": false,
+    "attributes": {
+      "vitality": 4,
+      "stamina": 2
+    },
+    "combatStats": {
+      "resistance": 0.02,
+      "health": 0.011
+    }
   },
   {
     "id": "ARM-ПОД-3-025",
@@ -3321,7 +4699,13 @@
     "effects": "Нет",
     "description": "Профессиональная часть комплекта «Поддержка». Создана для роли: атака, точность и критический урон.",
     "setBonus": "2/5: +1% профильного параметра; 3/5: +1% Мудрость; 4/5: усиление роли; 5/5: уникальный пассивный эффект",
-    "legacy": false
+    "legacy": false,
+    "attributes": {
+      "intelligence": 1
+    },
+    "combatStats": {
+      "healing": 0.008
+    }
   },
   {
     "id": "ARM-ПОД-3-040",
@@ -3339,7 +4723,13 @@
     "effects": "Нет",
     "description": "Профессиональная часть комплекта «Поддержка». Создана для роли: атака, точность и критический урон.",
     "setBonus": "2/5: +2% профильного параметра; 3/5: +2% Мудрость; 4/5: усиление роли; 5/5: уникальный пассивный эффект",
-    "legacy": false
+    "legacy": false,
+    "attributes": {
+      "intelligence": 1
+    },
+    "combatStats": {
+      "healing": 0.01
+    }
   },
   {
     "id": "ARM-ПОД-3-055",
@@ -3357,7 +4747,13 @@
     "effects": "Эффективность положительных эффектов",
     "description": "Профессиональная часть комплекта «Поддержка». Создана для роли: атака, точность и критический урон.",
     "setBonus": "2/5: +3% профильного параметра; 3/5: +3% Мудрость; 4/5: усиление роли; 5/5: уникальный пассивный эффект",
-    "legacy": false
+    "legacy": false,
+    "attributes": {
+      "intelligence": 1
+    },
+    "combatStats": {
+      "healing": 0.013
+    }
   },
   {
     "id": "ARM-ПОД-3-070",
@@ -3375,7 +4771,13 @@
     "effects": "Эффективность положительных эффектов",
     "description": "Профессиональная часть комплекта «Поддержка». Создана для роли: атака, точность и критический урон.",
     "setBonus": "2/5: +4% профильного параметра; 3/5: +4% Мудрость; 4/5: усиление роли; 5/5: уникальный пассивный эффект",
-    "legacy": false
+    "legacy": false,
+    "attributes": {
+      "intelligence": 2
+    },
+    "combatStats": {
+      "healing": 0.015
+    }
   },
   {
     "id": "ARM-ПОД-3-085",
@@ -3393,7 +4795,13 @@
     "effects": "Эффективность положительных эффектов",
     "description": "Профессиональная часть комплекта «Поддержка». Создана для роли: атака, точность и критический урон.",
     "setBonus": "2/5: +5% профильного параметра; 3/5: +5% Мудрость; 4/5: усиление роли; 5/5: уникальный пассивный эффект",
-    "legacy": false
+    "legacy": false,
+    "attributes": {
+      "intelligence": 2
+    },
+    "combatStats": {
+      "healing": 0.018
+    }
   },
   {
     "id": "ARM-ПОД-3-100",
@@ -3411,7 +4819,13 @@
     "effects": "Эффективность положительных эффектов",
     "description": "Профессиональная часть комплекта «Поддержка». Создана для роли: атака, точность и критический урон.",
     "setBonus": "2/5: +6% профильного параметра; 3/5: +6% Мудрость; 4/5: усиление роли; 5/5: уникальный пассивный эффект",
-    "legacy": false
+    "legacy": false,
+    "attributes": {
+      "intelligence": 2
+    },
+    "combatStats": {
+      "healing": 0.02
+    }
   },
   {
     "id": "ARM-ПОД-4-025",
@@ -3429,7 +4843,14 @@
     "effects": "Нет",
     "description": "Профессиональная часть комплекта «Поддержка». Создана для роли: ловкость, уклонение и восстановление.",
     "setBonus": "2/5: +1% профильного параметра; 3/5: +1% Мудрость; 4/5: усиление роли; 5/5: уникальный пассивный эффект",
-    "legacy": false
+    "legacy": false,
+    "attributes": {
+      "dexterity": 1
+    },
+    "combatStats": {
+      "evasion": 0.008,
+      "attackSpeed": 0.004
+    }
   },
   {
     "id": "ARM-ПОД-4-040",
@@ -3447,7 +4868,14 @@
     "effects": "Нет",
     "description": "Профессиональная часть комплекта «Поддержка». Создана для роли: ловкость, уклонение и восстановление.",
     "setBonus": "2/5: +2% профильного параметра; 3/5: +2% Мудрость; 4/5: усиление роли; 5/5: уникальный пассивный эффект",
-    "legacy": false
+    "legacy": false,
+    "attributes": {
+      "dexterity": 1
+    },
+    "combatStats": {
+      "evasion": 0.01,
+      "attackSpeed": 0.006
+    }
   },
   {
     "id": "ARM-ПОД-4-055",
@@ -3465,7 +4893,14 @@
     "effects": "+ к ловкости и уклонению",
     "description": "Профессиональная часть комплекта «Поддержка». Создана для роли: ловкость, уклонение и восстановление.",
     "setBonus": "2/5: +3% профильного параметра; 3/5: +3% Мудрость; 4/5: усиление роли; 5/5: уникальный пассивный эффект",
-    "legacy": false
+    "legacy": false,
+    "attributes": {
+      "dexterity": 2
+    },
+    "combatStats": {
+      "evasion": 0.013,
+      "attackSpeed": 0.007
+    }
   },
   {
     "id": "ARM-ПОД-4-070",
@@ -3483,7 +4918,14 @@
     "effects": "+ к ловкости и уклонению",
     "description": "Профессиональная часть комплекта «Поддержка». Создана для роли: ловкость, уклонение и восстановление.",
     "setBonus": "2/5: +4% профильного параметра; 3/5: +4% Мудрость; 4/5: усиление роли; 5/5: уникальный пассивный эффект",
-    "legacy": false
+    "legacy": false,
+    "attributes": {
+      "dexterity": 3
+    },
+    "combatStats": {
+      "evasion": 0.015,
+      "attackSpeed": 0.008
+    }
   },
   {
     "id": "ARM-ПОД-4-085",
@@ -3501,7 +4943,14 @@
     "effects": "+ к ловкости и уклонению",
     "description": "Профессиональная часть комплекта «Поддержка». Создана для роли: ловкость, уклонение и восстановление.",
     "setBonus": "2/5: +5% профильного параметра; 3/5: +5% Мудрость; 4/5: усиление роли; 5/5: уникальный пассивный эффект",
-    "legacy": false
+    "legacy": false,
+    "attributes": {
+      "dexterity": 3
+    },
+    "combatStats": {
+      "evasion": 0.018,
+      "attackSpeed": 0.01
+    }
   },
   {
     "id": "ARM-ПОД-4-100",
@@ -3519,7 +4968,14 @@
     "effects": "+ к ловкости и уклонению",
     "description": "Профессиональная часть комплекта «Поддержка». Создана для роли: ловкость, уклонение и восстановление.",
     "setBonus": "2/5: +6% профильного параметра; 3/5: +6% Мудрость; 4/5: усиление роли; 5/5: уникальный пассивный эффект",
-    "legacy": false
+    "legacy": false,
+    "attributes": {
+      "dexterity": 3
+    },
+    "combatStats": {
+      "evasion": 0.02,
+      "attackSpeed": 0.011
+    }
   },
   {
     "id": "ARM-ПОД-5-025",
@@ -3537,7 +4993,14 @@
     "effects": "Нет",
     "description": "Профессиональная часть комплекта «Поддержка». Создана для роли: сопротивления и специальные эффекты.",
     "setBonus": "2/5: +1% профильного параметра; 3/5: +1% Мудрость; 4/5: усиление роли; 5/5: уникальный пассивный эффект",
-    "legacy": false
+    "legacy": false,
+    "attributes": {
+      "stamina": 1,
+      "vitality": 1
+    },
+    "combatStats": {
+      "healing": 0.004
+    }
   },
   {
     "id": "ARM-ПОД-5-040",
@@ -3555,7 +5018,14 @@
     "effects": "Нет",
     "description": "Профессиональная часть комплекта «Поддержка». Создана для роли: сопротивления и специальные эффекты.",
     "setBonus": "2/5: +2% профильного параметра; 3/5: +2% Мудрость; 4/5: усиление роли; 5/5: уникальный пассивный эффект",
-    "legacy": false
+    "legacy": false,
+    "attributes": {
+      "stamina": 1,
+      "vitality": 1
+    },
+    "combatStats": {
+      "healing": 0.006
+    }
   },
   {
     "id": "ARM-ПОД-5-055",
@@ -3573,7 +5043,14 @@
     "effects": "+ к сопротивлению стихий и длительности отрицательных эффектов",
     "description": "Профессиональная часть комплекта «Поддержка». Создана для роли: сопротивления и специальные эффекты.",
     "setBonus": "2/5: +3% профильного параметра; 3/5: +3% Мудрость; 4/5: усиление роли; 5/5: уникальный пассивный эффект",
-    "legacy": false
+    "legacy": false,
+    "attributes": {
+      "stamina": 2,
+      "vitality": 1
+    },
+    "combatStats": {
+      "healing": 0.007
+    }
   },
   {
     "id": "ARM-ПОД-5-070",
@@ -3591,7 +5068,14 @@
     "effects": "+ к сопротивлению стихий и длительности отрицательных эффектов",
     "description": "Профессиональная часть комплекта «Поддержка». Создана для роли: сопротивления и специальные эффекты.",
     "setBonus": "2/5: +4% профильного параметра; 3/5: +4% Мудрость; 4/5: усиление роли; 5/5: уникальный пассивный эффект",
-    "legacy": false
+    "legacy": false,
+    "attributes": {
+      "stamina": 2,
+      "vitality": 1
+    },
+    "combatStats": {
+      "healing": 0.008
+    }
   },
   {
     "id": "ARM-ПОД-5-085",
@@ -3609,7 +5093,14 @@
     "effects": "+ к сопротивлению стихий и длительности отрицательных эффектов",
     "description": "Профессиональная часть комплекта «Поддержка». Создана для роли: сопротивления и специальные эффекты.",
     "setBonus": "2/5: +5% профильного параметра; 3/5: +5% Мудрость; 4/5: усиление роли; 5/5: уникальный пассивный эффект",
-    "legacy": false
+    "legacy": false,
+    "attributes": {
+      "stamina": 2,
+      "vitality": 1
+    },
+    "combatStats": {
+      "healing": 0.01
+    }
   },
   {
     "id": "ARM-ПОД-5-100",
@@ -3627,7 +5118,14 @@
     "effects": "+ к сопротивлению стихий и длительности отрицательных эффектов",
     "description": "Профессиональная часть комплекта «Поддержка». Создана для роли: сопротивления и специальные эффекты.",
     "setBonus": "2/5: +6% профильного параметра; 3/5: +6% Мудрость; 4/5: усиление роли; 5/5: уникальный пассивный эффект",
-    "legacy": false
+    "legacy": false,
+    "attributes": {
+      "stamina": 3,
+      "vitality": 2
+    },
+    "combatStats": {
+      "healing": 0.011
+    }
   },
   {
     "id": "ARM-ЛУЧ-1-025",
@@ -3645,7 +5143,14 @@
     "effects": "Нет",
     "description": "Профессиональная часть комплекта «Лучник». Создана для роли: HP, интеллект и сопротивления.",
     "setBonus": "2/5: +1% профильного параметра; 3/5: +1% Ловкость; 4/5: усиление роли; 5/5: уникальный пассивный эффект",
-    "legacy": false
+    "legacy": false,
+    "attributes": {
+      "dexterity": 1
+    },
+    "combatStats": {
+      "accuracy": 0.008,
+      "critChance": 0.004
+    }
   },
   {
     "id": "ARM-ЛУЧ-1-040",
@@ -3663,7 +5168,14 @@
     "effects": "Нет",
     "description": "Профессиональная часть комплекта «Лучник». Создана для роли: HP, интеллект и сопротивления.",
     "setBonus": "2/5: +2% профильного параметра; 3/5: +2% Ловкость; 4/5: усиление роли; 5/5: уникальный пассивный эффект",
-    "legacy": false
+    "legacy": false,
+    "attributes": {
+      "dexterity": 1
+    },
+    "combatStats": {
+      "accuracy": 0.01,
+      "critChance": 0.006
+    }
   },
   {
     "id": "ARM-ЛУЧ-1-055",
@@ -3681,7 +5193,14 @@
     "effects": "Точность; обнаружение скрытых целей",
     "description": "Профессиональная часть комплекта «Лучник». Создана для роли: HP, интеллект и сопротивления.",
     "setBonus": "2/5: +3% профильного параметра; 3/5: +3% Ловкость; 4/5: усиление роли; 5/5: уникальный пассивный эффект",
-    "legacy": false
+    "legacy": false,
+    "attributes": {
+      "dexterity": 1
+    },
+    "combatStats": {
+      "accuracy": 0.013,
+      "critChance": 0.007
+    }
   },
   {
     "id": "ARM-ЛУЧ-1-070",
@@ -3699,7 +5218,14 @@
     "effects": "Точность; обнаружение скрытых целей",
     "description": "Профессиональная часть комплекта «Лучник». Создана для роли: HP, интеллект и сопротивления.",
     "setBonus": "2/5: +4% профильного параметра; 3/5: +4% Ловкость; 4/5: усиление роли; 5/5: уникальный пассивный эффект",
-    "legacy": false
+    "legacy": false,
+    "attributes": {
+      "dexterity": 1
+    },
+    "combatStats": {
+      "accuracy": 0.015,
+      "critChance": 0.008
+    }
   },
   {
     "id": "ARM-ЛУЧ-1-085",
@@ -3717,7 +5243,14 @@
     "effects": "Точность; обнаружение скрытых целей",
     "description": "Профессиональная часть комплекта «Лучник». Создана для роли: HP, интеллект и сопротивления.",
     "setBonus": "2/5: +5% профильного параметра; 3/5: +5% Ловкость; 4/5: усиление роли; 5/5: уникальный пассивный эффект",
-    "legacy": false
+    "legacy": false,
+    "attributes": {
+      "dexterity": 1
+    },
+    "combatStats": {
+      "accuracy": 0.018,
+      "critChance": 0.01
+    }
   },
   {
     "id": "ARM-ЛУЧ-1-100",
@@ -3735,7 +5268,14 @@
     "effects": "Точность; обнаружение скрытых целей",
     "description": "Профессиональная часть комплекта «Лучник». Создана для роли: HP, интеллект и сопротивления.",
     "setBonus": "2/5: +6% профильного параметра; 3/5: +6% Ловкость; 4/5: усиление роли; 5/5: уникальный пассивный эффект",
-    "legacy": false
+    "legacy": false,
+    "attributes": {
+      "dexterity": 2
+    },
+    "combatStats": {
+      "accuracy": 0.02,
+      "critChance": 0.011
+    }
   },
   {
     "id": "ARM-ЛУЧ-2-025",
@@ -3753,7 +5293,15 @@
     "effects": "Нет",
     "description": "Профессиональная часть комплекта «Лучник». Создана для роли: защита, HP и основной атрибут.",
     "setBonus": "2/5: +1% профильного параметра; 3/5: +1% Ловкость; 4/5: усиление роли; 5/5: уникальный пассивный эффект",
-    "legacy": false
+    "legacy": false,
+    "attributes": {
+      "vitality": 1,
+      "stamina": 1
+    },
+    "combatStats": {
+      "resistance": 0.008,
+      "health": 0.004
+    }
   },
   {
     "id": "ARM-ЛУЧ-2-040",
@@ -3771,7 +5319,15 @@
     "effects": "Нет",
     "description": "Профессиональная часть комплекта «Лучник». Создана для роли: защита, HP и основной атрибут.",
     "setBonus": "2/5: +2% профильного параметра; 3/5: +2% Ловкость; 4/5: усиление роли; 5/5: уникальный пассивный эффект",
-    "legacy": false
+    "legacy": false,
+    "attributes": {
+      "vitality": 2,
+      "stamina": 1
+    },
+    "combatStats": {
+      "resistance": 0.01,
+      "health": 0.006
+    }
   },
   {
     "id": "ARM-ЛУЧ-2-055",
@@ -3789,7 +5345,15 @@
     "effects": "+ к HP и основному атрибуту",
     "description": "Профессиональная часть комплекта «Лучник». Создана для роли: защита, HP и основной атрибут.",
     "setBonus": "2/5: +3% профильного параметра; 3/5: +3% Ловкость; 4/5: усиление роли; 5/5: уникальный пассивный эффект",
-    "legacy": false
+    "legacy": false,
+    "attributes": {
+      "vitality": 2,
+      "stamina": 1
+    },
+    "combatStats": {
+      "resistance": 0.013,
+      "health": 0.007
+    }
   },
   {
     "id": "ARM-ЛУЧ-2-070",
@@ -3807,7 +5371,15 @@
     "effects": "+ к HP и основному атрибуту",
     "description": "Профессиональная часть комплекта «Лучник». Создана для роли: защита, HP и основной атрибут.",
     "setBonus": "2/5: +4% профильного параметра; 3/5: +4% Ловкость; 4/5: усиление роли; 5/5: уникальный пассивный эффект",
-    "legacy": false
+    "legacy": false,
+    "attributes": {
+      "vitality": 3,
+      "stamina": 2
+    },
+    "combatStats": {
+      "resistance": 0.015,
+      "health": 0.008
+    }
   },
   {
     "id": "ARM-ЛУЧ-2-085",
@@ -3825,7 +5397,15 @@
     "effects": "+ к HP и основному атрибуту",
     "description": "Профессиональная часть комплекта «Лучник». Создана для роли: защита, HP и основной атрибут.",
     "setBonus": "2/5: +5% профильного параметра; 3/5: +5% Ловкость; 4/5: усиление роли; 5/5: уникальный пассивный эффект",
-    "legacy": false
+    "legacy": false,
+    "attributes": {
+      "vitality": 3,
+      "stamina": 2
+    },
+    "combatStats": {
+      "resistance": 0.018,
+      "health": 0.01
+    }
   },
   {
     "id": "ARM-ЛУЧ-2-100",
@@ -3843,7 +5423,15 @@
     "effects": "+ к HP и основному атрибуту",
     "description": "Профессиональная часть комплекта «Лучник». Создана для роли: защита, HP и основной атрибут.",
     "setBonus": "2/5: +6% профильного параметра; 3/5: +6% Ловкость; 4/5: усиление роли; 5/5: уникальный пассивный эффект",
-    "legacy": false
+    "legacy": false,
+    "attributes": {
+      "vitality": 4,
+      "stamina": 2
+    },
+    "combatStats": {
+      "resistance": 0.02,
+      "health": 0.011
+    }
   },
   {
     "id": "ARM-ЛУЧ-3-025",
@@ -3861,7 +5449,14 @@
     "effects": "Нет",
     "description": "Профессиональная часть комплекта «Лучник». Создана для роли: атака, точность и критический урон.",
     "setBonus": "2/5: +1% профильного параметра; 3/5: +1% Ловкость; 4/5: усиление роли; 5/5: уникальный пассивный эффект",
-    "legacy": false
+    "legacy": false,
+    "attributes": {
+      "dexterity": 1
+    },
+    "combatStats": {
+      "physicalDamage": 0.008,
+      "critDamage": 0.004
+    }
   },
   {
     "id": "ARM-ЛУЧ-3-040",
@@ -3879,7 +5474,14 @@
     "effects": "Нет",
     "description": "Профессиональная часть комплекта «Лучник». Создана для роли: атака, точность и критический урон.",
     "setBonus": "2/5: +2% профильного параметра; 3/5: +2% Ловкость; 4/5: усиление роли; 5/5: уникальный пассивный эффект",
-    "legacy": false
+    "legacy": false,
+    "attributes": {
+      "dexterity": 1
+    },
+    "combatStats": {
+      "physicalDamage": 0.01,
+      "critDamage": 0.006
+    }
   },
   {
     "id": "ARM-ЛУЧ-3-055",
@@ -3897,7 +5499,14 @@
     "effects": "+ к атаке и точности",
     "description": "Профессиональная часть комплекта «Лучник». Создана для роли: атака, точность и критический урон.",
     "setBonus": "2/5: +3% профильного параметра; 3/5: +3% Ловкость; 4/5: усиление роли; 5/5: уникальный пассивный эффект",
-    "legacy": false
+    "legacy": false,
+    "attributes": {
+      "dexterity": 1
+    },
+    "combatStats": {
+      "physicalDamage": 0.013,
+      "critDamage": 0.007
+    }
   },
   {
     "id": "ARM-ЛУЧ-3-070",
@@ -3915,7 +5524,14 @@
     "effects": "+ к атаке и точности",
     "description": "Профессиональная часть комплекта «Лучник». Создана для роли: атака, точность и критический урон.",
     "setBonus": "2/5: +4% профильного параметра; 3/5: +4% Ловкость; 4/5: усиление роли; 5/5: уникальный пассивный эффект",
-    "legacy": false
+    "legacy": false,
+    "attributes": {
+      "dexterity": 1
+    },
+    "combatStats": {
+      "physicalDamage": 0.015,
+      "critDamage": 0.008
+    }
   },
   {
     "id": "ARM-ЛУЧ-3-085",
@@ -3933,7 +5549,14 @@
     "effects": "+ к атаке и точности",
     "description": "Профессиональная часть комплекта «Лучник». Создана для роли: атака, точность и критический урон.",
     "setBonus": "2/5: +5% профильного параметра; 3/5: +5% Ловкость; 4/5: усиление роли; 5/5: уникальный пассивный эффект",
-    "legacy": false
+    "legacy": false,
+    "attributes": {
+      "dexterity": 1
+    },
+    "combatStats": {
+      "physicalDamage": 0.018,
+      "critDamage": 0.01
+    }
   },
   {
     "id": "ARM-ЛУЧ-3-100",
@@ -3951,7 +5574,14 @@
     "effects": "+ к атаке и точности",
     "description": "Профессиональная часть комплекта «Лучник». Создана для роли: атака, точность и критический урон.",
     "setBonus": "2/5: +6% профильного параметра; 3/5: +6% Ловкость; 4/5: усиление роли; 5/5: уникальный пассивный эффект",
-    "legacy": false
+    "legacy": false,
+    "attributes": {
+      "dexterity": 1
+    },
+    "combatStats": {
+      "physicalDamage": 0.02,
+      "critDamage": 0.011
+    }
   },
   {
     "id": "ARM-ЛУЧ-4-025",
@@ -3969,7 +5599,14 @@
     "effects": "Нет",
     "description": "Профессиональная часть комплекта «Лучник». Создана для роли: ловкость, уклонение и восстановление.",
     "setBonus": "2/5: +1% профильного параметра; 3/5: +1% Ловкость; 4/5: усиление роли; 5/5: уникальный пассивный эффект",
-    "legacy": false
+    "legacy": false,
+    "attributes": {
+      "dexterity": 1
+    },
+    "combatStats": {
+      "evasion": 0.008,
+      "attackSpeed": 0.004
+    }
   },
   {
     "id": "ARM-ЛУЧ-4-040",
@@ -3987,7 +5624,14 @@
     "effects": "Нет",
     "description": "Профессиональная часть комплекта «Лучник». Создана для роли: ловкость, уклонение и восстановление.",
     "setBonus": "2/5: +2% профильного параметра; 3/5: +2% Ловкость; 4/5: усиление роли; 5/5: уникальный пассивный эффект",
-    "legacy": false
+    "legacy": false,
+    "attributes": {
+      "dexterity": 1
+    },
+    "combatStats": {
+      "evasion": 0.01,
+      "attackSpeed": 0.006
+    }
   },
   {
     "id": "ARM-ЛУЧ-4-055",
@@ -4005,7 +5649,14 @@
     "effects": "+ к ловкости и уклонению",
     "description": "Профессиональная часть комплекта «Лучник». Создана для роли: ловкость, уклонение и восстановление.",
     "setBonus": "2/5: +3% профильного параметра; 3/5: +3% Ловкость; 4/5: усиление роли; 5/5: уникальный пассивный эффект",
-    "legacy": false
+    "legacy": false,
+    "attributes": {
+      "dexterity": 2
+    },
+    "combatStats": {
+      "evasion": 0.013,
+      "attackSpeed": 0.007
+    }
   },
   {
     "id": "ARM-ЛУЧ-4-070",
@@ -4023,7 +5674,14 @@
     "effects": "+ к ловкости и уклонению",
     "description": "Профессиональная часть комплекта «Лучник». Создана для роли: ловкость, уклонение и восстановление.",
     "setBonus": "2/5: +4% профильного параметра; 3/5: +4% Ловкость; 4/5: усиление роли; 5/5: уникальный пассивный эффект",
-    "legacy": false
+    "legacy": false,
+    "attributes": {
+      "dexterity": 3
+    },
+    "combatStats": {
+      "evasion": 0.015,
+      "attackSpeed": 0.008
+    }
   },
   {
     "id": "ARM-ЛУЧ-4-085",
@@ -4041,7 +5699,14 @@
     "effects": "+ к ловкости и уклонению",
     "description": "Профессиональная часть комплекта «Лучник». Создана для роли: ловкость, уклонение и восстановление.",
     "setBonus": "2/5: +5% профильного параметра; 3/5: +5% Ловкость; 4/5: усиление роли; 5/5: уникальный пассивный эффект",
-    "legacy": false
+    "legacy": false,
+    "attributes": {
+      "dexterity": 3
+    },
+    "combatStats": {
+      "evasion": 0.018,
+      "attackSpeed": 0.01
+    }
   },
   {
     "id": "ARM-ЛУЧ-4-100",
@@ -4059,7 +5724,14 @@
     "effects": "+ к ловкости и уклонению",
     "description": "Профессиональная часть комплекта «Лучник». Создана для роли: ловкость, уклонение и восстановление.",
     "setBonus": "2/5: +6% профильного параметра; 3/5: +6% Ловкость; 4/5: усиление роли; 5/5: уникальный пассивный эффект",
-    "legacy": false
+    "legacy": false,
+    "attributes": {
+      "dexterity": 3
+    },
+    "combatStats": {
+      "evasion": 0.02,
+      "attackSpeed": 0.011
+    }
   },
   {
     "id": "ARM-ЛУЧ-5-025",
@@ -4077,7 +5749,14 @@
     "effects": "Нет",
     "description": "Профессиональная часть комплекта «Лучник». Создана для роли: сопротивления и специальные эффекты.",
     "setBonus": "2/5: +1% профильного параметра; 3/5: +1% Ловкость; 4/5: усиление роли; 5/5: уникальный пассивный эффект",
-    "legacy": false
+    "legacy": false,
+    "attributes": {
+      "stamina": 1,
+      "vitality": 1
+    },
+    "combatStats": {
+      "controlResistance": 0.004
+    }
   },
   {
     "id": "ARM-ЛУЧ-5-040",
@@ -4095,7 +5774,14 @@
     "effects": "Нет",
     "description": "Профессиональная часть комплекта «Лучник». Создана для роли: сопротивления и специальные эффекты.",
     "setBonus": "2/5: +2% профильного параметра; 3/5: +2% Ловкость; 4/5: усиление роли; 5/5: уникальный пассивный эффект",
-    "legacy": false
+    "legacy": false,
+    "attributes": {
+      "stamina": 1,
+      "vitality": 1
+    },
+    "combatStats": {
+      "controlResistance": 0.006
+    }
   },
   {
     "id": "ARM-ЛУЧ-5-055",
@@ -4113,7 +5799,14 @@
     "effects": "+ к сопротивлению стихий и длительности отрицательных эффектов",
     "description": "Профессиональная часть комплекта «Лучник». Создана для роли: сопротивления и специальные эффекты.",
     "setBonus": "2/5: +3% профильного параметра; 3/5: +3% Ловкость; 4/5: усиление роли; 5/5: уникальный пассивный эффект",
-    "legacy": false
+    "legacy": false,
+    "attributes": {
+      "stamina": 2,
+      "vitality": 1
+    },
+    "combatStats": {
+      "controlResistance": 0.007
+    }
   },
   {
     "id": "ARM-ЛУЧ-5-070",
@@ -4131,7 +5824,14 @@
     "effects": "+ к сопротивлению стихий и длительности отрицательных эффектов",
     "description": "Профессиональная часть комплекта «Лучник». Создана для роли: сопротивления и специальные эффекты.",
     "setBonus": "2/5: +4% профильного параметра; 3/5: +4% Ловкость; 4/5: усиление роли; 5/5: уникальный пассивный эффект",
-    "legacy": false
+    "legacy": false,
+    "attributes": {
+      "stamina": 2,
+      "vitality": 1
+    },
+    "combatStats": {
+      "controlResistance": 0.008
+    }
   },
   {
     "id": "ARM-ЛУЧ-5-085",
@@ -4149,7 +5849,14 @@
     "effects": "+ к сопротивлению стихий и длительности отрицательных эффектов",
     "description": "Профессиональная часть комплекта «Лучник». Создана для роли: сопротивления и специальные эффекты.",
     "setBonus": "2/5: +5% профильного параметра; 3/5: +5% Ловкость; 4/5: усиление роли; 5/5: уникальный пассивный эффект",
-    "legacy": false
+    "legacy": false,
+    "attributes": {
+      "stamina": 2,
+      "vitality": 1
+    },
+    "combatStats": {
+      "controlResistance": 0.01
+    }
   },
   {
     "id": "ARM-ЛУЧ-5-100",
@@ -4167,7 +5874,14 @@
     "effects": "+ к сопротивлению стихий и длительности отрицательных эффектов",
     "description": "Профессиональная часть комплекта «Лучник». Создана для роли: сопротивления и специальные эффекты.",
     "setBonus": "2/5: +6% профильного параметра; 3/5: +6% Ловкость; 4/5: усиление роли; 5/5: уникальный пассивный эффект",
-    "legacy": false
+    "legacy": false,
+    "attributes": {
+      "stamina": 3,
+      "vitality": 2
+    },
+    "combatStats": {
+      "controlResistance": 0.011
+    }
   },
   {
     "id": "ARM-ВАМ-1-025",
@@ -4185,7 +5899,13 @@
     "effects": "Нет",
     "description": "Профессиональная часть комплекта «Вампир». Создана для роли: HP, интеллект и сопротивления.",
     "setBonus": "2/5: +1% профильного параметра; 3/5: +1% Выносливость; 4/5: усиление роли; 5/5: уникальный пассивный эффект",
-    "legacy": false
+    "legacy": false,
+    "attributes": {
+      "stamina": 1
+    },
+    "combatStats": {
+      "controlResistance": 0.008
+    }
   },
   {
     "id": "ARM-ВАМ-1-040",
@@ -4203,7 +5923,13 @@
     "effects": "Нет",
     "description": "Профессиональная часть комплекта «Вампир». Создана для роли: HP, интеллект и сопротивления.",
     "setBonus": "2/5: +2% профильного параметра; 3/5: +2% Выносливость; 4/5: усиление роли; 5/5: уникальный пассивный эффект",
-    "legacy": false
+    "legacy": false,
+    "attributes": {
+      "stamina": 1
+    },
+    "combatStats": {
+      "controlResistance": 0.01
+    }
   },
   {
     "id": "ARM-ВАМ-1-055",
@@ -4221,7 +5947,13 @@
     "effects": "+ к HP и сопротивлению контролю",
     "description": "Профессиональная часть комплекта «Вампир». Создана для роли: HP, интеллект и сопротивления.",
     "setBonus": "2/5: +3% профильного параметра; 3/5: +3% Выносливость; 4/5: усиление роли; 5/5: уникальный пассивный эффект",
-    "legacy": false
+    "legacy": false,
+    "attributes": {
+      "stamina": 1
+    },
+    "combatStats": {
+      "controlResistance": 0.013
+    }
   },
   {
     "id": "ARM-ВАМ-1-070",
@@ -4239,7 +5971,13 @@
     "effects": "+ к HP и сопротивлению контролю",
     "description": "Профессиональная часть комплекта «Вампир». Создана для роли: HP, интеллект и сопротивления.",
     "setBonus": "2/5: +4% профильного параметра; 3/5: +4% Выносливость; 4/5: усиление роли; 5/5: уникальный пассивный эффект",
-    "legacy": false
+    "legacy": false,
+    "attributes": {
+      "stamina": 1
+    },
+    "combatStats": {
+      "controlResistance": 0.015
+    }
   },
   {
     "id": "ARM-ВАМ-1-085",
@@ -4257,7 +5995,13 @@
     "effects": "+ к HP и сопротивлению контролю",
     "description": "Профессиональная часть комплекта «Вампир». Создана для роли: HP, интеллект и сопротивления.",
     "setBonus": "2/5: +5% профильного параметра; 3/5: +5% Выносливость; 4/5: усиление роли; 5/5: уникальный пассивный эффект",
-    "legacy": false
+    "legacy": false,
+    "attributes": {
+      "stamina": 1
+    },
+    "combatStats": {
+      "controlResistance": 0.018
+    }
   },
   {
     "id": "ARM-ВАМ-1-100",
@@ -4275,7 +6019,13 @@
     "effects": "+ к HP и сопротивлению контролю",
     "description": "Профессиональная часть комплекта «Вампир». Создана для роли: HP, интеллект и сопротивления.",
     "setBonus": "2/5: +6% профильного параметра; 3/5: +6% Выносливость; 4/5: усиление роли; 5/5: уникальный пассивный эффект",
-    "legacy": false
+    "legacy": false,
+    "attributes": {
+      "stamina": 2
+    },
+    "combatStats": {
+      "controlResistance": 0.02
+    }
   },
   {
     "id": "ARM-ВАМ-2-025",
@@ -4293,7 +6043,15 @@
     "effects": "Нет",
     "description": "Профессиональная часть комплекта «Вампир». Создана для роли: защита, HP и основной атрибут.",
     "setBonus": "2/5: +1% профильного параметра; 3/5: +1% Выносливость; 4/5: усиление роли; 5/5: уникальный пассивный эффект",
-    "legacy": false
+    "legacy": false,
+    "attributes": {
+      "vitality": 1,
+      "stamina": 1
+    },
+    "combatStats": {
+      "resistance": 0.008,
+      "health": 0.004
+    }
   },
   {
     "id": "ARM-ВАМ-2-040",
@@ -4311,7 +6069,15 @@
     "effects": "Нет",
     "description": "Профессиональная часть комплекта «Вампир». Создана для роли: защита, HP и основной атрибут.",
     "setBonus": "2/5: +2% профильного параметра; 3/5: +2% Выносливость; 4/5: усиление роли; 5/5: уникальный пассивный эффект",
-    "legacy": false
+    "legacy": false,
+    "attributes": {
+      "vitality": 2,
+      "stamina": 1
+    },
+    "combatStats": {
+      "resistance": 0.01,
+      "health": 0.006
+    }
   },
   {
     "id": "ARM-ВАМ-2-055",
@@ -4329,7 +6095,15 @@
     "effects": "+ к HP и основному атрибуту",
     "description": "Профессиональная часть комплекта «Вампир». Создана для роли: защита, HP и основной атрибут.",
     "setBonus": "2/5: +3% профильного параметра; 3/5: +3% Выносливость; 4/5: усиление роли; 5/5: уникальный пассивный эффект",
-    "legacy": false
+    "legacy": false,
+    "attributes": {
+      "vitality": 2,
+      "stamina": 1
+    },
+    "combatStats": {
+      "resistance": 0.013,
+      "health": 0.007
+    }
   },
   {
     "id": "ARM-ВАМ-2-070",
@@ -4347,7 +6121,15 @@
     "effects": "+ к HP и основному атрибуту",
     "description": "Профессиональная часть комплекта «Вампир». Создана для роли: защита, HP и основной атрибут.",
     "setBonus": "2/5: +4% профильного параметра; 3/5: +4% Выносливость; 4/5: усиление роли; 5/5: уникальный пассивный эффект",
-    "legacy": false
+    "legacy": false,
+    "attributes": {
+      "vitality": 3,
+      "stamina": 2
+    },
+    "combatStats": {
+      "resistance": 0.015,
+      "health": 0.008
+    }
   },
   {
     "id": "ARM-ВАМ-2-085",
@@ -4365,7 +6147,15 @@
     "effects": "+ к HP и основному атрибуту",
     "description": "Профессиональная часть комплекта «Вампир». Создана для роли: защита, HP и основной атрибут.",
     "setBonus": "2/5: +5% профильного параметра; 3/5: +5% Выносливость; 4/5: усиление роли; 5/5: уникальный пассивный эффект",
-    "legacy": false
+    "legacy": false,
+    "attributes": {
+      "vitality": 3,
+      "stamina": 2
+    },
+    "combatStats": {
+      "resistance": 0.018,
+      "health": 0.01
+    }
   },
   {
     "id": "ARM-ВАМ-2-100",
@@ -4383,7 +6173,15 @@
     "effects": "+ к HP и основному атрибуту",
     "description": "Профессиональная часть комплекта «Вампир». Создана для роли: защита, HP и основной атрибут.",
     "setBonus": "2/5: +6% профильного параметра; 3/5: +6% Выносливость; 4/5: усиление роли; 5/5: уникальный пассивный эффект",
-    "legacy": false
+    "legacy": false,
+    "attributes": {
+      "vitality": 4,
+      "stamina": 2
+    },
+    "combatStats": {
+      "resistance": 0.02,
+      "health": 0.011
+    }
   },
   {
     "id": "ARM-ВАМ-3-025",
@@ -4401,7 +6199,14 @@
     "effects": "Нет",
     "description": "Профессиональная часть комплекта «Вампир». Создана для роли: атака, точность и критический урон.",
     "setBonus": "2/5: +1% профильного параметра; 3/5: +1% Выносливость; 4/5: усиление роли; 5/5: уникальный пассивный эффект",
-    "legacy": false
+    "legacy": false,
+    "attributes": {
+      "stamina": 1
+    },
+    "combatStats": {
+      "physicalDamage": 0.008,
+      "lifesteal": 0.004
+    }
   },
   {
     "id": "ARM-ВАМ-3-040",
@@ -4419,7 +6224,14 @@
     "effects": "Нет",
     "description": "Профессиональная часть комплекта «Вампир». Создана для роли: атака, точность и критический урон.",
     "setBonus": "2/5: +2% профильного параметра; 3/5: +2% Выносливость; 4/5: усиление роли; 5/5: уникальный пассивный эффект",
-    "legacy": false
+    "legacy": false,
+    "attributes": {
+      "stamina": 1
+    },
+    "combatStats": {
+      "physicalDamage": 0.01,
+      "lifesteal": 0.006
+    }
   },
   {
     "id": "ARM-ВАМ-3-055",
@@ -4437,7 +6249,14 @@
     "effects": "+ к атаке и точности",
     "description": "Профессиональная часть комплекта «Вампир». Создана для роли: атака, точность и критический урон.",
     "setBonus": "2/5: +3% профильного параметра; 3/5: +3% Выносливость; 4/5: усиление роли; 5/5: уникальный пассивный эффект",
-    "legacy": false
+    "legacy": false,
+    "attributes": {
+      "stamina": 1
+    },
+    "combatStats": {
+      "physicalDamage": 0.013,
+      "lifesteal": 0.007
+    }
   },
   {
     "id": "ARM-ВАМ-3-070",
@@ -4455,7 +6274,14 @@
     "effects": "+ к атаке и точности",
     "description": "Профессиональная часть комплекта «Вампир». Создана для роли: атака, точность и критический урон.",
     "setBonus": "2/5: +4% профильного параметра; 3/5: +4% Выносливость; 4/5: усиление роли; 5/5: уникальный пассивный эффект",
-    "legacy": false
+    "legacy": false,
+    "attributes": {
+      "stamina": 2
+    },
+    "combatStats": {
+      "physicalDamage": 0.015,
+      "lifesteal": 0.008
+    }
   },
   {
     "id": "ARM-ВАМ-3-085",
@@ -4473,7 +6299,14 @@
     "effects": "+ к атаке и точности",
     "description": "Профессиональная часть комплекта «Вампир». Создана для роли: атака, точность и критический урон.",
     "setBonus": "2/5: +5% профильного параметра; 3/5: +5% Выносливость; 4/5: усиление роли; 5/5: уникальный пассивный эффект",
-    "legacy": false
+    "legacy": false,
+    "attributes": {
+      "stamina": 2
+    },
+    "combatStats": {
+      "physicalDamage": 0.018,
+      "lifesteal": 0.01
+    }
   },
   {
     "id": "ARM-ВАМ-3-100",
@@ -4491,7 +6324,14 @@
     "effects": "+ к атаке и точности",
     "description": "Профессиональная часть комплекта «Вампир». Создана для роли: атака, точность и критический урон.",
     "setBonus": "2/5: +6% профильного параметра; 3/5: +6% Выносливость; 4/5: усиление роли; 5/5: уникальный пассивный эффект",
-    "legacy": false
+    "legacy": false,
+    "attributes": {
+      "stamina": 2
+    },
+    "combatStats": {
+      "physicalDamage": 0.02,
+      "lifesteal": 0.011
+    }
   },
   {
     "id": "ARM-ВАМ-4-025",
@@ -4509,7 +6349,15 @@
     "effects": "Нет",
     "description": "Профессиональная часть комплекта «Вампир». Создана для роли: ловкость, уклонение и восстановление.",
     "setBonus": "2/5: +1% профильного параметра; 3/5: +1% Выносливость; 4/5: усиление роли; 5/5: уникальный пассивный эффект",
-    "legacy": false
+    "legacy": false,
+    "attributes": {
+      "dexterity": 1,
+      "vitality": 1
+    },
+    "combatStats": {
+      "evasion": 0.008,
+      "attackSpeed": 0.004
+    }
   },
   {
     "id": "ARM-ВАМ-4-040",
@@ -4527,7 +6375,15 @@
     "effects": "Нет",
     "description": "Профессиональная часть комплекта «Вампир». Создана для роли: ловкость, уклонение и восстановление.",
     "setBonus": "2/5: +2% профильного параметра; 3/5: +2% Выносливость; 4/5: усиление роли; 5/5: уникальный пассивный эффект",
-    "legacy": false
+    "legacy": false,
+    "attributes": {
+      "dexterity": 1,
+      "vitality": 1
+    },
+    "combatStats": {
+      "evasion": 0.01,
+      "attackSpeed": 0.006
+    }
   },
   {
     "id": "ARM-ВАМ-4-055",
@@ -4545,7 +6401,15 @@
     "effects": "+ к ловкости и уклонению",
     "description": "Профессиональная часть комплекта «Вампир». Создана для роли: ловкость, уклонение и восстановление.",
     "setBonus": "2/5: +3% профильного параметра; 3/5: +3% Выносливость; 4/5: усиление роли; 5/5: уникальный пассивный эффект",
-    "legacy": false
+    "legacy": false,
+    "attributes": {
+      "dexterity": 2,
+      "vitality": 1
+    },
+    "combatStats": {
+      "evasion": 0.013,
+      "attackSpeed": 0.007
+    }
   },
   {
     "id": "ARM-ВАМ-4-070",
@@ -4563,7 +6427,15 @@
     "effects": "+ к ловкости и уклонению",
     "description": "Профессиональная часть комплекта «Вампир». Создана для роли: ловкость, уклонение и восстановление.",
     "setBonus": "2/5: +4% профильного параметра; 3/5: +4% Выносливость; 4/5: усиление роли; 5/5: уникальный пассивный эффект",
-    "legacy": false
+    "legacy": false,
+    "attributes": {
+      "dexterity": 3,
+      "vitality": 1
+    },
+    "combatStats": {
+      "evasion": 0.015,
+      "attackSpeed": 0.008
+    }
   },
   {
     "id": "ARM-ВАМ-4-085",
@@ -4581,7 +6453,15 @@
     "effects": "+ к ловкости и уклонению",
     "description": "Профессиональная часть комплекта «Вампир». Создана для роли: ловкость, уклонение и восстановление.",
     "setBonus": "2/5: +5% профильного параметра; 3/5: +5% Выносливость; 4/5: усиление роли; 5/5: уникальный пассивный эффект",
-    "legacy": false
+    "legacy": false,
+    "attributes": {
+      "dexterity": 3,
+      "vitality": 1
+    },
+    "combatStats": {
+      "evasion": 0.018,
+      "attackSpeed": 0.01
+    }
   },
   {
     "id": "ARM-ВАМ-4-100",
@@ -4599,7 +6479,15 @@
     "effects": "+ к ловкости и уклонению",
     "description": "Профессиональная часть комплекта «Вампир». Создана для роли: ловкость, уклонение и восстановление.",
     "setBonus": "2/5: +6% профильного параметра; 3/5: +6% Выносливость; 4/5: усиление роли; 5/5: уникальный пассивный эффект",
-    "legacy": false
+    "legacy": false,
+    "attributes": {
+      "dexterity": 3,
+      "vitality": 1
+    },
+    "combatStats": {
+      "evasion": 0.02,
+      "attackSpeed": 0.011
+    }
   },
   {
     "id": "ARM-ВАМ-5-025",
@@ -4617,7 +6505,14 @@
     "effects": "Нет",
     "description": "Профессиональная часть комплекта «Вампир». Создана для роли: сопротивления и специальные эффекты.",
     "setBonus": "2/5: +1% профильного параметра; 3/5: +1% Выносливость; 4/5: усиление роли; 5/5: уникальный пассивный эффект",
-    "legacy": false
+    "legacy": false,
+    "attributes": {
+      "stamina": 1,
+      "vitality": 1
+    },
+    "combatStats": {
+      "lifesteal": 0.004
+    }
   },
   {
     "id": "ARM-ВАМ-5-040",
@@ -4635,7 +6530,14 @@
     "effects": "Нет",
     "description": "Профессиональная часть комплекта «Вампир». Создана для роли: сопротивления и специальные эффекты.",
     "setBonus": "2/5: +2% профильного параметра; 3/5: +2% Выносливость; 4/5: усиление роли; 5/5: уникальный пассивный эффект",
-    "legacy": false
+    "legacy": false,
+    "attributes": {
+      "stamina": 1,
+      "vitality": 1
+    },
+    "combatStats": {
+      "lifesteal": 0.006
+    }
   },
   {
     "id": "ARM-ВАМ-5-055",
@@ -4653,7 +6555,14 @@
     "effects": "Сопротивление отрицательным эффектам; восстановление",
     "description": "Профессиональная часть комплекта «Вампир». Создана для роли: сопротивления и специальные эффекты.",
     "setBonus": "2/5: +3% профильного параметра; 3/5: +3% Выносливость; 4/5: усиление роли; 5/5: уникальный пассивный эффект",
-    "legacy": false
+    "legacy": false,
+    "attributes": {
+      "stamina": 2,
+      "vitality": 1
+    },
+    "combatStats": {
+      "lifesteal": 0.007
+    }
   },
   {
     "id": "ARM-ВАМ-5-070",
@@ -4671,7 +6580,14 @@
     "effects": "Сопротивление отрицательным эффектам; восстановление",
     "description": "Профессиональная часть комплекта «Вампир». Создана для роли: сопротивления и специальные эффекты.",
     "setBonus": "2/5: +4% профильного параметра; 3/5: +4% Выносливость; 4/5: усиление роли; 5/5: уникальный пассивный эффект",
-    "legacy": false
+    "legacy": false,
+    "attributes": {
+      "stamina": 2,
+      "vitality": 1
+    },
+    "combatStats": {
+      "lifesteal": 0.008
+    }
   },
   {
     "id": "ARM-ВАМ-5-085",
@@ -4689,7 +6605,14 @@
     "effects": "Сопротивление отрицательным эффектам; восстановление",
     "description": "Профессиональная часть комплекта «Вампир». Создана для роли: сопротивления и специальные эффекты.",
     "setBonus": "2/5: +5% профильного параметра; 3/5: +5% Выносливость; 4/5: усиление роли; 5/5: уникальный пассивный эффект",
-    "legacy": false
+    "legacy": false,
+    "attributes": {
+      "stamina": 2,
+      "vitality": 1
+    },
+    "combatStats": {
+      "lifesteal": 0.01
+    }
   },
   {
     "id": "ARM-ВАМ-5-100",
@@ -4707,7 +6630,14 @@
     "effects": "Сопротивление отрицательным эффектам; восстановление",
     "description": "Профессиональная часть комплекта «Вампир». Создана для роли: сопротивления и специальные эффекты.",
     "setBonus": "2/5: +6% профильного параметра; 3/5: +6% Выносливость; 4/5: усиление роли; 5/5: уникальный пассивный эффект",
-    "legacy": false
+    "legacy": false,
+    "attributes": {
+      "stamina": 3,
+      "vitality": 2
+    },
+    "combatStats": {
+      "lifesteal": 0.011
+    }
   },
   {
     "id": "ARM-ДОБ-1-025",
@@ -4725,7 +6655,13 @@
     "effects": "Нет",
     "description": "Профессиональная часть комплекта «Добытчик». Создана для роли: HP, интеллект и сопротивления.",
     "setBonus": "2/5: +1% профильного параметра; 3/5: +1% Мудрость; 4/5: усиление роли; 5/5: уникальный пассивный эффект",
-    "legacy": false
+    "legacy": false,
+    "attributes": {
+      "intelligence": 1
+    },
+    "combatStats": {
+      "controlResistance": 0.008
+    }
   },
   {
     "id": "ARM-ДОБ-1-040",
@@ -4743,7 +6679,13 @@
     "effects": "Нет",
     "description": "Профессиональная часть комплекта «Добытчик». Создана для роли: HP, интеллект и сопротивления.",
     "setBonus": "2/5: +2% профильного параметра; 3/5: +2% Мудрость; 4/5: усиление роли; 5/5: уникальный пассивный эффект",
-    "legacy": false
+    "legacy": false,
+    "attributes": {
+      "intelligence": 1
+    },
+    "combatStats": {
+      "controlResistance": 0.01
+    }
   },
   {
     "id": "ARM-ДОБ-1-055",
@@ -4761,7 +6703,13 @@
     "effects": "+ к HP и сопротивлению контролю",
     "description": "Профессиональная часть комплекта «Добытчик». Создана для роли: HP, интеллект и сопротивления.",
     "setBonus": "2/5: +3% профильного параметра; 3/5: +3% Мудрость; 4/5: усиление роли; 5/5: уникальный пассивный эффект",
-    "legacy": false
+    "legacy": false,
+    "attributes": {
+      "intelligence": 1
+    },
+    "combatStats": {
+      "controlResistance": 0.013
+    }
   },
   {
     "id": "ARM-ДОБ-1-070",
@@ -4779,7 +6727,13 @@
     "effects": "+ к HP и сопротивлению контролю",
     "description": "Профессиональная часть комплекта «Добытчик». Создана для роли: HP, интеллект и сопротивления.",
     "setBonus": "2/5: +4% профильного параметра; 3/5: +4% Мудрость; 4/5: усиление роли; 5/5: уникальный пассивный эффект",
-    "legacy": false
+    "legacy": false,
+    "attributes": {
+      "intelligence": 1
+    },
+    "combatStats": {
+      "controlResistance": 0.015
+    }
   },
   {
     "id": "ARM-ДОБ-1-085",
@@ -4797,7 +6751,13 @@
     "effects": "+ к HP и сопротивлению контролю",
     "description": "Профессиональная часть комплекта «Добытчик». Создана для роли: HP, интеллект и сопротивления.",
     "setBonus": "2/5: +5% профильного параметра; 3/5: +5% Мудрость; 4/5: усиление роли; 5/5: уникальный пассивный эффект",
-    "legacy": false
+    "legacy": false,
+    "attributes": {
+      "intelligence": 1
+    },
+    "combatStats": {
+      "controlResistance": 0.018
+    }
   },
   {
     "id": "ARM-ДОБ-1-100",
@@ -4815,7 +6775,13 @@
     "effects": "+ к HP и сопротивлению контролю",
     "description": "Профессиональная часть комплекта «Добытчик». Создана для роли: HP, интеллект и сопротивления.",
     "setBonus": "2/5: +6% профильного параметра; 3/5: +6% Мудрость; 4/5: усиление роли; 5/5: уникальный пассивный эффект",
-    "legacy": false
+    "legacy": false,
+    "attributes": {
+      "intelligence": 2
+    },
+    "combatStats": {
+      "controlResistance": 0.02
+    }
   },
   {
     "id": "ARM-ДОБ-2-025",
@@ -4833,7 +6799,15 @@
     "effects": "Нет",
     "description": "Профессиональная часть комплекта «Добытчик». Создана для роли: защита, HP и основной атрибут.",
     "setBonus": "2/5: +1% профильного параметра; 3/5: +1% Мудрость; 4/5: усиление роли; 5/5: уникальный пассивный эффект",
-    "legacy": false
+    "legacy": false,
+    "attributes": {
+      "vitality": 1,
+      "stamina": 1
+    },
+    "combatStats": {
+      "resistance": 0.008,
+      "health": 0.004
+    }
   },
   {
     "id": "ARM-ДОБ-2-040",
@@ -4851,7 +6825,15 @@
     "effects": "Нет",
     "description": "Профессиональная часть комплекта «Добытчик». Создана для роли: защита, HP и основной атрибут.",
     "setBonus": "2/5: +2% профильного параметра; 3/5: +2% Мудрость; 4/5: усиление роли; 5/5: уникальный пассивный эффект",
-    "legacy": false
+    "legacy": false,
+    "attributes": {
+      "vitality": 2,
+      "stamina": 1
+    },
+    "combatStats": {
+      "resistance": 0.01,
+      "health": 0.006
+    }
   },
   {
     "id": "ARM-ДОБ-2-055",
@@ -4869,7 +6851,15 @@
     "effects": "+ к HP и основному атрибуту",
     "description": "Профессиональная часть комплекта «Добытчик». Создана для роли: защита, HP и основной атрибут.",
     "setBonus": "2/5: +3% профильного параметра; 3/5: +3% Мудрость; 4/5: усиление роли; 5/5: уникальный пассивный эффект",
-    "legacy": false
+    "legacy": false,
+    "attributes": {
+      "vitality": 2,
+      "stamina": 1
+    },
+    "combatStats": {
+      "resistance": 0.013,
+      "health": 0.007
+    }
   },
   {
     "id": "ARM-ДОБ-2-070",
@@ -4887,7 +6877,15 @@
     "effects": "+ к HP и основному атрибуту",
     "description": "Профессиональная часть комплекта «Добытчик». Создана для роли: защита, HP и основной атрибут.",
     "setBonus": "2/5: +4% профильного параметра; 3/5: +4% Мудрость; 4/5: усиление роли; 5/5: уникальный пассивный эффект",
-    "legacy": false
+    "legacy": false,
+    "attributes": {
+      "vitality": 3,
+      "stamina": 2
+    },
+    "combatStats": {
+      "resistance": 0.015,
+      "health": 0.008
+    }
   },
   {
     "id": "ARM-ДОБ-2-085",
@@ -4905,7 +6903,15 @@
     "effects": "+ к HP и основному атрибуту",
     "description": "Профессиональная часть комплекта «Добытчик». Создана для роли: защита, HP и основной атрибут.",
     "setBonus": "2/5: +5% профильного параметра; 3/5: +5% Мудрость; 4/5: усиление роли; 5/5: уникальный пассивный эффект",
-    "legacy": false
+    "legacy": false,
+    "attributes": {
+      "vitality": 3,
+      "stamina": 2
+    },
+    "combatStats": {
+      "resistance": 0.018,
+      "health": 0.01
+    }
   },
   {
     "id": "ARM-ДОБ-2-100",
@@ -4923,7 +6929,15 @@
     "effects": "+ к HP и основному атрибуту",
     "description": "Профессиональная часть комплекта «Добытчик». Создана для роли: защита, HP и основной атрибут.",
     "setBonus": "2/5: +6% профильного параметра; 3/5: +6% Мудрость; 4/5: усиление роли; 5/5: уникальный пассивный эффект",
-    "legacy": false
+    "legacy": false,
+    "attributes": {
+      "vitality": 4,
+      "stamina": 2
+    },
+    "combatStats": {
+      "resistance": 0.02,
+      "health": 0.011
+    }
   },
   {
     "id": "ARM-ДОБ-3-025",
@@ -4941,7 +6955,14 @@
     "effects": "Нет",
     "description": "Профессиональная часть комплекта «Добытчик». Создана для роли: атака, точность и критический урон.",
     "setBonus": "2/5: +1% профильного параметра; 3/5: +1% Мудрость; 4/5: усиление роли; 5/5: уникальный пассивный эффект",
-    "legacy": false
+    "legacy": false,
+    "attributes": {
+      "intelligence": 1
+    },
+    "combatStats": {
+      "physicalDamage": 0.008,
+      "loot": 0.004
+    }
   },
   {
     "id": "ARM-ДОБ-3-040",
@@ -4959,7 +6980,14 @@
     "effects": "Нет",
     "description": "Профессиональная часть комплекта «Добытчик». Создана для роли: атака, точность и критический урон.",
     "setBonus": "2/5: +2% профильного параметра; 3/5: +2% Мудрость; 4/5: усиление роли; 5/5: уникальный пассивный эффект",
-    "legacy": false
+    "legacy": false,
+    "attributes": {
+      "intelligence": 1
+    },
+    "combatStats": {
+      "physicalDamage": 0.01,
+      "loot": 0.006
+    }
   },
   {
     "id": "ARM-ДОБ-3-055",
@@ -4977,7 +7005,14 @@
     "effects": "+ к атаке и точности",
     "description": "Профессиональная часть комплекта «Добытчик». Создана для роли: атака, точность и критический урон.",
     "setBonus": "2/5: +3% профильного параметра; 3/5: +3% Мудрость; 4/5: усиление роли; 5/5: уникальный пассивный эффект",
-    "legacy": false
+    "legacy": false,
+    "attributes": {
+      "intelligence": 1
+    },
+    "combatStats": {
+      "physicalDamage": 0.013,
+      "loot": 0.007
+    }
   },
   {
     "id": "ARM-ДОБ-3-070",
@@ -4995,7 +7030,14 @@
     "effects": "+ к атаке и точности",
     "description": "Профессиональная часть комплекта «Добытчик». Создана для роли: атака, точность и критический урон.",
     "setBonus": "2/5: +4% профильного параметра; 3/5: +4% Мудрость; 4/5: усиление роли; 5/5: уникальный пассивный эффект",
-    "legacy": false
+    "legacy": false,
+    "attributes": {
+      "intelligence": 2
+    },
+    "combatStats": {
+      "physicalDamage": 0.015,
+      "loot": 0.008
+    }
   },
   {
     "id": "ARM-ДОБ-3-085",
@@ -5013,7 +7055,14 @@
     "effects": "+ к атаке и точности",
     "description": "Профессиональная часть комплекта «Добытчик». Создана для роли: атака, точность и критический урон.",
     "setBonus": "2/5: +5% профильного параметра; 3/5: +5% Мудрость; 4/5: усиление роли; 5/5: уникальный пассивный эффект",
-    "legacy": false
+    "legacy": false,
+    "attributes": {
+      "intelligence": 2
+    },
+    "combatStats": {
+      "physicalDamage": 0.018,
+      "loot": 0.01
+    }
   },
   {
     "id": "ARM-ДОБ-3-100",
@@ -5031,7 +7080,14 @@
     "effects": "+ к атаке и точности",
     "description": "Профессиональная часть комплекта «Добытчик». Создана для роли: атака, точность и критический урон.",
     "setBonus": "2/5: +6% профильного параметра; 3/5: +6% Мудрость; 4/5: усиление роли; 5/5: уникальный пассивный эффект",
-    "legacy": false
+    "legacy": false,
+    "attributes": {
+      "intelligence": 2
+    },
+    "combatStats": {
+      "physicalDamage": 0.02,
+      "loot": 0.011
+    }
   },
   {
     "id": "ARM-ДОБ-4-025",
@@ -5049,7 +7105,14 @@
     "effects": "Нет",
     "description": "Профессиональная часть комплекта «Добытчик». Создана для роли: ловкость, уклонение и восстановление.",
     "setBonus": "2/5: +1% профильного параметра; 3/5: +1% Мудрость; 4/5: усиление роли; 5/5: уникальный пассивный эффект",
-    "legacy": false
+    "legacy": false,
+    "attributes": {
+      "dexterity": 1
+    },
+    "combatStats": {
+      "evasion": 0.008,
+      "attackSpeed": 0.004
+    }
   },
   {
     "id": "ARM-ДОБ-4-040",
@@ -5067,7 +7130,14 @@
     "effects": "Нет",
     "description": "Профессиональная часть комплекта «Добытчик». Создана для роли: ловкость, уклонение и восстановление.",
     "setBonus": "2/5: +2% профильного параметра; 3/5: +2% Мудрость; 4/5: усиление роли; 5/5: уникальный пассивный эффект",
-    "legacy": false
+    "legacy": false,
+    "attributes": {
+      "dexterity": 1
+    },
+    "combatStats": {
+      "evasion": 0.01,
+      "attackSpeed": 0.006
+    }
   },
   {
     "id": "ARM-ДОБ-4-055",
@@ -5085,7 +7155,14 @@
     "effects": "+ к ловкости и уклонению",
     "description": "Профессиональная часть комплекта «Добытчик». Создана для роли: ловкость, уклонение и восстановление.",
     "setBonus": "2/5: +3% профильного параметра; 3/5: +3% Мудрость; 4/5: усиление роли; 5/5: уникальный пассивный эффект",
-    "legacy": false
+    "legacy": false,
+    "attributes": {
+      "dexterity": 2
+    },
+    "combatStats": {
+      "evasion": 0.013,
+      "attackSpeed": 0.007
+    }
   },
   {
     "id": "ARM-ДОБ-4-070",
@@ -5103,7 +7180,14 @@
     "effects": "+ к ловкости и уклонению",
     "description": "Профессиональная часть комплекта «Добытчик». Создана для роли: ловкость, уклонение и восстановление.",
     "setBonus": "2/5: +4% профильного параметра; 3/5: +4% Мудрость; 4/5: усиление роли; 5/5: уникальный пассивный эффект",
-    "legacy": false
+    "legacy": false,
+    "attributes": {
+      "dexterity": 3
+    },
+    "combatStats": {
+      "evasion": 0.015,
+      "attackSpeed": 0.008
+    }
   },
   {
     "id": "ARM-ДОБ-4-085",
@@ -5121,7 +7205,14 @@
     "effects": "+ к ловкости и уклонению",
     "description": "Профессиональная часть комплекта «Добытчик». Создана для роли: ловкость, уклонение и восстановление.",
     "setBonus": "2/5: +5% профильного параметра; 3/5: +5% Мудрость; 4/5: усиление роли; 5/5: уникальный пассивный эффект",
-    "legacy": false
+    "legacy": false,
+    "attributes": {
+      "dexterity": 3
+    },
+    "combatStats": {
+      "evasion": 0.018,
+      "attackSpeed": 0.01
+    }
   },
   {
     "id": "ARM-ДОБ-4-100",
@@ -5139,7 +7230,14 @@
     "effects": "+ к ловкости и уклонению",
     "description": "Профессиональная часть комплекта «Добытчик». Создана для роли: ловкость, уклонение и восстановление.",
     "setBonus": "2/5: +6% профильного параметра; 3/5: +6% Мудрость; 4/5: усиление роли; 5/5: уникальный пассивный эффект",
-    "legacy": false
+    "legacy": false,
+    "attributes": {
+      "dexterity": 3
+    },
+    "combatStats": {
+      "evasion": 0.02,
+      "attackSpeed": 0.011
+    }
   },
   {
     "id": "ARM-ДОБ-5-025",
@@ -5157,7 +7255,14 @@
     "effects": "Нет",
     "description": "Профессиональная часть комплекта «Добытчик». Создана для роли: сопротивления и специальные эффекты.",
     "setBonus": "2/5: +1% профильного параметра; 3/5: +1% Мудрость; 4/5: усиление роли; 5/5: уникальный пассивный эффект",
-    "legacy": false
+    "legacy": false,
+    "attributes": {
+      "stamina": 1,
+      "vitality": 1
+    },
+    "combatStats": {
+      "loot": 0.004
+    }
   },
   {
     "id": "ARM-ДОБ-5-040",
@@ -5175,7 +7280,14 @@
     "effects": "Нет",
     "description": "Профессиональная часть комплекта «Добытчик». Создана для роли: сопротивления и специальные эффекты.",
     "setBonus": "2/5: +2% профильного параметра; 3/5: +2% Мудрость; 4/5: усиление роли; 5/5: уникальный пассивный эффект",
-    "legacy": false
+    "legacy": false,
+    "attributes": {
+      "stamina": 1,
+      "vitality": 1
+    },
+    "combatStats": {
+      "loot": 0.006
+    }
   },
   {
     "id": "ARM-ДОБ-5-055",
@@ -5193,7 +7305,14 @@
     "effects": "Шанс обнаружить дополнительный региональный ресурс",
     "description": "Профессиональная часть комплекта «Добытчик». Создана для роли: сопротивления и специальные эффекты.",
     "setBonus": "2/5: +3% профильного параметра; 3/5: +3% Мудрость; 4/5: усиление роли; 5/5: уникальный пассивный эффект",
-    "legacy": false
+    "legacy": false,
+    "attributes": {
+      "stamina": 2,
+      "vitality": 1
+    },
+    "combatStats": {
+      "loot": 0.007
+    }
   },
   {
     "id": "ARM-ДОБ-5-070",
@@ -5211,7 +7330,14 @@
     "effects": "Шанс обнаружить дополнительный региональный ресурс",
     "description": "Профессиональная часть комплекта «Добытчик». Создана для роли: сопротивления и специальные эффекты.",
     "setBonus": "2/5: +4% профильного параметра; 3/5: +4% Мудрость; 4/5: усиление роли; 5/5: уникальный пассивный эффект",
-    "legacy": false
+    "legacy": false,
+    "attributes": {
+      "stamina": 2,
+      "vitality": 1
+    },
+    "combatStats": {
+      "loot": 0.008
+    }
   },
   {
     "id": "ARM-ДОБ-5-085",
@@ -5229,7 +7355,14 @@
     "effects": "Шанс обнаружить дополнительный региональный ресурс",
     "description": "Профессиональная часть комплекта «Добытчик». Создана для роли: сопротивления и специальные эффекты.",
     "setBonus": "2/5: +5% профильного параметра; 3/5: +5% Мудрость; 4/5: усиление роли; 5/5: уникальный пассивный эффект",
-    "legacy": false
+    "legacy": false,
+    "attributes": {
+      "stamina": 2,
+      "vitality": 1
+    },
+    "combatStats": {
+      "loot": 0.01
+    }
   },
   {
     "id": "ARM-ДОБ-5-100",
@@ -5247,7 +7380,14 @@
     "effects": "Шанс обнаружить дополнительный региональный ресурс",
     "description": "Профессиональная часть комплекта «Добытчик». Создана для роли: сопротивления и специальные эффекты.",
     "setBonus": "2/5: +6% профильного параметра; 3/5: +6% Мудрость; 4/5: усиление роли; 5/5: уникальный пассивный эффект",
-    "legacy": false
+    "legacy": false,
+    "attributes": {
+      "stamina": 3,
+      "vitality": 2
+    },
+    "combatStats": {
+      "loot": 0.011
+    }
   },
   {
     "id": "LEG-МАГ-1",
@@ -5440,7 +7580,7 @@
     "defense": 180,
     "health": 260,
     "attack": 0,
-    "profession": "Воин",
+    "profession": "Рыцарь",
     "rarity": "Легендарная",
     "effects": "+10% к максимальному HP",
     "description": "Часть легендарного комплекта «Непоколебимая клятва». Тема комплекта: здоровье, защита, стойкость против боссов.",
@@ -5458,7 +7598,7 @@
     "defense": 360,
     "health": 420,
     "attack": 0,
-    "profession": "Воин",
+    "profession": "Рыцарь",
     "rarity": "Легендарная",
     "effects": "+8% к физической защите",
     "description": "Часть легендарного комплекта «Непоколебимая клятва». Тема комплекта: здоровье, защита, стойкость против боссов.",
@@ -5476,7 +7616,7 @@
     "defense": 135,
     "health": 100,
     "attack": 70,
-    "profession": "Воин",
+    "profession": "Рыцарь",
     "rarity": "Легендарная",
     "effects": "+5% к физическому урону",
     "description": "Часть легендарного комплекта «Непоколебимая клятва». Тема комплекта: здоровье, защита, стойкость против боссов.",
@@ -5494,7 +7634,7 @@
     "defense": 135,
     "health": 140,
     "attack": 0,
-    "profession": "Воин",
+    "profession": "Рыцарь",
     "rarity": "Легендарная",
     "effects": "+8% к сопротивлению контролю",
     "description": "Часть легендарного комплекта «Непоколебимая клятва». Тема комплекта: здоровье, защита, стойкость против боссов.",
@@ -5512,7 +7652,7 @@
     "defense": 90,
     "health": 180,
     "attack": 0,
-    "profession": "Воин",
+    "profession": "Рыцарь",
     "rarity": "Легендарная",
     "effects": "+10% к стойкости против боссов",
     "description": "Часть легендарного комплекта «Непоколебимая клятва». Тема комплекта: здоровье, защита, стойкость против боссов.",
@@ -5881,7 +8021,7 @@
   },
   {
     "id": "PEN-001",
-    "name": "Кулон прилежного котёнка",
+    "name": "Кольцо прилежного котёнка",
     "kind": "amulet",
     "slot": "amulet",
     "price": 150,
@@ -6076,5 +8216,1030 @@
     "upgradeTotal": 252500,
     "upgradeLast": 5000,
     "legacy": false
+  },
+  {
+    "id": "WPN-BIRD-ASS-025",
+    "name": "Кинжал ветреной тени",
+    "kind": "weapon",
+    "slot": "weapon",
+    "price": 15000,
+    "level": 25,
+    "attack": 34,
+    "profession": "Ассасин птицы",
+    "rarity": "Обычная",
+    "primaryAttribute": "+8 к Ловкость",
+    "effects": "Нет",
+    "description": "Одноручный кинжал школы Ассасина птицы. Повышает точность быстрых атак и критический урон.",
+    "legacy": false,
+    "attributes": {
+      "strength": 1
+    },
+    "combatStats": {
+      "physicalDamage": 0.012,
+      "critChance": 0.004
+    },
+    "weaponStyle": "single-dagger",
+    "race": "Птица"
+  },
+  {
+    "id": "WPN-BIRD-ASS-040",
+    "name": "Кинжал тихого крыла",
+    "kind": "weapon",
+    "slot": "weapon",
+    "price": 36000,
+    "level": 40,
+    "attack": 50,
+    "profession": "Ассасин птицы",
+    "rarity": "Обычная",
+    "primaryAttribute": "+12 к Ловкость",
+    "effects": "Нет",
+    "description": "Одноручный кинжал школы Ассасина птицы. Повышает точность быстрых атак и критический урон.",
+    "legacy": false,
+    "attributes": {
+      "strength": 1
+    },
+    "combatStats": {
+      "physicalDamage": 0.015,
+      "critChance": 0.006
+    },
+    "weaponStyle": "single-dagger",
+    "race": "Птица"
+  },
+  {
+    "id": "WPN-BIRD-ASS-055",
+    "name": "Клинок восходящего ветра",
+    "kind": "weapon",
+    "slot": "weapon",
+    "price": 78000,
+    "level": 55,
+    "attack": 72,
+    "profession": "Ассасин птицы",
+    "rarity": "Обычная",
+    "primaryAttribute": "+17 к Ловкость",
+    "effects": "Нет",
+    "description": "Одноручный кинжал школы Ассасина птицы. Повышает точность быстрых атак и критический урон.",
+    "legacy": false,
+    "attributes": {
+      "strength": 2
+    },
+    "combatStats": {
+      "physicalDamage": 0.02,
+      "critChance": 0.007
+    },
+    "weaponStyle": "single-dagger",
+    "race": "Птица"
+  },
+  {
+    "id": "WPN-BIRD-ASS-070",
+    "name": "Кинжал безмолвного неба",
+    "kind": "weapon",
+    "slot": "weapon",
+    "price": 156000,
+    "level": 70,
+    "attack": 100,
+    "profession": "Ассасин птицы",
+    "rarity": "Обычная",
+    "primaryAttribute": "+23 к Ловкость",
+    "effects": "+4% к профильной эффективности",
+    "description": "Одноручный кинжал школы Ассасина птицы. Повышает точность быстрых атак и критический урон.",
+    "legacy": false,
+    "attributes": {
+      "strength": 2
+    },
+    "combatStats": {
+      "physicalDamage": 0.023,
+      "critChance": 0.008
+    },
+    "weaponStyle": "single-dagger",
+    "race": "Птица"
+  },
+  {
+    "id": "WPN-BIRD-ASS-085",
+    "name": "Лезвие последнего порыва",
+    "kind": "weapon",
+    "slot": "weapon",
+    "price": 312000,
+    "level": 85,
+    "attack": 138,
+    "profession": "Ассасин птицы",
+    "rarity": "Обычная",
+    "primaryAttribute": "+30 к Ловкость",
+    "effects": "+5% к профильной эффективности",
+    "description": "Одноручный кинжал школы Ассасина птицы. Повышает точность быстрых атак и критический урон.",
+    "legacy": false,
+    "attributes": {
+      "strength": 2
+    },
+    "combatStats": {
+      "physicalDamage": 0.027,
+      "critChance": 0.01
+    },
+    "weaponStyle": "single-dagger",
+    "race": "Птица"
+  },
+  {
+    "id": "WPN-BIRD-ASS-100",
+    "name": "Кинжал небесного следа",
+    "kind": "weapon",
+    "slot": "weapon",
+    "price": 600000,
+    "level": 100,
+    "attack": 184,
+    "profession": "Ассасин птицы",
+    "rarity": "Обычная",
+    "primaryAttribute": "+38 к Ловкость",
+    "effects": "+6% к профильной эффективности",
+    "description": "Одноручный кинжал школы Ассасина птицы. Повышает точность быстрых атак и критический урон.",
+    "legacy": false,
+    "attributes": {
+      "strength": 3
+    },
+    "combatStats": {
+      "physicalDamage": 0.03,
+      "critChance": 0.011
+    },
+    "weaponStyle": "single-dagger",
+    "race": "Птица"
+  },
+  {
+    "id": "ARM-BIRD-ASS-1-025",
+    "name": "Крылатый Капюшон последней тени «ученика»",
+    "kind": "armor",
+    "slot": "helmet",
+    "set": "Тень высоты-25",
+    "price": 3000,
+    "level": 25,
+    "defense": 64,
+    "health": 80,
+    "attack": 0,
+    "profession": "Ассасин птицы",
+    "rarity": "Обычная",
+    "effects": "Нет",
+    "description": "Профессиональная часть комплекта «Ассасин птицы». Создана для роли: HP, интеллект и сопротивления.",
+    "setBonus": "2/5: +1% профильного параметра; 3/5: +1% Ловкость; 4/5: усиление роли; 5/5: уникальный пассивный эффект",
+    "legacy": false,
+    "attributes": {
+      "dexterity": 1
+    },
+    "combatStats": {
+      "accuracy": 0.008,
+      "critChance": 0.004
+    },
+    "race": "Птица"
+  },
+  {
+    "id": "ARM-BIRD-ASS-1-040",
+    "name": "Крылатый Капюшон последней тени «посвящённого»",
+    "kind": "armor",
+    "slot": "helmet",
+    "set": "Тень высоты-40",
+    "price": 7200,
+    "level": 40,
+    "defense": 86,
+    "health": 110,
+    "attack": 0,
+    "profession": "Ассасин птицы",
+    "rarity": "Обычная",
+    "effects": "Нет",
+    "description": "Профессиональная часть комплекта «Ассасин птицы». Создана для роли: HP, интеллект и сопротивления.",
+    "setBonus": "2/5: +2% профильного параметра; 3/5: +2% Ловкость; 4/5: усиление роли; 5/5: уникальный пассивный эффект",
+    "legacy": false,
+    "attributes": {
+      "dexterity": 1
+    },
+    "combatStats": {
+      "accuracy": 0.01,
+      "critChance": 0.006
+    },
+    "race": "Птица"
+  },
+  {
+    "id": "ARM-BIRD-ASS-1-055",
+    "name": "Крылатый Капюшон последней тени «мастера»",
+    "kind": "armor",
+    "slot": "helmet",
+    "set": "Тень высоты-55",
+    "price": 15600,
+    "level": 55,
+    "defense": 112,
+    "health": 144,
+    "attack": 0,
+    "profession": "Ассасин птицы",
+    "rarity": "Обычная",
+    "effects": "+ к HP и сопротивлению контролю",
+    "description": "Профессиональная часть комплекта «Ассасин птицы». Создана для роли: HP, интеллект и сопротивления.",
+    "setBonus": "2/5: +3% профильного параметра; 3/5: +3% Ловкость; 4/5: усиление роли; 5/5: уникальный пассивный эффект",
+    "legacy": false,
+    "attributes": {
+      "dexterity": 1
+    },
+    "combatStats": {
+      "accuracy": 0.013,
+      "critChance": 0.007
+    },
+    "race": "Птица"
+  },
+  {
+    "id": "ARM-BIRD-ASS-1-070",
+    "name": "Крылатый Капюшон последней тени «ветерана»",
+    "kind": "armor",
+    "slot": "helmet",
+    "set": "Тень высоты-70",
+    "price": 31200,
+    "level": 70,
+    "defense": 142,
+    "health": 184,
+    "attack": 0,
+    "profession": "Ассасин птицы",
+    "rarity": "Обычная",
+    "effects": "+ к HP и сопротивлению контролю",
+    "description": "Профессиональная часть комплекта «Ассасин птицы». Создана для роли: HP, интеллект и сопротивления.",
+    "setBonus": "2/5: +4% профильного параметра; 3/5: +4% Ловкость; 4/5: усиление роли; 5/5: уникальный пассивный эффект",
+    "legacy": false,
+    "attributes": {
+      "dexterity": 1
+    },
+    "combatStats": {
+      "accuracy": 0.015,
+      "critChance": 0.008
+    },
+    "race": "Птица"
+  },
+  {
+    "id": "ARM-BIRD-ASS-1-085",
+    "name": "Крылатый Капюшон последней тени «элиты»",
+    "kind": "armor",
+    "slot": "helmet",
+    "set": "Тень высоты-85",
+    "price": 62400,
+    "level": 85,
+    "defense": 176,
+    "health": 230,
+    "attack": 0,
+    "profession": "Ассасин птицы",
+    "rarity": "Обычная",
+    "effects": "+ к HP и сопротивлению контролю",
+    "description": "Профессиональная часть комплекта «Ассасин птицы». Создана для роли: HP, интеллект и сопротивления.",
+    "setBonus": "2/5: +5% профильного параметра; 3/5: +5% Ловкость; 4/5: усиление роли; 5/5: уникальный пассивный эффект",
+    "legacy": false,
+    "attributes": {
+      "dexterity": 1
+    },
+    "combatStats": {
+      "accuracy": 0.018,
+      "critChance": 0.01
+    },
+    "race": "Птица"
+  },
+  {
+    "id": "ARM-BIRD-ASS-1-100",
+    "name": "Крылатый Капюшон последней тени «первого круга»",
+    "kind": "armor",
+    "slot": "helmet",
+    "set": "Тень высоты-100",
+    "price": 120000,
+    "level": 100,
+    "defense": 216,
+    "health": 280,
+    "attack": 0,
+    "profession": "Ассасин птицы",
+    "rarity": "Обычная",
+    "effects": "+ к HP и сопротивлению контролю",
+    "description": "Профессиональная часть комплекта «Ассасин птицы». Создана для роли: HP, интеллект и сопротивления.",
+    "setBonus": "2/5: +6% профильного параметра; 3/5: +6% Ловкость; 4/5: усиление роли; 5/5: уникальный пассивный эффект",
+    "legacy": false,
+    "attributes": {
+      "dexterity": 2
+    },
+    "combatStats": {
+      "accuracy": 0.02,
+      "critChance": 0.011
+    },
+    "race": "Птица"
+  },
+  {
+    "id": "ARM-BIRD-ASS-2-025",
+    "name": "Крылатый Доспех безмолвного шага «ученика»",
+    "kind": "armor",
+    "slot": "armor",
+    "set": "Тень высоты-25",
+    "price": 6000,
+    "level": 25,
+    "defense": 128,
+    "health": 120,
+    "attack": 0,
+    "profession": "Ассасин птицы",
+    "rarity": "Обычная",
+    "effects": "Нет",
+    "description": "Профессиональная часть комплекта «Ассасин птицы». Создана для роли: защита, HP и основной атрибут.",
+    "setBonus": "2/5: +1% профильного параметра; 3/5: +1% Ловкость; 4/5: усиление роли; 5/5: уникальный пассивный эффект",
+    "legacy": false,
+    "attributes": {
+      "vitality": 1,
+      "stamina": 1
+    },
+    "combatStats": {
+      "resistance": 0.008,
+      "health": 0.004
+    },
+    "race": "Птица"
+  },
+  {
+    "id": "ARM-BIRD-ASS-2-040",
+    "name": "Крылатый Доспех безмолвного шага «посвящённого»",
+    "kind": "armor",
+    "slot": "armor",
+    "set": "Тень высоты-40",
+    "price": 14400,
+    "level": 40,
+    "defense": 172,
+    "health": 165,
+    "attack": 0,
+    "profession": "Ассасин птицы",
+    "rarity": "Обычная",
+    "effects": "Нет",
+    "description": "Профессиональная часть комплекта «Ассасин птицы». Создана для роли: защита, HP и основной атрибут.",
+    "setBonus": "2/5: +2% профильного параметра; 3/5: +2% Ловкость; 4/5: усиление роли; 5/5: уникальный пассивный эффект",
+    "legacy": false,
+    "attributes": {
+      "vitality": 2,
+      "stamina": 1
+    },
+    "combatStats": {
+      "resistance": 0.01,
+      "health": 0.006
+    },
+    "race": "Птица"
+  },
+  {
+    "id": "ARM-BIRD-ASS-2-055",
+    "name": "Крылатый Доспех безмолвного шага «мастера»",
+    "kind": "armor",
+    "slot": "armor",
+    "set": "Тень высоты-55",
+    "price": 31200,
+    "level": 55,
+    "defense": 224,
+    "health": 216,
+    "attack": 0,
+    "profession": "Ассасин птицы",
+    "rarity": "Обычная",
+    "effects": "+ к HP и основному атрибуту",
+    "description": "Профессиональная часть комплекта «Ассасин птицы». Создана для роли: защита, HP и основной атрибут.",
+    "setBonus": "2/5: +3% профильного параметра; 3/5: +3% Ловкость; 4/5: усиление роли; 5/5: уникальный пассивный эффект",
+    "legacy": false,
+    "attributes": {
+      "vitality": 2,
+      "stamina": 1
+    },
+    "combatStats": {
+      "resistance": 0.013,
+      "health": 0.007
+    },
+    "race": "Птица"
+  },
+  {
+    "id": "ARM-BIRD-ASS-2-070",
+    "name": "Крылатый Доспех безмолвного шага «ветерана»",
+    "kind": "armor",
+    "slot": "armor",
+    "set": "Тень высоты-70",
+    "price": 62400,
+    "level": 70,
+    "defense": 284,
+    "health": 276,
+    "attack": 0,
+    "profession": "Ассасин птицы",
+    "rarity": "Обычная",
+    "effects": "+ к HP и основному атрибуту",
+    "description": "Профессиональная часть комплекта «Ассасин птицы». Создана для роли: защита, HP и основной атрибут.",
+    "setBonus": "2/5: +4% профильного параметра; 3/5: +4% Ловкость; 4/5: усиление роли; 5/5: уникальный пассивный эффект",
+    "legacy": false,
+    "attributes": {
+      "vitality": 3,
+      "stamina": 2
+    },
+    "combatStats": {
+      "resistance": 0.015,
+      "health": 0.008
+    },
+    "race": "Птица"
+  },
+  {
+    "id": "ARM-BIRD-ASS-2-085",
+    "name": "Крылатый Доспех безмолвного шага «элиты»",
+    "kind": "armor",
+    "slot": "armor",
+    "set": "Тень высоты-85",
+    "price": 124800,
+    "level": 85,
+    "defense": 352,
+    "health": 345,
+    "attack": 0,
+    "profession": "Ассасин птицы",
+    "rarity": "Обычная",
+    "effects": "+ к HP и основному атрибуту",
+    "description": "Профессиональная часть комплекта «Ассасин птицы». Создана для роли: защита, HP и основной атрибут.",
+    "setBonus": "2/5: +5% профильного параметра; 3/5: +5% Ловкость; 4/5: усиление роли; 5/5: уникальный пассивный эффект",
+    "legacy": false,
+    "attributes": {
+      "vitality": 3,
+      "stamina": 2
+    },
+    "combatStats": {
+      "resistance": 0.018,
+      "health": 0.01
+    },
+    "race": "Птица"
+  },
+  {
+    "id": "ARM-BIRD-ASS-2-100",
+    "name": "Крылатый Доспех безмолвного шага «первого круга»",
+    "kind": "armor",
+    "slot": "armor",
+    "set": "Тень высоты-100",
+    "price": 240000,
+    "level": 100,
+    "defense": 432,
+    "health": 420,
+    "attack": 0,
+    "profession": "Ассасин птицы",
+    "rarity": "Обычная",
+    "effects": "+ к HP и основному атрибуту",
+    "description": "Профессиональная часть комплекта «Ассасин птицы». Создана для роли: защита, HP и основной атрибут.",
+    "setBonus": "2/5: +6% профильного параметра; 3/5: +6% Ловкость; 4/5: усиление роли; 5/5: уникальный пассивный эффект",
+    "legacy": false,
+    "attributes": {
+      "vitality": 4,
+      "stamina": 2
+    },
+    "combatStats": {
+      "resistance": 0.02,
+      "health": 0.011
+    },
+    "race": "Птица"
+  },
+  {
+    "id": "ARM-BIRD-ASS-3-025",
+    "name": "Крылатый Перчатки скрытого клинка «ученика»",
+    "kind": "armor",
+    "slot": "gloves",
+    "set": "Тень высоты-25",
+    "price": 2250,
+    "level": 25,
+    "defense": 48,
+    "health": 40,
+    "attack": 38,
+    "profession": "Ассасин птицы",
+    "rarity": "Обычная",
+    "effects": "Нет",
+    "description": "Профессиональная часть комплекта «Ассасин птицы». Создана для роли: атака, точность и критический урон.",
+    "setBonus": "2/5: +1% профильного параметра; 3/5: +1% Ловкость; 4/5: усиление роли; 5/5: уникальный пассивный эффект",
+    "legacy": false,
+    "attributes": {
+      "dexterity": 1
+    },
+    "combatStats": {
+      "physicalDamage": 0.008,
+      "critDamage": 0.004
+    },
+    "race": "Птица"
+  },
+  {
+    "id": "ARM-BIRD-ASS-3-040",
+    "name": "Крылатый Перчатки скрытого клинка «посвящённого»",
+    "kind": "armor",
+    "slot": "gloves",
+    "set": "Тень высоты-40",
+    "price": 5400,
+    "level": 40,
+    "defense": 64,
+    "health": 55,
+    "attack": 52,
+    "profession": "Ассасин птицы",
+    "rarity": "Обычная",
+    "effects": "Нет",
+    "description": "Профессиональная часть комплекта «Ассасин птицы». Создана для роли: атака, точность и критический урон.",
+    "setBonus": "2/5: +2% профильного параметра; 3/5: +2% Ловкость; 4/5: усиление роли; 5/5: уникальный пассивный эффект",
+    "legacy": false,
+    "attributes": {
+      "dexterity": 1
+    },
+    "combatStats": {
+      "physicalDamage": 0.01,
+      "critDamage": 0.006
+    },
+    "race": "Птица"
+  },
+  {
+    "id": "ARM-BIRD-ASS-3-055",
+    "name": "Крылатый Перчатки скрытого клинка «мастера»",
+    "kind": "armor",
+    "slot": "gloves",
+    "set": "Тень высоты-55",
+    "price": 11700,
+    "level": 55,
+    "defense": 84,
+    "health": 72,
+    "attack": 67,
+    "profession": "Ассасин птицы",
+    "rarity": "Обычная",
+    "effects": "+ к атаке и точности",
+    "description": "Профессиональная часть комплекта «Ассасин птицы». Создана для роли: атака, точность и критический урон.",
+    "setBonus": "2/5: +3% профильного параметра; 3/5: +3% Ловкость; 4/5: усиление роли; 5/5: уникальный пассивный эффект",
+    "legacy": false,
+    "attributes": {
+      "dexterity": 1
+    },
+    "combatStats": {
+      "physicalDamage": 0.013,
+      "critDamage": 0.007
+    },
+    "race": "Птица"
+  },
+  {
+    "id": "ARM-BIRD-ASS-3-070",
+    "name": "Крылатый Перчатки скрытого клинка «ветерана»",
+    "kind": "armor",
+    "slot": "gloves",
+    "set": "Тень высоты-70",
+    "price": 23400,
+    "level": 70,
+    "defense": 106,
+    "health": 92,
+    "attack": 85,
+    "profession": "Ассасин птицы",
+    "rarity": "Обычная",
+    "effects": "+ к атаке и точности",
+    "description": "Профессиональная часть комплекта «Ассасин птицы». Создана для роли: атака, точность и критический урон.",
+    "setBonus": "2/5: +4% профильного параметра; 3/5: +4% Ловкость; 4/5: усиление роли; 5/5: уникальный пассивный эффект",
+    "legacy": false,
+    "attributes": {
+      "dexterity": 1
+    },
+    "combatStats": {
+      "physicalDamage": 0.015,
+      "critDamage": 0.008
+    },
+    "race": "Птица"
+  },
+  {
+    "id": "ARM-BIRD-ASS-3-085",
+    "name": "Крылатый Перчатки скрытого клинка «элиты»",
+    "kind": "armor",
+    "slot": "gloves",
+    "set": "Тень высоты-85",
+    "price": 46800,
+    "level": 85,
+    "defense": 132,
+    "health": 115,
+    "attack": 106,
+    "profession": "Ассасин птицы",
+    "rarity": "Обычная",
+    "effects": "+ к атаке и точности",
+    "description": "Профессиональная часть комплекта «Ассасин птицы». Создана для роли: атака, точность и критический урон.",
+    "setBonus": "2/5: +5% профильного параметра; 3/5: +5% Ловкость; 4/5: усиление роли; 5/5: уникальный пассивный эффект",
+    "legacy": false,
+    "attributes": {
+      "dexterity": 1
+    },
+    "combatStats": {
+      "physicalDamage": 0.018,
+      "critDamage": 0.01
+    },
+    "race": "Птица"
+  },
+  {
+    "id": "ARM-BIRD-ASS-3-100",
+    "name": "Крылатый Перчатки скрытого клинка «первого круга»",
+    "kind": "armor",
+    "slot": "gloves",
+    "set": "Тень высоты-100",
+    "price": 90000,
+    "level": 100,
+    "defense": 162,
+    "health": 140,
+    "attack": 130,
+    "profession": "Ассасин птицы",
+    "rarity": "Обычная",
+    "effects": "+ к атаке и точности",
+    "description": "Профессиональная часть комплекта «Ассасин птицы». Создана для роли: атака, точность и критический урон.",
+    "setBonus": "2/5: +6% профильного параметра; 3/5: +6% Ловкость; 4/5: усиление роли; 5/5: уникальный пассивный эффект",
+    "legacy": false,
+    "attributes": {
+      "dexterity": 1
+    },
+    "combatStats": {
+      "physicalDamage": 0.02,
+      "critDamage": 0.011
+    },
+    "race": "Птица"
+  },
+  {
+    "id": "ARM-BIRD-ASS-4-025",
+    "name": "Крылатый Сапоги бесшумной тропы «ученика»",
+    "kind": "armor",
+    "slot": "boots",
+    "set": "Тень высоты-25",
+    "price": 2250,
+    "level": 25,
+    "defense": 48,
+    "health": 60,
+    "attack": 0,
+    "profession": "Ассасин птицы",
+    "rarity": "Обычная",
+    "effects": "Нет",
+    "description": "Профессиональная часть комплекта «Ассасин птицы». Создана для роли: ловкость, уклонение и восстановление.",
+    "setBonus": "2/5: +1% профильного параметра; 3/5: +1% Ловкость; 4/5: усиление роли; 5/5: уникальный пассивный эффект",
+    "legacy": false,
+    "attributes": {
+      "dexterity": 1
+    },
+    "combatStats": {
+      "evasion": 0.008,
+      "attackSpeed": 0.004
+    },
+    "race": "Птица"
+  },
+  {
+    "id": "ARM-BIRD-ASS-4-040",
+    "name": "Крылатый Сапоги бесшумной тропы «посвящённого»",
+    "kind": "armor",
+    "slot": "boots",
+    "set": "Тень высоты-40",
+    "price": 5400,
+    "level": 40,
+    "defense": 64,
+    "health": 82,
+    "attack": 0,
+    "profession": "Ассасин птицы",
+    "rarity": "Обычная",
+    "effects": "Нет",
+    "description": "Профессиональная часть комплекта «Ассасин птицы». Создана для роли: ловкость, уклонение и восстановление.",
+    "setBonus": "2/5: +2% профильного параметра; 3/5: +2% Ловкость; 4/5: усиление роли; 5/5: уникальный пассивный эффект",
+    "legacy": false,
+    "attributes": {
+      "dexterity": 1
+    },
+    "combatStats": {
+      "evasion": 0.01,
+      "attackSpeed": 0.006
+    },
+    "race": "Птица"
+  },
+  {
+    "id": "ARM-BIRD-ASS-4-055",
+    "name": "Крылатый Сапоги бесшумной тропы «мастера»",
+    "kind": "armor",
+    "slot": "boots",
+    "set": "Тень высоты-55",
+    "price": 11700,
+    "level": 55,
+    "defense": 84,
+    "health": 108,
+    "attack": 0,
+    "profession": "Ассасин птицы",
+    "rarity": "Обычная",
+    "effects": "Уклонение; снижение заметности в охотничьих зонах",
+    "description": "Профессиональная часть комплекта «Ассасин птицы». Создана для роли: ловкость, уклонение и восстановление.",
+    "setBonus": "2/5: +3% профильного параметра; 3/5: +3% Ловкость; 4/5: усиление роли; 5/5: уникальный пассивный эффект",
+    "legacy": false,
+    "attributes": {
+      "dexterity": 2
+    },
+    "combatStats": {
+      "evasion": 0.013,
+      "attackSpeed": 0.007
+    },
+    "race": "Птица"
+  },
+  {
+    "id": "ARM-BIRD-ASS-4-070",
+    "name": "Крылатый Сапоги бесшумной тропы «ветерана»",
+    "kind": "armor",
+    "slot": "boots",
+    "set": "Тень высоты-70",
+    "price": 23400,
+    "level": 70,
+    "defense": 106,
+    "health": 138,
+    "attack": 0,
+    "profession": "Ассасин птицы",
+    "rarity": "Обычная",
+    "effects": "Уклонение; снижение заметности в охотничьих зонах",
+    "description": "Профессиональная часть комплекта «Ассасин птицы». Создана для роли: ловкость, уклонение и восстановление.",
+    "setBonus": "2/5: +4% профильного параметра; 3/5: +4% Ловкость; 4/5: усиление роли; 5/5: уникальный пассивный эффект",
+    "legacy": false,
+    "attributes": {
+      "dexterity": 3
+    },
+    "combatStats": {
+      "evasion": 0.015,
+      "attackSpeed": 0.008
+    },
+    "race": "Птица"
+  },
+  {
+    "id": "ARM-BIRD-ASS-4-085",
+    "name": "Крылатый Сапоги бесшумной тропы «элиты»",
+    "kind": "armor",
+    "slot": "boots",
+    "set": "Тень высоты-85",
+    "price": 46800,
+    "level": 85,
+    "defense": 132,
+    "health": 172,
+    "attack": 0,
+    "profession": "Ассасин птицы",
+    "rarity": "Обычная",
+    "effects": "Уклонение; снижение заметности в охотничьих зонах",
+    "description": "Профессиональная часть комплекта «Ассасин птицы». Создана для роли: ловкость, уклонение и восстановление.",
+    "setBonus": "2/5: +5% профильного параметра; 3/5: +5% Ловкость; 4/5: усиление роли; 5/5: уникальный пассивный эффект",
+    "legacy": false,
+    "attributes": {
+      "dexterity": 3
+    },
+    "combatStats": {
+      "evasion": 0.018,
+      "attackSpeed": 0.01
+    },
+    "race": "Птица"
+  },
+  {
+    "id": "ARM-BIRD-ASS-4-100",
+    "name": "Крылатый Сапоги бесшумной тропы «первого круга»",
+    "kind": "armor",
+    "slot": "boots",
+    "set": "Тень высоты-100",
+    "price": 90000,
+    "level": 100,
+    "defense": 162,
+    "health": 210,
+    "attack": 0,
+    "profession": "Ассасин птицы",
+    "rarity": "Обычная",
+    "effects": "Уклонение; снижение заметности в охотничьих зонах",
+    "description": "Профессиональная часть комплекта «Ассасин птицы». Создана для роли: ловкость, уклонение и восстановление.",
+    "setBonus": "2/5: +6% профильного параметра; 3/5: +6% Ловкость; 4/5: усиление роли; 5/5: уникальный пассивный эффект",
+    "legacy": false,
+    "attributes": {
+      "dexterity": 3
+    },
+    "combatStats": {
+      "evasion": 0.02,
+      "attackSpeed": 0.011
+    },
+    "race": "Птица"
+  },
+  {
+    "id": "ARM-BIRD-ASS-5-025",
+    "name": "Крылатый Плащ исчезающего следа «ученика»",
+    "kind": "armor",
+    "slot": "cloak",
+    "set": "Тень высоты-25",
+    "price": 1500,
+    "level": 25,
+    "defense": 32,
+    "health": 100,
+    "attack": 0,
+    "profession": "Ассасин птицы",
+    "rarity": "Обычная",
+    "effects": "Нет",
+    "description": "Профессиональная часть комплекта «Ассасин птицы». Создана для роли: сопротивления и специальные эффекты.",
+    "setBonus": "2/5: +1% профильного параметра; 3/5: +1% Ловкость; 4/5: усиление роли; 5/5: уникальный пассивный эффект",
+    "legacy": false,
+    "attributes": {
+      "stamina": 1,
+      "vitality": 1
+    },
+    "combatStats": {
+      "controlResistance": 0.004
+    },
+    "race": "Птица"
+  },
+  {
+    "id": "ARM-BIRD-ASS-5-040",
+    "name": "Крылатый Плащ исчезающего следа «посвящённого»",
+    "kind": "armor",
+    "slot": "cloak",
+    "set": "Тень высоты-40",
+    "price": 3600,
+    "level": 40,
+    "defense": 43,
+    "health": 138,
+    "attack": 0,
+    "profession": "Ассасин птицы",
+    "rarity": "Обычная",
+    "effects": "Нет",
+    "description": "Профессиональная часть комплекта «Ассасин птицы». Создана для роли: сопротивления и специальные эффекты.",
+    "setBonus": "2/5: +2% профильного параметра; 3/5: +2% Ловкость; 4/5: усиление роли; 5/5: уникальный пассивный эффект",
+    "legacy": false,
+    "attributes": {
+      "stamina": 1,
+      "vitality": 1
+    },
+    "combatStats": {
+      "controlResistance": 0.006
+    },
+    "race": "Птица"
+  },
+  {
+    "id": "ARM-BIRD-ASS-5-055",
+    "name": "Крылатый Плащ исчезающего следа «мастера»",
+    "kind": "armor",
+    "slot": "cloak",
+    "set": "Тень высоты-55",
+    "price": 7800,
+    "level": 55,
+    "defense": 56,
+    "health": 180,
+    "attack": 0,
+    "profession": "Ассасин птицы",
+    "rarity": "Обычная",
+    "effects": "+ к сопротивлению стихий и длительности отрицательных эффектов",
+    "description": "Профессиональная часть комплекта «Ассасин птицы». Создана для роли: сопротивления и специальные эффекты.",
+    "setBonus": "2/5: +3% профильного параметра; 3/5: +3% Ловкость; 4/5: усиление роли; 5/5: уникальный пассивный эффект",
+    "legacy": false,
+    "attributes": {
+      "stamina": 2,
+      "vitality": 1
+    },
+    "combatStats": {
+      "controlResistance": 0.007
+    },
+    "race": "Птица"
+  },
+  {
+    "id": "ARM-BIRD-ASS-5-070",
+    "name": "Крылатый Плащ исчезающего следа «ветерана»",
+    "kind": "armor",
+    "slot": "cloak",
+    "set": "Тень высоты-70",
+    "price": 15600,
+    "level": 70,
+    "defense": 71,
+    "health": 230,
+    "attack": 0,
+    "profession": "Ассасин птицы",
+    "rarity": "Обычная",
+    "effects": "+ к сопротивлению стихий и длительности отрицательных эффектов",
+    "description": "Профессиональная часть комплекта «Ассасин птицы». Создана для роли: сопротивления и специальные эффекты.",
+    "setBonus": "2/5: +4% профильного параметра; 3/5: +4% Ловкость; 4/5: усиление роли; 5/5: уникальный пассивный эффект",
+    "legacy": false,
+    "attributes": {
+      "stamina": 2,
+      "vitality": 1
+    },
+    "combatStats": {
+      "controlResistance": 0.008
+    },
+    "race": "Птица"
+  },
+  {
+    "id": "ARM-BIRD-ASS-5-085",
+    "name": "Крылатый Плащ исчезающего следа «элиты»",
+    "kind": "armor",
+    "slot": "cloak",
+    "set": "Тень высоты-85",
+    "price": 31200,
+    "level": 85,
+    "defense": 88,
+    "health": 288,
+    "attack": 0,
+    "profession": "Ассасин птицы",
+    "rarity": "Обычная",
+    "effects": "+ к сопротивлению стихий и длительности отрицательных эффектов",
+    "description": "Профессиональная часть комплекта «Ассасин птицы». Создана для роли: сопротивления и специальные эффекты.",
+    "setBonus": "2/5: +5% профильного параметра; 3/5: +5% Ловкость; 4/5: усиление роли; 5/5: уникальный пассивный эффект",
+    "legacy": false,
+    "attributes": {
+      "stamina": 2,
+      "vitality": 1
+    },
+    "combatStats": {
+      "controlResistance": 0.01
+    },
+    "race": "Птица"
+  },
+  {
+    "id": "ARM-BIRD-ASS-5-100",
+    "name": "Крылатый Плащ исчезающего следа «первого круга»",
+    "kind": "armor",
+    "slot": "cloak",
+    "set": "Тень высоты-100",
+    "price": 60000,
+    "level": 100,
+    "defense": 108,
+    "health": 350,
+    "attack": 0,
+    "profession": "Ассасин птицы",
+    "rarity": "Обычная",
+    "effects": "+ к сопротивлению стихий и длительности отрицательных эффектов",
+    "description": "Профессиональная часть комплекта «Ассасин птицы». Создана для роли: сопротивления и специальные эффекты.",
+    "setBonus": "2/5: +6% профильного параметра; 3/5: +6% Ловкость; 4/5: усиление роли; 5/5: уникальный пассивный эффект",
+    "legacy": false,
+    "attributes": {
+      "stamina": 3,
+      "vitality": 2
+    },
+    "combatStats": {
+      "controlResistance": 0.011
+    },
+    "race": "Птица"
+  },
+  {
+    "id": "LEG-BIRD-ASS-1",
+    "name": "Крылатый Маска последнего свидетеля",
+    "kind": "armor",
+    "slot": "helmet",
+    "set": "Последний порыв",
+    "price": 0,
+    "level": 100,
+    "defense": 180,
+    "health": 260,
+    "attack": 0,
+    "profession": "Ассасин птицы",
+    "rarity": "Легендарная",
+    "effects": "+5% к критическому шансу",
+    "description": "Часть легендарного комплекта «Последний порыв». Тема комплекта: критический урон, уклонение, скрытность.",
+    "setBonus": "2/5: малый пассив; 3/5: профессиональный бонус; 4/5: сильный эффект; 5/5: уникальная способность",
+    "legacy": false,
+    "race": "Птица"
+  },
+  {
+    "id": "LEG-BIRD-ASS-2",
+    "name": "Крылатый Доспех исчезающего имени",
+    "kind": "armor",
+    "slot": "armor",
+    "set": "Последний порыв",
+    "price": 0,
+    "level": 100,
+    "defense": 360,
+    "health": 420,
+    "attack": 0,
+    "profession": "Ассасин птицы",
+    "rarity": "Легендарная",
+    "effects": "+8% к критическому урону",
+    "description": "Часть легендарного комплекта «Последний порыв». Тема комплекта: критический урон, уклонение, скрытность.",
+    "setBonus": "2/5: малый пассив; 3/5: профессиональный бонус; 4/5: сильный эффект; 5/5: уникальная способность",
+    "legacy": false,
+    "race": "Птица"
+  },
+  {
+    "id": "LEG-BIRD-ASS-3",
+    "name": "Крылатый Перчатки бесшумного приговора",
+    "kind": "armor",
+    "slot": "gloves",
+    "set": "Последний порыв",
+    "price": 0,
+    "level": 100,
+    "defense": 135,
+    "health": 100,
+    "attack": 70,
+    "profession": "Ассасин птицы",
+    "rarity": "Легендарная",
+    "effects": "+5% к уклонению",
+    "description": "Часть легендарного комплекта «Последний порыв». Тема комплекта: критический урон, уклонение, скрытность.",
+    "setBonus": "2/5: малый пассив; 3/5: профессиональный бонус; 4/5: сильный эффект; 5/5: уникальная способность",
+    "legacy": false,
+    "race": "Птица"
+  },
+  {
+    "id": "LEG-BIRD-ASS-4",
+    "name": "Крылатый Сапоги немого шага",
+    "kind": "armor",
+    "slot": "boots",
+    "set": "Последний порыв",
+    "price": 0,
+    "level": 100,
+    "defense": 135,
+    "health": 140,
+    "attack": 0,
+    "profession": "Ассасин птицы",
+    "rarity": "Легендарная",
+    "effects": "+4% к скорости атак",
+    "description": "Часть легендарного комплекта «Последний порыв». Тема комплекта: критический урон, уклонение, скрытность.",
+    "setBonus": "2/5: малый пассив; 3/5: профессиональный бонус; 4/5: сильный эффект; 5/5: уникальная способность",
+    "legacy": false,
+    "race": "Птица"
+  },
+  {
+    "id": "LEG-BIRD-ASS-5",
+    "name": "Крылатый Плащ незамеченного ухода",
+    "kind": "armor",
+    "slot": "cloak",
+    "set": "Последний порыв",
+    "price": 0,
+    "level": 100,
+    "defense": 90,
+    "health": 180,
+    "attack": 0,
+    "profession": "Ассасин птицы",
+    "rarity": "Легендарная",
+    "effects": "+8% к урону по одиночной цели",
+    "description": "Часть легендарного комплекта «Последний порыв». Тема комплекта: критический урон, уклонение, скрытность.",
+    "setBonus": "2/5: малый пассив; 3/5: профессиональный бонус; 4/5: сильный эффект; 5/5: уникальная способность",
+    "legacy": false,
+    "race": "Птица"
   }
 ]

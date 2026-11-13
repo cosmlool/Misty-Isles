@@ -1,0 +1,1953 @@
+import assert from 'node:assert/strict';
+import { readFileSync } from 'node:fs';
+import { dirname, resolve } from 'node:path';
+import { fileURLToPath } from 'node:url';
+import test from 'node:test';
+
+import { getMonsterPassiveDescriptions, parseMonsterWeakness, resolveMonsterPassive, resolveLegacyMonsterAttackMultiplier, resolveLegacyMonsterDefenseMultiplier, resolveLegacyMonsterProfessionDamageMultiplier, resolveLegacyMonsterResistance, resolveLegacyMonsterWeaknessMultiplier, resolveLegacyMonsterHitMultiplier, resolveLegacyPlayerHitMultiplier, resolveLegacyHealingMultiplier } from '../src/monsterCombat.js';
+import { calculateCombatSpeed, resolveMonsterBattle } from '../src/monsterBattle.js';
+import { adaptPlayerCombatant, buildPlayerCombatantForMonsterBattle } from '../src/monsterCombatantAdapter.js';
+import { resolveEquipmentSetTierDescriptions, aggregateMonsterCombatModifiers, calculatePlayerMonsterCombatStats, parseMonsterCombatEffect, parseMonsterCombatEffectClauses, resolveMonsterCombatProperty, resolveMonsterPendantCombatEffect, resolvePlayerMonsterCombatHealth, resolveEquipmentSetCombatEffects, resolveGoldEquipmentStatProfile, resolvePlayerMonsterLifestealRate } from '../src/monsterCombatStats.js';
+
+const serverDir = resolve(dirname(fileURLToPath(import.meta.url)), '..');
+const bestiary = JSON.parse(readFileSync(resolve(serverDir, 'data/forgotten_lands.json'), 'utf8'));
+
+test('every bestiary passive description has one typed registry entry', () => {
+  const descriptions = [...new Set(bestiary.monsters.map((monster: any) => monster.passiveDescription))];
+  const registered = new Set(getMonsterPassiveDescriptions());
+  assert.equal(descriptions.length, 63);
+  assert.equal(registered.size, descriptions.length);
+  for (const description of descriptions) {
+    assert.ok(registered.has(description), `Missing passive mapping: ${description}`);
+    assert.ok(resolveMonsterPassive(description), `Passive has no typed effect: ${description}`);
+  }
+});
+
+test('legacy monster weakness bonuses affect only the matching profession and skip unmapped fire damage', () => {
+  assert.equal(resolveLegacyMonsterWeaknessMultiplier(parseMonsterWeakness('Маг +25%'), 'Боевой маг'), 1.25);
+  assert.equal(resolveLegacyMonsterWeaknessMultiplier(parseMonsterWeakness('Маг +25%'), 'Маг'), 1.25);
+  assert.equal(resolveLegacyMonsterWeaknessMultiplier(parseMonsterWeakness('Маг +25%'), 'Лучник'), 1);
+  assert.equal(resolveLegacyMonsterWeaknessMultiplier(parseMonsterWeakness('Огненный урон +25%'), 'Боевой маг'), 1);
+});
+
+test('monster weakness parser distinguishes professions from damage types', () => {
+  assert.deepEqual(parseMonsterWeakness('Маг +25%'), { kind: 'profession', profession: 'Маг', bonus: 0.25 });
+  assert.deepEqual(parseMonsterWeakness('Лучник +10%'), { kind: 'profession', profession: 'Лучник', bonus: 0.10 });
+  assert.deepEqual(parseMonsterWeakness('Огненный урон +25%'), { kind: 'damageType', damageType: 'fire', bonus: 0.25 });
+  assert.equal(parseMonsterWeakness('нет'), undefined);
+  assert.equal(parseMonsterWeakness('Маг +x%'), undefined);
+  assert.equal(parseMonsterWeakness('Лёд +25%'), undefined);
+});
+
+test('passive registry keeps compound effects instead of dropping secondary clauses', () => {
+  assert.deepEqual(resolveMonsterPassive('Весь урон −20%; ниже 50% HP атака +20%'), {
+    allResistance: 0.20,
+    attackBelowHpRatio: { threshold: 0.50, multiplier: 1.20 },
+  });
+  assert.deepEqual(resolveMonsterPassive('Восстанавливает 10% HP каждый третий раунд; урон лучника −20%'), {
+    healEveryRounds: { rounds: 3, maxHpRatio: 0.10 },
+    professionResistance: { 'Лучник': 0.20 },
+  });
+});
+
+
+test('legacy monster resistance stacks static sources and clamps the total', () => {
+  const effect = {
+    allResistance: 0.2,
+    physicalResistance: 0.15,
+    professionResistance: { Воин: 0.1 },
+  } as Parameters<typeof resolveLegacyMonsterResistance>[0];
+  assert.equal(resolveLegacyMonsterResistance(effect, 'Воин'), 0.45);
+  assert.equal(resolveLegacyMonsterResistance(effect, 'Боевой маг'), 0.2);
+
+  const mageEffect = { magicResistance: -0.2, professionResistance: { 'Боевой маг': 0.1 } } as Parameters<typeof resolveLegacyMonsterResistance>[0];
+  assert.equal(resolveLegacyMonsterResistance(mageEffect, 'Маг'), -0.1);
+
+  const capped = { allResistance: 0.75, physicalResistance: 0.3 } as Parameters<typeof resolveLegacyMonsterResistance>[0];
+  assert.equal(resolveLegacyMonsterResistance(capped, 'Воин'), 0.85);
+});
+
+test('legacy monster evasion reduces expected hits and accuracy gear counters it', () => {
+  const effect = { evasion: 0.15 } as Parameters<typeof resolveLegacyMonsterHitMultiplier>[0];
+  assert.equal(resolveLegacyMonsterHitMultiplier(undefined), 1);
+  assert.equal(resolveLegacyMonsterHitMultiplier(effect), 0.85);
+  assert.equal(resolveLegacyMonsterHitMultiplier(effect, 0.1), 0.95);
+  assert.equal(resolveLegacyMonsterHitMultiplier(effect, 0.2), 1);
+  assert.equal(resolveLegacyMonsterHitMultiplier({ evasion: 0.9 } as Parameters<typeof resolveLegacyMonsterHitMultiplier>[0]), 0.25);
+
+  const evasionMonsters = bestiary.monsters.filter((monster: any) => /Уклонение \+15%/.test(String(monster.passiveDescription || '')));
+  assert.equal(evasionMonsters.length, 2);
+  for (const monster of evasionMonsters) {
+    const passive = resolveMonsterPassive(monster.passiveDescription);
+    assert.equal(passive?.evasion, 0.15);
+    assert.equal(resolveLegacyMonsterHitMultiplier(passive), 0.85);
+  }
+});
+
+test('legacy healing multiplier applies monster reduction and player healing bonuses', () => {
+  assert.equal(resolveLegacyHealingMultiplier(undefined), 1);
+  assert.equal(resolveLegacyHealingMultiplier({ healReduction: 0.1 } as Parameters<typeof resolveLegacyHealingMultiplier>[0]), 0.9);
+  assert.equal(resolveLegacyHealingMultiplier({ healReduction: 0.1 } as Parameters<typeof resolveLegacyHealingMultiplier>[0], 0.5), 1.35);
+  assert.equal(resolveLegacyHealingMultiplier({ healReduction: 1 } as Parameters<typeof resolveLegacyHealingMultiplier>[0], 5), 0);
+  assert.equal(resolveLegacyHealingMultiplier(undefined, 10), 6);
+
+  const healingMonsters = bestiary.monsters.filter((monster: any) => /Лечение противника −10%/.test(String(monster.passiveDescription || '')));
+  assert.equal(healingMonsters.length, 2);
+  for (const monster of healingMonsters) {
+    const passive = resolveMonsterPassive(monster.passiveDescription);
+    assert.equal(passive?.healReduction, 0.1);
+    assert.equal(resolveLegacyHealingMultiplier(passive), 0.9);
+  }
+});
+
+test('legacy player evasion reduces expected monster hits', () => {
+  assert.equal(resolveLegacyPlayerHitMultiplier(), 1);
+  assert.equal(resolveLegacyPlayerHitMultiplier(0.2), 0.8);
+  assert.equal(resolveLegacyPlayerHitMultiplier(0.2, 50), 0.4);
+  assert.equal(resolveLegacyPlayerHitMultiplier(0.9, 0), 0.0125);
+});
+
+test('legacy monster attack and defense multipliers keep conditional ally bonuses separate', () => {
+  const effect = {
+    attackMultiplier: 1.1,
+    attackWhenAllies: 0.2,
+    defenseMultiplier: 1.15,
+    defenseWhenAllies: 0.1,
+  } as Parameters<typeof resolveLegacyMonsterAttackMultiplier>[0];
+  assert.equal(resolveLegacyMonsterAttackMultiplier(effect, 0), 1.1);
+  assert.equal(resolveLegacyMonsterAttackMultiplier(effect, 1), 1.32);
+  assert.equal(resolveLegacyMonsterDefenseMultiplier(effect, 0), 1.15);
+  assert.equal(resolveLegacyMonsterDefenseMultiplier(effect, 1), 1.265);
+});
+
+test('legacy monster profession damage bonuses match profession aliases', () => {
+  const effect = {
+    attackVsProfession: { profession: 'Боевой маг', multiplier: 1.15 },
+    damageVsProfession: { profession: 'Лучник', multiplier: 1.2 },
+  } as Parameters<typeof resolveLegacyMonsterProfessionDamageMultiplier>[0];
+  assert.equal(resolveLegacyMonsterProfessionDamageMultiplier(effect, 'Маг'), 1.15);
+  assert.equal(resolveLegacyMonsterProfessionDamageMultiplier(effect, 'Лучник'), 1.2);
+  assert.equal(resolveLegacyMonsterProfessionDamageMultiplier(effect, 'Воин'), 1);
+});
+
+test('monster battle resolves profession and fire weaknesses deterministically', () => {
+  const base = {
+    monster: { id: 'm1', name: 'Test monster', hp: 50, attack: 1, defense: 0, speed: 5, weakness: 'Огненный урон +25%' },
+    party: [{ id: 'p1', profession: 'Боевой маг', hp: 500, maxHp: 500, attack: 100, defense: 0, speed: 10, damageType: 'fire' as const }],
+    random: () => 0.5,
+  };
+  const first = resolveMonsterBattle(base);
+  const second = resolveMonsterBattle(base);
+  assert.equal(first.winner, 'party');
+  assert.equal(first.totalDamageToMonster, 125);
+  assert.deepEqual(first, second);
+});
+
+test('monster profession damage bonus affects incoming damage, not player outgoing damage', () => {
+  const run = (profession: string) => resolveMonsterBattle({
+    monster: { id: 'm2', name: 'Archer hunter', hp: 10000, attack: 100, defense: 0, speed: 5, passiveDescription: 'Урон по лучникам +20%' },
+    party: [{ id: 'p2', profession, hp: 1000, maxHp: 1000, attack: 10, defense: 0, speed: 5 }],
+    maxRounds: 1,
+    random: () => 0.5,
+  });
+  const archer = run('Лучник');
+  const warrior = run('Воин');
+  assert.equal(archer.totalDamageToMonster, warrior.totalDamageToMonster);
+  assert.equal(archer.totalDamageToParty, 120);
+  assert.equal(warrior.totalDamageToParty, 100);
+});
+
+
+test('monster ally bonuses depend on monster allies, not party size', () => {
+  const run = (allies: number) => resolveMonsterBattle({
+    monster: { id: 'm3', name: 'Pack hunter', hp: 10000, attack: 100, defense: 0, speed: 5, allies, passiveDescription: 'Атака +10% при союзниках' },
+    party: [{ id: 'p3', profession: 'Воин', hp: 1000, maxHp: 1000, attack: 10, defense: 0, speed: 5 }],
+    maxRounds: 1,
+    random: () => 0.5,
+  });
+  assert.equal(run(0).totalDamageToParty, 100);
+  assert.equal(run(1).totalDamageToParty, 110);
+});
+
+test('monster defense ally bonus applies to incoming player damage', () => {
+  const run = (allies: number) => resolveMonsterBattle({
+    monster: { id: 'm4', name: 'Guarded monster', hp: 10000, attack: 1, defense: 100, speed: 5, allies, passiveDescription: 'Атака и защита +15% при союзниках' },
+    party: [{ id: 'p4', profession: 'Воин', hp: 1000, maxHp: 1000, attack: 100, defense: 0, speed: 5 }],
+    maxRounds: 1,
+    random: () => 0.5,
+  });
+  assert.equal(run(0).totalDamageToMonster, 50);
+  assert.equal(run(1).totalDamageToMonster, 46);
+});
+
+
+test('monster resistance and matching profession weakness combine multiplicatively', () => {
+  const result = resolveMonsterBattle({
+    monster: {
+      id: 'm-resist-weakness',
+      name: 'Balanced guardian',
+      hp: 10000,
+      attack: 1,
+      defense: 0,
+      speed: 0,
+      passiveDescription: 'На 20% меньше физического урона',
+      weakness: 'Воин +25%',
+    },
+    party: [{
+      id: 'p-resist-weakness',
+      profession: 'Воин',
+      hp: 1000,
+      maxHp: 1000,
+      attack: 100,
+      defense: 0,
+      speed: 20,
+      damageType: 'physical',
+    }],
+    maxRounds: 1,
+    random: () => 0.5,
+  });
+  assert.equal(result.totalDamageToMonster, 100);
+});
+
+test('monster poison is applied to the struck player and ticks on following rounds', () => {
+  const result = resolveMonsterBattle({
+    monster: { id: 'm5', name: 'Venom beast', hp: 10000, attack: 10, defense: 0, speed: 5, passiveDescription: 'Атака накладывает яд' },
+    party: [{ id: 'p5', profession: 'Воин', hp: 1000, maxHp: 1000, attack: 1, defense: 0, speed: 5 }],
+    maxRounds: 2,
+    random: () => 0.5,
+  });
+  assert.equal(result.totalDamageToMonster, 2);
+  assert.equal(result.totalDamageToParty, 50);
+  assert.ok(result.events.some(event => event.action === 'poison' && event.target === 'p5' && event.damage === 30));
+});
+
+test('faster player can kill the monster before its initiative turn', () => {
+  const result = resolveMonsterBattle({
+    monster: { id: 'm-fast-kill', name: 'Slow monster', hp: 10, attack: 100, defense: 0, speed: 5 },
+    party: [{ id: 'p-fast', profession: 'Воин', hp: 500, maxHp: 500, attack: 20, defense: 0, speed: 20 }],
+    random: () => 0.5,
+  });
+  assert.equal(result.winner, 'party');
+  assert.equal(result.totalDamageToParty, 0);
+  assert.equal(result.events.some(event => event.actor === 'Slow monster'), false);
+});
+
+test('faster monster attacks before the player turn', () => {
+  const result = resolveMonsterBattle({
+    monster: { id: 'm-fast', name: 'Fast monster', hp: 10000, attack: 100, defense: 0, speed: 20 },
+    party: [{ id: 'p-slow', profession: 'Воин', hp: 50, maxHp: 50, attack: 100, defense: 0, speed: 10 }],
+    random: () => 0.5,
+  });
+  assert.equal(result.winner, 'monster');
+  assert.equal(result.totalDamageToMonster, 0);
+  assert.equal(result.events[0]?.actor, 'Fast monster');
+});
+
+test('first-round enemy speed reduction can change initiative order', () => {
+  const make = (passiveDescription?: string) => resolveMonsterBattle({
+    monster: { id: 'm-speed-check', name: 'Speed check', hp: 10000, attack: 1, defense: 0, speed: 10, passiveDescription },
+    party: [{ id: 'p-speed-check', profession: 'Воин', hp: 1000, maxHp: 1000, attack: 1, defense: 0, speed: 11 }],
+    random: () => 0.5,
+  });
+  assert.equal(make().events[0]?.actor, 'p-speed-check');
+  assert.equal(make('Снижает скорость противника на 20% в первом раунде').events[0]?.actor, 'Speed check');
+});
+
+test('equal-speed initiative uses a stable monster-first tie-break', () => {
+  const input = {
+    monster: { id: 'm-tie', name: 'Tie monster', hp: 10000, attack: 1, defense: 0, speed: 10 },
+    party: [
+      { id: 'p-z', profession: 'Воин', hp: 1000, maxHp: 1000, attack: 1, defense: 0, speed: 10 },
+      { id: 'p-a', profession: 'Воин', hp: 1000, maxHp: 1000, attack: 1, defense: 0, speed: 10 },
+    ],
+    random: () => 0.5,
+  };
+  const first = resolveMonsterBattle(input);
+  const second = resolveMonsterBattle(input);
+  assert.deepEqual(first, second);
+  assert.deepEqual(first.events.slice(0, 3).map(event => event.actor), ['Tie monster', 'p-a', 'p-z']);
+});
+
+test('monster resistance above half HP ends when the monster drops below the threshold', () => {
+  const result = resolveMonsterBattle({
+    monster: {
+      id: 'm-conditional-resist',
+      name: 'Threshold guardian',
+      hp: 100,
+      attack: 1,
+      defense: 0,
+      speed: 1,
+      passiveDescription: 'Весь урон −20% пока HP выше 50%',
+    },
+    party: [
+      { id: 'p-first', profession: 'Воин', hp: 1000, maxHp: 1000, attack: 70, defense: 0, speed: 20 },
+      { id: 'p-second', profession: 'Воин', hp: 1000, maxHp: 1000, attack: 10, defense: 0, speed: 19 },
+    ],
+    maxRounds: 1,
+    random: () => 0.5,
+  });
+  assert.deepEqual(result.events.filter(event => event.action === 'attack' && event.target === 'Threshold guardian').map(event => event.damage), [56, 10]);
+});
+
+test('monster suppresses one strongest active buff once per target', () => {
+  const result = resolveMonsterBattle({
+    monster: {
+      id: 'm-suppress',
+      name: 'Hexing monster',
+      hp: 10000,
+      attack: 1,
+      defense: 0,
+      speed: 20,
+      passiveDescription: 'Снижает силу одного усиления противника на 10%',
+    },
+    party: [{
+      id: 'p-buffed',
+      profession: 'Воин',
+      hp: 1000,
+      maxHp: 1000,
+      attack: 100,
+      defense: 0,
+      speed: 10,
+      buff: 'attack',
+      buffValue: 0.20,
+      buffSecondaryEffect: 'defense',
+      buffSecondaryValue: 0.10,
+      buffUntil: 10000,
+    }],
+    now: 1000,
+    maxRounds: 2,
+    random: () => 0.5,
+  });
+  assert.equal(result.party[0]?.buffValue, 0.18);
+  assert.equal(result.party[0]?.buffSecondaryValue, 0.10);
+  assert.equal(result.totalDamageToMonster, 236);
+  assert.equal(result.events.filter(event => event.action === 'suppress').length, 1);
+  assert.deepEqual(
+    result.events.filter(event => event.action === 'suppress').map(event => ({ effect: event.effect, value: event.value })),
+    [{ effect: 'attack', value: 0.18 }],
+  );
+});
+
+test('expired buffs are not suppressed or applied to combat stats', () => {
+  const result = resolveMonsterBattle({
+    monster: {
+      id: 'm-expired',
+      name: 'Buff hunter',
+      hp: 10000,
+      attack: 1,
+      defense: 0,
+      speed: 20,
+      passiveDescription: 'Снижает силу одного усиления противника на 10%',
+    },
+    party: [{
+      id: 'p-expired',
+      profession: 'Воин',
+      hp: 1000,
+      maxHp: 1000,
+      attack: 100,
+      defense: 0,
+      speed: 10,
+      buff: 'attack',
+      buffValue: 0.20,
+      buffUntil: 999,
+    }],
+    now: 1000,
+    random: () => 0.5,
+  });
+  assert.equal(result.totalDamageToMonster, 3000);
+  assert.equal(result.party[0]?.buffValue, 0.20);
+  assert.equal(result.events.some(event => event.action === 'suppress'), false);
+});
+
+
+
+test('party healing actions restore the full requested amount without heal reduction', () => {
+  const result = resolveMonsterBattle({
+    monster: { id: 'm-heal-full', name: 'Training monster', hp: 10000, attack: 1, defense: 0, speed: 1 },
+    party: [
+      { id: 'healer', profession: 'Баффер', hp: 100, maxHp: 100, attack: 1, defense: 0, speed: 20 },
+      { id: 'wounded', profession: 'Воин', hp: 50, maxHp: 100, attack: 1, defense: 0, speed: 10 },
+    ],
+    healingActions: [{ round: 1, actorId: 'healer', targetId: 'wounded', amount: 40 }],
+    maxRounds: 1,
+    random: () => 0.5,
+  });
+  assert.deepEqual(result.events.filter(event => event.action === 'heal').map(event => event.healing), [40]);
+});
+
+test('monster heal reduction lowers party healing by ten percent', () => {
+  const result = resolveMonsterBattle({
+    monster: {
+      id: 'm-heal-reduction',
+      name: 'Healing ward monster',
+      hp: 10000,
+      attack: 1,
+      defense: 0,
+      speed: 1,
+      passiveDescription: 'Лечение противника −10%',
+    },
+    party: [
+      { id: 'healer', profession: 'Баффер', hp: 100, maxHp: 100, attack: 1, defense: 0, speed: 20 },
+      { id: 'wounded', profession: 'Воин', hp: 50, maxHp: 100, attack: 1, defense: 0, speed: 10 },
+    ],
+    healingActions: [{ round: 1, actorId: 'healer', targetId: 'wounded', amount: 40 }],
+    maxRounds: 1,
+    random: () => 0.5,
+  });
+  assert.deepEqual(result.events.filter(event => event.action === 'heal').map(event => event.healing), [36]);
+});
+
+test('party healing never restores health above the target max HP', () => {
+  const result = resolveMonsterBattle({
+    monster: { id: 'm-heal-cap', name: 'Training monster', hp: 10000, attack: 1, defense: 0, speed: 1 },
+    party: [
+      { id: 'healer', profession: 'Баффер', hp: 100, maxHp: 100, attack: 1, defense: 0, speed: 20 },
+      { id: 'almost-full', profession: 'Воин', hp: 90, maxHp: 100, attack: 1, defense: 0, speed: 10 },
+    ],
+    healingActions: [{ round: 1, actorId: 'healer', targetId: 'almost-full', amount: 50 }],
+    maxRounds: 1,
+    random: () => 0.5,
+  });
+  assert.equal(result.events.find(event => event.action === 'heal')?.healing, 10);
+  assert.equal(result.party.find(member => member.id === 'almost-full')?.remainingHp, 99);
+});
+
+test('party healing ignores dead and unknown targets', () => {
+  const result = resolveMonsterBattle({
+    monster: { id: 'm-heal-invalid', name: 'Training monster', hp: 10000, attack: 1, defense: 0, speed: 1 },
+    party: [
+      { id: 'healer-a', profession: 'Баффер', hp: 100, maxHp: 100, attack: 1, defense: 0, speed: 30 },
+      { id: 'healer-b', profession: 'Баффер', hp: 100, maxHp: 100, attack: 1, defense: 0, speed: 20 },
+      { id: 'dead', profession: 'Воин', hp: 0, maxHp: 100, attack: 1, defense: 0, speed: 10 },
+    ],
+    healingActions: [
+      { round: 1, actorId: 'healer-a', targetId: 'dead', amount: 50 },
+      { round: 1, actorId: 'healer-b', targetId: 'missing', amount: 50 },
+    ],
+    maxRounds: 1,
+    random: () => 0.5,
+  });
+  assert.equal(result.party.find(member => member.id === 'dead')?.remainingHp, 0);
+  assert.equal(result.events.some(event => event.action === 'heal'), false);
+});
+
+test('monster periodic healing remains independent from party healing actions', () => {
+  const result = resolveMonsterBattle({
+    monster: {
+      id: 'm-own-heal',
+      name: 'Regenerating monster',
+      hp: 100,
+      attack: 1,
+      defense: 0,
+      speed: 1,
+      passiveDescription: 'Восстанавливает 8% HP каждый второй раунд',
+    },
+    party: [{ id: 'fighter', profession: 'Воин', hp: 1000, maxHp: 1000, attack: 10, defense: 0, speed: 20 }],
+    healingActions: [{ round: 1, actorId: 'fighter', targetId: 'fighter', amount: 20 }],
+    maxRounds: 2,
+    random: () => 0.5,
+  });
+  assert.ok(result.events.some(event => event.actor === 'Regenerating monster' && event.target === 'Regenerating monster' && event.healing === 8));
+});
+
+
+test('a party healing action consumes the actor turn instead of also attacking', () => {
+  const result = resolveMonsterBattle({
+    monster: { id: 'm-heal-turn', name: 'Training monster', hp: 10000, attack: 1, defense: 0, speed: 1 },
+    party: [{ id: 'healer', profession: 'Баффер', hp: 50, maxHp: 100, attack: 100, defense: 0, speed: 20 }],
+    healingActions: [{ round: 1, actorId: 'healer', targetId: 'healer', amount: 20 }],
+    maxRounds: 1,
+    random: () => 0.5,
+  });
+  assert.equal(result.totalDamageToMonster, 0);
+  assert.equal(result.events.some(event => event.actor === 'healer' && event.action === 'attack'), false);
+  assert.equal(result.events.find(event => event.actor === 'healer' && event.action === 'heal')?.healing, 20);
+});
+
+
+test('monster defense reduction is scoped to the struck party member', () => {
+  const result = resolveMonsterBattle({
+    monster: {
+      id: 'm-target-defense',
+      name: 'Defense breaker',
+      hp: 10000,
+      attack: 100,
+      defense: 0,
+      speed: 20,
+      passiveDescription: 'Снижает защиту цели на 10%',
+    },
+    party: [
+      { id: 'a-target', profession: 'Воин', hp: 900, maxHp: 1000, attack: 1, defense: 100, speed: 10 },
+      { id: 'b-other', profession: 'Воин', hp: 950, maxHp: 1000, attack: 1, defense: 100, speed: 9 },
+      { id: 'healer', profession: 'Баффер', hp: 1000, maxHp: 1000, attack: 1, defense: 0, speed: 15 },
+    ],
+    healingActions: [{ round: 1, actorId: 'healer', targetId: 'a-target', amount: 200 }],
+    maxRounds: 2,
+    random: () => 0.5,
+  });
+  assert.equal(result.party.find(member => member.id === 'a-target')?.damageTaken, 50);
+  assert.equal(result.party.find(member => member.id === 'b-other')?.damageTaken, 50);
+});
+
+test('monster attack reduction is scoped to the struck party member', () => {
+  const result = resolveMonsterBattle({
+    monster: {
+      id: 'm-target-attack',
+      name: 'Attack breaker',
+      hp: 10000,
+      attack: 1,
+      defense: 0,
+      speed: 20,
+      passiveDescription: 'Атака противника −10%',
+    },
+    party: [
+      { id: 'a-target', profession: 'Воин', hp: 900, maxHp: 1000, attack: 100, defense: 0, speed: 10 },
+      { id: 'b-other', profession: 'Воин', hp: 950, maxHp: 1000, attack: 100, defense: 0, speed: 9 },
+      { id: 'healer', profession: 'Баффер', hp: 1000, maxHp: 1000, attack: 1, defense: 0, speed: 15 },
+    ],
+    healingActions: [{ round: 1, actorId: 'healer', targetId: 'a-target', amount: 200 }],
+    maxRounds: 2,
+    random: () => 0.5,
+  });
+  assert.equal(result.party.find(member => member.id === 'a-target')?.damageDealt, 180);
+  assert.equal(result.party.find(member => member.id === 'b-other')?.damageDealt, 190);
+});
+
+
+test('monster deals bonus damage to a blinded weakened target', () => {
+  const run = (blind: boolean) => resolveMonsterBattle({
+    monster: {
+      id: 'm-weakened-target',
+      name: 'Weakness hunter',
+      hp: 10000,
+      attack: 100,
+      defense: 0,
+      speed: 20,
+      passiveDescription: 'Атака +15% против ослабленной цели',
+    },
+    party: [{ id: 'target', profession: 'Воин', hp: 1000, maxHp: 1000, attack: 1, defense: 0, speed: 10, blind }],
+    maxRounds: 1,
+    random: () => 0.5,
+  });
+  assert.equal(run(true).totalDamageToParty, 115);
+  assert.equal(run(false).totalDamageToParty, 100);
+});
+
+
+test('blindness immunity protects monster accuracy, not player accuracy', () => {
+  const monsterBlindWithoutImmunity = resolveMonsterBattle({
+    monster: { id: 'm-blind', name: 'Blinded monster', hp: 10000, attack: 100, defense: 0, speed: 20, accuracy: 100, blind: true },
+    party: [{ id: 'p-clear', profession: 'Воин', hp: 1000, maxHp: 1000, attack: 1, defense: 0, speed: 10 }],
+    maxRounds: 1,
+    random: () => 0.8,
+  });
+  const monsterBlindWithImmunity = resolveMonsterBattle({
+    monster: {
+      id: 'm-blind-immune',
+      name: 'Blindness-proof monster',
+      hp: 10000,
+      attack: 100,
+      defense: 0,
+      speed: 20,
+      accuracy: 100,
+      blind: true,
+      passiveDescription: 'Не теряет точность от ослепления',
+    },
+    party: [{ id: 'p-clear', profession: 'Воин', hp: 1000, maxHp: 1000, attack: 1, defense: 0, speed: 10 }],
+    maxRounds: 1,
+    random: () => 0.8,
+  });
+  const blindedPlayerAgainstImmuneMonster = resolveMonsterBattle({
+    monster: {
+      id: 'm-no-blind',
+      name: 'Unblinded monster',
+      hp: 10000,
+      attack: 100,
+      defense: 0,
+      speed: 20,
+      accuracy: 100,
+      passiveDescription: 'Не теряет точность от ослепления',
+    },
+    party: [{ id: 'p-blind', profession: 'Воин', hp: 1000, maxHp: 1000, attack: 1, defense: 0, speed: 10, blind: true }],
+    maxRounds: 1,
+    random: () => 0.8,
+  });
+
+  assert.equal(monsterBlindWithoutImmunity.totalDamageToParty, 0);
+  assert.equal(monsterBlindWithImmunity.totalDamageToParty, 100);
+  assert.equal(blindedPlayerAgainstImmuneMonster.totalDamageToParty, 100);
+  assert.ok(blindedPlayerAgainstImmuneMonster.events.some(event => event.actor === 'p-blind' && event.action === 'miss'));
+});
+
+
+test('every weakness value used by the bestiary is supported by the parser', () => {
+  const weaknesses = [...new Set(bestiary.monsters.map((monster: any) => monster.weakness).filter(Boolean))];
+  assert.ok(weaknesses.length > 0);
+  for (const weakness of weaknesses) {
+    assert.ok(parseMonsterWeakness(weakness), `Unsupported bestiary weakness: ${weakness}`);
+  }
+});
+
+
+test('first attack bonus applies once and then returns to normal damage', () => {
+  const result = resolveMonsterBattle({
+    monster: { id: 'm-first-hit', name: 'First striker', hp: 10000, attack: 100, defense: 0, speed: 20, passiveDescription: 'Первая атака +20%' },
+    party: [{ id: 'p-first-hit', profession: 'Воин', hp: 1000, maxHp: 1000, attack: 1, defense: 0, speed: 10 }],
+    maxRounds: 2,
+    random: () => 0.5,
+  });
+  assert.deepEqual(result.events.filter(event => event.actor === 'First striker' && event.action === 'attack').map(event => event.damage), [120, 100]);
+});
+
+test('attack after first round bonus starts on round two', () => {
+  const result = resolveMonsterBattle({
+    monster: { id: 'm-after-round', name: 'Scaling striker', hp: 10000, attack: 100, defense: 0, speed: 20, passiveDescription: 'Атака +15% после первого раунда' },
+    party: [{ id: 'p-after-round', profession: 'Воин', hp: 1000, maxHp: 1000, attack: 1, defense: 0, speed: 10 }],
+    maxRounds: 2,
+    random: () => 0.5,
+  });
+  assert.deepEqual(result.events.filter(event => event.actor === 'Scaling striker' && event.action === 'attack').map(event => event.damage), [100, 115]);
+});
+
+test('low-health attack bonus activates only below its HP threshold', () => {
+  const result = resolveMonsterBattle({
+    monster: { id: 'm-low-hp', name: 'Desperate striker', hp: 100, attack: 100, defense: 0, speed: 10, passiveDescription: 'Атака +20% ниже 50% HP' },
+    party: [{ id: 'p-low-hp', profession: 'Воин', hp: 1000, maxHp: 1000, attack: 60, defense: 0, speed: 20 }],
+    maxRounds: 1,
+    random: () => 0.5,
+  });
+  assert.equal(result.monsterHp, 40);
+  assert.equal(result.events.find(event => event.actor === 'Desperate striker' && event.action === 'attack')?.damage, 120);
+});
+
+test('monster evasion passive avoids incoming player attacks, not monster attacks', () => {
+  const result = resolveMonsterBattle({
+    monster: { id: 'm-evasion', name: 'Evasive monster', hp: 10000, attack: 100, defense: 0, speed: 0, passiveDescription: 'Уклонение +15%' },
+    party: [{ id: 'p-evasion', profession: 'Воин', hp: 1000, maxHp: 1000, attack: 1, defense: 0, speed: 10 }],
+    maxRounds: 1,
+    random: () => 0.1,
+  });
+  assert.equal(result.monsterHp, 10000);
+  assert.ok(result.events.some(event => event.actor === 'Evasive monster' && event.target === 'p-evasion' && event.action === 'dodge'));
+});
+
+test('accuracy gear does not also inflate the base hit chance', () => {
+  const result = resolveMonsterBattle({
+    monster: { id: 'm-accuracy-base', name: 'Target', hp: 10000, attack: 1, defense: 0, speed: 0 },
+    party: [{
+      id: 'p-accuracy-base', profession: 'Лучник', hp: 100, maxHp: 100,
+      attack: 100, defense: 0, speed: 10, accuracy: 50,
+      combatModifiers: { accuracyBonus: 0.10 },
+    }],
+    maxRounds: 1,
+    random: () => 0.52,
+  });
+  assert.ok(result.events.some(event => event.actor === 'p-accuracy-base' && event.action === 'miss'));
+  assert.equal(result.monsterHp, 10000);
+});
+
+test('player accuracy reduces monster evasion by percentage points', () => {
+  const result = resolveMonsterBattle({
+    monster: { id: 'm-accuracy-counter', name: 'Evasive target', hp: 10000, attack: 100, defense: 0, speed: 0, passiveDescription: 'Уклонение +15%' },
+    party: [{
+      id: 'p-accuracy-counter', profession: 'Лучник', hp: 1000, maxHp: 1000,
+      attack: 100, defense: 0, speed: 10, accuracy: 100,
+      combatModifiers: { accuracyBonus: 0.06 },
+    }],
+    maxRounds: 1,
+    random: () => 0.1,
+  });
+  assert.ok(result.events.some(event => event.actor === 'p-accuracy-counter' && event.action === 'attack' && event.target === 'Evasive target'));
+  assert.ok(!result.events.some(event => event.actor === 'Evasive target' && event.action === 'dodge'));
+  assert.equal(result.monsterHp, 9900);
+});
+
+test('player evasion modifier avoids incoming monster attacks', () => {
+  const result = resolveMonsterBattle({
+    monster: { id: 'm-player-evasion', name: 'Attacker', hp: 10000, attack: 100, defense: 0, speed: 20 },
+    party: [{
+      id: 'p-player-evasion', profession: 'Ассасин', hp: 1000, maxHp: 1000,
+      attack: 1, defense: 0, speed: 10, combatModifiers: { evasionBonus: 0.25 },
+    }],
+    maxRounds: 1,
+    random: () => 0.1,
+  });
+  assert.equal(result.totalDamageToParty, 0);
+  assert.ok(result.events.some(event => event.actor === 'Attacker' && event.target === 'p-player-evasion' && event.action === 'dodge'));
+});
+
+test('monster lifesteal restores a percentage of damage actually dealt', () => {
+  const result = resolveMonsterBattle({
+    monster: { id: 'm-lifesteal', name: 'Leech monster', hp: 1000, attack: 100, defense: 0, speed: 10, passiveDescription: 'Восстанавливает 10% нанесённого урона' },
+    party: [{ id: 'p-lifesteal', profession: 'Воин', hp: 1000, maxHp: 1000, attack: 500, defense: 0, speed: 20 }],
+    maxRounds: 1,
+    random: () => 0.5,
+  });
+  assert.equal(result.monsterHp, 510);
+  assert.ok(result.events.some(event => event.actor === 'Leech monster' && event.action === 'heal' && event.healing === 10));
+});
+
+test('monster lifesteal uses effective damage when the target has low HP', () => {
+  const result = resolveMonsterBattle({
+    monster: {
+      id: 'm-overkill-lifesteal',
+      name: 'Leech overkiller',
+      hp: 1000,
+      attack: 100,
+      defense: 0,
+      speed: 10,
+      passiveDescription: 'Восстанавливает 10% нанесённого урона',
+    },
+    party: [{
+      id: 'p-low-hp-lifesteal',
+      profession: 'Воин',
+      hp: 20,
+      maxHp: 100,
+      attack: 100,
+      defense: 0,
+      speed: 20,
+    }],
+    maxRounds: 1,
+    random: () => 0.5,
+  });
+  assert.equal(result.totalDamageToMonster, 100);
+  assert.equal(result.totalDamageToParty, 20);
+  assert.equal(result.party[0].remainingHp, 0);
+  assert.equal(result.monsterHp, 902);
+  assert.equal(result.events.find(event => event.actor === 'Leech overkiller' && event.action === 'attack')?.damage, 20);
+  assert.equal(result.events.find(event => event.actor === 'Leech overkiller' && event.action === 'heal')?.healing, 2);
+});
+
+test('monster poison tick is capped at the target remaining HP', () => {
+  const result = resolveMonsterBattle({
+    monster: {
+      id: 'm-poison-overkill',
+      name: 'Poison overkiller',
+      hp: 1000,
+      attack: 1,
+      defense: 0,
+      speed: 20,
+      passiveDescription: 'Атака накладывает яд',
+    },
+    party: [{
+      id: 'p-poison-overkill',
+      profession: 'Воин',
+      hp: 10,
+      maxHp: 1000,
+      attack: 1,
+      defense: 0,
+      speed: 10,
+    }],
+    maxRounds: 2,
+    random: () => 0.5,
+  });
+  assert.equal(result.totalDamageToParty, 10);
+  assert.equal(result.party[0].remainingHp, 0);
+  assert.equal(result.events.find(event => event.action === 'poison')?.damage, 8);
+});
+
+test('monster critical damage bonus increases only critical hits', () => {
+  const result = resolveMonsterBattle({
+    monster: { id: 'm-crit-bonus', name: 'Critical striker', hp: 10000, attack: 100, defense: 0, speed: 20, critChance: 1, critMultiplier: 1.5, passiveDescription: 'Критический урон +10%' },
+    party: [{ id: 'p-crit-bonus', profession: 'Воин', hp: 1000, maxHp: 1000, attack: 1, defense: 0, speed: 10 }],
+    maxRounds: 1,
+    random: () => 0.5,
+  });
+  assert.equal(result.totalDamageToParty, 160);
+  assert.equal(result.events.find(event => event.actor === 'Critical striker' && event.action === 'attack')?.critical, true);
+});
+
+test('monster critical damage reduction lowers party critical multiplier', () => {
+  const result = resolveMonsterBattle({
+    monster: { id: 'm-crit-reduce', name: 'Critical ward', hp: 10000, attack: 1, defense: 0, speed: 10, passiveDescription: 'Критический урон −20%' },
+    party: [{ id: 'p-crit-reduce', profession: 'Воин', hp: 1000, maxHp: 1000, attack: 100, defense: 0, speed: 20, critChance: 1, critMultiplier: 1.5 }],
+    maxRounds: 1,
+    random: () => 0.5,
+  });
+  assert.equal(result.totalDamageToMonster, 130);
+  assert.equal(result.events.find(event => event.actor === 'p-crit-reduce' && event.action === 'attack')?.critical, true);
+});
+
+test('attack bonus after a monster critical hit is consumed by the next attack only', () => {
+  const result = resolveMonsterBattle({
+    monster: { id: 'm-after-crit', name: 'Critical chain', hp: 10000, attack: 100, defense: 0, speed: 20, critChance: 0.5, critMultiplier: 1, passiveDescription: 'После критического удара атака +15%' },
+    party: [{ id: 'p-after-crit', profession: 'Воин', hp: 1000, maxHp: 1000, attack: 1, defense: 0, speed: 10 }],
+    maxRounds: 3,
+    random: (() => { const values = [0.5, 0.1, 0.5, 0.5, 0.5, 0.5, 0.9, 0.5, 0.5, 0.5, 0.5, 0.5, 0.9, 0.5, 0.5]; let index = 0; return () => values[index++] ?? 0.5; })(),
+  });
+  assert.deepEqual(result.events.filter(event => event.actor === 'Critical chain' && event.action === 'attack').map(event => event.damage), [100, 115, 100]);
+});
+
+
+test('physical, magic and fire resistance use the matching incoming damage type', () => {
+  const run = (passiveDescription: string, damageType: 'physical' | 'magic' | 'fire') => resolveMonsterBattle({
+    monster: { id: 'm-resistance-matrix', name: 'Resistance tester', hp: 10000, attack: 100, defense: 0, speed: 20, passiveDescription },
+    party: [{ id: `p-${damageType}`, profession: 'Воин', hp: 1000, maxHp: 1000, attack: 100, defense: 0, speed: 10, damageType }],
+    maxRounds: 1,
+    random: () => 0.5,
+  });
+  assert.equal(run('На 20% меньше физического урона', 'physical').totalDamageToMonster, 80);
+  assert.equal(run('Магический урон −15%', 'magic').totalDamageToMonster, 85);
+  assert.equal(run('Магический урон −15%', 'fire').totalDamageToMonster, 85);
+});
+
+test('negative magic resistance increases incoming magic damage', () => {
+  const result = resolveMonsterBattle({
+    monster: { id: 'm-magic-vulnerable', name: 'Magic vulnerable', hp: 10000, attack: 100, defense: 0, speed: 20, passiveDescription: 'Получает на 20% больше магического урона' },
+    party: [{ id: 'p-magic', profession: 'Боевой маг', hp: 1000, maxHp: 1000, attack: 100, defense: 0, speed: 10, damageType: 'magic' }],
+    maxRounds: 1,
+    random: () => 0.5,
+  });
+  assert.equal(result.totalDamageToMonster, 120);
+});
+
+
+test('damage bonuses against fast and slow targets use initiative-adjusted speed', () => {
+  const run = (playerSpeed: number, passiveDescription: string) => resolveMonsterBattle({
+    monster: { id: 'm-speed-target', name: 'Speed hunter', hp: 10000, attack: 100, defense: 0, speed: 10, passiveDescription },
+    party: [{ id: 'p-speed-target', profession: 'Воин', hp: 1000, maxHp: 1000, attack: 1, defense: 0, speed: playerSpeed }],
+    maxRounds: 1,
+    random: () => 0.5,
+  });
+  assert.equal(run(20, 'Урон +20% по быстрым целям').totalDamageToParty, 120);
+  assert.equal(run(5, 'Урон +20% по медленным целям').totalDamageToParty, 120);
+  assert.equal(run(5, 'Урон +20% по быстрым целям').totalDamageToParty, 100);
+  assert.equal(run(20, 'Урон +20% по медленным целям').totalDamageToParty, 100);
+});
+
+test('damage bonus against armored targets checks the target defense threshold', () => {
+  const run = (passiveDescription?: string) => resolveMonsterBattle({
+    monster: { id: 'm-armored', name: 'Armor hunter', hp: 10000, attack: 100, defense: 0, speed: 20, passiveDescription },
+    party: [{ id: 'p-armored', profession: 'Воин', hp: 1000, maxHp: 1000, attack: 1, defense: 100, speed: 10 }],
+    maxRounds: 1,
+    random: () => 0.5,
+  });
+  assert.equal(run().totalDamageToParty, 50);
+  assert.equal(run('Урон +20% по защищённым целям').totalDamageToParty, 60);
+});
+
+test('damage bonus against low-defense targets checks the target defense threshold', () => {
+  const run = (passiveDescription?: string) => resolveMonsterBattle({
+    monster: { id: 'm-low-defense', name: 'Defense hunter', hp: 10000, attack: 100, defense: 0, speed: 20, passiveDescription },
+    party: [{ id: 'p-low-defense', profession: 'Воин', hp: 1000, maxHp: 1000, attack: 1, defense: 40, speed: 10 }],
+    maxRounds: 1,
+    random: () => 0.5,
+  });
+  assert.equal(run().totalDamageToParty, 71);
+  assert.equal(run('Урон +20% по целям с низкой защитой').totalDamageToParty, 85);
+});
+
+test('damage bonus against low-HP targets activates below its threshold', () => {
+  const run = (hp: number, passiveDescription?: string) => resolveMonsterBattle({
+    monster: { id: 'm-low-target-hp', name: 'Finisher', hp: 10000, attack: 100, defense: 0, speed: 20, passiveDescription },
+    party: [{ id: 'p-low-target-hp', profession: 'Воин', hp, maxHp: 1000, attack: 1, defense: 0, speed: 10 }],
+    maxRounds: 1,
+    random: () => 0.5,
+  });
+  assert.equal(run(400, 'Урон +25% по целям ниже 30% HP').totalDamageToParty, 100);
+  assert.equal(run(200, 'Урон +25% по целям ниже 30% HP').totalDamageToParty, 125);
+});
+
+test('attack bonus against a profession affects only the matching target profession', () => {
+  const run = (profession: string) => resolveMonsterBattle({
+    monster: { id: 'm-vs-profession', name: 'Mage hunter', hp: 10000, attack: 100, defense: 0, speed: 20, passiveDescription: 'Атака +15% против мага' },
+    party: [{ id: 'p-vs-profession', profession, hp: 1000, maxHp: 1000, attack: 1, defense: 0, speed: 10 }],
+    maxRounds: 1,
+    random: () => 0.5,
+  });
+  assert.equal(run('Боевой маг').totalDamageToParty, 115);
+  assert.equal(run('Воин').totalDamageToParty, 100);
+});
+
+test('damage bonus against a profession affects incoming damage only for that profession', () => {
+  const run = (profession: string) => resolveMonsterBattle({
+    monster: { id: 'm-damage-profession', name: 'Archer hunter', hp: 10000, attack: 100, defense: 0, speed: 20, passiveDescription: 'Урон по лучникам +20%' },
+    party: [{ id: 'p-damage-profession', profession, hp: 1000, maxHp: 1000, attack: 1, defense: 0, speed: 10 }],
+    maxRounds: 1,
+    random: () => 0.5,
+  });
+  assert.equal(run('Лучник').totalDamageToParty, 120);
+  assert.equal(run('Воин').totalDamageToParty, 100);
+});
+
+test('monster defense bonus activates below its low-HP threshold', () => {
+  const result = resolveMonsterBattle({
+    monster: { id: 'm-defense-low-hp', name: 'Last stand', hp: 1000, attack: 100, defense: 100, speed: 10, passiveDescription: 'Защита +25% ниже 25% HP' },
+    party: [
+      { id: 'p-first-defense', profession: 'Воин', hp: 1000, maxHp: 1000, attack: 1600, defense: 0, speed: 20 },
+      { id: 'p-second-defense', profession: 'Воин', hp: 1000, maxHp: 1000, attack: 200, defense: 0, speed: 19 },
+    ],
+    maxRounds: 1,
+    random: () => 0.5,
+  });
+  assert.equal(result.monsterHp, 112);
+  assert.deepEqual(
+    result.events.filter(event => event.action === 'attack' && event.target === 'Last stand').map(event => event.damage),
+    [800, 88],
+  );
+});
+test('compound passive applies attack, defense and physical resistance together', () => {
+  const result = resolveMonsterBattle({
+    monster: { id: 'm-compound', name: 'Iron guardian', hp: 10000, attack: 100, defense: 100, speed: 20, passiveDescription: 'Атака и защита +15%; физический урон −25%' },
+    party: [{ id: 'p-compound', profession: 'Воин', hp: 1000, maxHp: 1000, attack: 100, defense: 0, speed: 10, damageType: 'physical' }],
+    maxRounds: 1,
+    random: () => 0.5,
+  });
+  assert.equal(result.totalDamageToMonster, 34);
+  assert.equal(result.totalDamageToParty, 115);
+});
+
+test('HP-threshold passives do not activate at the exact threshold', () => {
+  const belowThreshold = resolveMonsterBattle({
+    monster: { id: 'm-threshold-50', name: 'Threshold guardian', hp: 1000, attack: 100, defense: 0, speed: 10, passiveDescription: 'Атака +20% ниже 50% HP' },
+    party: [{ id: 'p-threshold-50', profession: 'Воин', hp: 1000, maxHp: 1000, attack: 500, defense: 0, speed: 20 }],
+    maxRounds: 1,
+    random: () => 0.5,
+  });
+  const aboveThreshold = resolveMonsterBattle({
+    monster: { id: 'm-threshold-75', name: 'Threshold sentinel', hp: 1000, attack: 100, defense: 0, speed: 10, passiveDescription: 'Атака +10% при HP выше 75%' },
+    party: [{ id: 'p-threshold-75', profession: 'Воин', hp: 1000, maxHp: 1000, attack: 250, defense: 0, speed: 20 }],
+    maxRounds: 1,
+    random: () => 0.5,
+  });
+  assert.equal(belowThreshold.monsterHp, 500);
+  assert.equal(belowThreshold.totalDamageToParty, 100);
+  assert.equal(aboveThreshold.monsterHp, 750);
+  assert.equal(aboveThreshold.totalDamageToParty, 100);
+});
+
+test('equal initiative speed is neither a fast nor a slow target', () => {
+  const run = (passiveDescription: string) => resolveMonsterBattle({
+    monster: { id: 'm-equal-speed', name: 'Equal-speed hunter', hp: 10000, attack: 100, defense: 0, speed: 10, passiveDescription },
+    party: [{ id: 'p-equal-speed', profession: 'Воин', hp: 1000, maxHp: 1000, attack: 1, defense: 0, speed: 10 }],
+    maxRounds: 1,
+    random: () => 0.5,
+  });
+  assert.equal(run('Урон +20% по быстрым целям').totalDamageToParty, 100);
+  assert.equal(run('Урон +20% по медленным целям').totalDamageToParty, 100);
+});
+
+test('zero player critical chance never produces a critical hit', () => {
+  const result = resolveMonsterBattle({
+    monster: { id: 'm-zero-crit', name: 'Crit tester', hp: 10000, attack: 1, defense: 0, speed: 10 },
+    party: [{ id: 'p-zero-crit', profession: 'Воин', hp: 1000, maxHp: 1000, attack: 100, defense: 0, speed: 20, critChance: 0, critMultiplier: 2 }],
+    maxRounds: 1,
+    random: () => 0,
+  });
+  const attack = result.events.find(event => event.actor === 'p-zero-crit' && event.action === 'attack');
+  assert.equal(attack?.critical, false);
+  assert.equal(attack?.damage, 100);
+});
+
+test('damage formula preserves minimum one damage against extreme defense', () => {
+  const result = resolveMonsterBattle({
+    monster: { id: 'm-extreme-defense', name: 'Immovable target', hp: 10000, attack: 1, defense: 1_000_000_000, speed: 10 },
+    party: [{ id: 'p-min-damage', profession: 'Воин', hp: 1000, maxHp: 1000, attack: 1, defense: 0, speed: 20 }],
+    maxRounds: 1,
+    random: () => 0.5,
+  });
+  assert.equal(result.totalDamageToMonster, 1);
+});
+
+test('compound physical and magic resistance passive uses the matching damage type', () => {
+  const run = (damageType: 'physical' | 'magic') => resolveMonsterBattle({
+    monster: { id: 'm-dual-resistance', name: 'Dual ward', hp: 10000, attack: 1, defense: 0, speed: 10, passiveDescription: 'Физический урон −20%; магический урон −15%; ниже 30% HP атака +30%' },
+    party: [{ id: `p-${damageType}`, profession: 'Воин', hp: 1000, maxHp: 1000, attack: 100, defense: 0, speed: 20, damageType }],
+    maxRounds: 1,
+    random: () => 0.5,
+  });
+  assert.equal(run('physical').totalDamageToMonster, 80);
+  assert.equal(run('magic').totalDamageToMonster, 85);
+});
+
+
+test('combat speed equals dexterity plus explicit equipment dexterity bonus', () => {
+  assert.equal(calculateCombatSpeed(10, 0), 10);
+  assert.equal(calculateCombatSpeed(25, 8), 33);
+  assert.equal(calculateCombatSpeed(0, 12), 12);
+});
+
+test('combat speed ignores invalid or negative dexterity inputs', () => {
+  assert.equal(calculateCombatSpeed(-5, 4), 4);
+  assert.equal(calculateCombatSpeed(10, -3), 10);
+  assert.equal(calculateCombatSpeed(Number.NaN, Number.POSITIVE_INFINITY), 0);
+});
+
+
+test('player combatant adapter maps resolved stats and equipment dexterity into shared combatant', () => {
+  const combatant = adaptPlayerCombatant({
+    id: 'player-adapter',
+    profession: 'Ассасин',
+    hp: 720,
+    maxHp: 900,
+    attack: 245,
+    defense: 118,
+    dexterity: 34,
+    equipmentDexterityBonus: 12,
+    damageType: 'physical',
+    buff: 'attack',
+    buffValue: 0.15,
+    buffSecondaryEffect: 'defense',
+    buffSecondaryValue: 0.05,
+    buffUntil: 123456,
+  });
+
+  assert.deepEqual(combatant, {
+    id: 'player-adapter',
+    profession: 'Ассасин',
+    hp: 720,
+    maxHp: 900,
+    attack: 245,
+    defense: 118,
+    speed: 46,
+    damageType: 'physical',
+    buff: 'attack',
+    buffValue: 0.15,
+    buffSecondaryEffect: 'defense',
+    buffSecondaryValue: 0.05,
+    buffUntil: 123456,
+  });
+});
+
+test('player combatant adapter passes an explicit critical buff as a chance modifier', () => {
+  const combatant = adaptPlayerCombatant({
+    id: 'player-crit-buff',
+    profession: 'Ассасин',
+    hp: 100,
+    maxHp: 100,
+    attack: 50,
+    defense: 20,
+    dexterity: 30,
+    buff: 'crit',
+    buffValue: 0.12,
+    buffUntil: 5000,
+  });
+
+  assert.equal(combatant.attack, 50);
+  assert.equal(combatant.critChance, undefined);
+  assert.equal(combatant.buff, 'crit');
+  assert.equal(combatant.buffValue, 0.12);
+  assert.equal(combatant.buffUntil, 5000);
+});
+
+test('player combatant adapter supports an unequipped character and omits unresolved combat chances', () => {
+  const combatant = adaptPlayerCombatant({
+    id: 'player-no-gear',
+    profession: 'Воин',
+    hp: 100,
+    maxHp: 100,
+    attack: 12,
+    defense: 8,
+    dexterity: 10,
+  });
+
+  assert.equal(combatant.speed, 10);
+  assert.equal(combatant.critChance, undefined);
+  assert.equal(combatant.critMultiplier, undefined);
+  assert.equal(combatant.accuracy, undefined);
+  assert.equal(combatant.damageType, undefined);
+});
+
+test('player combatant adapter normalizes invalid stats and clamps optional combat values', () => {
+  const combatant = adaptPlayerCombatant({
+    id: 'player-invalid',
+    profession: '',
+    hp: Number.POSITIVE_INFINITY,
+    maxHp: Number.NaN,
+    attack: -10,
+    defense: Number.NaN,
+    dexterity: Number.NaN,
+    equipmentDexterityBonus: -4,
+    critChance: 4,
+    critMultiplier: 0.5,
+    accuracy: -10,
+    buffValue: Number.NaN,
+    buffUntil: Number.POSITIVE_INFINITY,
+  });
+
+  assert.equal(combatant.profession, 'Без профессии');
+  assert.equal(combatant.hp, 0);
+  assert.equal(combatant.maxHp, 1);
+  assert.equal(combatant.attack, 0);
+  assert.equal(combatant.defense, 0);
+  assert.equal(combatant.speed, 0);
+  assert.equal(combatant.critChance, 1);
+  assert.equal(combatant.critMultiplier, 1);
+  assert.equal(combatant.accuracy, 0);
+  assert.equal(combatant.buffValue, undefined);
+  assert.equal(combatant.buffUntil, undefined);
+});
+
+
+test('player monster combat stats preserve legacy totals while exposing the canonical Knight profile', () => {
+  const stats = calculatePlayerMonsterCombatStats({
+    profession: 'Воин',
+    strength: 10,
+    dexterity: 10,
+    intelligence: 10,
+    vitality: 10,
+    stamina: 10,
+    baseDefense: 10,
+    weaponAttack: 20,
+    armorAttack: 5,
+    armorDefense: 5,
+    weaponDexterityBonus: 4,
+    weaponProfileBonus: 0.1,
+    weaponLootBonus: 0.05,
+    pendantEffect: 'bossDamage',
+    pendantValue: 0.1,
+    isBoss: true,
+    setBonuses: [{ effect: 'attack', itemCount: 2, mastery: 0 }],
+    buffs: { attack: 0.2, crit: 0.1, defense: 0.1, loot: 0.2, lifesteal: 0.03 },
+    now: 100,
+    buffUntil: 200,
+  });
+
+  assert.ok(Math.abs(stats.attack - 65.5578) < 0.000001);
+  assert.ok(Math.abs(stats.defense - 25.047) < 0.000001);
+  assert.equal(stats.speed, 14);
+  assert.equal(stats.lootBonus, 0.25);
+  assert.equal(stats.lifestealBonus, 0.03);
+  assert.equal(stats.profession, 'Рыцарь');
+});
+
+test('player monster combat stats preserve dungeon and non-boss pendant boundaries', () => {
+  const common = {
+    profession: 'Воин',
+    strength: 10,
+    dexterity: 10,
+    intelligence: 10,
+    vitality: 10,
+    stamina: 10,
+    baseDefense: 10,
+    pendantEffect: 'bossDamage',
+    pendantValue: 0.5,
+    buffs: { attack: 0.5, defense: 0.5 },
+    now: 100,
+    buffUntil: 50,
+  };
+  const nonBoss = calculatePlayerMonsterCombatStats({ ...common, isBoss: false });
+  const dungeonBoss = calculatePlayerMonsterCombatStats({ ...common, isBoss: true });
+
+  assert.equal(nonBoss.attack, 18);
+  assert.equal(dungeonBoss.attack, 27);
+  assert.equal(nonBoss.defense, 17.27);
+  assert.equal(dungeonBoss.defense, 17.27);
+});
+
+test('set metadata without explicit tier descriptions does not invent legacy combat bonuses', () => {
+  const common = {
+    profession: 'Воин',
+    strength: 10,
+    dexterity: 10,
+    intelligence: 10,
+    vitality: 10,
+    stamina: 10,
+    baseDefense: 10,
+    setBonuses: [{ effect: 'defense', itemCount: 5, mastery: 0 }],
+  };
+  const expedition = calculatePlayerMonsterCombatStats(common);
+  const dungeon = calculatePlayerMonsterCombatStats({ ...common, applyFivePieceSetBonus: false });
+
+  assert.equal(expedition.defense, 17.27);
+  assert.equal(dungeon.defense, 17.27);
+});
+
+
+test('player monster combat stats apply each equipment enhancement to that item exactly once', () => {
+  const stats = calculatePlayerMonsterCombatStats({
+    profession: 'Воин',
+    strength: 10,
+    dexterity: 10,
+    intelligence: 10,
+    vitality: 10,
+    stamina: 10,
+    baseDefense: 10,
+    weaponAttack: 100,
+    weaponEnhancementLevel: 2,
+    weaponDexterityBonus: 2,
+    armorItems: [
+      { attack: 10, defense: 20, enhancementLevel: 1 },
+      { attack: 30, defense: 40, enhancementLevel: 3 },
+    ],
+  });
+
+  assert.equal(stats.attack, 170);
+  assert.ok(Math.abs(stats.defense - 89.43) < 0.000001);
+  assert.equal(stats.speed, 12);
+});
+
+
+test('shared player combat stats preserve active lifesteal buffs and ignore expired ones', () => {
+  const common = {
+    profession: 'Воин',
+    strength: 10,
+    dexterity: 10,
+    intelligence: 10,
+    vitality: 10,
+    stamina: 10,
+    baseDefense: 10,
+    buffs: { attack: 0, crit: 0, defense: 0, loot: 0, lifesteal: 0.08 },
+    now: 1000,
+  };
+  const active = calculatePlayerMonsterCombatStats({ ...common, buffUntil: 2000 });
+  const expired = calculatePlayerMonsterCombatStats({ ...common, buffUntil: 999 });
+
+  assert.equal(active.lifestealBonus, 0.08);
+  assert.equal(expired.lifestealBonus, 0);
+});
+
+test('shared player combat stats do not apply attack, defense or crit buffs after expiration', () => {
+  const common = {
+    profession: 'Воин',
+    strength: 10,
+    dexterity: 10,
+    intelligence: 10,
+    vitality: 10,
+    stamina: 10,
+    baseDefense: 10,
+    buffs: { attack: 0.5, crit: 0.2, defense: 0.5, loot: 0.1, lifesteal: 0.1 },
+    now: 1000,
+  };
+  const expired = calculatePlayerMonsterCombatStats({ ...common, buffUntil: 1000 });
+  const baseline = calculatePlayerMonsterCombatStats({ ...common, buffs: {}, buffUntil: 2000 });
+
+  assert.deepEqual(expired, baseline);
+});
+
+
+test('shared player combat stats cover every current combat profession baseline', () => {
+  const professions = [
+    { profession: 'Боевой маг', attack: 17.05, defense: 15.7 },
+    { profession: 'Ассасин', attack: 22.68, defense: 15.7 },
+    { profession: 'Воин', attack: 18, defense: 17.27 },
+    { profession: 'Баффер', attack: 18, defense: 15.7 },
+    { profession: 'Лучник', attack: 22.26, defense: 15.7 },
+    { profession: 'Вампир', attack: 21, defense: 15.7 },
+    { profession: 'Добытчик', attack: 18, defense: 15.7 },
+  ];
+
+  for (const expected of professions) {
+    const actual = calculatePlayerMonsterCombatStats({
+      profession: expected.profession,
+      strength: 10,
+      dexterity: 10,
+      intelligence: 10,
+      vitality: 10,
+      stamina: 10,
+      baseDefense: 10,
+    });
+    assert.ok(Math.abs(actual.attack - expected.attack) < 0.000001, expected.profession + ' attack');
+    assert.ok(Math.abs(actual.defense - expected.defense) < 0.000001, expected.profession + ' defense');
+    assert.equal(actual.speed, 10, expected.profession + ' speed');
+  }
+});
+
+test('shared player combat stats route profile bonuses to the profession-specific output', () => {
+  const buffer = calculatePlayerMonsterCombatStats({
+    profession: 'Баффер',
+    strength: 10, dexterity: 10, intelligence: 10, vitality: 10, stamina: 10,
+    baseDefense: 10, weaponProfileBonus: 0.2,
+  });
+  const warrior = calculatePlayerMonsterCombatStats({
+    profession: 'Воин',
+    strength: 10, dexterity: 10, intelligence: 10, vitality: 10, stamina: 10,
+    baseDefense: 10, weaponProfileBonus: 0.2,
+  });
+  const gatherer = calculatePlayerMonsterCombatStats({
+    profession: 'Добытчик',
+    strength: 10, dexterity: 10, intelligence: 10, vitality: 10, stamina: 10,
+    baseDefense: 10, weaponLootBonus: 0.25,
+  });
+
+  assert.ok(Math.abs(buffer.defense - 18.84) < 0.000001);
+  assert.equal(buffer.attack, 18);
+  assert.equal(buffer.baseAttack, 18);
+  assert.equal(buffer.baseDefense, 15.7);
+  assert.equal(buffer.combatModifiers.defenseBonus, 0.2);
+  assert.ok(Math.abs(warrior.attack - 21.6) < 0.000001);
+  assert.equal(warrior.defense, 17.27);
+  assert.equal(warrior.baseAttack, 18);
+  assert.equal(warrior.combatModifiers.attackBonus, 0.2);
+  assert.equal(gatherer.lootBonus, 0.25);
+  assert.equal(gatherer.attack, 18);
+  assert.equal(gatherer.combatModifiers.attackBonus, 0);
+  assert.equal(gatherer.baseAttack, 18);
+});
+
+
+test('equipment set descriptions unlock only at their exact piece thresholds', () => {
+  const tiers = { two: 'two', three: 'three', four: 'four', full: 'full' };
+  assert.deepEqual(resolveEquipmentSetTierDescriptions({ itemCount: 1, ...tiers }), []);
+  assert.deepEqual(resolveEquipmentSetTierDescriptions({ itemCount: 2, ...tiers }), ['two']);
+  assert.deepEqual(resolveEquipmentSetTierDescriptions({ itemCount: 3, ...tiers }), ['two', 'three']);
+  assert.deepEqual(resolveEquipmentSetTierDescriptions({ itemCount: 4, ...tiers }), ['two', 'three', 'four']);
+  assert.deepEqual(resolveEquipmentSetTierDescriptions({ itemCount: 5, ...tiers }), ['two', 'three', 'four', 'full']);
+  assert.deepEqual(resolveEquipmentSetTierDescriptions({ itemCount: 3, two: 'two', full: 'full' }), ['two']);
+  assert.deepEqual(resolveEquipmentSetTierDescriptions({ itemCount: 5, two: 'two', full: 'full' }), ['two', 'full']);
+});
+
+test('set tier descriptions preserve separate bonuses for each unlocked threshold', () => {
+  assert.deepEqual(parseMonsterCombatEffectClauses('2 предмета: +6% к критическому шансу'), [
+    { target: 'critChance', value: 0.06 },
+  ]);
+  assert.deepEqual(parseMonsterCombatEffectClauses('3 предмета: +12% к защите и +5% к здоровью'), [
+    { target: 'defense', value: 0.12 },
+    { target: 'health', value: 0.05 },
+  ]);
+  const stats = calculatePlayerMonsterCombatStats({
+    profession: 'Воин', strength: 10, dexterity: 10, intelligence: 10,
+    vitality: 10, stamina: 10, baseDefense: 10,
+    setBonuses: [{ effect: 'crit', itemCount: 3, mastery: 0, descriptions: [
+      '2 предмета: +6% к критическому шансу',
+      '3 предмета: +12% к критическому урону',
+    ] }],
+  });
+  assert.equal(stats.combatModifiers.critChanceBonus, 0.06);
+  assert.equal(stats.combatModifiers.critDamageBonus, 0.12);
+  assert.equal(stats.combatModifiers.attackBonus, 0);
+});
+
+test('set effect identifiers do not invent typed bonuses without an explicit tier description', () => {
+  const stats = calculatePlayerMonsterCombatStats({
+    profession: 'Воин', strength: 10, dexterity: 10, intelligence: 10,
+    vitality: 10, stamina: 10, baseDefense: 10,
+    setBonuses: [{ effect: 'attack', itemCount: 5, mastery: 10 }],
+  });
+
+  assert.equal(stats.combatModifiers.attackBonus, 0);
+  assert.equal(stats.combatModifiers.defenseBonus, 0);
+});
+
+test('gold-purchasable weapons and armor define level-scaled attributes and combat stats', () => {
+  const catalog = JSON.parse(readFileSync(resolve(serverDir, 'data/equipment_catalog.json'), 'utf8'));
+  const gear = catalog.filter((item: any) => Number(item.price) > 0 && ['weapon', 'armor'].includes(item.kind));
+  assert.equal(gear.length, 336);
+  for (const item of gear) {
+    assert.ok(item.attributes && Object.keys(item.attributes).length > 0, `Missing attributes: ${item.id}`);
+    assert.ok(item.combatStats && Object.keys(item.combatStats).length > 0, `Missing combat stats: ${item.id}`);
+    const expected = resolveGoldEquipmentStatProfile({ kind: item.kind, level: item.level, profession: item.profession, slot: item.slot });
+    assert.deepEqual(item.attributes, expected.attributes, `Unexpected attributes: ${item.id}`);
+    assert.deepEqual(item.combatStats, expected.combatStats, `Unexpected combat stats: ${item.id}`);
+    for (const value of Object.values(item.attributes) as number[]) {
+      assert.ok(Number.isInteger(value) && value > 0, `Invalid attribute value: ${item.id}`);
+    }
+    for (const value of Object.values(item.combatStats) as number[]) {
+      assert.ok(Number.isFinite(value) && value > 0 && value <= 0.05, `Invalid combat-stat value: ${item.id}`);
+    }
+  }
+  assert.equal(catalog.filter((item: any) => Number(item.price) <= 0 && ['weapon', 'armor'].includes(item.kind) && item.attributes).length, 0);
+});
+
+test('equipped gear loot and lifesteal bonuses reach expedition stat outputs', () => {
+  const stats = calculatePlayerMonsterCombatStats({
+    profession: 'Добытчик', strength: 10, dexterity: 10, intelligence: 10,
+    vitality: 10, stamina: 10, baseDefense: 10,
+    equipmentEffects: [
+      { target: 'loot', value: 0.08 },
+      { target: 'lifesteal', value: 0.04 },
+    ],
+  });
+  assert.equal(stats.lootBonus, 0.08);
+  assert.equal(stats.lifestealBonus, 0.04);
+});
+
+test('legacy gold-priced weapons and armor receive the shared stat profile at runtime', () => {
+  const source = readFileSync(resolve(serverDir, 'src/index.ts'), 'utf8');
+  const start = source.indexOf('const ITEMS: Item[] = [');
+  const end = source.indexOf('];', start);
+  const itemBlock = source.slice(start, end);
+  const legacyGoldGear = itemBlock.split('\n').filter((line: string) => {
+    const isGear = line.includes("kind:'weapon'") || line.includes("kind:'armor'");
+    const priceToken = line.match(/price:[0-9]+/);
+    return isGear && Boolean(priceToken) && Number(priceToken?.[0].slice(6)) > 0;
+  });
+  assert.equal(legacyGoldGear.length, 58);
+  assert.ok(source.includes('for(const item of ITEMS)'));
+  assert.ok(source.includes('resolveGoldEquipmentStatProfile({kind:item.kind'));
+});
+test('level 100 buffer weapon preserves the full healing specialization bonus', () => {
+  const profile = resolveGoldEquipmentStatProfile({ kind: 'weapon', level: 100, profession: 'Баффер', slot: 'weapon' });
+  assert.equal(profile.combatStats.healing, 0.03);
+});
+
+test('armor attribute bonuses contribute to attack, defense and combat speed', () => {
+  const base = calculatePlayerMonsterCombatStats({
+    profession: 'Воин', strength: 10, dexterity: 10, intelligence: 10,
+    vitality: 10, stamina: 10, baseDefense: 10,
+  });
+  const geared = calculatePlayerMonsterCombatStats({
+    profession: 'Воин', strength: 10, dexterity: 10, intelligence: 10,
+    vitality: 10, stamina: 10, baseDefense: 10,
+    armorItems: [{ strength: 4, dexterity: 2, intelligence: 3, vitality: 5, stamina: 2 }],
+  });
+  assert.ok(geared.attack > base.attack);
+  assert.ok(geared.defense > base.defense);
+  assert.equal(geared.speed, base.speed + 2);
+});
+
+test('typed combat modifier aggregation keeps each effect in its own stat channel', () => {
+  const modifiers = aggregateMonsterCombatModifiers([
+    parseMonsterCombatEffect('+5% к критическому шансу'),
+    parseMonsterCombatEffect('+12% к критическому шансу'),
+    parseMonsterCombatEffect('+8% к критическому урону'),
+    parseMonsterCombatEffect('Восстанавливает 3% максимального здоровья после победы'),
+    parseMonsterCombatEffect('+5% к количеству обычных ресурсов'),
+    parseMonsterCombatEffect('+8% к атаке'),
+    parseMonsterCombatEffect('+8% к физической защите'),
+    parseMonsterCombatEffect('Усиление роли'),
+  ]);
+  assert.equal(modifiers.critChanceBonus, 0.17);
+  assert.equal(modifiers.critDamageBonus, 0.08);
+  assert.equal(modifiers.lifestealBonus, 0.03);
+  assert.equal(modifiers.lootBonus, 0.05);
+  assert.equal(modifiers.attackBonus, 0.08);
+  assert.equal(modifiers.defenseBonus, 0.08);
+  assert.equal(modifiers.magicDamageBonus, 0);
+  assert.equal(modifiers.bossDamageBonus, 0);
+});
+
+test('legendary armor catalog effects retain their declared typed channels', () => {
+  assert.deepEqual(parseMonsterCombatEffect('+8% к магическому урону'), { target: 'magicDamage', value: 0.08 });
+  assert.deepEqual(parseMonsterCombatEffect('+5% к критическому шансу'), { target: 'critChance', value: 0.05 });
+  assert.deepEqual(parseMonsterCombatEffect('+8% к критическому урону'), { target: 'critDamage', value: 0.08 });
+  assert.deepEqual(parseMonsterCombatEffect('+10% к максимальному HP'), { target: 'health', value: 0.10 });
+  assert.deepEqual(parseMonsterCombatEffect('+8% к эффективности лечения'), { target: 'healing', value: 0.08 });
+  assert.deepEqual(parseMonsterCombatEffect('+6% к точности'), { target: 'accuracy', value: 0.06 });
+  assert.deepEqual(parseMonsterCombatEffect('+5% к количеству обычных ресурсов'), { target: 'loot', value: 0.05 });
+  assert.deepEqual(parseMonsterCombatEffect('+8% к скорости производства'), { target: 'production', value: 0.08 });
+  assert.deepEqual(parseMonsterCombatEffect('+5% к золоту с региональной добычи'), { target: 'gold', value: 0.05 });
+  assert.deepEqual(parseMonsterCombatEffect('+8% к урону по боссам'), { target: 'bossDamage', value: 0.08 });
+});
+
+test('legendary accuracy and evasion gear effects remain separate typed modifiers', () => {
+  const accuracy = parseMonsterCombatEffect('+6% к точности');
+  const evasion = parseMonsterCombatEffect('+5% к уклонению');
+  assert.deepEqual(accuracy, { target: 'accuracy', value: 0.06 });
+  assert.deepEqual(evasion, { target: 'evasion', value: 0.05 });
+
+  const modifiers = aggregateMonsterCombatModifiers([accuracy, evasion]);
+  assert.equal(modifiers.accuracyBonus, 0.06);
+  assert.equal(modifiers.evasionBonus, 0.05);
+  assert.equal(modifiers.attackBonus, 0);
+  assert.equal(modifiers.defenseBonus, 0);
+});
+
+test('unquantified accuracy and evasion catalog text is not converted into combat percentages', () => {
+  assert.equal(parseMonsterCombatEffect('+ к атаке и точности'), undefined);
+  assert.equal(parseMonsterCombatEffect('+ к ловкости и уклонению'), undefined);
+  assert.equal(parseMonsterCombatEffect('Точность; обнаружение скрытых целей'), undefined);
+  assert.equal(parseMonsterCombatEffect('Уклонение; снижение заметности в охотничьих зонах'), undefined);
+});
+
+test('control resistance is not treated as incoming damage resistance', () => {
+  assert.deepEqual(parseMonsterCombatEffect('+8% к сопротивлению контролю'), { target: 'controlResistance', value: 0.08 });
+  assert.deepEqual(parseMonsterCombatEffect('+8% к сопротивлению отрицательным эффектам'), { target: 'controlResistance', value: 0.08 });
+  assert.deepEqual(parseMonsterCombatEffect('+8% к сопротивлению входящему урону'), { target: 'resistance', value: 0.08 });
+  assert.equal(parseMonsterCombatEffect('+1% сопротивления'), undefined);
+});
+
+test('catalog set tiers parse HP, defense and resistance independently', () => {
+  assert.deepEqual(parseMonsterCombatEffect('2/5: +1% HP'), { target: 'health', value: 0.01 });
+  assert.deepEqual(parseMonsterCombatEffect('3/5: +1% защиты'), { target: 'defense', value: 0.01 });
+  assert.deepEqual(parseMonsterCombatEffect('4/5: +1% сопротивления'), { target: 'resistance', value: 0.01 });
+  assert.deepEqual(parseMonsterCombatEffect('5/5: +2% HP'), { target: 'health', value: 0.02 });
+});
+
+test('catalog combat effects map to typed modifiers without collapsing into attack', () => {
+  assert.deepEqual(parseMonsterCombatEffect('+5% к критическому шансу'), { target: 'critChance', value: 0.05 });
+  assert.deepEqual(parseMonsterCombatEffect('+8% к критическому урону'), { target: 'critDamage', value: 0.08 });
+  assert.deepEqual(parseMonsterCombatEffect('Восстанавливает 3% максимального здоровья после победы'), { target: 'lifesteal', value: 0.03 });
+  assert.deepEqual(parseMonsterCombatEffect('+8% к магическому урону'), { target: 'magicDamage', value: 0.08 });
+  assert.deepEqual(parseMonsterCombatEffect('+8% к физическому урону'), { target: 'physicalDamage', value: 0.08 });
+  assert.deepEqual(parseMonsterCombatEffect('+8% к урону по боссам'), { target: 'bossDamage', value: 0.08 });
+  assert.deepEqual(parseMonsterCombatEffect('+5% к количеству обычных ресурсов'), { target: 'loot', value: 0.05 });
+  assert.deepEqual(parseMonsterCombatEffect('+8% к физической защите'), { target: 'defense', value: 0.08 });
+  assert.equal(parseMonsterCombatEffect('+6% профильного параметра'), undefined);
+  assert.equal(parseMonsterCombatEffect('+5% к HP; +8% к защите'), undefined);
+  assert.equal(parseMonsterCombatEffect('+5% к HP и +8% к защите'), undefined);
+  assert.equal(parseMonsterCombatEffect('Усиление роли'), undefined);
+  assert.equal(parseMonsterCombatEffect('Нет'), undefined);
+});
+
+test('equipped rare properties resolve to their declared typed combat channels', () => {
+  const effects = [
+    resolveMonsterCombatProperty('crit', 0.05),
+    resolveMonsterCombatProperty('critical', 0.04),
+    resolveMonsterCombatProperty('lifesteal', 0.03),
+    resolveMonsterCombatProperty('loot', 0.12),
+    resolveMonsterCombatProperty('defense', 0.08),
+    resolveMonsterCombatProperty('attack', 0.08),
+    resolveMonsterCombatProperty('unknown', 0.50),
+  ];
+  const modifiers = aggregateMonsterCombatModifiers(effects);
+  assert.equal(modifiers.critChanceBonus, 0.09);
+  assert.equal(modifiers.lifestealBonus, 0.03);
+  assert.equal(modifiers.lootBonus, 0.12);
+  assert.equal(modifiers.defenseBonus, 0.08);
+  assert.equal(modifiers.attackBonus, 0.08);
+  assert.equal(resolveMonsterCombatProperty('unknown', 0.5), undefined);
+});
+
+test('pendant effects preserve relative crit scaling and stay separate from legacy attack', () => {
+  const baseline = calculatePlayerMonsterCombatStats({
+    profession: 'Ассасин', strength: 10, dexterity: 10, intelligence: 10,
+    vitality: 10, stamina: 10, baseDefense: 10,
+  });
+  const equipped = calculatePlayerMonsterCombatStats({
+    profession: 'Ассасин', strength: 10, dexterity: 10, intelligence: 10,
+    vitality: 10, stamina: 10, baseDefense: 10,
+    pendantCombatEffect: resolveMonsterPendantCombatEffect('crit', 0.10),
+    equipmentEffects: [
+      resolveMonsterCombatProperty('crit', 0.05),
+      resolveMonsterCombatProperty('lifesteal', 0.03),
+    ].filter((effect): effect is NonNullable<typeof effect> => Boolean(effect)),
+  });
+  assert.equal(equipped.combatModifiers.critChanceBonus, 0.05);
+  assert.equal(equipped.combatModifiers.critChanceMultiplierBonus, 0.10);
+  assert.equal(equipped.combatModifiers.lifestealBonus, 0.03);
+  assert.equal(equipped.attack, baseline.attack);
+  assert.equal(equipped.defense, baseline.defense);
+  assert.deepEqual(resolveMonsterPendantCombatEffect('lifesteal', 0.04), { target: 'lifesteal', value: 0.04 });
+  assert.deepEqual(resolveMonsterPendantCombatEffect('crystalChance', 0.20), undefined);
+});
+
+test('clean base stats exclude typed gear and set bonuses while legacy totals remain stable', () => {
+  const baseline = calculatePlayerMonsterCombatStats({
+    profession: 'Воин', strength: 10, dexterity: 10, intelligence: 10,
+    vitality: 10, stamina: 10, baseDefense: 10,
+  });
+  const equipped = calculatePlayerMonsterCombatStats({
+    profession: 'Воин', strength: 10, dexterity: 10, intelligence: 10,
+    vitality: 10, stamina: 10, baseDefense: 10,
+    equipmentEffects: [resolveMonsterCombatProperty('attack', 0.08)!],
+    setBonuses: [{ effect: 'attack', itemCount: 2, mastery: 0, descriptions: ['2 предмета: +8% к атаке'] }],
+  });
+
+  assert.equal(equipped.attack, baseline.attack);
+  assert.equal(equipped.baseAttack, baseline.baseAttack);
+  assert.equal(equipped.baseDefense, baseline.baseDefense);
+  assert.equal(equipped.combatModifiers.attackBonus, 0.16);
+});
+
+test('player combatant adapter forwards typed modifiers without folding them into base stats', () => {
+  const combatant = adaptPlayerCombatant({
+    id: 'player-typed-modifiers', profession: 'Ассасин',
+    hp: 80, maxHp: 100, attack: 100, defense: 30, dexterity: 20,
+    combatModifiers: {
+      attackBonus: 0.10,
+      defenseBonus: 0.08,
+      critChanceBonus: 0.05,
+      critChanceMultiplierBonus: 0.20,
+      critDamageBonus: 0.15,
+      lifestealBonus: 0.03,
+      physicalDamageBonus: 0.12,
+      bossDamageBonus: 0.10,
+      healthBonus: 0.20,
+      attackSpeedBonus: 0.15,
+      healingBonus: 0.25,
+      controlResistance: 0.30,
+    },
+  });
+  assert.equal(combatant.attack, 100);
+  assert.equal(combatant.defense, 30);
+  assert.deepEqual(combatant.combatModifiers, {
+    attackBonus: 0.10,
+    defenseBonus: 0.08,
+    critChanceBonus: 0.05,
+    critChanceMultiplierBonus: 0.20,
+    critDamageBonus: 0.15,
+    lifestealBonus: 0.03,
+    physicalDamageBonus: 0.12,
+    bossDamageBonus: 0.10,
+    healthBonus: 0.20,
+    attackSpeedBonus: 0.15,
+    healingBonus: 0.25,
+    controlResistance: 0.30,
+  });
+});
+
+test('typed modifier aggregation preserves control resistance as its own channel', () => {
+  const modifiers = aggregateMonsterCombatModifiers([
+    parseMonsterCombatEffect('+25% к сопротивлению контролю'),
+  ]);
+  assert.equal(modifiers.controlResistance, 0.25);
+  assert.equal(modifiers.resistanceBonus, 0);
+});
+
+test('monster battle applies health and attack speed bonuses without granting extra turns', () => {
+  const result = resolveMonsterBattle({
+    monster: { id: 'training-dummy', name: 'Манекен', hp: 100, attack: 10, defense: 0, speed: 15 },
+    party: [{
+      id: 'fast-fighter', profession: 'Воин', hp: 50, maxHp: 100,
+      attack: 100, defense: 0, speed: 10,
+      combatModifiers: { healthBonus: 0.20, attackSpeedBonus: 1 },
+    }],
+    maxRounds: 1,
+    random: (() => { const values = [0, 0.99]; let i = 0; return () => values[i++] ?? 0.99; })(),
+  });
+
+  assert.equal(result.winner, 'party');
+  assert.equal(result.party[0].maxHp, 120);
+  assert.equal(result.party[0].remainingHp, 60);
+  assert.equal(result.events.filter(event => event.actor === 'fast-fighter' && event.action === 'attack').length, 1);
+  assert.equal(result.events.some(event => event.actor === 'Манекен' && event.action === 'attack'), false);
+});
+
+test('monster battle applies healing bonus to submitted healing actions', () => {
+  const result = resolveMonsterBattle({
+    monster: { id: 'training-dummy', name: 'Манекен', hp: 1000, attack: 1, defense: 0, speed: 0 },
+    party: [
+      {
+        id: 'healer', profession: 'Баффер', hp: 100, maxHp: 100,
+        attack: 1, defense: 0, speed: 20,
+        combatModifiers: { healingBonus: 0.50 },
+      },
+      { id: 'ally', profession: 'Воин', hp: 50, maxHp: 100, attack: 1, defense: 0, speed: 10 },
+    ],
+    healingActions: [{ round: 1, actorId: 'healer', targetId: 'ally', amount: 20 }],
+    maxRounds: 1,
+    random: () => 0.99,
+  });
+
+  assert.ok(result.events.some(event => event.action === 'heal' && event.actor === 'healer' && event.target === 'ally' && event.healing === 30));
+  assert.equal(result.party.find(member => member.id === 'ally')?.remainingHp, 79);
+});
+
+test('control resistance can prevent monster poison without reducing incoming damage resistance', () => {
+  const result = resolveMonsterBattle({
+    monster: {
+      id: 'poisoner', name: 'Ядовитый монстр', hp: 1000, attack: 1, defense: 0, speed: 10,
+      passiveDescription: 'Атака накладывает яд',
+    },
+    party: [{
+      id: 'resistant', profession: 'Воин', hp: 1000, maxHp: 1000,
+      attack: 1, defense: 0, speed: 0,
+      combatModifiers: { controlResistance: 0.75 },
+    }],
+    maxRounds: 2,
+    random: () => 0.1,
+  });
+
+  assert.equal(result.events.some(event => event.action === 'poison'), false);
+  assert.equal(result.party[0].damageTaken, 2);
+});
+
+test('monster battle applies typed attack, damage-type and lifesteal modifiers', () => {
+  const result = resolveMonsterBattle({
+    monster: { id: 'training-dummy', name: 'Манекен', hp: 132, attack: 1, defense: 0, speed: 0 },
+    party: [{
+      id: 'fighter', profession: 'Воин', hp: 50, maxHp: 100,
+      attack: 100, defense: 0, speed: 10, damageType: 'physical',
+      combatModifiers: { attackBonus: 0.10, physicalDamageBonus: 0.20, lifestealBonus: 0.20, healingBonus: 0.50 },
+    }],
+    maxRounds: 1,
+    random: (() => { const values = [0, 0.99, 0.99, 0.99]; let i = 0; return () => values[i++] ?? 0.99; })(),
+  });
+  assert.equal(result.party[0].damageDealt, 132);
+  assert.equal(result.party[0].remainingHp, 89);
+  assert.ok(result.events.some(event => event.action === 'heal' && event.actor === 'fighter' && event.healing === 39));
+});
+
+test('monster healing reduction also reduces player lifesteal', () => {
+  const result = resolveMonsterBattle({
+    monster: {
+      id: 'healing-reducer', name: 'Лишатель лечения', hp: 10000,
+      attack: 1, defense: 0, speed: 0,
+      passiveDescription: 'Лечение противника −10%',
+    },
+    party: [{
+      id: 'lifesteal-fighter', profession: 'Вампир', hp: 50, maxHp: 100,
+      attack: 100, defense: 0, speed: 10,
+      combatModifiers: { lifestealBonus: 0.50 },
+    }],
+    maxRounds: 1,
+    random: () => 0.99,
+  });
+  assert.ok(result.events.some(event => event.action === 'heal' && event.actor === 'lifesteal-fighter' && event.healing === 45));
+});
+
+test('monster battle applies crit chance and critical damage modifiers independently', () => {
+  const result = resolveMonsterBattle({
+    monster: { id: 'training-dummy', name: 'Манекен', hp: 1000, attack: 1, defense: 0, speed: 0 },
+    party: [{
+      id: 'critical-fighter', profession: 'Ассасин', hp: 100, maxHp: 100,
+      attack: 100, defense: 0, speed: 10, critChance: 0.10, critMultiplier: 1.5,
+      combatModifiers: { critChanceBonus: 0.10, critChanceMultiplierBonus: 0.50, critDamageBonus: 0.25 },
+    }],
+    maxRounds: 1,
+    random: (() => { const values = [0, 0.15, 0.99, 0.99]; let i = 0; return () => values[i++] ?? 0.99; })(),
+  });
+  assert.equal(result.party[0].damageDealt, 175);
+  assert.equal(result.events.find(event => event.action === 'attack' && event.actor === 'critical-fighter')?.critical, true);
+});
+
+
+test('combat HP normalization preserves the legacy health ratio before typed health bonuses', () => {
+  assert.deepEqual(resolvePlayerMonsterCombatHealth({
+    currentHp: 75, legacyEffectiveMaxHp: 150, baseMaxHp: 120,
+  }), { hp: 60, maxHp: 120 });
+  assert.deepEqual(resolvePlayerMonsterCombatHealth({
+    currentHp: 150, legacyEffectiveMaxHp: 150, baseMaxHp: 120,
+  }), { hp: 120, maxHp: 120 });
+  assert.deepEqual(resolvePlayerMonsterCombatHealth({
+    currentHp: 200, legacyEffectiveMaxHp: 150, baseMaxHp: 120,
+  }), { hp: 120, maxHp: 120 });
+});
+
+test('combat HP normalization safely handles invalid and non-positive inputs', () => {
+  assert.deepEqual(resolvePlayerMonsterCombatHealth({
+    currentHp: Number.NaN, legacyEffectiveMaxHp: 0, baseMaxHp: Number.NaN,
+  }), { hp: 0, maxHp: 1 });
+  assert.deepEqual(resolvePlayerMonsterCombatHealth({
+    currentHp: -10, legacyEffectiveMaxHp: 100, baseMaxHp: 80,
+  }), { hp: 0, maxHp: 80 });
+});
+
+
+test('active attack, defense and crit buffs map to typed channels without changing clean base stats', () => {
+  const stats = calculatePlayerMonsterCombatStats({
+    profession: 'Воин', strength: 10, dexterity: 10, intelligence: 10,
+    vitality: 10, stamina: 10, baseDefense: 10,
+    buffs: { attack: 0.20, defense: 0.10, crit: 0.12 },
+    buffUntil: 200, now: 100,
+  });
+
+  assert.equal(stats.baseAttack, 18);
+  assert.equal(stats.baseDefense, 17.27);
+  assert.equal(stats.combatModifiers.attackBonus, 0.20);
+  assert.equal(stats.combatModifiers.defenseBonus, 0.10);
+  assert.equal(stats.combatModifiers.critChanceBonus, 0.12);
+});
+
+test('normalized combatant builder preserves HP ratio and merges active lifesteal once', () => {
+  const stats = calculatePlayerMonsterCombatStats({
+    profession: 'Ассасин', strength: 10, dexterity: 20, intelligence: 10,
+    vitality: 10, stamina: 10, baseDefense: 10,
+    equipmentEffects: [resolveMonsterCombatProperty('lifesteal', 0.03)!],
+    pendantCombatEffect: resolveMonsterPendantCombatEffect('health', 0.20),
+    buffs: { lifesteal: 0.08 }, buffUntil: 200, now: 100,
+  });
+  const combatant = buildPlayerCombatantForMonsterBattle({
+    id: 'normalized-player', currentHp: 75, legacyEffectiveMaxHp: 150, baseMaxHp: 120,
+    stats,
+  });
+
+  assert.equal(combatant.hp, 60);
+  assert.equal(combatant.maxHp, 120);
+  assert.equal(combatant.attack, stats.baseAttack);
+  assert.equal(combatant.defense, stats.baseDefense);
+  assert.equal(combatant.speed, stats.speed);
+  assert.equal(combatant.combatModifiers?.healthBonus, 0.20);
+  assert.equal(combatant.combatModifiers?.lifestealBonus, 0.11);
+  assert.equal(combatant.critChance, undefined);
+  assert.equal(combatant.accuracy, undefined);
+});
+
+
+test('legacy Shadowstalker set tiers contribute explicit typed crit effects to the new engine', () => {
+  const twoPieces = resolveEquipmentSetCombatEffects({
+    itemCount: 2,
+    fullAt: 3,
+    two: '2 предмета: +6% к критическому шансу',
+    full: '3 предмета: +12% к критическому урону',
+  });
+  const threePieces = resolveEquipmentSetCombatEffects({
+    itemCount: 3,
+    fullAt: 3,
+    two: '2 предмета: +6% к критическому шансу',
+    full: '3 предмета: +12% к критическому урону',
+  });
+
+  assert.deepEqual(twoPieces, [{ target: 'critChance', value: 0.06 }]);
+  assert.deepEqual(threePieces, [
+    { target: 'critChance', value: 0.06 },
+    { target: 'critDamage', value: 0.12 },
+  ]);
+  assert.deepEqual(aggregateMonsterCombatModifiers(threePieces), {
+    attackBonus: 0, defenseBonus: 0, critChanceBonus: 0.06,
+    critChanceMultiplierBonus: 0, critDamageBonus: 0.12,
+    lifestealBonus: 0, lootBonus: 0, healthBonus: 0, accuracyBonus: 0,
+    evasionBonus: 0, attackSpeedBonus: 0, magicDamageBonus: 0,
+    physicalDamageBonus: 0, bossDamageBonus: 0, experienceBonus: 0,
+    goldBonus: 0, productionBonus: 0, resistanceBonus: 0,
+    controlResistance: 0, healingBonus: 0,
+  });
+});
+
+test('unknown player damage type does not receive physical or magic damage bonuses', () => {
+  const run = (damageType?: 'physical' | 'magic' | 'fire') => resolveMonsterBattle({
+    monster: { id: 'training-dummy', name: 'Манекен', hp: 1000, attack: 1, defense: 0, speed: 0 },
+    party: [{
+      id: 'fighter', profession: 'Воин', hp: 100, maxHp: 100,
+      attack: 100, defense: 0, speed: 10, damageType,
+      combatModifiers: { physicalDamageBonus: 0.50, magicDamageBonus: 0.80 },
+    }],
+    maxRounds: 1,
+    random: () => 0.99,
+  });
+
+  assert.equal(run().party[0].damageDealt, 100);
+  assert.equal(run('physical').party[0].damageDealt, 150);
+  assert.equal(run('magic').party[0].damageDealt, 180);
+  assert.equal(run('fire').party[0].damageDealt, 180);
+});
+
+
+test('lifesteal combines Vampire baseline with aggregated gear, set and buff bonuses exactly once', () => {
+  assert.equal(resolvePlayerMonsterLifestealRate('Вампир', 0.11), 0.19);
+  assert.equal(resolvePlayerMonsterLifestealRate('Ассасин', 0.11), 0.11);
+  assert.equal(resolvePlayerMonsterLifestealRate('Вампир', 0.80), 0.88);
+  assert.equal(resolvePlayerMonsterLifestealRate('Вампир', Number.NaN), 0.08);
+});
+
+
+test('monster battle rejects duplicate party IDs instead of resolving multiple turns against the first matching member', () => {
+  assert.throws(() => resolveMonsterBattle({
+    monster: { id: 'duplicate-test', name: 'Test monster', hp: 100, attack: 10, defense: 0, speed: 1 },
+    party: [
+      { id: 'same-player', profession: 'Воин', hp: 100, maxHp: 100, attack: 20, defense: 0, speed: 10 },
+      { id: 'same-player', profession: 'Лучник', hp: 100, maxHp: 100, attack: 20, defense: 0, speed: 10 },
+    ],
+    random: () => 0.5,
+  }), /duplicate combatant IDs/);
+});
+
+
+test('deterministic typed combat matrix covers every implemented profession at solo, duo and trio sizes', () => {
+  const professions = [
+    { name: 'Боевой маг', attack: 17.05, defense: 15.7, damageType: 'fire' as const },
+    { name: 'Ассасин', attack: 22.68, defense: 15.7, damageType: 'physical' as const },
+    { name: 'Ассасин птицы', attack: 22.68, defense: 15.7, damageType: 'physical' as const },
+    { name: 'Рыцарь', attack: 18, defense: 17.27, damageType: 'physical' as const },
+    { name: 'Баффер', attack: 18, defense: 15.7, damageType: 'physical' as const },
+    { name: 'Лучник', attack: 22.26, defense: 15.7, damageType: 'physical' as const },
+    { name: 'Вампир', attack: 21, defense: 15.7, damageType: 'physical' as const },
+    { name: 'Добытчик', attack: 18, defense: 15.7, damageType: 'physical' as const },
+  ];
+  const monsters = [
+    {
+      id: 'matrix-normal', name: 'Matrix normal', hp: 2600, attack: 82, defense: 25, speed: 12,
+      weakness: 'Огненный урон +25%',
+    },
+    {
+      id: 'matrix-boss', name: 'Matrix boss', hp: 5200, attack: 115, defense: 65, speed: 18, isBoss: true,
+      passiveDescription: 'Атака и защита +15%; физический урон −25%',
+    },
+    {
+      id: 'matrix-threshold', name: 'Matrix threshold', hp: 3400, attack: 96, defense: 35, speed: 10,
+      passiveDescription: 'Атака +20% ниже 50% HP',
+    },
+  ];
+
+  let scenarios = 0;
+  for (const profession of professions) {
+    for (const partySize of [1, 2, 3]) {
+      for (const monster of monsters) {
+        const party = Array.from({ length: partySize }, (_, index) => ({
+          id: profession.name + '-' + partySize + '-' + index,
+          profession: profession.name,
+          hp: 1200,
+          maxHp: 1200,
+          attack: profession.attack * 5,
+          defense: profession.defense * 4,
+          speed: 18 + index,
+          damageType: profession.damageType,
+          critChance: 0.15,
+          critMultiplier: 1.5,
+          combatModifiers: {
+            physicalDamageBonus: profession.damageType === 'physical' ? 0.05 : 0,
+            magicDamageBonus: profession.damageType === 'fire' ? 0.08 : 0,
+            bossDamageBonus: 0.04,
+            lifestealBonus: profession.name === 'Вампир' ? 0.08 : 0,
+            attackSpeedBonus: index === 0 ? 0.02 : 0,
+          },
+        }));
+        const input = { monster, party, maxRounds: 12, random: () => 0.42, now: 1_800_000_000_000 };
+        const first = resolveMonsterBattle(input);
+        const second = resolveMonsterBattle(input);
+
+        assert.deepEqual(first, second, profession.name + ' party ' + partySize + ' vs ' + monster.id + ' must be deterministic');
+        assert.equal(first.party.length, partySize);
+        assert.ok(first.rounds >= 0 && first.rounds <= 12);
+        assert.ok(first.monsterHp >= 0 && first.monsterHp <= monster.hp);
+        assert.ok(first.totalDamageToMonster >= 0);
+        assert.ok(first.totalDamageToParty >= 0);
+        assert.ok(['party', 'monster', 'draw'].includes(first.winner));
+        assert.equal(first.totalDamageToMonster, first.party.reduce((sum, member) => sum + member.damageDealt, 0));
+        assert.equal(first.totalDamageToParty, first.party.reduce((sum, member) => sum + member.damageTaken, 0));
+        for (const member of first.party) {
+          assert.ok(member.remainingHp >= 0 && member.remainingHp <= member.maxHp);
+        }
+        scenarios++;
+      }
+    }
+  }
+  assert.equal(scenarios, 72);
+});
+
+test('Knight preserves Warrior combat profile and Bird Assassin matches the Assassin archetype', () => {
+  for (const kind of ['weapon', 'armor'] as const) {
+    assert.deepEqual(
+      resolveGoldEquipmentStatProfile({ kind, level: 40, profession: 'Рыцарь', slot: kind === 'armor' ? 'helmet' : undefined }),
+      resolveGoldEquipmentStatProfile({ kind, level: 40, profession: 'Воин', slot: kind === 'armor' ? 'helmet' : undefined }),
+    );
+    assert.deepEqual(
+      resolveGoldEquipmentStatProfile({ kind, level: 40, profession: 'Ассасин птицы', slot: kind === 'armor' ? 'gloves' : undefined }),
+      resolveGoldEquipmentStatProfile({ kind, level: 40, profession: 'Ассасин', slot: kind === 'armor' ? 'gloves' : undefined }),
+    );
+  }
+  const knight = calculatePlayerMonsterCombatStats({
+    profession: 'Рыцарь', strength: 10, dexterity: 10, intelligence: 10, vitality: 10, stamina: 10, baseDefense: 10,
+  });
+  const oldWarrior = calculatePlayerMonsterCombatStats({
+    profession: 'Воин', strength: 10, dexterity: 10, intelligence: 10, vitality: 10, stamina: 10, baseDefense: 10,
+  });
+  assert.deepEqual(knight, oldWarrior);
+  const birdAssassin = calculatePlayerMonsterCombatStats({
+    profession: 'Ассасин птицы', strength: 10, dexterity: 10, intelligence: 10, vitality: 10, stamina: 10, baseDefense: 10,
+  });
+  const catAssassin = calculatePlayerMonsterCombatStats({
+    profession: 'Ассасин', strength: 10, dexterity: 10, intelligence: 10, vitality: 10, stamina: 10, baseDefense: 10,
+  });
+  assert.equal(birdAssassin.attack, catAssassin.attack);
+  assert.equal(birdAssassin.defense, catAssassin.defense);
+  assert.deepEqual(birdAssassin.combatModifiers, catAssassin.combatModifiers);
+});
+
+test('new professional set bonuses never infer legacy multipliers from profession or mastery', () => {
+  const base = {
+    profession: 'Воин', strength: 10, dexterity: 10, intelligence: 10,
+    vitality: 10, stamina: 10, baseDefense: 10,
+  };
+  const withoutSet = calculatePlayerMonsterCombatStats(base);
+  for (const effect of ['attack', 'defense', 'crit', 'lifesteal', 'loot']) {
+    const withSet = calculatePlayerMonsterCombatStats({
+      ...base,
+      setBonuses: [{ effect, itemCount: 5, mastery: 10 }],
+    });
+    assert.equal(withSet.attack, withoutSet.attack, `unexpected inferred attack for ${effect}`);
+    assert.equal(withSet.defense, withoutSet.defense, `unexpected inferred defense for ${effect}`);
+    assert.equal(withSet.combatModifiers.attackBonus, 0);
+    assert.equal(withSet.combatModifiers.defenseBonus, 0);
+  }
+});
+
+test('new set explicit tier effects are applied once and do not receive hidden five-piece or mastery bonuses', () => {
+  const base = {
+    profession: 'Воин', strength: 10, dexterity: 10, intelligence: 10,
+    vitality: 10, stamina: 10, baseDefense: 10,
+  };
+  const withoutSet = calculatePlayerMonsterCombatStats(base);
+  const withSet = calculatePlayerMonsterCombatStats({
+    ...base,
+    setBonuses: [{
+      effect: 'attack', itemCount: 5, mastery: 10,
+      descriptions: ['2/5: +10% к атаке'],
+    }],
+  });
+  assert.equal(withSet.attack, withoutSet.attack);
+  assert.equal(withSet.defense, withoutSet.defense);
+  assert.equal(withSet.combatModifiers.attackBonus, 0.10);
+  assert.equal(withSet.combatModifiers.defenseBonus, 0);
+});

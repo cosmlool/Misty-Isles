@@ -1,3 +1,5 @@
+import { removeInventoryCopy } from './inventoryOperations.js';
+
 export type EconomyPlayer = Record<string, any>;
 export type AuctionLot = {
   id: string; itemId: string; itemName: string; sellerId: string; sellerName: string;
@@ -66,13 +68,9 @@ export function listAuctionItem(input: {
   if (!Number.isSafeInteger(Number(seller[field])) || Number(seller[field]) < fee) throw new Error('Not enough currency for the listing fee.');
   seller[field] = Number(seller[field]) - fee;
   if (field === 'gold') seller.goldSpent = Number(seller.goldSpent || 0) + fee;
-  inventory.splice(input.index, 1);
-  seller.inventory = JSON.stringify(inventory);
-  const equipment = equipmentOf(seller);
-  for (const slot of ['weapon', 'helmet', 'armor', 'gloves', 'boots', 'cloak', 'amulet']) {
-    if (equipment[slot] === itemId) equipment[slot] = '';
-  }
-  seller.equipment = JSON.stringify(equipment);
+  const removal = removeInventoryCopy(inventory, equipmentOf(seller), input.index);
+  seller.inventory = JSON.stringify(removal.inventory);
+  seller.equipment = JSON.stringify(removal.equipment);
   const lot: AuctionLot = {
     id: input.lotId, itemId, itemName: input.itemName || itemId, sellerId: input.sellerId,
     sellerName: String(seller.name || ''), price: input.price, currency: input.currency,
@@ -88,7 +86,7 @@ export function listAuctionItem(input: {
 }
 
 export function cancelAuctionItem(input: {
-  snapshot: EconomySnapshot; sellerId: string; lotId: string; validItemIds: ReadonlySet<string>; now: number;
+  snapshot: EconomySnapshot; sellerId: string; lotId: string; validItemIds: ReadonlySet<string>; uniqueItemIds?: ReadonlySet<string>; now: number;
 }): EconomySnapshot {
   const next = clone(input.snapshot);
   validateLots(next.auction, input.validItemIds);
@@ -98,6 +96,11 @@ export function cancelAuctionItem(input: {
   const seller = next.players[input.sellerId];
   if (!seller) throw new Error('Seller is missing from the player save.');
   const inventory = inventoryOf(seller);
+  const equipment = equipmentOf(seller);
+  if (input.uniqueItemIds?.has(lot.itemId)
+    && (inventory.includes(lot.itemId) || Object.values(equipment).includes(lot.itemId))) {
+    throw new Error('This unique item is already owned; remove the other copy before withdrawing this lot.');
+  }
   inventory.push(lot.itemId);
   seller.inventory = JSON.stringify(inventory);
   next.auction.splice(index, 1);
@@ -125,7 +128,11 @@ export function buyAuctionItem(input: {
   if (!buyer) throw new Error('Buyer is missing from the player save.');
   if (!seller) throw new Error('Seller not found; purchase cancelled.');
   const inventory = inventoryOf(buyer);
-  if (input.uniqueItemIds?.has(lot.itemId) && inventory.includes(lot.itemId)) throw new Error('This unique item is already owned.');
+  const equipment = equipmentOf(buyer);
+  if (input.uniqueItemIds?.has(lot.itemId)
+    && (inventory.includes(lot.itemId) || Object.values(equipment).includes(lot.itemId))) {
+    throw new Error('This unique item is already owned.');
+  }
   const field = lot.currency;
   if (!Number.isSafeInteger(Number(buyer[field])) || Number(buyer[field]) < lot.price) throw new Error('Insufficient currency.');
   const fee = field === 'gold' ? Math.max(1, Math.floor(lot.price * 0.05)) : 0;
