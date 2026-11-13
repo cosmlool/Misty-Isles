@@ -1,3 +1,4 @@
+/// <reference types="vite/client" />
 import { Client } from 'colyseus.js';
 import { claimDungeonResultEvent } from './dungeonResultDedup.js';
 
