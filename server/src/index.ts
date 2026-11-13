@@ -61,6 +61,8 @@ if (configuredDataDir && !isAbsolute(configuredDataDir)) {
   throw new Error('MISTY_DATA_DIR must be an absolute path.');
 }
 const DATA_DIR = resolve(configuredDataDir || join(process.cwd(), 'data'));
+// Static world definitions ship with the server and must never be redirected into a fresh save directory.
+const GAME_DATA_DIR = join(process.cwd(), 'data');
 const SAVE_FILE = join(DATA_DIR, 'players.json');
 const CLAN_FILE = join(DATA_DIR, 'clans.json');
 const AUCTION_FILE = join(DATA_DIR, 'auction.json');
@@ -143,14 +145,14 @@ function persistHuntGroups(players:Player[]=[],playerQuestOverrides:Record<strin
     throw error;
   }
 }
-const EXPEDITION_DATA:any = JSON.parse(readFileSync(join(DATA_DIR,'forgotten_lands.json'),'utf8'));
+const EXPEDITION_DATA:any = JSON.parse(readFileSync(join(GAME_DATA_DIR,'forgotten_lands.json'),'utf8'));
 const EXPEDITION_BESTIARY:any[] = EXPEDITION_DATA.monsters
   .filter((monster:any)=>['rare','elite','guardian','boss','finalBoss'].includes(monster.rank))
   .map((monster:any)=>{
     const zone=EXPEDITION_DATA.zones.find((entry:any)=>entry.id===monster.zoneId);
     return {id:monster.id,name:monster.name,region:zone?.region||'Забытые земли',boss:monster.name,rare:monster.rank,min:zone?.minLevel??monster.level,max:zone?.maxLevel??monster.level};
   });
-const CITY_NPCS:any[] = JSON.parse(readFileSync(join(DATA_DIR,'city_npcs.json'),'utf8'));
+const CITY_NPCS:any[] = JSON.parse(readFileSync(join(GAME_DATA_DIR,'city_npcs.json'),'utf8'));
 
 type Item = { id:string; name:string; kind:'weapon'|'armor'|'amulet'|'potion'|'material'|'chest'; slot?:string; price:number; currency?:string; level:number; maxLevel?:number; attack?:number; defense?:number; health?:number; heal?:number; effect?:string; value?:number; profession?:string; race?:string; description?:string; legacy?:boolean; attributes?:Record<string,number>; combatStats?:Record<string,number>; primaryAttribute?:string; [key:string]:any };
 type Recipe = {id:string;name:string;level:number;seconds:number;output:string;count:number;materials:Record<string,number>;description:string;profession?:string};
@@ -365,7 +367,7 @@ const ITEMS: Item[] = [
 for (const item of ITEMS) { if (item.price > 0 && item.kind !== 'amulet' && item.kind !== 'material') item.price = Math.ceil(item.price * 1.3); }
 
 // New catalog is authoritative for new equipment; legacy IDs remain available for existing saves, auctions and recipes.
-const NEW_EQUIPMENT_ITEMS:Item[] = JSON.parse(readFileSync(join(DATA_DIR,'equipment_catalog.json'),'utf8'));
+const NEW_EQUIPMENT_ITEMS:Item[] = JSON.parse(readFileSync(join(GAME_DATA_DIR,'equipment_catalog.json'),'utf8'));
 const EXPEDITION_DROP_ITEMS:Item[] = EXPEDITION_DATA.dropItems || [];
 for (const item of ITEMS) { if (['weapon','armor','amulet'].includes(item.kind)) item.legacy = true; }
 for (const item of NEW_EQUIPMENT_ITEMS) { if (item.price > 0 && item.kind !== 'amulet' && item.kind !== 'material') item.price = Math.ceil(item.price * 1.3); }
