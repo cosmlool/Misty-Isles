@@ -23,6 +23,8 @@ export function prepareDungeonMemberQuestSettlement(input: {
 
   const stats = { ...((quests.activityToday || { hunts: 0, wins: 0, losses: 0, gold: 0, xp: 0, dungeons: 0, crafts: 0 }) as Record<string, number>) };
   stats.dungeons += 1;
+  stats.gold += Number(input.activity.gold || 0);
+  stats.xp += Number(input.activity.xp || 0);
   quests.activityToday = stats;
 
   const activityLog = Array.isArray(quests.activityLog) ? [...quests.activityLog] : [];
