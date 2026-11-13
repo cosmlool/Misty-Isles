@@ -9,8 +9,9 @@ function activeRun(runId='run-1', participantIds=['p1','p2']) {
 
 test('finds the active run for a participant and ignores terminal runs',()=>{
   const active=activeRun();
-  const terminal={...active,status:'completed' as const,terminalResult:{outcome:'win' as const,committedAt:200,requestId:active.requestId}};
-  const store:DungeonRunStore={[active.runId]:active,old:terminal};
+  const old=activeRun('old');
+  const terminal={...old,status:'completed' as const,terminalResult:{outcome:'win' as const,committedAt:200,requestId:old.requestId}};
+  const store:DungeonRunStore={[active.runId]:active,[old.runId]:terminal};
   assert.equal(findActiveDungeonRunForParticipant(store,'p2')?.runId,'run-1');
   assert.equal(findActiveDungeonRunForParticipant(store,'unknown'),null);
 });
