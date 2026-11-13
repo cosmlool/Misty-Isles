@@ -236,3 +236,14 @@ PR #15 остаётся Draft/open и не объединён. Слияние б
 - Кодовые commits: helper `b9c118df6c377fb2c57c4296b66dff3f83235cce`; tests `368d94e3d0f927c3e2bc69d06ddc9d6cec76d3cf`; test script `ac51746324f6c29e3580cd0080cd4859e6c2bc54`; test expectation correction `49d29134212ce6367b15fc6df5ed0a19b53a3f66`; handler `308acb9359dcca4b713b1e0911df55e7d7b4bbb0`.
 - Новый HEAD требует полного CI подтверждения. До завершения CI не начинать следующий кодовый этап.
 - PR #15 остаётся Draft/open, merged=false; merge не выполнять. Полная durable dungeon lifecycle integration НЕ подключена.
+
+
+## Продолжение dungeon audit: recovery перед изменением Player (2026-11-13)
+
+- Quality Gate на предыдущем HEAD `d3d2db6e960badb5d52f23e7e0a4fccb63c278fe` завершился успешно: все 4 jobs (Data/docs/structure, Client TS/Vite, Server TS/build + transaction recovery, Playwright). Отдельный Server Checks workflow также success.
+- При полном просмотре live `Room.runExpeditionDungeon()` обнаружено окно: handler изменял online Player объекты до `persistDungeonResultPlayers()`; WAL recovery внутри persistence мог восстановить disk snapshot и отклонить commit, оставив в памяти рассчитанные, но не сохранённые изменения.
+- Исправление: commit `a11002b36e2f8b456e683f12618ff5fe04afe69b` добавляет вызов `recoverPlayerStateBeforeMutation()` в самом начале dungeon handler. При recovery online players синхронизируются из сохранения и текущий вход отклоняется до чтения/расхода попыток, RNG и боя.
+- Документация: commit `89ba20fd9aadc75e5e552d1e143b5f9eba4b4814`.
+- Новый HEAD после checkpoint commit требует полного CI; до его завершения код не менять.
+- Следующая проверка: после CI продолжить аудит целостности settlement/persistence всей dungeon подсистемы, включая поведение при ошибке WAL commit и отсутствие побочных эффектов. Не считать durable lifecycle подключённым.
+- PR #15 остаётся Draft/open, merged=false. Не сливать.
