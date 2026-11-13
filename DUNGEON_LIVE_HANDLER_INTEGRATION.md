@@ -154,3 +154,13 @@ Regression tests: `server/test/dungeonRequestRecovery.test.ts` — unknown reque
 - Это закрывает окно восстановления перед мутациями, не меняя combat formulas, RNG, награды, drop allocation, report, outbox или WAL transaction boundary.
 - Commit: `a11002b36e2f8b456e683f12618ff5fe04afe69b`. Shared runtime tests уже покрывают сигнал recovery; новый handler HEAD требует полного CI подтверждения.
 - Durable dungeon lifecycle integration по-прежнему НЕ подключена; PR #15 остаётся Draft/open, merge запрещён.
+
+## Этап: восстановление online Player после ошибки settlement persistence (2026-11-13)
+
+- Новый просмотр `sharedStateTransactions.transact()` подтвердил отдельное окно отказа: `prepareAfterRecovery`, `validateFiles` и запись самого WAL выполняются до внутреннего блока replay. Ошибка на этих шагах выбрасывается до commit, но live dungeon handler к этому моменту уже меняет объекты `Player`.
+- В `runExpeditionDungeon()` теперь сохраняются detached snapshots всех участников до игровых мутаций. Если settlement persistence падает до создания WAL, участники восстанавливаются из этих snapshots.
+- Если WAL уже существует, runtime повторно пытается выполнить recovery и синхронизирует online players с текущим durable `players.json`, даже если replay остаётся заблокированным. Ошибка исходного сохранения по-прежнему возвращается; pending journal не удаляется и дальнейшие writers остаются fail-closed.
+- Общие `persistPlayers()` и `transactClanMutation()` также синхронизируют online players с durable snapshot после ошибки записи, поскольку их callbacks могут выполняться после live mutations. Auction operations остаются detached snapshot transactions.
+- Добавлен тест отказа при создании WAL: target files должны остаться без изменений. Добавлены regression assertions на snapshot capture/rollback и recovery branch.
+- Не менялись combat formulas, RNG, попытки, rewards, inventory allocation, report, outbox identity или transaction commit semantics. Это защита live memory consistency при persistence failure, а не подключение durable dungeon lifecycle.
+- Новый HEAD требует полного CI; PR #15 остаётся Draft/open, merged=false.
