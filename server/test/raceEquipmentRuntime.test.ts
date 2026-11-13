@@ -195,6 +195,10 @@ test('server preserves race equipment rules, migrates Warrior to Knight and enab
         profile.profession + ' weapon equip',
       );
 
+      await waitFor(() => {
+        const persisted = readJson(join(dataDir, 'players.json'))[profile.playerId];
+        return persisted && JSON.parse(persisted.equipment).weapon === profile.weaponId ? true : undefined;
+      }, profile.profession + ' persisted weapon');
       const saved = readJson(join(dataDir, 'players.json'))[profile.playerId];
       assert.equal(saved.profession, profile.profession, profile.profession + ' profession must persist');
       assert.equal(JSON.parse(saved.equipment).weapon, profile.weaponId, profile.profession + ' weapon must persist');
