@@ -294,3 +294,14 @@ PR #15 остаётся Draft/open и не объединён. Слияние б
 - Commits: auction durability `9aa4d598cedfcd041005ab073a6da17abed1963a`; clan durability `cf9d49874f70caba7ebcd7f1193c367232f09a7b`; auction regression test `fe4bd1e2eaa969bd1cd7b517716bbc6e76a31e40`; clan regression test `d23468c8a7b9b46c78219114b85d4cb887707409`; integration docs `538df1f6262f245657bc12e5c057a6f1aba5bd87`.
 - Новый HEAD после checkpoint update требует полного CI. Следующий шаг — проверить workflow; при ошибках получить job logs и исправить их до продолжения аудита.
 - PR #15 остаётся Draft/open, merged=false; не объединять. Полная durable dungeon lifecycle integration НЕ подключена.
+
+## Контрольная точка — 2026-11-14 (локальная изолированная тестовая среда)
+
+- Создан Draft PR #18: https://github.com/cosmlool/Misty-Isles/pull/18, ветка `staging/local-isolated-launcher`, base `stage29/clean-validation-recovery`; не объединять без отдельного решения.
+- Клиент поддерживает `VITE_SERVER_URL`; без переменной сохраняется прежний fallback на текущий hostname и порт 2567. Добавлена ссылка типов `vite/client` для TypeScript.
+- Windows-лаунчер задаёт `MISTY_DATA_DIR` как абсолютный путь к корневой `.local-data` и `VITE_SERVER_URL=http://127.0.0.1:2567`. Переменные наследуются запущенными процессами сервера и Vite.
+- Проверен серверный путь: `server/src/index.ts` валидирует абсолютный `MISTY_DATA_DIR`, создаёт каталог при отсутствии и направляет в него все persistence-файлы; без переменной default остаётся `server/data`.
+- `.local-data/`, `logs/` и `.misty-game-processes.json` добавлены в корневой `.gitignore`.
+- На HEAD `1c317079be208d6b581892dc127b44677ecbcd7e` Quality Gate прошёл полностью: Data/docs/structure, Client TypeScript/Vite, Server TypeScript и Playwright browser smoke — success. Повторный запуск workflows также завершился success (восемь check runs, включая оба запуска).
+- Реальный запуск PowerShell-лаунчера на пользовательском Windows ПК ещё не проверен; CI подтверждает сборки и smoke tests, но не заменяет ручную проверку кнопок запуска/остановки и фактического расположения файлов.
+- Следующий этап: проверить diff PR #18, добавить при необходимости безопасную диагностику локального профиля, затем пользователь запускает лаунчер и подтверждает, что тестовые файлы появляются только в `.local-data`.
