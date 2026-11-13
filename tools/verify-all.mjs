@@ -38,9 +38,11 @@ function ensureDependencies(folder, label) {
     console.log(`Dependencies ready: ${label}`);
     return;
   }
-  const hasLock = existsSync(resolve(projectDir, 'package-lock.json'));
-  const args = hasLock ? ['ci', '--no-audit', '--no-fund'] : ['install', '--no-audit', '--no-fund'];
-  run(npmCommand, args, projectDir, `Install ${label} dependencies`);
+  if (!existsSync(resolve(projectDir, 'package-lock.json'))) {
+    console.error(`Missing required package-lock.json for ${label}; refusing a non-reproducible install.`);
+    process.exit(1);
+  }
+  run(npmCommand, ['ci', '--no-audit', '--no-fund'], projectDir, `Install locked ${label} dependencies`);
 }
 
 if (process.versions.node.split('.')[0] !== '22') {
