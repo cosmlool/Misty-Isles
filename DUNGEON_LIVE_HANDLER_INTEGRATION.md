@@ -144,3 +144,13 @@ Regression tests: `server/test/dungeonRequestRecovery.test.ts` — unknown reque
 - Кодовые commits: helper `b9c118df6c377fb2c57c4296b66dff3f83235cce`; tests `368d94e3d0f927c3e2bc69d06ddc9d6cec76d3cf`; test script `ac51746324f6c29e3580cd0080cd4859e6c2bc54`; test expectation correction `49d29134212ce6367b15fc6df5ed0a19b53a3f66`; handler `308acb9359dcca4b713b1e0911df55e7d7b4bbb0`.
 - Новый HEAD требует полного CI подтверждения. До завершения CI не начинать следующий кодовый этап.
 - PR #15 остаётся Draft/open, merged=false; merge не выполнять. Полная durable dungeon lifecycle integration НЕ подключена.
+
+
+## Этап: recovery gate перед dungeon mutation (2026-11-13)
+
+- Полный просмотр live `runExpeditionDungeon()` выявил важную границу: handler до вызова `persistDungeonResultPlayers()` меняет живые Player объекты (попытки, battles, HP, награды, inventory и quests).
+- Общий WAL runtime может восстановить более свежий сохранённый snapshot непосредственно внутри persistence-вызова. Если это произошло, прежняя проверка `recovered` отклоняла commit, но online Player объекты уже содержали рассчитанные legacy изменения.
+- Исправлено: `runExpeditionDungeon()` теперь вызывает `recoverPlayerStateBeforeMutation()` до чтения группы, roster, попыток, RNG и любых игровых изменений. Если recovery был выполнен, online players синхронизируются с восстановленными сохранениями, а dungeon request отклоняется с просьбой повторить вход. Бой и расход попытки в этом вызове не запускаются.
+- Это закрывает окно восстановления перед мутациями, не меняя combat formulas, RNG, награды, drop allocation, report, outbox или WAL transaction boundary.
+- Commit: `a11002b36e2f8b456e683f12618ff5fe04afe69b`. Shared runtime tests уже покрывают сигнал recovery; новый handler HEAD требует полного CI подтверждения.
+- Durable dungeon lifecycle integration по-прежнему НЕ подключена; PR #15 остаётся Draft/open, merge запрещён.
