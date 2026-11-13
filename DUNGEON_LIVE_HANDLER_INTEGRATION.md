@@ -173,3 +173,14 @@ Regression tests: `server/test/dungeonRequestRecovery.test.ts` — unknown reque
 - Добавлен source regression test, который проверяет lifecycle section и запрещает повторный stale rollback.
 - Другие проверенные call sites: expedition mutations идут через `persistPlayers`; friend acceptance через `persistPlayer` (который сохраняет весь online snapshot); clan mutations через guarded `transactClanMutation`; auction commits строят detached snapshots и применяют их только после успешного commit. Не найдено второго локального rollback, который перезаписывает reconciliation.
 - Новые изменения требуют полного CI. PR #15 остаётся Draft/open, merged=false.
+
+
+## Этап: долговечность shared-state WAL (2026-11-14)
+
+- На HEAD `a6b089aa91076b06318992b531d9fe7efe37b8c2` полный CI завершился успешно: Server checks — success; Quality Gate — 4/4 (server transaction recovery/build, client build, data/docs/structure, Playwright).
+- В `sharedStateTransactions.ts` найден пробел durability: атомарные временные файлы публиковались через rename без `fsync`. Это защищало от частичной записи, но не гарантировало сохранность WAL/target directory entries при внезапном отключении питания.
+- Исправлено: содержимое временного файла fsync-ится до rename; затем fsync-ится родительская директория. Для backup players.json применяется тот же порядок. Удаление WAL также синхронизирует директорию. WAL directory barrier завершается до первого изменения transaction targets.
+- Добавлен test hook `afterSync` и 2 regression tests: проверка порядка journal-file sync → directory sync → target write; имитация ошибки directory sync, подтверждающая отсутствие target writes и последующее восстановление из оставшегося журнала.
+- Игровые данные, формат журнала, ключи транзакций, combat/reward formulas и порядок применения файлов не менялись.
+- Коммиты: fsync implementation `c1314ab50ceda181bc0063acddd30eee3147bf23`; test hook `6a0e8a565fa47a89779a5d4dcbd95955faa8e5e8`; regression tests `9b9c463599b859cfabffc5e9bb41679fffe3a0a4`.
+- Новый HEAD требует полного CI. Не считать этап подтверждённым до завершения Server checks и всех Quality Gate jobs. PR #15 остаётся Draft/open, merged=false; не объединять.
