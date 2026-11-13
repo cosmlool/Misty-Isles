@@ -1,5 +1,6 @@
 export type DungeonResultDeliveryEvent = {
   eventId: string;
+  runId: string;
   playerId: string;
   messageType: string;
   payload: Record<string, unknown>;
