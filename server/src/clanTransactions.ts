@@ -28,7 +28,7 @@ export function createClanTransactionStore(options: ClanTransactionOptions) {
   mkdirSync(options.dataDir, { recursive: true });
 
   function syncPath(path: string) {
-    const descriptor = openSync(path, 'r');
+    const descriptor = openSync(path, 'r+');
     try { fsyncSync(descriptor); options.testHooks?.afterSync?.(path); }
     finally { closeSync(descriptor); }
   }
