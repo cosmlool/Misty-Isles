@@ -66,8 +66,8 @@ export function createSharedStateTransactionStore(options: Options) {
     throw new Error('At least one shared-state target file must be configured.');
   }
 
-  function syncPath(path: string) {
-    const descriptor = openSync(path, 'r+');
+  function syncPath(path: string, isDirectory = false) {
+    const descriptor = openSync(path, isDirectory ? 'r' : 'r+');
     try { fsyncSync(descriptor); options.testHooks?.afterSync?.(path); }
     finally { closeSync(descriptor); }
   }
@@ -77,7 +77,7 @@ export function createSharedStateTransactionStore(options: Options) {
     // Keep file-content fsync mandatory; directory-entry durability is provided
     // where the platform supports syncing directory descriptors.
     if ((options.platform ?? process.platform) === 'win32') return;
-    syncPath(path);
+    syncPath(path, true);
   }
 
   function atomicWrite(file: string, value: unknown) {
