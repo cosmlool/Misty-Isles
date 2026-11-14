@@ -507,3 +507,11 @@ PR #15 остаётся Draft/open и не объединён. Слияние б
 - Round и finalization уже имеют crash/restart после записи `players`; их дополнительные точки до/после каждого target write пока не расширялись. Это остаточная глубина crash matrix, не блокер для корректности уже проверенных сценариев.
 - Новые тесты находятся в `server/test/dungeonRunStartWal.test.ts` и `server/test/dungeonEncounterCommitRuntime.test.ts`; оба файла уже перечислены в `server/package.json` test script. Никаких runtime gameplay изменений и изменений баланса не сделано.
 - Следующий шаг: дождаться Quality Gate на актуальном PR HEAD и при успешном CI проверить crash/ack edge cases round/finalization/outbox; затем зафиксировать итоговую матрицу и только после этого проектировать полную границу live dungeon integration. Не подключать durable lifecycle частями.
+
+
+## Уведомления после durable save — 2026-11-14
+- На PR #18 HEAD `f944d443bf5499d266be3b44d6c63605823c94f8` CI выявил три runtime assertion failures: story_3 city reputation, weekly challenge reward snapshot и legacy Knight weapon snapshot.
+- Диагностика подтвердила общий порядок в `GameRoom.notice()`: сообщение отправлялось клиенту до синхронного `save()`. Клиент мог получить notice и прочитать players.json до завершения записи.
+- Исправлено в commit `9835a48204588b2d4ae97e9c7919ee6f9819b025`: `notice()` теперь вызывает `save()` перед отправкой сообщения. При ошибке сохранения уведомление не отправляется.
+- Это исправление не меняет награды, условия заданий, экипировку или баланс.
+- Обязательная проверка: повторный Quality Gate на новом HEAD; особое внимание трём runtime tests в server suite. До полного зелёного CI не просить пользователя запускать игру.
