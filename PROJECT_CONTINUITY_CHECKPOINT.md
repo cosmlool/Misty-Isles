@@ -424,3 +424,16 @@ PR #15 остаётся Draft/open и не объединён. Слияние б
 - Предыдущий runtime-test failure устранён изменением только последовательности подготовки теста; runtime запреты на изменение состава группы во время поиска/перехода сохранены.
 - PR #18 остаётся Draft/open, merged=false. Никакого merge или изменения main не выполнялось.
 - Теперь можно продолжать технический аудит на текущем зелёном HEAD. Ручной запуск игры не требуется для подтверждения CI; перед следующей ручной проверкой всё равно сверять HEAD и полный Quality Gate.
+
+
+## Аудит фактического восстановления активного забега подземелья — 2026-11-14
+
+- Проверен текущий путь server startup → room join → client UI → dungeon entry.
+- При старте сервер действительно восстанавливает shared WAL, валидирует `dungeon_runs.json`, проверяет отсутствие пересекающихся активных забегов и заполняет `ACTIVE_DUNGEON_RUNS`.
+- При подключении игрока сервер отправляет `dungeonRunRecovery`; клиент принимает snapshot и показывает карточку «Сохранённый забег», блокируя новый вход.
+- Однако клиент пока только отображает snapshot: обработчика продолжения/завершения забега нет.
+- В серверном `index.ts` `ACTIVE_DUNGEON_RUNS` используется для обнаружения и блокировки повторного входа/покупки свитка, но live `runExpeditionDungeon()` по-прежнему выполняет legacy aggregate combat, расход попытки, reward/drop allocation и settlement напрямую. Новые durable start/round/encounter/finalization runtime helpers не подключены к этому обработчику.
+- Следствие: если активный durable run уже окажется на диске после аварийного завершения, игрок увидит сохранённый забег, но не сможет продолжить его; новый вход будет заблокирован. Это fail-closed поведение предотвращает потерю/повтор наград, но оставляет забег в тупике.
+- Не вносить частичную интеграцию. Перед подключением требуется целостный сценарий: idempotent start + attempt charge → durable encounter/round progression → immutable prepared encounter → atomic player/run/outbox finalization → restart/retry recovery → client resume/result acknowledgement. Существующий legacy путь должен быть заменён целиком за один согласованный этап или оставлен как изолированный fallback без смешения состояний.
+- Проверено по `server/src/index.ts`, `server/src/dungeonRunState.ts`, durable runtime modules, `client/src/main.ts`; никаких игровых данных и баланса не менялось.
+- Следующий этап аудита: сверить семантику состояния durable run (round plan, participant health/death/spectator, terminal outcomes, result outbox) с утверждёнными правилами подземелий и выявить все несовпадения до проектирования интеграции.
