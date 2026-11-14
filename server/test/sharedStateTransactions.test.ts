@@ -9,7 +9,7 @@ import { createAuctionTransactionStore } from '../src/auctionTransactions.js';
 import { createClanTransactionStore } from '../src/clanTransactions.js';
 import { createSharedStateRuntime } from '../src/sharedStateRuntime.js';
 
-function fixture(testHooks?: any) {
+function fixture(testHooks?: any, platform?: NodeJS.Platform) {
   const dataDir = mkdtempSync(join(tmpdir(), 'misty-shared-state-'));
   const files = {
     players: join(dataDir, 'players.json'),
@@ -23,7 +23,7 @@ function fixture(testHooks?: any) {
   };
   return {
     dataDir, files,
-    store: createSharedStateTransactionStore({ dataDir, files, testHooks }),
+    store: createSharedStateTransactionStore({ dataDir, files, testHooks, platform }),
     cleanup: () => rmSync(dataDir, { recursive: true, force: true }),
   };
 }
@@ -265,6 +265,22 @@ test('a failed journal directory sync blocks target writes and leaves recovery d
     const restarted = createSharedStateTransactionStore({ dataDir: f.dataDir, files: f.files });
     assert.equal(restarted.recover(), true);
     assert.deepEqual(readJson(f.files.players), { p1: { gold: 999 } });
+  } finally { f.cleanup(); }
+});
+
+test('Windows skips unsupported directory fsync but still fsyncs transaction files', () => {
+  const synced: string[] = [];
+  const f = fixture({ afterSync(path: string) { synced.push(path); } }, 'win32');
+  try {
+    f.store.transact(() => ({
+      files: { players: { p1: { gold: 42 } }, auction: [{ id: 'windows_lot' }] },
+      result: 'saved',
+    }));
+    assert.deepEqual(readJson(f.files.players), { p1: { gold: 42 } });
+    assert.deepEqual(readJson(f.files.auction), [{ id: 'windows_lot' }]);
+    assert.ok(synced.some(path => path.includes('.tmp')), 'temporary file contents must still be fsynced');
+    assert.ok(!synced.includes(f.dataDir), 'Windows directory handles must not be passed to fsync');
+    assert.equal(existsSync(f.store.journalFile), false);
   } finally { f.cleanup(); }
 });
 
