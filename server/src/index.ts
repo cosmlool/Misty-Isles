@@ -667,7 +667,7 @@ class GameRoom extends Room<RoomState> {
   }
   onDispose() { recoverPlayerStateBeforeMutation(); applyHealthRegeneration(this.state.player); this.save(); }
   private save() { if (!this.playerId || !canSaveRoomPlayerSnapshot(ONLINE_PLAYERS.get(this.playerId), this.state.player)) return; this.state.player.lastSeenAt=Date.now(); persistPlayers([this.state.player]); }
-  private notice(c: Client, text: string) { c.send('notice', { text }); this.save(); }
+  private notice(c: Client, text: string) { this.save(); c.send('notice', { text }); }
   private requireCharacter(c: Client) { if(ONLINE_CLIENTS.get(this.playerId)!==c){c.leave(4021);return false;}const p=this.state.player; if(!p.race){this.notice(c,'Сначала создай персонажа.');return false;} return true; }
   private addXp(p: Player, amount: number) { p.experience += amount; while(p.experience>=xpNeed(p.level)){p.experience-=xpNeed(p.level);p.level++;p.statPoints+=3;p.experienceToNext=xpNeed(p.level);const healthIncrease=18+p.vitality*0.5;p.maxHealth+=healthIncrease;p.health=Math.min(effectiveMaxHealth(p),p.health+healthIncrease);} }
   private finishCraftJobs(p: Player) { /* completed jobs stay claimable until the player collects them */ }
