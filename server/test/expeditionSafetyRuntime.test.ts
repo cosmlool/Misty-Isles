@@ -222,6 +222,31 @@ test('expedition reports capture pre/post health and disconnect cancels stale gr
     await waitFor(() => soloNotices.find(message => message.includes('Награда за это задание уже получена.')), 'duplicate daily hunt claim');
     assert.equal(readPlayers(join(dataDir, 'players.json'))[soloId].gold, goldBeforeDailyHunt + 300, 'daily hunt reward must not be duplicated');
 
+    connected[soloId].send('expeditionSearchStart');
+    await waitFor(() => soloNotices.find(message => message.includes('Поиск монстра начался.')), 'solo search before page reload');
+    const soloSearchBeforeReload = JSON.parse(readPlayers(join(dataDir, 'players.json'))[soloId].quests).expedition;
+    assert.equal(soloSearchBeforeReload.state, 'searching');
+    const soloSearchEndsAt = Number(soloSearchBeforeReload.endsAt);
+    await connected[soloId].leave();
+    const soloSearchAfterDisconnect = await waitFor(() => {
+      const state = JSON.parse(readPlayers(join(dataDir, 'players.json'))[soloId].quests).expedition;
+      return state?.state === 'searching' && Number(state.endsAt) === soloSearchEndsAt ? state : undefined;
+    }, 'solo expedition search persistence after disconnect');
+    assert.equal(soloSearchAfterDisconnect.endsAt, soloSearchEndsAt,
+      'disconnecting a solo client must not reset the active search timer');
+
+    const soloReconnectToken = await guestToken(port, soloId);
+    connected[soloId] = await client.joinOrCreate('my_room', { playerId: soloId, sessionToken: soloReconnectToken });
+    rooms.push(connected[soloId]);
+    const restoredSoloStates: any[] = [];
+    connected[soloId].onMessage('expeditionState', payload => restoredSoloStates.push(payload.state));
+    connected[soloId].send('expeditionState');
+    const restoredSoloSearch = await waitFor(() => restoredSoloStates[0], 'solo expedition state after page reload');
+    assert.equal(restoredSoloSearch.state, 'searching',
+      'reconnecting after a page reload must restore the active solo search');
+    assert.equal(restoredSoloSearch.endsAt, soloSearchEndsAt,
+      'reconnecting must preserve the original search completion timestamp');
+
     const invitations: any[] = [];
     connected[memberId].onMessage('huntGroupInvite', payload => invitations.push(payload));
     connected[leaderId].send('huntGroupInvite', { targetId: publicCode(memberId) });
