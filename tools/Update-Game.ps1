@@ -38,7 +38,7 @@ if ($status.Count -gt 0) {
   $status | ForEach-Object { Write-Host "  $_" }
   Fail 'Сначала сохраните или отдельно разберите локальные изменения. Автоматический stash/reset не выполняется.'
 }
-Invoke-Git @('fetch', $Remote, $Branch) 'Проверяю обновления на GitHub...'
+Invoke-Git @('fetch', $Remote, "+refs/heads/$Branch`:refs/remotes/$Remote/$Branch") 'Проверяю обновления на GitHub...'
 $remoteRef = "$Remote/$Branch"
 $remoteHead = (& git rev-parse $remoteRef 2>$null).Trim()
 if ($LASTEXITCODE -ne 0 -or -not $remoteHead) { Fail "Не удалось получить ссылку $remoteRef." }
