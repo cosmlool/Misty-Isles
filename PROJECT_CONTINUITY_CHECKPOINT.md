@@ -523,3 +523,14 @@ PR #15 остаётся Draft/open и не объединён. Слияние б
 - Добавлен runtime regression test: legacy solo expedition без `groupId` должна пережить reconnect и сохранить исходный `endsAt`; тест на orphaned group search продолжает проверять безопасный сброс.
 - Коммиты: `c4a97db0aafcdadbc83b6d24f7b9de2cfcd65bb8` (fix), `78fa07b0f0c6853fa49b83d241baa66bdc5e81ad` (test).
 - CI для этих изменений ещё не подтверждён.
+
+
+## Локальный Git updater — защита работающей игры — 2026-11-14
+
+- PR #18 / ветка `staging/local-isolated-launcher`; перед этапом head был `8ec2a7d683a540efe3c7f15c7cb94b389f00f614`.
+- Quality Gate run `43611995201` на этом HEAD завершился успешно: все 4 обязательные jobs прошли (data/docs/structure, client TypeScript+Vite, server tests+build, Playwright browser smoke tests).
+- Проверены `tools/Update-Game.ps1`, `Запустить игру.bat`, `tools/Start-Game.ps1`, `tools/Stop-Game.ps1` и локальные ignore rules.
+- Найден риск: повторный запуск BAT во время работающей игры мог выполнить Git fast-forward поверх файлов, используемых dev-серверами.
+- Добавлена fail-closed проверка портов 2567 и 5173 перед fetch/pull. Если один из портов слушается или проверка портов недоступна, updater прекращает работу и предлагает сначала остановить игру через `Остановить игру.bat`. Никаких автоматических остановок или удаления данных нет.
+- Commit: `8dd3a0c98f0830748a90f064cf2d10a94c88a71c`. Новый Quality Gate обязателен; не просить пользователя запускать обновлённый BAT до 4/4 success на новом HEAD.
+- Ограничение остаётся: updater применяет изменения только перед запуском игры; live/hot update и бесшовный серверный restart ещё не реализованы.
