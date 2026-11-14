@@ -22,7 +22,7 @@ const boundaries = [
   { name: 'after dungeonRuns target write', hook: 'dungeonRuns', status: 92 },
 ] as const;
 
-test('dungeon start WAL crash matrix recovers either the complete attempt charge and active run', () => {
+test('dungeon start WAL crash matrix recovers either the complete attempt charge and active run', async () => {
   for (const boundary of boundaries) {
     const dataDir = mkdtempSync(join(tmpdir(), 'misty-dungeon-start-matrix-'));
     const files = { players: join(dataDir, 'players.json'), dungeonRuns: join(dataDir, 'dungeon_runs.json') };
@@ -62,8 +62,6 @@ test('dungeon start WAL crash matrix recovers either the complete attempt charge
       `;
       runCrashChild(childScript, boundary.status);
       assert.equal(existsSync(join(dataDir, 'shared_state_transaction.json')), true, boundary.name);
-      const recoveryStore = (awaitImportStore => awaitImportStore)(null as never);
-      void recoveryStore;
       const { createSharedStateTransactionStore } = await import('../src/sharedStateTransactions.js');
       const restarted = createSharedStateTransactionStore({ dataDir, files });
       assert.equal(restarted.recover(), true, boundary.name);
@@ -81,7 +79,7 @@ test('dungeon start WAL crash matrix recovers either the complete attempt charge
   }
 });
 
-test('prepared encounter WAL crash matrix restores the exact immutable encounter snapshot', () => {
+test('prepared encounter WAL crash matrix restores the exact immutable encounter snapshot', async () => {
   for (const boundary of boundaries) {
     const dataDir = mkdtempSync(join(tmpdir(), 'misty-dungeon-prepare-matrix-'));
     const files = { players: join(dataDir, 'players.json'), dungeonRuns: join(dataDir, 'dungeon_runs.json') };
