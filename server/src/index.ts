@@ -61,6 +61,13 @@ if (configuredDataDir && !isAbsolute(configuredDataDir)) {
   throw new Error('MISTY_DATA_DIR must be an absolute path.');
 }
 const DATA_DIR = resolve(configuredDataDir || join(process.cwd(), 'data'));
+// Static world definitions ship with the server and must never follow the save directory implicitly.
+// Tests may explicitly provide a disposable fixture directory without changing normal or launcher behavior.
+const configuredGameDataDir = process.env.MISTY_GAME_DATA_DIR?.trim();
+if (configuredGameDataDir && !isAbsolute(configuredGameDataDir)) {
+  throw new Error('MISTY_GAME_DATA_DIR must be an absolute path.');
+}
+const GAME_DATA_DIR = resolve(configuredGameDataDir || join(process.cwd(), 'data'));
 const SAVE_FILE = join(DATA_DIR, 'players.json');
 const CLAN_FILE = join(DATA_DIR, 'clans.json');
 const AUCTION_FILE = join(DATA_DIR, 'auction.json');
@@ -143,14 +150,14 @@ function persistHuntGroups(players:Player[]=[],playerQuestOverrides:Record<strin
     throw error;
   }
 }
-const EXPEDITION_DATA:any = JSON.parse(readFileSync(join(DATA_DIR,'forgotten_lands.json'),'utf8'));
+const EXPEDITION_DATA:any = JSON.parse(readFileSync(join(GAME_DATA_DIR,'forgotten_lands.json'),'utf8'));
 const EXPEDITION_BESTIARY:any[] = EXPEDITION_DATA.monsters
   .filter((monster:any)=>['rare','elite','guardian','boss','finalBoss'].includes(monster.rank))
   .map((monster:any)=>{
     const zone=EXPEDITION_DATA.zones.find((entry:any)=>entry.id===monster.zoneId);
     return {id:monster.id,name:monster.name,region:zone?.region||'Забытые земли',boss:monster.name,rare:monster.rank,min:zone?.minLevel??monster.level,max:zone?.maxLevel??monster.level};
   });
-const CITY_NPCS:any[] = JSON.parse(readFileSync(join(DATA_DIR,'city_npcs.json'),'utf8'));
+const CITY_NPCS:any[] = JSON.parse(readFileSync(join(GAME_DATA_DIR,'city_npcs.json'),'utf8'));
 
 type Item = { id:string; name:string; kind:'weapon'|'armor'|'amulet'|'potion'|'material'|'chest'; slot?:string; price:number; currency?:string; level:number; maxLevel?:number; attack?:number; defense?:number; health?:number; heal?:number; effect?:string; value?:number; profession?:string; race?:string; description?:string; legacy?:boolean; attributes?:Record<string,number>; combatStats?:Record<string,number>; primaryAttribute?:string; [key:string]:any };
 type Recipe = {id:string;name:string;level:number;seconds:number;output:string;count:number;materials:Record<string,number>;description:string;profession?:string};
@@ -365,7 +372,7 @@ const ITEMS: Item[] = [
 for (const item of ITEMS) { if (item.price > 0 && item.kind !== 'amulet' && item.kind !== 'material') item.price = Math.ceil(item.price * 1.3); }
 
 // New catalog is authoritative for new equipment; legacy IDs remain available for existing saves, auctions and recipes.
-const NEW_EQUIPMENT_ITEMS:Item[] = JSON.parse(readFileSync(join(DATA_DIR,'equipment_catalog.json'),'utf8'));
+const NEW_EQUIPMENT_ITEMS:Item[] = JSON.parse(readFileSync(join(GAME_DATA_DIR,'equipment_catalog.json'),'utf8'));
 const EXPEDITION_DROP_ITEMS:Item[] = EXPEDITION_DATA.dropItems || [];
 for (const item of ITEMS) { if (['weapon','armor','amulet'].includes(item.kind)) item.legacy = true; }
 for (const item of NEW_EQUIPMENT_ITEMS) { if (item.price > 0 && item.kind !== 'amulet' && item.kind !== 'material') item.price = Math.ceil(item.price * 1.3); }
@@ -608,7 +615,7 @@ class GameRoom extends Room<RoomState> {
     ONLINE_PLAYERS.set(this.playerId, this.state.player);
     ONLINE_CLIENTS.set(this.playerId, client);
     ONLINE_SESSION_HASHES.set(this.playerId, tokenDigest(this.sessionToken));
-    const initialQuests=readObject(player.quests); if(!initialQuests.expedition) initialQuests.expedition={branchId:'forgotten_lands',currentZoneId:'el1',opened:1,cleared:[],seen:{},state:'idle'};const persistedGroupId=PLAYER_GROUP.get(this.playerId)||'';if(initialQuests.expedition.groupId!==persistedGroupId){initialQuests.expedition.groupId=persistedGroupId;if(!persistedGroupId&&['searching','moving'].includes(initialQuests.expedition.state)){initialQuests.expedition.state='idle';initialQuests.expedition.endsAt=0;delete initialQuests.expedition.targetZoneId;}} player.quests=JSON.stringify(initialQuests); const normalizedEquipment=readObject(player.equipment); for(const slot of ['weapon','helmet','armor','gloves','boots','cloak','amulet']) if(normalizedEquipment[slot]===undefined) normalizedEquipment[slot]=''; player.equipment=JSON.stringify(normalizedEquipment);
+    const initialQuests=readObject(player.quests); if(!initialQuests.expedition) initialQuests.expedition={branchId:'forgotten_lands',currentZoneId:'el1',opened:1,cleared:[],seen:{},state:'idle'};const persistedGroupId=PLAYER_GROUP.get(this.playerId)||'';if(String(initialQuests.expedition.groupId||'')!==persistedGroupId){initialQuests.expedition.groupId=persistedGroupId;if(!persistedGroupId&&['searching','moving'].includes(initialQuests.expedition.state)){initialQuests.expedition.state='idle';initialQuests.expedition.endsAt=0;delete initialQuests.expedition.targetZoneId;}} player.quests=JSON.stringify(initialQuests); const normalizedEquipment=readObject(player.equipment); for(const slot of ['weapon','helmet','armor','gloves','boots','cloak','amulet']) if(normalizedEquipment[slot]===undefined) normalizedEquipment[slot]=''; player.equipment=JSON.stringify(normalizedEquipment);
     client.send('hello', { message: 'Соединение установлено.' });
     try { dispatchDungeonResultsToClient(this.playerId,client); } catch (error) { console.error('Dungeon result outbox delivery deferred:', error); }
     const recoveredRun=findActiveDungeonRunForParticipant(Object.fromEntries(ACTIVE_DUNGEON_RUNS),this.playerId);
@@ -627,7 +634,7 @@ class GameRoom extends Room<RoomState> {
     const groupId=PLAYER_GROUP.get(this.playerId);
     const group=groupId?HUNT_GROUPS.get(groupId):undefined;
     const affectedPlayers=(group?.members||[this.playerId]).map(id=>ONLINE_PLAYERS.get(id)).filter((player):player is Player=>!!player);
-    const hasActiveGroupAction=affectedPlayers.some(player=>['searching','moving'].includes(String(readObject(player.quests).expedition?.state||'')));
+    const hasActiveGroupAction=Boolean(group)&&affectedPlayers.some(player=>['searching','moving'].includes(String(readObject(player.quests).expedition?.state||'')));
     for(const player of affectedPlayers){
       const quests=readObject(player.quests);
       if(!quests.expedition)continue;
@@ -660,7 +667,7 @@ class GameRoom extends Room<RoomState> {
   }
   onDispose() { recoverPlayerStateBeforeMutation(); applyHealthRegeneration(this.state.player); this.save(); }
   private save() { if (!this.playerId || !canSaveRoomPlayerSnapshot(ONLINE_PLAYERS.get(this.playerId), this.state.player)) return; this.state.player.lastSeenAt=Date.now(); persistPlayers([this.state.player]); }
-  private notice(c: Client, text: string) { c.send('notice', { text }); this.save(); }
+  private notice(c: Client, text: string) { this.save(); c.send('notice', { text }); }
   private requireCharacter(c: Client) { if(ONLINE_CLIENTS.get(this.playerId)!==c){c.leave(4021);return false;}const p=this.state.player; if(!p.race){this.notice(c,'Сначала создай персонажа.');return false;} return true; }
   private addXp(p: Player, amount: number) { p.experience += amount; while(p.experience>=xpNeed(p.level)){p.experience-=xpNeed(p.level);p.level++;p.statPoints+=3;p.experienceToNext=xpNeed(p.level);const healthIncrease=18+p.vitality*0.5;p.maxHealth+=healthIncrease;p.health=Math.min(effectiveMaxHealth(p),p.health+healthIncrease);} }
   private finishCraftJobs(p: Player) { /* completed jobs stay claimable until the player collects them */ }

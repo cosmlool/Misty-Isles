@@ -123,3 +123,72 @@ test('dungeon entry refuses to overwrite snapshots when startup recovery occurre
     rmSync(dataDir, { recursive: true, force: true });
   }
 });
+
+
+test('dungeon start WAL recovers the complete entry at journal and target-write crash boundaries', () => {
+  const boundaries = [
+    { name: 'after journal persistence', hook: 'journal', status: 91 },
+    { name: 'after players target write', hook: 'players', status: 92 },
+    { name: 'after dungeonRuns target write', hook: 'dungeonRuns', status: 92 },
+  ] as const;
+  for (const boundary of boundaries) {
+    const dataDir = mkdtempSync(join(tmpdir(), 'misty-dungeon-start-matrix-'));
+    const files = { players: join(dataDir, 'players.json'), dungeonRuns: join(dataDir, 'dungeon_runs.json') };
+    try {
+      const transactionModule = new URL('../src/sharedStateTransactions.ts', import.meta.url).href;
+      const runtimeModule = new URL('../src/sharedStateRuntime.ts', import.meta.url).href;
+      const stateModule = new URL('../src/dungeonRunState.ts', import.meta.url).href;
+      const startModule = new URL('../src/dungeonRunStartRuntime.ts', import.meta.url).href;
+      const childScript = `
+        import { createSharedStateTransactionStore } from ${JSON.stringify(transactionModule)};
+        import { createSharedStateRuntime } from ${JSON.stringify(runtimeModule)};
+        import { createDungeonRunRecord } from ${JSON.stringify(stateModule)};
+        import { commitDungeonRunStart } from ${JSON.stringify(startModule)};
+        const dataDir = ${JSON.stringify(dataDir)};
+        const files = ${JSON.stringify(files)};
+        const boundary = ${JSON.stringify(boundary.hook)};
+        const store = createSharedStateTransactionStore({
+          dataDir, files,
+          testHooks: {
+            afterJournalPersisted() { if (boundary === 'journal') process.exit(91); },
+            afterTargetWrite(key) { if (boundary === key) process.exit(92); },
+          },
+        });
+        const runtime = createSharedStateRuntime({ shared: store, auction: { recover: () => false }, clans: { recover: () => false } });
+        const run = createDungeonRunRecord({
+          runId: 'run_start_matrix', requestId: 'request_start_matrix', dungeonId: 'dungeon_20',
+          groupId: 'group_1', leaderId: 'p1',
+          participants: [
+            { playerId: 'p1', health: 100, maxHealth: 100 },
+            { playerId: 'p2', health: 80, maxHealth: 100 },
+          ],
+          bossId: 'boss_20', bossHealth: 500, seed: 'seed_start_matrix', now: 100,
+        });
+        const players = {
+          p1: { id: 'p1', quests: JSON.stringify({ dungeonDay: '2026-11-14', dungeonRuns: 1 }), battles: 3 },
+          p2: { id: 'p2', quests: JSON.stringify({ dungeonDay: '2026-11-14', dungeonRuns: 2 }), battles: 7 },
+        };
+        commitDungeonRunStart({ runtime, run, players, runs: {}, day: '2026-11-14' });
+        process.exit(0);
+      `;
+      const child = spawnSync(process.execPath, ['--import', 'tsx', '--input-type=module', '-e', childScript], {
+        cwd: process.cwd(), encoding: 'utf8', timeout: 10_000,
+      });
+      assert.equal(child.status, boundary.status, child.stderr || child.stdout);
+      assert.equal(existsSync(join(dataDir, 'shared_state_transaction.json')), true, boundary.name);
+      const restarted = createSharedStateTransactionStore({ dataDir, files });
+      assert.equal(restarted.recover(), true, boundary.name);
+      const savedPlayers = readJson(files.players);
+      const savedRuns = readJson(files.dungeonRuns);
+      assert.equal(JSON.parse(savedPlayers.p1.quests).dungeonRuns, 2, boundary.name);
+      assert.equal(JSON.parse(savedPlayers.p2.quests).dungeonRuns, 3, boundary.name);
+      assert.equal(savedPlayers.p1.battles, 4, boundary.name);
+      assert.equal(savedPlayers.p2.battles, 8, boundary.name);
+      assert.equal(savedRuns.run_start_matrix.status, 'active', boundary.name);
+      assert.deepEqual(savedRuns.run_start_matrix.participantIds, ['p1', 'p2'], boundary.name);
+      assert.equal(existsSync(join(dataDir, 'shared_state_transaction.json')), false, boundary.name);
+    } finally {
+      rmSync(dataDir, { recursive: true, force: true });
+    }
+  }
+});

@@ -31,6 +31,7 @@ type Journal = { version: 1; files: SharedStateSnapshot };
 type Options = {
   dataDir: string;
   files: Partial<Record<SharedStateKey, string>>;
+  platform?: NodeJS.Platform;
   testHooks?: {
     afterJournalPersisted?: () => void;
     afterTargetWrite?: (key: SharedStateKey) => void;
@@ -65,10 +66,18 @@ export function createSharedStateTransactionStore(options: Options) {
     throw new Error('At least one shared-state target file must be configured.');
   }
 
-  function syncPath(path: string) {
-    const descriptor = openSync(path, 'r');
+  function syncPath(path: string, isDirectory = false) {
+    const descriptor = openSync(path, isDirectory ? 'r' : 'r+');
     try { fsyncSync(descriptor); options.testHooks?.afterSync?.(path); }
     finally { closeSync(descriptor); }
+  }
+
+  function syncDirectory(path: string) {
+    // Node cannot open Windows directories with the access needed for fsync.
+    // Keep file-content fsync mandatory; directory-entry durability is provided
+    // where the platform supports syncing directory descriptors.
+    if ((options.platform ?? process.platform) === 'win32') return;
+    syncPath(path, true);
   }
 
   function atomicWrite(file: string, value: unknown) {
@@ -81,7 +90,7 @@ export function createSharedStateTransactionStore(options: Options) {
       syncPath(temp);
       renameSync(temp, file);
       // The journal rename must be durable before any transaction target is applied.
-      syncPath(dirname(file));
+      syncDirectory(dirname(file));
     } catch (error) {
       try { if (existsSync(temp)) unlinkSync(temp); } catch {}
       throw error;
@@ -122,7 +131,7 @@ export function createSharedStateTransactionStore(options: Options) {
       copyFileSync(target, backupTemp);
       syncPath(backupTemp);
       renameSync(backupTemp, backupFile);
-      syncPath(dataDir);
+      syncDirectory(dataDir);
       return backupFile;
     } catch (error) {
       try { if (existsSync(backupTemp)) unlinkSync(backupTemp); } catch {}
@@ -162,7 +171,7 @@ export function createSharedStateTransactionStore(options: Options) {
     validateJournal(parsed);
     apply(parsed.files);
     unlinkSync(journalFile);
-    syncPath(dataDir);
+    syncDirectory(dataDir);
     return true;
   }
 
@@ -183,7 +192,7 @@ export function createSharedStateTransactionStore(options: Options) {
       options.testHooks?.afterJournalPersisted?.();
       apply(prepared.files);
       unlinkSync(journalFile);
-      syncPath(dataDir);
+      syncDirectory(dataDir);
     } catch (error) {
       // A successful replay means the journaled transaction committed despite
       // the interrupted first attempt. If replay fails, keep the journal and

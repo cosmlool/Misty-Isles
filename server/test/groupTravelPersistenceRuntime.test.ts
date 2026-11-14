@@ -118,7 +118,7 @@ test('group expedition travel start and claim persist every member together', { 
 
     child = spawn(process.execPath, ['--import', 'tsx', 'src/index.ts'], {
       cwd: serverDir,
-      env: { ...process.env, MISTY_DATA_DIR: dataDir, MISTY_PORT: String(port) },
+      env: { ...process.env, MISTY_DATA_DIR: dataDir, MISTY_GAME_DATA_DIR: dataDir, MISTY_PORT: String(port) },
       stdio: 'ignore',
     });
     await waitForServer(port, child);
@@ -218,7 +218,7 @@ test('group expedition travel start and claim persist every member together', { 
     await stopServer(child!);
     child = spawn(process.execPath, ['--import', 'tsx', 'src/index.ts'], {
       cwd: serverDir,
-      env: { ...process.env, MISTY_DATA_DIR: dataDir, MISTY_PORT: String(port) },
+      env: { ...process.env, MISTY_DATA_DIR: dataDir, MISTY_GAME_DATA_DIR: dataDir, MISTY_PORT: String(port) },
       stdio: 'ignore',
     });
     await waitForServer(port, child);

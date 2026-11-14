@@ -294,3 +294,243 @@ PR #15 остаётся Draft/open и не объединён. Слияние б
 - Commits: auction durability `9aa4d598cedfcd041005ab073a6da17abed1963a`; clan durability `cf9d49874f70caba7ebcd7f1193c367232f09a7b`; auction regression test `fe4bd1e2eaa969bd1cd7b517716bbc6e76a31e40`; clan regression test `d23468c8a7b9b46c78219114b85d4cb887707409`; integration docs `538df1f6262f245657bc12e5c057a6f1aba5bd87`.
 - Новый HEAD после checkpoint update требует полного CI. Следующий шаг — проверить workflow; при ошибках получить job logs и исправить их до продолжения аудита.
 - PR #15 остаётся Draft/open, merged=false; не объединять. Полная durable dungeon lifecycle integration НЕ подключена.
+
+## Контрольная точка — 2026-11-14 (локальная изолированная тестовая среда)
+
+- Создан Draft PR #18: https://github.com/cosmlool/Misty-Isles/pull/18, ветка `staging/local-isolated-launcher`, base `stage29/clean-validation-recovery`; не объединять без отдельного решения.
+- Клиент поддерживает `VITE_SERVER_URL`; без переменной сохраняется прежний fallback на текущий hostname и порт 2567. Добавлена ссылка типов `vite/client` для TypeScript.
+- Windows-лаунчер задаёт `MISTY_DATA_DIR` как абсолютный путь к корневой `.local-data` и `VITE_SERVER_URL=http://127.0.0.1:2567`. Переменные наследуются запущенными процессами сервера и Vite.
+- Проверен серверный путь: `server/src/index.ts` валидирует абсолютный `MISTY_DATA_DIR`, создаёт каталог при отсутствии и направляет в него все persistence-файлы; без переменной default остаётся `server/data`.
+- `.local-data/`, `logs/` и `.misty-game-processes.json` добавлены в корневой `.gitignore`.
+- На HEAD `1c317079be208d6b581892dc127b44677ecbcd7e` Quality Gate прошёл полностью: Data/docs/structure, Client TypeScript/Vite, Server TypeScript и Playwright browser smoke — success. Повторный запуск workflows также завершился success (восемь check runs, включая оба запуска).
+- Реальный запуск PowerShell-лаунчера на пользовательском Windows ПК ещё не проверен; CI подтверждает сборки и smoke tests, но не заменяет ручную проверку кнопок запуска/остановки и фактического расположения файлов.
+- Следующий этап: проверить diff PR #18, добавить при необходимости безопасную диагностику локального профиля, затем пользователь запускает лаунчер и подтверждает, что тестовые файлы появляются только в `.local-data`.
+
+
+## Исправление локального запуска: разделение сохранений и игровых ресурсов — 2026-11-14
+
+- Первый ручной запуск ветки `staging/local-isolated-launcher` выявил `ENOENT` для `.local-data/forgotten_lands.json`.
+- Причина: `MISTY_DATA_DIR` корректно перенаправлял изменяемые сохранения, но три неизменяемых ресурса игры также ошибочно читались относительно этого каталога: `forgotten_lands.json`, `city_npcs.json`, `equipment_catalog.json`.
+- Исправлено в `server/src/index.ts`: `DATA_DIR` остаётся каталогом сохранений (`.local-data` при локальном запуске), а новый `GAME_DATA_DIR` всегда указывает на поставляемую папку `server/data`. Все три статических JSON загружаются из `GAME_DATA_DIR`.
+- Сохранения игроков, кланов, аукциона, сессий и прочее изменяемое состояние остаются в `DATA_DIR`. Статические файлы не копируются и не изменяются.
+- Добавлен regression test в `server/test/playerPersistenceWriters.test.ts`, проверяющий разделение путей и сохранение player saves в `DATA_DIR`.
+- README уточнён: описывает разницу между локальными сохранениями и статическими ресурсами.
+- Коммиты: runtime fix `7f406d4daf10030e49ceec39743a2482095c5652`; regression test `30d13dcc814b090297e3d3d52c53507dd65daf0c`; README `a476c12bc7b9883d4fff76c29965deff5ef66ba7`.
+- Предыдущее утверждение выше о том, что все persistence-файлы находятся в `.local-data`, относится к изменяемому состоянию; статические игровые ресурсы остаются в `server/data`.
+- Новый HEAD требует полного CI. После зелёного CI повторить локальный запуск на Windows. Проверить создание персонажа и появление файлов в `.local-data`; убедиться, что `server/data` не меняется.
+- PR #18 остаётся Draft/open, merged=false; `main` не изменять и PR не объединять.
+
+## Исправление регрессии изоляции тестовых игровых ресурсов — 2026-11-14
+
+- CI PR #18 выявил, что тестовые серверы создают временные копии игровых JSON в MISTY_DATA_DIR; некоторые тесты изменяют эти копии (например, searchSeconds=0), а Playwright задаёт searchSeconds=1.
+- После первоначального разделения DATA_DIR и GAME_DATA_DIR сервер стал правильно брать игровые ресурсы из server/data при обычном запуске, но перестал учитывать явно подготовленные тестовые копии. Это вызвало таймауты экспедиционных/group-travel тестов и один дополнительный runtime-test failure.
+- Исправлено: добавлена отдельная необязательная переменная MISTY_GAME_DATA_DIR, валидируемая как абсолютный путь. При отсутствии переменной GAME_DATA_DIR остаётся server/data; MISTY_DATA_DIR по-прежнему отвечает только за изменяемые сохранения.
+- MISTY_GAME_DATA_DIR выставляется только в тестовых процессах, которым нужны disposable static fixtures: dungeon attempts, expedition safety, group travel persistence и Playwright. Windows-лаунчер не задаёт её и продолжает читать поставляемые игровые файлы из server/data.
+- Regression source test обновлён, README описывает test-only override. Никакие игровые формулы, баланс, содержимое ресурсов или main не менялись.
+- Commits: runtime df166296ff9d43e07c7a3ae756962e88b9627733; dungeon fixture 2221c17f4412709635dc344e848797ac38a40e3f; expedition fixture c618a91cf0e4a5e027900a3236bc837800ab7a65; group fixture f5aae138d720f4fd9d6961b950849c7fe802a2b2; Playwright fixture 643d1d2020d63117e92f816e2eaa6ed3bc3a87c7; regression test b65260132a9144be757199606b6ea8a0f90c6b34.
+- Полный CI на новом HEAD обязателен; не считать ошибки устранёнными до успешного повторного прогона. PR #18 остаётся Draft/open, merged=false.
+
+
+## Исправление Windows EPERM при сохранении — 2026-11-14
+
+- Ручной запуск Windows-лаунчера подтвердил запуск сервера на порту 2567, но сохранение персонажа завершалось EPERM: operation not permitted, fsync.
+- Причина: общая WAL-транзакция вызывала fsync на дескрипторе каталога после rename/unlink. Node.js на Windows не позволяет открыть каталог таким способом.
+- В shared WAL, а также в legacy auction/clan recovery stores добавлен платформенный syncDirectory: на Windows синхронизация каталога пропускается, на POSIX сохраняется прежний directory fsync. Синхронизация содержимого временных файлов через fsync не отключалась.
+- Добавлен регрессионный тест Windows-пути: файловые fsync сохраняются, directory fsync не вызывается, WAL-транзакция завершается и сохраняет файлы.
+- В README описано платформенное ограничение: на Windows остаётся меньшая гарантия durability directory entries при внезапном отключении питания; содержимое файлов и WAL по-прежнему fsync-ятся.
+- Commits: shared WAL 5cf4c85c878823c5644e6c778b152c27c9104177; auction recovery 81cfd1a820598ba322352166e2e3fb95d735406a; clan recovery e19a41496451db270c3616ce6063df7bca4cada6; Windows regression test 7386ea207779542d76563746ffb8da5377485d01.
+- Новый CI обязателен на свежем HEAD. После полного успеха повторить локальный запуск и создание тестового персонажа. Не переносить реальные сохранения и не трогать server/data.
+- PR #18 остаётся Draft/open, merged=false; не объединять без явного разрешения.
+
+
+## Дополнительное исправление Windows EPERM: режим открытия файлов для fsync — 2026-11-14
+
+- Повторная ручная проверка после предыдущего исправления всё ещё показала `EPERM: operation not permitted, fsync` в `sharedStateTransactions.ts`, на вызове `syncPath(temp)` внутри `atomicWrite`.
+- Уточнённая причина: directory fsync уже пропускался на Windows, но сами временные файлы открывались для fsync в режиме только чтения (`'r'`). На Windows такой дескриптор не предоставляет право записи/flush, необходимое для `fsync`.
+- Исправлено в трёх transaction stores: `sharedStateTransactions.ts`, `auctionTransactions.ts`, `clanTransactions.ts` — `openSync(path, 'r+')` перед `fsyncSync`. Файловая синхронизация остаётся обязательной; отключено только directory fsync на Windows.
+- Commits: shared WAL `232c2343a90912c735f1a6bec370c4f666306b75`; auction `552817cfaf681aa34ef89dfecbb549305b6a516c`; clan `aed94f2fa974501a2d6b6a5c2e1f0dcb52d34f19`.
+- Новый HEAD: `aed94f2fa974501a2d6b6a5c2e1f0dcb52d34f19`. Требуется полный Quality Gate CI. Не просить пользователя повторять запуск до зелёного CI.
+- После CI — дать свежую ZIP-ссылку на эту ветку и повторить ручную проверку сохранения. Ошибка «Требуется войти в аккаунт» в клиенте отдельная от fsync и требует последующей проверки auth/session flow; пока не менять auth.
+- PR #18 остаётся Draft/open, merged=false; `main` не менять и PR не объединять.
+
+
+## Исправление регрессии CI после Windows fsync patch — 2026-11-14
+
+- CI на PR run `43537946529` выявил регрессию: общий `syncPath` был изменён на открытие `r+`, но этот же helper использовался для POSIX directory fsync. Linux завершал тесты с `EISDIR` при открытии каталога как файла; из-за серверного старта/персистенции упали также Playwright сценарии.
+- Исправление: `syncPath(path, isDirectory = false)` выбирает `r+` для файлов и `r` для каталогов; `syncDirectory` вызывает `syncPath(path, true)`. На Windows directory fsync по-прежнему пропускается, file fsync использует read/write descriptor.
+- Исправлено во всех трёх stores: shared WAL, auction, clan.
+- Commit sequence: `ad995d4afd4d6e80d707eb32c9dcd2b45ebc490e`, `80fe6c987fa4271c0c15e540a203ce2529843c75`, `3de115f9b4e3cfddc1260b60181f6a3f71e60681`.
+- CI run `43537946529`: client build и data/docs success; server transaction recovery и Playwright failed из-за EISDIR. Новый исправленный HEAD требует полного Quality Gate CI; до его зелёного статуса ZIP пользователю не выдавать.
+- Отдельно остаётся проверить Windows file fsync и auth/session flow после CI.
+
+
+## Контрольная точка — 2026-11-14 (Windows launcher: ручной запуск и CI)
+
+- Актуальный PR #18 HEAD: `890d9c9390fd96f4ef11db3c413914676df13b31`; PR остаётся Draft/open, merged=false.
+- Quality Gate run `43538934525` завершился полностью успешно: все 4 jobs success — Client TypeScript/Vite, Data/docs/structure, Playwright browser smoke tests, Server TypeScript build и transaction recovery tests.
+- Пользователь подтвердил, что после последнего исправления Windows launcher удалось запустить. Это подтверждает запуск сервера, но пока НЕ подтверждает вход в аккаунт, создание персонажа, сохранение и повторную загрузку.
+- Исправление Windows fsync: file descriptors открываются как `r+`, directory descriptors — как `r` на POSIX; directory fsync пропускается на Windows. Не отключать file-content fsync.
+- Ранее полученная ошибка `Требуется войти в аккаунт` возникает в `GameRoom.onJoin()`, если session token не проходит `verifySession` или playerId не совпадает. Это отдельный auth/session flow; пока не менять auth до проверки свежего запуска и воспроизведения.
+- Следующий шаг: попросить пользователя проверить UI авторизации (регистрация/вход), затем создать тестового персонажа, перезапустить клиент и проверить повторную загрузку. Проверить, что новые изменяемые файлы появляются в `.local-data`, а `server/data` не меняется.
+- После подтверждения ручного сценария продолжить технический аудит, начиная с оставшихся persistence/dungeon lifecycle gaps. Полную durable dungeon lifecycle integration не считать завершённой.
+- PR #18 не объединять; `main` не менять без отдельного разрешения.
+
+## Исправление сброса одиночной экспедиции при обновлении страницы — 2026-11-14
+
+- Причина: закрытие/перезагрузка вкладки вызывает GameRoom.onLeave(). Старый код сбрасывал активное состояние экспедиции (state='idle', endsAt=0) при любом отключении, включая одиночную охоту.
+- Исправлено: отмена поиска/перехода при onLeave() применяется только если отключившийся персонаж состоял в охотничьей группе. Одиночный поиск сохраняет исходный endsAt и восстанавливается после повторного подключения.
+- Согласованное поведение групп не менялось: отключение участника по-прежнему отменяет общее действие для группы.
+- Добавлен интеграционный регрессионный сценарий: запуск одиночного поиска → disconnect → проверка сохранённого state/endsAt → reconnect → запрос expeditionState → проверка восстановления того же таймера.
+- Commits: server fix 23d264217931226fbeb2cfca2b5fcd44b2a1e807; integration test 71a02d834dae794d0eff98fe88fb3d4de734385d.
+- Новый HEAD до обновления этой контрольной точки: 71a02d834dae794d0eff98fe88fb3d4de734385d. Требуется полный Quality Gate CI; до его успеха ZIP не выдавать и локальный запуск не просить.
+- PR #18 остаётся Draft/open, merged=false. Не объединять без отдельного разрешения.
+
+
+## Исправление ложного падения теста восстановления одиночного поиска — 2026-11-14
+
+- PR #18 Quality Gate run `43541811685` выявил 1 падение из 381 серверного теста: `expeditionSafetyRuntime`, строка 228, ожидалось `searching`, получено `idle`.
+- Причина не в runtime `onLeave()`: интеграционный тест повторно использовал массив уведомлений и при втором поиске находил старое сообщение «Поиск монстра начался.» от предыдущего поиска. Проверка состояния выполнялась до обработки нового запроса.
+- Исправлено: тест фиксирует количество уведомлений до отправки второго `expeditionSearchStart` и ждёт именно новое уведомление после этой отметки, исключая ложное срабатывание на старом сообщении.
+- Commit: `d109afee54a1a5efeefcbd9141e6ed388d58e40f`.
+- Требуется полный повторный Quality Gate на новом HEAD; до 4/4 success не просить повторный запуск игры и не выдавать ZIP.
+- PR #18 остаётся Draft/open, merged=false; не объединять.
+
+
+## Повторная синхронизация интеграционного теста поиска — 2026-11-14
+
+- Quality Gate run `43544127576` на PR merge HEAD `2641cdb3a9b2d34ac81081aa57871b873bb2c4d1`: 3/4 jobs success; серверный тест упал в `expeditionSafetyRuntime.test.ts:231`, ожидал `searching`, получил `idle`.
+- Выяснено, что синхронизация второго поиска по тексту уведомления ненадёжна: клиент может получить отложенное уведомление предыдущего поиска после начала следующей проверки.
+- Тест теперь ждёт именно новое сохранённое состояние `searching` с `startedAt`, превышающим timestamp предыдущего поиска; уведомление больше не является условием, по которому определяется запуск нового поиска.
+- Коммиты тестовой синхронизации: `36fa89955ec7ddef1d573b280c8f2e011013b6a0`, упрощение чтения сохранённого состояния `7117fa13149a9ccdd363191b5be4522c5b9dd0fb`.
+- Требуется повторный полный Quality Gate на актуальном PR HEAD. До 4/4 success не просить пользователя запускать игру и не выдавать ZIP.
+- PR #18 остаётся Draft/open, merged=false; не объединять.
+
+
+## Исправление подготовки expedition safety runtime test — 2026-11-14
+
+- Quality Gate run `43547929071` на HEAD `3964447e530f5e4ec1097d0c535e51626c671291`: 3/4 jobs success; server transaction recovery job failed на тесте `expeditionSafetyRuntime.test.ts`, ожидание `pending invite before expedition` завершилось timeout.
+- Причина в последовательности самого интеграционного теста: soloId восстанавливал после reconnect активный одиночный поиск, затем тест пытался пригласить этого же персонажа в группу. Runtime корректно запрещает приглашения, если у приглашающего или целевого игрока состояние экспедиции `searching`/ `moving`. Следовательно, ожидаемое pending invite было несовместимо с проверяемым активным одиночным поиском.
+- Исправлена подготовка теста: после проверки восстановления исходного `state` и `endsAt` тест теперь завершает уже восстановленный нулевой по длительности одиночный поиск через `expeditionSearchClaim`, прежде чем использовать персонажа как адресата группового приглашения. Runtime-правило не ослаблялось.
+- Commit: `eb8e0fd364afa2028868928b43228d4ef1d1f335`.
+- Новый полный Quality Gate обязателен на свежем HEAD. Не считать исправление подтверждённым до 4/4 success; не просить пользователя запускать игру и не выдавать ZIP до этого.
+- PR #18 остаётся Draft/open, merged=false; не объединять и не менять `main` без отдельного разрешения.
+
+
+## Подтверждение полного Quality Gate после исправления expedition safety test — 2026-11-14
+
+- Актуальный PR #18 HEAD: `12c91a8ad73ae8e4a48e4b40f96caa95ca4cedc5`.
+- Quality Gate run `43548309302` завершился с conclusion=success.
+- Все четыре обязательные проверки на этом HEAD завершились success: Data/docs/project structure; Client TypeScript and Vite build; Server TypeScript build; Playwright browser smoke tests.
+- Предыдущий runtime-test failure устранён изменением только последовательности подготовки теста; runtime запреты на изменение состава группы во время поиска/перехода сохранены.
+- PR #18 остаётся Draft/open, merged=false. Никакого merge или изменения main не выполнялось.
+- Теперь можно продолжать технический аудит на текущем зелёном HEAD. Ручной запуск игры не требуется для подтверждения CI; перед следующей ручной проверкой всё равно сверять HEAD и полный Quality Gate.
+
+
+## Аудит фактического восстановления активного забега подземелья — 2026-11-14
+
+- Проверен текущий путь server startup → room join → client UI → dungeon entry.
+- При старте сервер действительно восстанавливает shared WAL, валидирует `dungeon_runs.json`, проверяет отсутствие пересекающихся активных забегов и заполняет `ACTIVE_DUNGEON_RUNS`.
+- При подключении игрока сервер отправляет `dungeonRunRecovery`; клиент принимает snapshot и показывает карточку «Сохранённый забег», блокируя новый вход.
+- Однако клиент пока только отображает snapshot: обработчика продолжения/завершения забега нет.
+- В серверном `index.ts` `ACTIVE_DUNGEON_RUNS` используется для обнаружения и блокировки повторного входа/покупки свитка, но live `runExpeditionDungeon()` по-прежнему выполняет legacy aggregate combat, расход попытки, reward/drop allocation и settlement напрямую. Новые durable start/round/encounter/finalization runtime helpers не подключены к этому обработчику.
+- Следствие: если активный durable run уже окажется на диске после аварийного завершения, игрок увидит сохранённый забег, но не сможет продолжить его; новый вход будет заблокирован. Это fail-closed поведение предотвращает потерю/повтор наград, но оставляет забег в тупике.
+- Не вносить частичную интеграцию. Перед подключением требуется целостный сценарий: idempotent start + attempt charge → durable encounter/round progression → immutable prepared encounter → atomic player/run/outbox finalization → restart/retry recovery → client resume/result acknowledgement. Существующий legacy путь должен быть заменён целиком за один согласованный этап или оставлен как изолированный fallback без смешения состояний.
+- Проверено по `server/src/index.ts`, `server/src/dungeonRunState.ts`, durable runtime modules, `client/src/main.ts`; никаких игровых данных и баланса не менялось.
+- Следующий этап аудита: сверить семантику состояния durable run (round plan, participant health/death/spectator, terminal outcomes, result outbox) с утверждёнными правилами подземелий и выявить все несовпадения до проектирования интеграции.
+
+
+## Сверка семантики durable dungeon lifecycle — 2026-11-14
+
+- PR #18 HEAD: `8f91341c8a815ea266f72281f983ff7e3f46580e`; Quality Gate run `43563764060` завершился success, все 4 обязательных jobs success: Data/docs/project structure; Client TypeScript and Vite build; Server TypeScript build; Playwright browser smoke tests.
+- PR #18 остаётся Draft/open, merged=false. Merge и изменения `main` не выполнялись.
+- Проверены `dungeonRunState.ts`, `dungeonRunStartTransaction.ts`, start/round/finalization runtimes, prepared encounter/commit/finalization, request recovery, recovery view и соответствующие тесты.
+- Стартовая транзакция корректно объединяет расход ежедневной попытки, инкремент `battles` и запись активного run в shared WAL; повтор того же requestId не списывает попытку повторно, пересекающиеся активные roster блокируются.
+- Round plan сохраняет суммарный урон детерминированными срезами; round commit атомарно пишет run и HP игроков, защищён от stale round index. Но round resolver намеренно зажимает HP живых участников минимум до 1; смерть/перевод в spectator существует отдельным переходом, не выводится из damage schedule.
+- Семантическое несовпадение №1: durable run разрешает spectator с HP=0, однако `createPreparedDungeonEncounter()` требует `hpBefore > 0` и `hpAfter >= 1` для КАЖДОГО roster участника, а snapshot health должен совпадать с hpAfter. Значит, prepared settlement для roster с павшим spectator невалиден; модель должна явно отделить spectator/no-combat settlement от боевых участников, не исключая его из roster и не выдавая ему боевые награды автоматически.
+- Семантическое несовпадение №2: `finishDungeonRun()` допускает исходы `leader_afk` и `leader_dead`, но finalization runtime не проверяет, что лидер действительно AFK/погиб и не был воскрешён. Также runtime не реализует требуемые последствия: лидер AFK — завершить забег, вернуть всех в город и расформировать группу; лидер погиб без воскрешения — вывести весь roster, сохранив группу. Эти правила должны быть проверяемыми переходами, а не произвольными terminal outcome строками.
+- Семантическое несовпадение №3: finalization WAL атомарно коммитит players, dungeonRuns и dungeonOutbox, но не `hunt_groups`. Поэтому последствия для состава/сохранения группы при leader AFK/death не могут быть атомарно зафиксированы вместе с результатом забега в текущем runtime.
+- Resurrection transition учитывает spectator, живого спасателя, scroll count и запрет повторного revive одной и той же парой rescuer→target; однако runtime-атомарность расхода предмета вместе с изменением run пока не подключена к live handler.
+- Result outbox имеет at-least-once delivery и idempotent event ID, но доставка/ack/replay ещё не подключены к live transport и клиентскому acknowledgement.
+- Это аудит, не изменение runtime или баланса. Не подключать lifecycle частями. Перед интеграцией спроектировать согласованную модель participant combat eligibility/spectator, leader terminal transitions + hunt_groups transaction, resurrection item transaction, reward/outbox replay и client resume/result acknowledgement.
+- Следующий этап: проверить правила попыток/поражения и legacy reward/drop semantics против подготовленного encounter, затем составить целевой end-to-end контракт интеграции с перечнем затрагиваемых файлов и тестов.
+
+## Сверка legacy dungeon attempt/reward/drop semantics — 2026-11-14
+
+- На PR #18 HEAD `6ddcdb551ec47576d0a0626342918a9252f9da88` запущен Quality Gate run `43600975727`; на момент проверки он ещё in_progress. Не считать CI подтверждённым до 4/4 jobs success.
+- Legacy handler `GameRoom.runExpeditionDungeon()` проверяет лимит 3 входа на игрока за UTC-день до боя, затем списывает попытку и увеличивает `battles` до расчёта результата. Поражение также расходует попытку; новая durable start transaction повторяет эту семантику и идемпотентно не списывает повторно тот же requestId.
+- Legacy combat formula возвращает win только если `rounds <= 3` и у каждого участника `health > incomingDamage`. При поражении и победе `prepareDungeonMemberHealthOutcome()` ограничивает итоговое здоровье минимумом 1 HP; текущий legacy boss dungeon бой не создаёт смерть/0 HP и не переводит участника в spectator.
+- Победа: каждому участнику начисляются индивидуально рассчитанные XP и gold; базовое золото делится через `Math.floor(dungeon.gold / partySize)`, затем учитываются личные эффекты экипировки/баффов. Гарантированный ресурс и дополнительные drops роллятся один раз, после чего каждый item распределяется одному случайному участнику. Поражение: XP/gold/drop отсутствуют, но попытка и последствия входа сохраняются; здоровье уменьшается.
+- Legacy quest settlement обновляет daily activity, activity log, combat history, request history и создаёт result event на каждого участника. Сохранение players и dungeon result events идёт через общую persistence/recovery обвязку. Durable prepared encounter замораживает уже рассчитанные XP/gold/loot/snapshots, запрещает drops при loss, а finalization сохраняет players+run+outbox одним WAL; он сам не пересчитывает награды и не бросает RNG.
+- Выявлен контрактный нюанс: durable start транзакция хранит общий дневной счётчик `dungeonRuns` на игрока, а legacy ограничение также глобальное для всех подземелий; при интеграции нельзя ошибочно вводить отдельный лимит по dungeonId. День сейчас ключуется UTC через `toISOString().slice(0,10)`; это существующая семантика, менять без отдельного решения.
+- Не найдено оснований менять численные формулы, reward rates или drop chances. Код/баланс не менялись.
+- До end-to-end интеграции остаются решения/контракты: согласовать spectator eligibility и 0 HP; лидер AFK/death + атомарная связь с `hunt_groups`; расход revive item вместе с run; сохранение legacy quest/history/request-id semantics в player snapshots; at-least-once outbox delivery/replay/client acknowledgement; resume UI и terminal result flow.
+- Следующий шаг аудита: собрать точную карту переходов legacy dungeon request → attempt charge → combat calculation → reward/drop roll → quest/history settlement → persistence/outbox и сопоставить её с durable run state machine, затем определить минимальную полную границу миграции без частичного dual-write.
+
+
+## Карта legacy dungeon request → persistence/outbox — 2026-11-14
+
+- Текущая legacy последовательность в `GameRoom.runExpeditionDungeon()`:
+  1. Recovery gate shared WAL; проверка leader/group/online roster/requestId.
+  2. Проверка кэша `dungeonRequestHistory`/`dungeonLastRequest` по requestId; повтор возвращает сохранённый результат без нового боя.
+  3. Блокировка участников с активным durable run; проверка min level, group ±5 и персонального глобального дневного лимита.
+  4. Подготовка boss/stats/passive/weakness/group guard и pure `calculateDungeonCombatPlan()`.
+  5. Снимок rollback, списание попытки + battles, расчёт win/loss и здоровья; на победе XP/gold, drop rolls и случайные получатели.
+  6. Подготовка персональных combat reports, activity log/daily activity/combat history/request history и result events.
+  7. Один shared WAL транзакционно сохраняет полные player snapshots + dungeon result outbox; при ошибке rollback/recovery синхронизирует online players.
+  8. Отправка combatHistory/notice, затем dispatch pending outbox combatResult и ack после send; повторная доставка возможна при crash между send и ack.
+- Durable целевой путь уже имеет отдельные helpers для idempotent start/attempt charge, round progress, prepared encounter commit, atomic player+run+outbox finalization и outbox ack. Однако helpers пока не подключены к legacy handler; live flow по-прежнему использует legacy aggregate combat и пишет legacy result outbox event с `runId=legacy_<requestId>`.
+- Для миграции нужно сохранить requestId idempotency и последние 5 request history entries, legacy duplicate result behavior, player quest/history fields, battles/attempt charge, exact reward/drop RNG decisions, reports и per-player combatResult payload. Нельзя повторно рассчитывать или роллить loot после того, как prepared encounter уже закоммичен.
+- Существенная разница: legacy сохраняет player settlement + outbox, но не создаёт terminal dungeon run; durable путь должен добавить run lifecycle, не меняя семантику уже начисленных player rewards. Переключение должно иметь однозначную точку commit: либо legacy path до durable start, либо durable run после атомарного start; смешанные списания/дублирование rewards недопустимы.
+- Отдельно требуется определить восстановление при падении между start, combat preparation, prepared snapshot commit, finalization и event delivery. Prepared snapshot должен быть единственным источником истины после commit; до него можно безопасно повторять только этапы с idempotency key и неизменяемыми входными данными.
+- CI run `43600975727` на HEAD `6ddcdb551ec47576d0a06281f983ff7e3f46580e` на момент обновления checkpoint: client, Playwright и data/docs jobs success; server transaction/build job ещё in_progress. Не объявлять 4/4 до его завершения.
+- Следующий этап: проверить существующие durable runtime tests на failure injection для каждого crash boundary, а также проверить outbox replay/ack при повторном подключении; затем оформить полную таблицу crash matrix и acceptance tests до проектирования live integration.
+
+
+## Проверка crash-matrix и outbox test coverage — 2026-11-14
+
+- `dungeonRunStartTransaction.test.ts` покрывает pure preparation, attempt charge, duplicate request idempotency, overlap, exhausted attempts и invalid snapshots, но не проверяет реальную shared-WAL commit/crash/restart границу для старта.
+- `dungeonRunRoundRuntime.test.ts` содержит реальный shared-WAL crash/restart сценарий после записи players; recovery восстанавливает round cursor, boss HP, participant HP и очищает journal.
+- `dungeonEncounterCommitRuntime.test.ts` проверяет immutable snapshot attachment, exact retry/conflict и fail-closed после recovery, но commit/recovery проверяется через pure preparation или mock runtime; реального WAL crash/restart теста для сохранения prepared snapshot не найдено.
+- `dungeonRunFinalizationRuntime.test.ts` содержит реальный WAL crash/restart после записи players; recovery восстанавливает terminal run и player rewards. Есть duplicate finalization no-op и fail-closed recovery tests.
+- `dungeonResultOutboxDelivery.test.ts` проверяет порядок send→ack, отсутствие ack при send failure, поведение при ack failure, фильтрацию чужих событий и idempotent enqueue. Не найден тест полного reconnect/restart replay из сохранённого outbox после crash между transport send и durable ack.
+- Подтверждённая неполнота crash matrix: добавить WAL crash/restart для start и prepared encounter commit; добавить outbox persistence+restart replay и повторную доставку при crash после send до ack; проверить восстановление/повторное подключение с pending event и client-side dedup по eventId.
+- Эти gaps относятся к тестовому покрытию и будущей интеграции; код пока не менялся.
+- Quality Gate run `43600975727` на HEAD `6ddcdb551ec47576d0a06281f983ff7e3f46580e`: client, Playwright, data/docs success; Server TypeScript build / transaction recovery всё ещё in_progress при последней проверке. Следующий документационный HEAD `0928e39f24e3302cfb7b02f923d40670b3791003` требует собственного CI; не считать 4/4 подтверждённым.
+- Следующий этап: спроектировать crash matrix с точками аварии до/после каждого durable commit и ожидаемым recovery result; затем добавить отсутствующие тесты до live integration.
+
+## Уточнение crash matrix и outbox coverage — 2026-11-14
+
+- Повторно сверены существующие тесты и package test script; первоначальная gap-карта была неполной: `dungeonRunStartWal.test.ts` уже содержал реальный child-process crash/restart после записи players; `dungeonResultOutboxRecovery.test.ts` уже проверял сохранение pending event, restart replay и отсутствие повторной отправки после durable ack; `dungeonResultDedup.test.ts` уже проверял клиентское подавление повторов по eventId с устойчивым browser storage.
+- Подтверждено: `index.ts` вызывает dispatch pending dungeon result events при `onJoin`, то есть reconnect path существует. At-least-once повтор между transport send и ack остаётся ожидаемым; client dedup предназначен для подавления повторного отображения.
+- Добавлены реальные child-process crash/restart проверки для start WAL на трёх границах: после durable journal write, после target write `players`, после target write `dungeonRuns`. После каждого сбоя recovery должен восстановить полный набор: ровно одно списание попытки, один increment `battles` и active run.
+- Добавлены реальные child-process crash/restart проверки для prepared encounter commit на тех же трёх границах. После recovery immutable prepared snapshot (включая rewards/drop recipient) должен быть сохранён точно, а player snapshots не должны измениться.
+- Round и finalization уже имеют crash/restart после записи `players`; их дополнительные точки до/после каждого target write пока не расширялись. Это остаточная глубина crash matrix, не блокер для корректности уже проверенных сценариев.
+- Новые тесты находятся в `server/test/dungeonRunStartWal.test.ts` и `server/test/dungeonEncounterCommitRuntime.test.ts`; оба файла уже перечислены в `server/package.json` test script. Никаких runtime gameplay изменений и изменений баланса не сделано.
+- Следующий шаг: дождаться Quality Gate на актуальном PR HEAD и при успешном CI проверить crash/ack edge cases round/finalization/outbox; затем зафиксировать итоговую матрицу и только после этого проектировать полную границу live dungeon integration. Не подключать durable lifecycle частями.
+
+
+## Уведомления после durable save — 2026-11-14
+- На PR #18 HEAD `f944d443bf5499d266be3b44d6c63605823c94f8` CI выявил три runtime assertion failures: story_3 city reputation, weekly challenge reward snapshot и legacy Knight weapon snapshot.
+- Диагностика подтвердила общий порядок в `GameRoom.notice()`: сообщение отправлялось клиенту до синхронного `save()`. Клиент мог получить notice и прочитать players.json до завершения записи.
+- Исправлено в commit `9835a48204588b2d4ae97e9c7919ee6f9819b025`: `notice()` теперь вызывает `save()` перед отправкой сообщения. При ошибке сохранения уведомление не отправляется.
+- Это исправление не меняет награды, условия заданий, экипировку или баланс.
+- Обязательная проверка: повторный Quality Gate на новом HEAD; особое внимание трём runtime tests в server suite. До полного зелёного CI не просить пользователя запускать игру.
+
+
+## Восстановление одиночной экспедиции после переподключения — 2026-11-14
+- Исправлен edge case в `GameRoom.onJoin()`: старые сохранения одиночного поиска могли не иметь поля `expedition.groupId`; строгое сравнение с пустым ID трактовало это как потерю групповой привязки и сбрасывало поиск.
+- Сравнение нормализует отсутствующий/пустой `groupId` к пустой строке. Реальная привязка к отсутствующей группе по-прежнему сбрасывается.
+- Добавлен runtime regression test: legacy solo expedition без `groupId` должна пережить reconnect и сохранить исходный `endsAt`; тест на orphaned group search продолжает проверять безопасный сброс.
+- Коммиты: `c4a97db0aafcdadbc83b6d24f7b9de2cfcd65bb8` (fix), `78fa07b0f0c6853fa49b83d241baa66bdc5e81ad` (test).
+- CI для этих изменений ещё не подтверждён.
+
+
+## Локальный Git updater — защита работающей игры — 2026-11-14
+
+- PR #18 / ветка `staging/local-isolated-launcher`; перед этапом head был `8ec2a7d683a540efe3c7f15c7cb94b389f00f614`.
+- Quality Gate run `43611995201` на этом HEAD завершился успешно: все 4 обязательные jobs прошли (data/docs/structure, client TypeScript+Vite, server tests+build, Playwright browser smoke tests).
+- Проверены `tools/Update-Game.ps1`, `Запустить игру.bat`, `tools/Start-Game.ps1`, `tools/Stop-Game.ps1` и локальные ignore rules.
+- Найден риск: повторный запуск BAT во время работающей игры мог выполнить Git fast-forward поверх файлов, используемых dev-серверами.
+- Добавлена fail-closed проверка портов 2567 и 5173 перед fetch/pull. Если один из портов слушается или проверка портов недоступна, updater прекращает работу и предлагает сначала остановить игру через `Остановить игру.bat`. Никаких автоматических остановок или удаления данных нет.
+- Commit: `8dd3a0c98f0830748a90f064cf2d10a94c88a71c`. Новый Quality Gate обязателен; не просить пользователя запускать обновлённый BAT до 4/4 success на новом HEAD.
+- Ограничение остаётся: updater применяет изменения только перед запуском игры; live/hot update и бесшовный серверный restart ещё не реализованы.

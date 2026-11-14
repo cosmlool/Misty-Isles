@@ -1,6 +1,10 @@
 ﻿$ErrorActionPreference = 'Stop'
 $Root = Split-Path -Parent $PSScriptRoot
 Set-Location $Root
+# Keep local test accounts and world state separate from the normal server/data directory.
+$env:MISTY_DATA_DIR = [System.IO.Path]::GetFullPath((Join-Path $Root '.local-data'))
+# Pin the browser client to the local server even if the page is opened through another hostname.
+$env:VITE_SERVER_URL = 'http://127.0.0.1:2567'
 $LogDir = Join-Path $Root 'logs'
 New-Item -ItemType Directory -Force -Path $LogDir | Out-Null
 $Log = Join-Path $LogDir 'launcher.log'
