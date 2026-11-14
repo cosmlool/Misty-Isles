@@ -33,13 +33,18 @@ export function createClanTransactionStore(options: ClanTransactionOptions) {
     finally { closeSync(descriptor); }
   }
 
+  function syncDirectory(path: string) {
+    if (process.platform === 'win32') return;
+    syncPath(path);
+  }
+
   function atomicWrite(file: string, value: unknown) {
     const temp = `${file}.${process.pid}.${Date.now()}.${randomBytes(4).toString('hex')}.tmp`;
     try {
       writeFileSync(temp, JSON.stringify(value, null, 2), { encoding: 'utf8', flag: 'wx' });
       syncPath(temp);
       renameSync(temp, file);
-      syncPath(dirname(file));
+      syncDirectory(dirname(file));
     } catch (error) {
       try { if (existsSync(temp)) unlinkSync(temp); } catch {}
       throw error;
@@ -90,7 +95,7 @@ export function createClanTransactionStore(options: ClanTransactionOptions) {
     validateJournal(parsed);
     apply(parsed.snapshot);
     unlinkSync(journalFile);
-    syncPath(options.dataDir);
+    syncDirectory(options.dataDir);
     return true;
   }
 
@@ -101,7 +106,7 @@ export function createClanTransactionStore(options: ClanTransactionOptions) {
     try {
       apply(snapshot);
       unlinkSync(journalFile);
-      syncPath(options.dataDir);
+      syncDirectory(options.dataDir);
     } catch (error) {
       try {
         recover();
