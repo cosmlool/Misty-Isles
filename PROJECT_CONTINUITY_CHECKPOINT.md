@@ -352,3 +352,13 @@ PR #15 остаётся Draft/open и не объединён. Слияние б
 - Новый HEAD: `aed94f2fa974501a2d6b6a5c2e1f0dcb52d34f19`. Требуется полный Quality Gate CI. Не просить пользователя повторять запуск до зелёного CI.
 - После CI — дать свежую ZIP-ссылку на эту ветку и повторить ручную проверку сохранения. Ошибка «Требуется войти в аккаунт» в клиенте отдельная от fsync и требует последующей проверки auth/session flow; пока не менять auth.
 - PR #18 остаётся Draft/open, merged=false; `main` не менять и PR не объединять.
+
+
+## Исправление регрессии CI после Windows fsync patch — 2026-11-14
+
+- CI на PR run `43537946529` выявил регрессию: общий `syncPath` был изменён на открытие `r+`, но этот же helper использовался для POSIX directory fsync. Linux завершал тесты с `EISDIR` при открытии каталога как файла; из-за серверного старта/персистенции упали также Playwright сценарии.
+- Исправление: `syncPath(path, isDirectory = false)` выбирает `r+` для файлов и `r` для каталогов; `syncDirectory` вызывает `syncPath(path, true)`. На Windows directory fsync по-прежнему пропускается, file fsync использует read/write descriptor.
+- Исправлено во всех трёх stores: shared WAL, auction, clan.
+- Commit sequence: `ad995d4afd4d6e80d707eb32c9dcd2b45ebc490e`, `80fe6c987fa4271c0c15e540a203ce2529843c75`, `3de115f9b4e3cfddc1260b60181f6a3f71e60681`.
+- CI run `43537946529`: client build и data/docs success; server transaction recovery и Playwright failed из-за EISDIR. Новый исправленный HEAD требует полного Quality Gate CI; до его зелёного статуса ZIP пользователю не выдавать.
+- Отдельно остаётся проверить Windows file fsync и auth/session flow после CI.
