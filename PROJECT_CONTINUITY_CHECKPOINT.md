@@ -329,3 +329,15 @@ PR #15 остаётся Draft/open и не объединён. Слияние б
 - Regression source test обновлён, README описывает test-only override. Никакие игровые формулы, баланс, содержимое ресурсов или main не менялись.
 - Commits: runtime df166296ff9d43e07c7a3ae756962e88b9627733; dungeon fixture 2221c17f4412709635dc344e848797ac38a40e3f; expedition fixture c618a91cf0e4a5e027900a3236bc837800ab7a65; group fixture f5aae138d720f4fd9d6961b950849c7fe802a2b2; Playwright fixture 643d1d2020d63117e92f816e2eaa6ed3bc3a87c7; regression test b65260132a9144be757199606b6ea8a0f90c6b34.
 - Полный CI на новом HEAD обязателен; не считать ошибки устранёнными до успешного повторного прогона. PR #18 остаётся Draft/open, merged=false.
+
+
+## Исправление Windows EPERM при сохранении — 2026-11-14
+
+- Ручной запуск Windows-лаунчера подтвердил запуск сервера на порту 2567, но сохранение персонажа завершалось EPERM: operation not permitted, fsync.
+- Причина: общая WAL-транзакция вызывала fsync на дескрипторе каталога после rename/unlink. Node.js на Windows не позволяет открыть каталог таким способом.
+- В shared WAL, а также в legacy auction/clan recovery stores добавлен платформенный syncDirectory: на Windows синхронизация каталога пропускается, на POSIX сохраняется прежний directory fsync. Синхронизация содержимого временных файлов через fsync не отключалась.
+- Добавлен регрессионный тест Windows-пути: файловые fsync сохраняются, directory fsync не вызывается, WAL-транзакция завершается и сохраняет файлы.
+- В README описано платформенное ограничение: на Windows остаётся меньшая гарантия durability directory entries при внезапном отключении питания; содержимое файлов и WAL по-прежнему fsync-ятся.
+- Commits: shared WAL 5cf4c85c878823c5644e6c778b152c27c9104177; auction recovery 81cfd1a820598ba322352166e2e3fb95d735406a; clan recovery e19a41496451db270c3616ce6063df7bca4cada6; Windows regression test 7386ea207779542d76563746ffb8da5377485d01.
+- Новый CI обязателен на свежем HEAD. После полного успеха повторить локальный запуск и создание тестового персонажа. Не переносить реальные сохранения и не трогать server/data.
+- PR #18 остаётся Draft/open, merged=false; не объединять без явного разрешения.
