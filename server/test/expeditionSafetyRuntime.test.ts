@@ -254,6 +254,11 @@ test('expedition reports capture pre/post health and disconnect cancels stale gr
     assert.equal(restoredSoloSearch.endsAt, soloSearchEndsAt,
       'reconnecting must preserve the original search completion timestamp');
 
+    const resumedSearchResults: any[] = [];
+    connected[soloId].onMessage('combatResult', payload => resumedSearchResults.push(payload));
+    connected[soloId].send('expeditionSearchClaim');
+    await waitFor(() => resumedSearchResults[0], 'restored solo expedition search completion');
+
     const invitations: any[] = [];
     connected[memberId].onMessage('huntGroupInvite', payload => invitations.push(payload));
     connected[leaderId].send('huntGroupInvite', { targetId: publicCode(memberId) });
