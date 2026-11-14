@@ -61,8 +61,13 @@ if (configuredDataDir && !isAbsolute(configuredDataDir)) {
   throw new Error('MISTY_DATA_DIR must be an absolute path.');
 }
 const DATA_DIR = resolve(configuredDataDir || join(process.cwd(), 'data'));
-// Static world definitions ship with the server and must never be redirected into a fresh save directory.
-const GAME_DATA_DIR = join(process.cwd(), 'data');
+// Static world definitions ship with the server and must never follow the save directory implicitly.
+// Tests may explicitly provide a disposable fixture directory without changing normal or launcher behavior.
+const configuredGameDataDir = process.env.MISTY_GAME_DATA_DIR?.trim();
+if (configuredGameDataDir && !isAbsolute(configuredGameDataDir)) {
+  throw new Error('MISTY_GAME_DATA_DIR must be an absolute path.');
+}
+const GAME_DATA_DIR = resolve(configuredGameDataDir || join(process.cwd(), 'data'));
 const SAVE_FILE = join(DATA_DIR, 'players.json');
 const CLAN_FILE = join(DATA_DIR, 'clans.json');
 const AUCTION_FILE = join(DATA_DIR, 'auction.json');
