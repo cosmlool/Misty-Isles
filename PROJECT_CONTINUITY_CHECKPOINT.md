@@ -414,3 +414,13 @@ PR #15 остаётся Draft/open и не объединён. Слияние б
 - Commit: `eb8e0fd364afa2028868928b43228d4ef1d1f335`.
 - Новый полный Quality Gate обязателен на свежем HEAD. Не считать исправление подтверждённым до 4/4 success; не просить пользователя запускать игру и не выдавать ZIP до этого.
 - PR #18 остаётся Draft/open, merged=false; не объединять и не менять `main` без отдельного разрешения.
+
+
+## Подтверждение полного Quality Gate после исправления expedition safety test — 2026-11-14
+
+- Актуальный PR #18 HEAD: `12c91a8ad73ae8e4a48e4b40f96caa95ca4cedc5`.
+- Quality Gate run `43548309302` завершился с conclusion=success.
+- Все четыре обязательные проверки на этом HEAD завершились success: Data/docs/project structure; Client TypeScript and Vite build; Server TypeScript build; Playwright browser smoke tests.
+- Предыдущий runtime-test failure устранён изменением только последовательности подготовки теста; runtime запреты на изменение состава группы во время поиска/перехода сохранены.
+- PR #18 остаётся Draft/open, merged=false. Никакого merge или изменения main не выполнялось.
+- Теперь можно продолжать технический аудит на текущем зелёном HEAD. Ручной запуск игры не требуется для подтверждения CI; перед следующей ручной проверкой всё равно сверять HEAD и полный Quality Gate.
