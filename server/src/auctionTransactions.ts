@@ -30,7 +30,7 @@ export function createAuctionTransactionStore(options: AuctionTransactionOptions
   mkdirSync(options.dataDir, { recursive: true });
 
   function syncPath(path: string) {
-    const descriptor = openSync(path, 'r');
+    const descriptor = openSync(path, 'r+');
     try { fsyncSync(descriptor); options.testHooks?.afterSync?.(path); }
     finally { closeSync(descriptor); }
   }
