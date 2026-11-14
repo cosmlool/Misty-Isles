@@ -465,3 +465,22 @@ PR #15 остаётся Draft/open и не объединён. Слияние б
 - Не найдено оснований менять численные формулы, reward rates или drop chances. Код/баланс не менялись.
 - До end-to-end интеграции остаются решения/контракты: согласовать spectator eligibility и 0 HP; лидер AFK/death + атомарная связь с `hunt_groups`; расход revive item вместе с run; сохранение legacy quest/history/request-id semantics в player snapshots; at-least-once outbox delivery/replay/client acknowledgement; resume UI и terminal result flow.
 - Следующий шаг аудита: собрать точную карту переходов legacy dungeon request → attempt charge → combat calculation → reward/drop roll → quest/history settlement → persistence/outbox и сопоставить её с durable run state machine, затем определить минимальную полную границу миграции без частичного dual-write.
+
+
+## Карта legacy dungeon request → persistence/outbox — 2026-11-14
+
+- Текущая legacy последовательность в `GameRoom.runExpeditionDungeon()`:
+  1. Recovery gate shared WAL; проверка leader/group/online roster/requestId.
+  2. Проверка кэша `dungeonRequestHistory`/`dungeonLastRequest` по requestId; повтор возвращает сохранённый результат без нового боя.
+  3. Блокировка участников с активным durable run; проверка min level, group ±5 и персонального глобального дневного лимита.
+  4. Подготовка boss/stats/passive/weakness/group guard и pure `calculateDungeonCombatPlan()`.
+  5. Снимок rollback, списание попытки + battles, расчёт win/loss и здоровья; на победе XP/gold, drop rolls и случайные получатели.
+  6. Подготовка персональных combat reports, activity log/daily activity/combat history/request history и result events.
+  7. Один shared WAL транзакционно сохраняет полные player snapshots + dungeon result outbox; при ошибке rollback/recovery синхронизирует online players.
+  8. Отправка combatHistory/notice, затем dispatch pending outbox combatResult и ack после send; повторная доставка возможна при crash между send и ack.
+- Durable целевой путь уже имеет отдельные helpers для idempotent start/attempt charge, round progress, prepared encounter commit, atomic player+run+outbox finalization и outbox ack. Однако helpers пока не подключены к legacy handler; live flow по-прежнему использует legacy aggregate combat и пишет legacy result outbox event с `runId=legacy_<requestId>`.
+- Для миграции нужно сохранить requestId idempotency и последние 5 request history entries, legacy duplicate result behavior, player quest/history fields, battles/attempt charge, exact reward/drop RNG decisions, reports и per-player combatResult payload. Нельзя повторно рассчитывать или роллить loot после того, как prepared encounter уже закоммичен.
+- Существенная разница: legacy сохраняет player settlement + outbox, но не создаёт terminal dungeon run; durable путь должен добавить run lifecycle, не меняя семантику уже начисленных player rewards. Переключение должно иметь однозначную точку commit: либо legacy path до durable start, либо durable run после атомарного start; смешанные списания/дублирование rewards недопустимы.
+- Отдельно требуется определить восстановление при падении между start, combat preparation, prepared snapshot commit, finalization и event delivery. Prepared snapshot должен быть единственным источником истины после commit; до него можно безопасно повторять только этапы с idempotency key и неизменяемыми входными данными.
+- CI run `43600975727` на HEAD `6ddcdb551ec47576d0a06281f983ff7e3f46580e` на момент обновления checkpoint: client, Playwright и data/docs jobs success; server transaction/build job ещё in_progress. Не объявлять 4/4 до его завершения.
+- Следующий этап: проверить существующие durable runtime tests на failure injection для каждого crash boundary, а также проверить outbox replay/ack при повторном подключении; затем оформить полную таблицу crash matrix и acceptance tests до проектирования live integration.
