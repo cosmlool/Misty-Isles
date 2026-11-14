@@ -29,15 +29,15 @@ export function createAuctionTransactionStore(options: AuctionTransactionOptions
   const journalFile = join(options.dataDir, 'auction_transaction.json');
   mkdirSync(options.dataDir, { recursive: true });
 
-  function syncPath(path: string) {
-    const descriptor = openSync(path, 'r+');
+  function syncPath(path: string, isDirectory = false) {
+    const descriptor = openSync(path, isDirectory ? 'r' : 'r+');
     try { fsyncSync(descriptor); options.testHooks?.afterSync?.(path); }
     finally { closeSync(descriptor); }
   }
 
   function syncDirectory(path: string) {
     if (process.platform === 'win32') return;
-    syncPath(path);
+    syncPath(path, true);
   }
 
   function atomicWrite(file: string, value: unknown) {
