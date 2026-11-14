@@ -319,3 +319,13 @@ PR #15 остаётся Draft/open и не объединён. Слияние б
 - Предыдущее утверждение выше о том, что все persistence-файлы находятся в `.local-data`, относится к изменяемому состоянию; статические игровые ресурсы остаются в `server/data`.
 - Новый HEAD требует полного CI. После зелёного CI повторить локальный запуск на Windows. Проверить создание персонажа и появление файлов в `.local-data`; убедиться, что `server/data` не меняется.
 - PR #18 остаётся Draft/open, merged=false; `main` не изменять и PR не объединять.
+
+## Исправление регрессии изоляции тестовых игровых ресурсов — 2026-11-14
+
+- CI PR #18 выявил, что тестовые серверы создают временные копии игровых JSON в MISTY_DATA_DIR; некоторые тесты изменяют эти копии (например, searchSeconds=0), а Playwright задаёт searchSeconds=1.
+- После первоначального разделения DATA_DIR и GAME_DATA_DIR сервер стал правильно брать игровые ресурсы из server/data при обычном запуске, но перестал учитывать явно подготовленные тестовые копии. Это вызвало таймауты экспедиционных/group-travel тестов и один дополнительный runtime-test failure.
+- Исправлено: добавлена отдельная необязательная переменная MISTY_GAME_DATA_DIR, валидируемая как абсолютный путь. При отсутствии переменной GAME_DATA_DIR остаётся server/data; MISTY_DATA_DIR по-прежнему отвечает только за изменяемые сохранения.
+- MISTY_GAME_DATA_DIR выставляется только в тестовых процессах, которым нужны disposable static fixtures: dungeon attempts, expedition safety, group travel persistence и Playwright. Windows-лаунчер не задаёт её и продолжает читать поставляемые игровые файлы из server/data.
+- Regression source test обновлён, README описывает test-only override. Никакие игровые формулы, баланс, содержимое ресурсов или main не менялись.
+- Commits: runtime df166296ff9d43e07c7a3ae756962e88b9627733; dungeon fixture 2221c17f4412709635dc344e848797ac38a40e3f; expedition fixture c618a91cf0e4a5e027900a3236bc837800ab7a65; group fixture f5aae138d720f4fd9d6961b950849c7fe802a2b2; Playwright fixture 643d1d2020d63117e92f816e2eaa6ed3bc3a87c7; regression test b65260132a9144be757199606b6ea8a0f90c6b34.
+- Полный CI на новом HEAD обязателен; не считать ошибки устранёнными до успешного повторного прогона. PR #18 остаётся Draft/open, merged=false.
