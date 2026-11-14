@@ -362,3 +362,15 @@ PR #15 остаётся Draft/open и не объединён. Слияние б
 - Commit sequence: `ad995d4afd4d6e80d707eb32c9dcd2b45ebc490e`, `80fe6c987fa4271c0c15e540a203ce2529843c75`, `3de115f9b4e3cfddc1260b60181f6a3f71e60681`.
 - CI run `43537946529`: client build и data/docs success; server transaction recovery и Playwright failed из-за EISDIR. Новый исправленный HEAD требует полного Quality Gate CI; до его зелёного статуса ZIP пользователю не выдавать.
 - Отдельно остаётся проверить Windows file fsync и auth/session flow после CI.
+
+
+## Контрольная точка — 2026-11-14 (Windows launcher: ручной запуск и CI)
+
+- Актуальный PR #18 HEAD: `890d9c9390fd96f4ef11db3c413914676df13b31`; PR остаётся Draft/open, merged=false.
+- Quality Gate run `43538934525` завершился полностью успешно: все 4 jobs success — Client TypeScript/Vite, Data/docs/structure, Playwright browser smoke tests, Server TypeScript build и transaction recovery tests.
+- Пользователь подтвердил, что после последнего исправления Windows launcher удалось запустить. Это подтверждает запуск сервера, но пока НЕ подтверждает вход в аккаунт, создание персонажа, сохранение и повторную загрузку.
+- Исправление Windows fsync: file descriptors открываются как `r+`, directory descriptors — как `r` на POSIX; directory fsync пропускается на Windows. Не отключать file-content fsync.
+- Ранее полученная ошибка `Требуется войти в аккаунт` возникает в `GameRoom.onJoin()`, если session token не проходит `verifySession` или playerId не совпадает. Это отдельный auth/session flow; пока не менять auth до проверки свежего запуска и воспроизведения.
+- Следующий шаг: попросить пользователя проверить UI авторизации (регистрация/вход), затем создать тестового персонажа, перезапустить клиент и проверить повторную загрузку. Проверить, что новые изменяемые файлы появляются в `.local-data`, а `server/data` не меняется.
+- После подтверждения ручного сценария продолжить технический аудит, начиная с оставшихся persistence/dungeon lifecycle gaps. Полную durable dungeon lifecycle integration не считать завершённой.
+- PR #18 не объединять; `main` не менять без отдельного разрешения.
