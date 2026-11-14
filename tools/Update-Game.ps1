@@ -31,6 +31,16 @@ $currentBranch = (& git branch --show-current 2>$null).Trim()
 if ($LASTEXITCODE -ne 0 -or $currentBranch -ne $Branch) { Fail "Ожидалась ветка '$Branch', а найдена '$currentBranch'. Автоматическое переключение веток запрещено." }
 $origin = (& git remote get-url $Remote 2>$null).Trim()
 if ($LASTEXITCODE -ne 0 -or $origin -notmatch 'github\.com[:/]cosmlool/Misty-Isles(?:\.git)?$') { Fail "Remote origin не соответствует cosmlool/Misty-Isles: $origin" }
+# Never replace files while this local development instance is running.
+try {
+  $listeners = @(Get-NetTCPConnection -State Listen -LocalPort 2567,5173 -ErrorAction Stop)
+} catch {
+  Fail 'Не удалось проверить локальные игровые порты 2567 и 5173. Для безопасности обновление отменено.'
+}
+if ($listeners.Count -gt 0) {
+  $busy = ($listeners | ForEach-Object { "порт $($_.LocalPort), PID $($_.OwningProcess)" }) -join '; '
+  Fail "Игра уже запущена ($busy). Сначала остановите её через «Остановить игру.bat», затем повторите запуск обновления."
+}
 $status = @(& git status --porcelain --untracked-files=normal)
 if ($LASTEXITCODE -ne 0) { Fail 'Не удалось проверить локальные изменения.' }
 if ($status.Count -gt 0) {
