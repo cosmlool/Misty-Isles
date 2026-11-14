@@ -222,12 +222,16 @@ test('expedition reports capture pre/post health and disconnect cancels stale gr
     await waitFor(() => soloNotices.find(message => message.includes('Награда за это задание уже получена.')), 'duplicate daily hunt claim');
     assert.equal(readPlayers(join(dataDir, 'players.json'))[soloId].gold, goldBeforeDailyHunt + 300, 'daily hunt reward must not be duplicated');
 
-    const noticesBeforeReloadSearch = soloNotices.length;
+    const previousSearchStartedAt = Number(readPlayers(join(dataDir, 'players.json'))[soloId].quests
+      ? JSON.parse(readPlayers(join(dataDir, 'players.json'))[soloId].quests).expedition?.startedAt || 0
+      : 0);
     connected[soloId].send('expeditionSearchStart');
-    await waitFor(() => soloNotices.length > noticesBeforeReloadSearch
-      && soloNotices.slice(noticesBeforeReloadSearch).some(message => message.includes('Поиск монстра начался.')),
-    'solo search before page reload');
-    const soloSearchBeforeReload = JSON.parse(readPlayers(join(dataDir, 'players.json'))[soloId].quests).expedition;
+    const soloSearchBeforeReload = await waitFor(() => {
+      const state = JSON.parse(readPlayers(join(dataDir, 'players.json'))[soloId].quests).expedition;
+      return state?.state === 'searching' && Number(state.startedAt) > previousSearchStartedAt ? state : undefined;
+    }, 'new solo search persisted before page reload');
+    await waitFor(() => soloNotices.some(message => message.includes('Поиск монстра начался.')),
+      'solo search before page reload notice');
     assert.equal(soloSearchBeforeReload.state, 'searching');
     const soloSearchEndsAt = Number(soloSearchBeforeReload.endsAt);
     await connected[soloId].leave();
