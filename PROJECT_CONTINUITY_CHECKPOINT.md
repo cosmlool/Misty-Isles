@@ -341,3 +341,14 @@ PR #15 остаётся Draft/open и не объединён. Слияние б
 - Commits: shared WAL 5cf4c85c878823c5644e6c778b152c27c9104177; auction recovery 81cfd1a820598ba322352166e2e3fb95d735406a; clan recovery e19a41496451db270c3616ce6063df7bca4cada6; Windows regression test 7386ea207779542d76563746ffb8da5377485d01.
 - Новый CI обязателен на свежем HEAD. После полного успеха повторить локальный запуск и создание тестового персонажа. Не переносить реальные сохранения и не трогать server/data.
 - PR #18 остаётся Draft/open, merged=false; не объединять без явного разрешения.
+
+
+## Дополнительное исправление Windows EPERM: режим открытия файлов для fsync — 2026-11-14
+
+- Повторная ручная проверка после предыдущего исправления всё ещё показала `EPERM: operation not permitted, fsync` в `sharedStateTransactions.ts`, на вызове `syncPath(temp)` внутри `atomicWrite`.
+- Уточнённая причина: directory fsync уже пропускался на Windows, но сами временные файлы открывались для fsync в режиме только чтения (`'r'`). На Windows такой дескриптор не предоставляет право записи/flush, необходимое для `fsync`.
+- Исправлено в трёх transaction stores: `sharedStateTransactions.ts`, `auctionTransactions.ts`, `clanTransactions.ts` — `openSync(path, 'r+')` перед `fsyncSync`. Файловая синхронизация остаётся обязательной; отключено только directory fsync на Windows.
+- Commits: shared WAL `232c2343a90912c735f1a6bec370c4f666306b75`; auction `552817cfaf681aa34ef89dfecbb549305b6a516c`; clan `aed94f2fa974501a2d6b6a5c2e1f0dcb52d34f19`.
+- Новый HEAD: `aed94f2fa974501a2d6b6a5c2e1f0dcb52d34f19`. Требуется полный Quality Gate CI. Не просить пользователя повторять запуск до зелёного CI.
+- После CI — дать свежую ZIP-ссылку на эту ветку и повторить ручную проверку сохранения. Ошибка «Требуется войти в аккаунт» в клиенте отдельная от fsync и требует последующей проверки auth/session flow; пока не менять auth.
+- PR #18 остаётся Draft/open, merged=false; `main` не менять и PR не объединять.
