@@ -484,3 +484,16 @@ PR #15 остаётся Draft/open и не объединён. Слияние б
 - Отдельно требуется определить восстановление при падении между start, combat preparation, prepared snapshot commit, finalization и event delivery. Prepared snapshot должен быть единственным источником истины после commit; до него можно безопасно повторять только этапы с idempotency key и неизменяемыми входными данными.
 - CI run `43600975727` на HEAD `6ddcdb551ec47576d0a06281f983ff7e3f46580e` на момент обновления checkpoint: client, Playwright и data/docs jobs success; server transaction/build job ещё in_progress. Не объявлять 4/4 до его завершения.
 - Следующий этап: проверить существующие durable runtime tests на failure injection для каждого crash boundary, а также проверить outbox replay/ack при повторном подключении; затем оформить полную таблицу crash matrix и acceptance tests до проектирования live integration.
+
+
+## Проверка crash-matrix и outbox test coverage — 2026-11-14
+
+- `dungeonRunStartTransaction.test.ts` покрывает pure preparation, attempt charge, duplicate request idempotency, overlap, exhausted attempts и invalid snapshots, но не проверяет реальную shared-WAL commit/crash/restart границу для старта.
+- `dungeonRunRoundRuntime.test.ts` содержит реальный shared-WAL crash/restart сценарий после записи players; recovery восстанавливает round cursor, boss HP, participant HP и очищает journal.
+- `dungeonEncounterCommitRuntime.test.ts` проверяет immutable snapshot attachment, exact retry/conflict и fail-closed после recovery, но commit/recovery проверяется через pure preparation или mock runtime; реального WAL crash/restart теста для сохранения prepared snapshot не найдено.
+- `dungeonRunFinalizationRuntime.test.ts` содержит реальный WAL crash/restart после записи players; recovery восстанавливает terminal run и player rewards. Есть duplicate finalization no-op и fail-closed recovery tests.
+- `dungeonResultOutboxDelivery.test.ts` проверяет порядок send→ack, отсутствие ack при send failure, поведение при ack failure, фильтрацию чужих событий и idempotent enqueue. Не найден тест полного reconnect/restart replay из сохранённого outbox после crash между transport send и durable ack.
+- Подтверждённая неполнота crash matrix: добавить WAL crash/restart для start и prepared encounter commit; добавить outbox persistence+restart replay и повторную доставку при crash после send до ack; проверить восстановление/повторное подключение с pending event и client-side dedup по eventId.
+- Эти gaps относятся к тестовому покрытию и будущей интеграции; код пока не менялся.
+- Quality Gate run `43600975727` на HEAD `6ddcdb551ec47576d0a06281f983ff7e3f46580e`: client, Playwright, data/docs success; Server TypeScript build / transaction recovery всё ещё in_progress при последней проверке. Следующий документационный HEAD `0928e39f24e3302cfb7b02f923d40670b3791003` требует собственного CI; не считать 4/4 подтверждённым.
+- Следующий этап: спроектировать crash matrix с точками аварии до/после каждого durable commit и ожидаемым recovery result; затем добавить отсутствующие тесты до live integration.
