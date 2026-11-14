@@ -67,7 +67,7 @@ export function createSharedStateTransactionStore(options: Options) {
   }
 
   function syncPath(path: string) {
-    const descriptor = openSync(path, 'r');
+    const descriptor = openSync(path, 'r+');
     try { fsyncSync(descriptor); options.testHooks?.afterSync?.(path); }
     finally { closeSync(descriptor); }
   }
