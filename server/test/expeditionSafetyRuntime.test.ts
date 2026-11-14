@@ -222,8 +222,11 @@ test('expedition reports capture pre/post health and disconnect cancels stale gr
     await waitFor(() => soloNotices.find(message => message.includes('Награда за это задание уже получена.')), 'duplicate daily hunt claim');
     assert.equal(readPlayers(join(dataDir, 'players.json'))[soloId].gold, goldBeforeDailyHunt + 300, 'daily hunt reward must not be duplicated');
 
+    const noticesBeforeReloadSearch = soloNotices.length;
     connected[soloId].send('expeditionSearchStart');
-    await waitFor(() => soloNotices.find(message => message.includes('Поиск монстра начался.')), 'solo search before page reload');
+    await waitFor(() => soloNotices.length > noticesBeforeReloadSearch
+      && soloNotices.slice(noticesBeforeReloadSearch).some(message => message.includes('Поиск монстра начался.')),
+    'solo search before page reload');
     const soloSearchBeforeReload = JSON.parse(readPlayers(join(dataDir, 'players.json'))[soloId].quests).expedition;
     assert.equal(soloSearchBeforeReload.state, 'searching');
     const soloSearchEndsAt = Number(soloSearchBeforeReload.endsAt);
