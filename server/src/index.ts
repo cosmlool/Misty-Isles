@@ -634,7 +634,7 @@ class GameRoom extends Room<RoomState> {
     const groupId=PLAYER_GROUP.get(this.playerId);
     const group=groupId?HUNT_GROUPS.get(groupId):undefined;
     const affectedPlayers=(group?.members||[this.playerId]).map(id=>ONLINE_PLAYERS.get(id)).filter((player):player is Player=>!!player);
-    const hasActiveGroupAction=affectedPlayers.some(player=>['searching','moving'].includes(String(readObject(player.quests).expedition?.state||'')));
+    const hasActiveGroupAction=Boolean(group)&&affectedPlayers.some(player=>['searching','moving'].includes(String(readObject(player.quests).expedition?.state||'')));
     for(const player of affectedPlayers){
       const quests=readObject(player.quests);
       if(!quests.expedition)continue;
