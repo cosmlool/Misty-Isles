@@ -35,13 +35,18 @@ export function createAuctionTransactionStore(options: AuctionTransactionOptions
     finally { closeSync(descriptor); }
   }
 
+  function syncDirectory(path: string) {
+    if (process.platform === 'win32') return;
+    syncPath(path);
+  }
+
   function atomicWrite(file: string, value: unknown) {
     const temp = `${file}.${process.pid}.${Date.now()}.${randomBytes(4).toString('hex')}.tmp`;
     try {
       writeFileSync(temp, JSON.stringify(value, null, 2), { encoding: 'utf8', flag: 'wx' });
       syncPath(temp);
       renameSync(temp, file);
-      syncPath(dirname(file));
+      syncDirectory(dirname(file));
     } catch (error) {
       try { if (existsSync(temp)) unlinkSync(temp); } catch {}
       throw error;
@@ -71,7 +76,7 @@ export function createAuctionTransactionStore(options: AuctionTransactionOptions
       copyFileSync(options.playersFile, backupTemp);
       syncPath(backupTemp);
       renameSync(backupTemp, backupFile);
-      syncPath(options.dataDir);
+      syncDirectory(options.dataDir);
     } catch (error) {
       try { if (existsSync(backupTemp)) unlinkSync(backupTemp); } catch {}
       throw new Error(`Could not create a backup of players.json; auction transaction write cancelled. ${String(error)}`);
@@ -111,7 +116,7 @@ export function createAuctionTransactionStore(options: AuctionTransactionOptions
     validateJournal(parsed);
     apply(parsed.snapshot);
     unlinkSync(journalFile);
-    syncPath(options.dataDir);
+    syncDirectory(options.dataDir);
     return true;
   }
 
@@ -128,7 +133,7 @@ export function createAuctionTransactionStore(options: AuctionTransactionOptions
       options.testHooks?.afterJournalPersisted?.();
       apply(snapshot);
       unlinkSync(journalFile);
-      syncPath(options.dataDir);
+      syncDirectory(options.dataDir);
     } catch (error) {
       // Retry the complete snapshot immediately. If storage is still failing,
       // keep the journal so the next startup can finish the transaction.
