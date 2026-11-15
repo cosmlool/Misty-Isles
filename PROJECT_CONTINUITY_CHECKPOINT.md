@@ -959,3 +959,5 @@ PR #15 остаётся Draft/open и не объединён. Слияние б
 - Added live isolated-server regression for daily gold reward and gem-to-crystal conversion at the caps. Local tests not run; GitHub Actions Quality Gate required.
 - Detailed specification: `CURRENCY_CAPS.md`.
 - Commits in this stage include `2154571` currency helper, `153ce79` helper tests, `5be86be` gameplay credit integration, `2e26829` auction cap, `b466b10` PvP cap, `b8a6dee` combat settlement display, `c78178e` auction notice, `02dd013` legacy balance clamp, `50dcc0d` runtime test, and `a2dac79` cap specification.
+
+- Follow-up boundary refinement: legacy balances are clamped when finite and above the cap even if the stored number is outside JavaScript's safe-integer range; non-finite/negative balances and fractional in-cap balances still fail closed. PvP and auction balance readers use the same normalization. Added regressions for unsafe finite over-cap legacy values. Details updated in `CURRENCY_CAPS.md`.
