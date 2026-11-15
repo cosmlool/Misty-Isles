@@ -1029,3 +1029,16 @@ PR #15 остаётся Draft/open и не объединён. Слияние б
 - Commits: `56ed72e412fecc9c45ed73c42875eec3b80e3509` (hardening), `9b87fbaf02e59e653de3b0a2ffd0e899bb0e4e8d` (tests).
 - Local tests not run. New full Quality Gate required for final HEAD.
 - PR #18 remains Draft/open/unmerged; no main changes or save migration.
+
+
+## Clan war persisted-record validation — 2026-11-16
+
+- Continued review of concurrent attack handling, repeat settlement, clan war runtime behavior, and shared-state journal recovery.
+- Confirmed war settlement is guarded by the active-to-finished status transition; subsequent settlement passes do not issue the reward again. Clan mutations are serialized through the synchronous shared-state transaction coordinator in the single-server-process model.
+- Found malformed persisted war fields were previously coerced during settlement: invalid/negative/fractional/unsafe damage counters could be treated as zero or influence winner selection; malformed end timestamps could also be coerced.
+- Fixed settlement to validate the settlement clock, active-war end timestamp, and both damage counters as nonnegative safe integers before changing cloned war/clan state or issuing rewards. Invalid records now fail closed and leave source objects untouched.
+- Added regression tests for malformed damage values, malformed end timestamps, and no partial mutation on rejection.
+- Existing war scoring, duration, cooldown, reward formula and replay behavior unchanged.
+- Commits: `593c0fdf3f79bb441b60a41eb7bba4f756269165` (validation), `6a21ad8aea6e5964aff2eac5ee0ce1dc3f7739ae` (tests).
+- Local tests not run. CI for previous HEAD was in progress during this stage; full Quality Gate for final HEAD is required.
+- PR #18 remains Draft/open/unmerged; no main changes or save migration.
