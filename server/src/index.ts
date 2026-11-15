@@ -10,6 +10,7 @@ import { normalizeProfession, PROFESSIONS } from './professionProfiles.js';
 import { calculatePvpCombatStats, resolvePvpSetBonuses } from './pvpCombat.js';
 import { calculateCombatSpeed } from './monsterBattle.js';
 import { calculatePlayerMonsterCombatStats, parseMonsterCombatEffectClauses, resolveEquipmentSetCombatEffects, resolveEquipmentSetTierDescriptions, resolveGoldEquipmentStatProfile, resolveMonsterCombatProperty, resolvePlayerMonsterLifestealRate, resolveMonsterPendantCombatEffect } from './monsterCombatStats.js';
+import { acquireDataDirectoryLock } from './dataDirectoryLock.js';
 import { applyPlayerSave, createPlayerSaveStore } from './playerSaves.js';
 import { startPlayerAutosave } from './playerAutosave.js';
 import { canSaveRoomPlayerSnapshot, isCurrentRoomSession } from './playerSessionOwnership.js';
@@ -46,6 +47,8 @@ import { prepareXpProgression } from './xpProgression.js';
 const ONLINE_PLAYERS = new Map<string, Player>();
 const ONLINE_CLIENTS = new Map<string, Client>();
 const ONLINE_SESSION_HASHES = new Map<string, string>();
+let stopPlayerAutosave: () => void = () => {};
+let shutdownRequested = false;
 type HuntGroup = { id:string; leader:string; members:string[] };
 const HUNT_GROUPS = new Map<string, HuntGroup>();
 const PLAYER_GROUP = new Map<string,string>();
@@ -82,6 +85,8 @@ const ACCOUNT_FILE = join(DATA_DIR, 'accounts.json');
 const SESSION_FILE = join(DATA_DIR, 'sessions.json');
 const GUEST_CREDENTIAL_FILE = join(DATA_DIR, 'guest_credentials.json');
 if (!existsSync(DATA_DIR)) mkdirSync(DATA_DIR, { recursive: true });
+const releaseDataDirectoryLock = acquireDataDirectoryLock(DATA_DIR);
+process.once('exit', releaseDataDirectoryLock);
 const { loadPlayers } = createPlayerSaveStore(SAVE_FILE, DATA_DIR);
 const auctionTransactions = createAuctionTransactionStore({ dataDir: DATA_DIR, playersFile: SAVE_FILE, auctionFile: AUCTION_FILE, historyFile: AUCTION_HISTORY_FILE });
 const clanTransactions = createClanTransactionStore({ dataDir: DATA_DIR, playersFile: SAVE_FILE, clansFile: CLAN_FILE, warsFile: WAR_FILE, territoriesFile: TERRITORY_FILE });
@@ -540,7 +545,24 @@ function sendJson(res:ServerResponse,status:number,data:any) { res.writeHead(sta
 function authHttpHandler(req:IncomingMessage,res:ServerResponse) {
   res.setHeader('Access-Control-Allow-Origin','*');res.setHeader('Access-Control-Allow-Headers','Content-Type');res.setHeader('Access-Control-Allow-Methods','POST, OPTIONS');
   if(req.method==='OPTIONS'){res.writeHead(204);res.end();return;}
-  const path=String(req.url||'').split('?')[0];if(!path?.startsWith('/auth/')){res.writeHead(404);res.end('Not found');return;}
+  const path=String(req.url||'').split('?')[0];
+  if(path==='/internal/shutdown'){
+    if(req.method!=='POST'){sendJson(res,405,{error:'Используй POST.'});return;}
+    const remoteAddress=String(req.socket.remoteAddress||'');
+    const isLoopback=remoteAddress==='::1'||remoteAddress==='::ffff:127.0.0.1'||/^127(?:\\.\\d{1,3}){3}$/.test(remoteAddress);
+    const expected=String(process.env.MISTY_SHUTDOWN_TOKEN||'');
+    const supplied=String(req.headers['x-misty-shutdown-token']||'');
+    const expectedBytes=Buffer.from(expected),suppliedBytes=Buffer.from(supplied);
+    if(!isLoopback||!expected||expectedBytes.length!==suppliedBytes.length||!timingSafeEqual(expectedBytes,suppliedBytes)){
+      sendJson(res,404,{error:'Not found'});return;
+    }
+    if(shutdownRequested){sendJson(res,202,{ok:true,shutdown:'already-requested'});return;}
+    shutdownRequested=true;
+    sendJson(res,202,{ok:true,shutdown:'requested'});
+    res.once('finish',()=>{void gameServer.gracefullyShutdown();});
+    return;
+  }
+  if(!path?.startsWith('/auth/')){res.writeHead(404);res.end('Not found');return;}
   if(req.method!=='POST'){sendJson(res,405,{error:'Используй POST.'});return;}
   if(path==='/auth/login'||path==='/auth/register'||path==='/auth/guest'){const ip=req.socket.remoteAddress||'unknown';if(!allowAuthAttempt(ip)){sendJson(res,429,{error:'Слишком много попыток. Попробуй позже.'});return;}}
   let body='';req.on('data',chunk=>{body+=String(chunk);if(body.length>8192){sendJson(res,413,{error:'Слишком большой запрос.'});req.destroy();}});
@@ -1494,7 +1516,14 @@ function rand(a:number,b:number){return Math.floor(Math.random()*(b-a+1))+a;}
 function statName(k:string){return ({strength:'Сила',defense:'Защита',vitality:'Живучесть',dexterity:'Ловкость',intelligence:'Интеллект',luck:'Удача',stamina:'Выносливость',accuracy:'Меткость'} as Record<string,string>)[k]||k;}
 function labelForActivity(encounter:string){return encounter==='boss'?'Победа над боссом':encounter==='rare'?'Победа над редким монстром':'Победа в охоте';}
 const httpServer=createServer(authHttpHandler);const gameServer=new Server({transport:new WebSocketTransport({server:httpServer})});gameServer.define('my_room',GameRoom);
-startPlayerAutosave({
+gameServer.onBeforeShutdown(()=>stopPlayerAutosave());
+gameServer.onShutdown(()=>{
+  if(ONLINE_PLAYERS.size){
+    try{recoverPlayerStateBeforeMutation();persistPlayers(Array.from(ONLINE_PLAYERS.values()));}
+    catch(error){console.error('Final online-player persistence failed during shutdown:',error);throw error;}
+  }
+});
+stopPlayerAutosave = startPlayerAutosave({
   intervalMs: 30_000,
   save: () => {
     if (ONLINE_PLAYERS.size) {
