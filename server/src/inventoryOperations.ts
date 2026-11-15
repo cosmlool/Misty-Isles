@@ -60,3 +60,27 @@ export function filterAvailableUniqueItems(
 ): string[] {
   return itemIds.filter(itemId => !uniqueItemIds.has(itemId) || !ownsItemCopy(inventory, equipment, itemId));
 }
+
+
+/**
+ * Validate a client action against the exact inventory snapshot shown to that client.
+ * Requiring the stack count prevents a replayed index action from consuming the next
+ * adjacent copy after the first removal.
+ */
+export function validateInventoryStackAction(
+  inventory: string[],
+  index: number,
+  itemId: unknown,
+  expectedCount: unknown,
+): boolean {
+  if (!Array.isArray(inventory) || inventory.some(item => typeof item !== 'string')) {
+    throw new Error('Inventory is invalid.');
+  }
+  if (!Number.isSafeInteger(index) || index < 0 || index >= inventory.length
+    || typeof itemId !== 'string' || itemId.length === 0
+    || !Number.isSafeInteger(expectedCount) || Number(expectedCount) < 1) {
+    return false;
+  }
+  return inventory[index] === itemId
+    && inventory.filter(item => item === itemId).length === expectedCount;
+}
