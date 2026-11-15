@@ -911,3 +911,13 @@ PR #15 остаётся Draft/open и не объединён. Слияние б
 - No additional confirmed inventory/auction corruption defect was established in this pass. No game data, balance, inventory, or equipment behavior was changed.
 - Follow-up review target: read-only auction list/history loading accepts plain objects at the persistence boundary and should be assessed separately for response-field allowlisting and malformed legacy data presentation. Do not tighten persisted-data validation without checking real legacy compatibility.
 - Current branch HEAD remains `807b69d7cc544ea31c25dd0635ae7a82dc0708d3`; PR #18 remains Draft/open/unmerged. No local tests were run.
+
+
+## Auction read-only response hardening — 2026-11-15
+- Confirmed issue: `auctionList`, `auctionHistory` and `marketHistory` sent persisted objects directly to clients. Unknown legacy properties were therefore copied into WebSocket payloads; malformed rows could also reach client rendering and market aggregation.
+- Added explicit presentation projections for active lots and transaction history. Only the fields required by the current client are emitted; unknown fields are dropped. Malformed rows, invalid prices/currency/timestamps/fees, duplicate active lot IDs, and inconsistent transaction status/type pairs are omitted from read-only views.
+- Preserved valid legacy lot compatibility: missing lot status defaults to active, and missing display names fall back to item ID/empty seller name. This is a read-only filter only; source save/history files are never rewritten or pruned.
+- Applied projections to initial list/history requests and to list/history payloads sent after sell, cancel, and buy mutations. Personal history remains scoped to the authenticated player's seller/buyer IDs; public market history remains completed sales only.
+- Added regression tests for unknown-property stripping, malformed rows, duplicate lot IDs, status validation, and supported legacy records.
+- Commits: `32f8dd98d76bfd92ea92cb619d7e660552ae427b` (projection helpers), `c808d98f1aa51913becf6535d518d50e41b66991` (tests), `ae7b25ac34f68c4016c12a3d55b1042c179901d9` (production handlers).
+- No player saves, auction files, balances, item IDs, prices, fee formulas, or game rules were changed. Local tests were not run; await Quality Gate on the final HEAD.
