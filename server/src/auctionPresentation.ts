@@ -75,3 +75,17 @@ export function projectAuctionHistory(value: unknown): Array<{
   }
   return result;
 }
+
+/** Public analytics need sale facts only, not internal player identifiers or names. */
+export function projectPublicMarketHistory(value: unknown): Array<{
+  type: 'sold'; itemName: string; price: number; currency: 'gold' | 'crystals';
+  fee: number; createdAt: number; status: 'completed';
+}> {
+  return projectAuctionHistory(value)
+    .filter(entry => entry.type === 'sold' && entry.status === 'completed')
+    .map(entry => ({
+      type: 'sold' as const, itemName: entry.itemName, price: entry.price,
+      currency: entry.currency, fee: entry.fee, createdAt: entry.createdAt,
+      status: 'completed' as const,
+    }));
+}
