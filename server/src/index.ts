@@ -6,7 +6,7 @@ import { Server, Room, Client } from '@colyseus/core';
 import { WebSocketTransport } from '@colyseus/ws-transport';
 import { Schema, type } from '@colyseus/schema';
 import { Player } from './PlayerSchema.js';
-import { creditGold, creditCrystals, prepareGemExchange, MAX_GOLD_BALANCE, MAX_CRYSTALS_BALANCE } from './currencyOperations.js';
+import { creditGold, creditCrystals, prepareGemExchange, preparePlayerCurrencyBalances, MAX_GOLD_BALANCE, MAX_CRYSTALS_BALANCE } from './currencyOperations.js';
 import { normalizeProfession, PROFESSIONS } from './professionProfiles.js';
 import { calculatePvpCombatStats, resolvePvpSetBonuses } from './pvpCombat.js';
 import { calculateCombatSpeed } from './monsterBattle.js';
@@ -717,7 +717,7 @@ class GameRoom extends Room<RoomState> {
   onDispose() { recoverPlayerStateBeforeMutation(); applyHealthRegeneration(this.state.player); this.save(); }
   private save() { if (!this.playerId || !canSaveRoomPlayerSnapshot(ONLINE_PLAYERS.get(this.playerId), this.state.player)) return; this.state.player.lastSeenAt=Date.now(); persistPlayers([this.state.player]); }
   private notice(c: Client, text: string) { this.save(); c.send('notice', { text }); }
-  private requireCharacter(c: Client) { if(ONLINE_CLIENTS.get(this.playerId)!==c){c.leave(4021);return false;}const p=this.state.player;let capped=false;if(Number.isFinite(p.gold)&&p.gold>MAX_GOLD_BALANCE){p.gold=MAX_GOLD_BALANCE;capped=true;}if(Number.isFinite(p.crystals)&&p.crystals>MAX_CRYSTALS_BALANCE){p.crystals=MAX_CRYSTALS_BALANCE;capped=true;}if(capped)this.save();if(!p.race){this.notice(c,'Сначала создай персонажа.');return false;} return true; }
+  private requireCharacter(c: Client) { if(ONLINE_CLIENTS.get(this.playerId)!==c){c.leave(4021);return false;}const p=this.state.player;let balances;try{balances=preparePlayerCurrencyBalances(p.gold,p.crystals,p.gems);}catch{return (c.send('notice',{text:'Действие отменено: обнаружен некорректный валютный баланс. Обратись к поддержке.'}),false);}if(balances.capped){p.gold=balances.gold;p.crystals=balances.crystals;this.save();}if(!p.race){this.notice(c,'Сначала создай персонажа.');return false;} return true; }
   private addXp(p: Player, amount: number) { const progression=prepareXpProgression(p,amount,baseMaxHealth=>effectiveMaxHealth(Object.assign(Object.create(Object.getPrototypeOf(p)),p,{maxHealth:baseMaxHealth}) as Player));Object.assign(p,progression); }
   private finishCraftJobs(p: Player) { /* completed jobs stay claimable until the player collects them */ }
   private runExpeditionDungeon(c:Client,dungeon:any,requestIdRaw:unknown) {
