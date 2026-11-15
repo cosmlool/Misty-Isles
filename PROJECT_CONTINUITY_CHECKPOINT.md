@@ -868,3 +868,13 @@ PR #15 остаётся Draft/open и не объединён. Слияние б
 - Compatibility rule: never repurpose/rename an item ID without a verified migration plan. Current catalog and history are insufficient to prove the full historical ID population.
 - Forgotten Lands signatureDrop values are names; gatekeeper references are IDs. Keep those namespaces distinct.
 - No cross-reference against real player saves was possible because runtime saves are gitignored. No IDs, prices, stats, saves, or production code changed.
+
+
+## Cross-catalog identity / recipe queue audit — 2026-11-15
+- Current static snapshot: 149 original in-code item IDs + 387 new equipment IDs + 125 Forgotten Lands drop IDs = 661 unique runtime IDs with no cross-source collisions.
+- Verified all 11 static recipe outputs and 27 material references; all resolve. The 40 legendary armor items generate additional runtime recipes; required special materials FLDROP-10-10-A/B exist.
+- Forgotten Lands: 100 monsters, 10 zones, 125 drops; all monster drop IDs, drop sourceMonster IDs, monster zone IDs, dungeon boss/resource IDs, and zone gatekeeper IDs resolve. Drop chances are finite in [0,1], no duplicate drops per monster.
+- New equipment catalog contains 64 armor sets; each has exactly five required slots, unique slots, consistent profession and setBonus. All legacy set item references resolve.
+- Existing auction validation receives the combined runtime item IDs, preserving legacy IDs. New craft jobs persist a materials snapshot, allowing cancellation even when a recipe later becomes hidden because its output is legacy; if old queue entries lack both stored materials and an active recipe fallback, cancellation fails closed.
+- Confirmed integrity gap for follow-up: craftClaim only uses catalog lookup to detect unique-amulet conflicts; unknown job.output still reaches claimCraftJob and is appended to inventory. A safe fix must retain the job on rejection and cover legacy queued outputs, retired recipes, unknown IDs and unique amulets. No production change made yet.
+- No player saves were available, so historical craftQueue shape remains unverified. No IDs/data/stats/prices/saves changed; static source/data review only.
