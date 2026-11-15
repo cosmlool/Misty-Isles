@@ -197,6 +197,12 @@ test('PvP offers four saved real characters, steals 20 percent gold, persists co
     }));
     const targetBefore = challengeRecovery[targetId];
 
+    const authCheck = await fetch(`http://127.0.0.1:${port}/auth/check`, {
+      method: 'POST', headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ token }),
+    });
+    assert.equal(authCheck.status, 200, 'HTTP session verification must recover pending shared state before the next live player mutation');
+
     attackerRoom.send('pvpChallenge', { targetId: chosen.id });
     const result = await waitFor(() => results[0], 'PvP combat result');
     assert.equal(result.report.result, 'win', 'the synthetic high-stat attacker should win');
