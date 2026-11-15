@@ -119,7 +119,7 @@ test('clan war attacks enforce per-player cooldown and accumulate real damage', 
       createdAt: Date.now(), endsAt: Date.now() + 60_000,
     }], null, 2));
     writeFileSync(join(dataDir, 'clan_territories.json'), JSON.stringify([
-      { id: 'territory-runtime', owner: 'clan-a', ownerName: 'Клан А', capturedAt: 1, defense: 10 },
+      { id: 'crossroads', owner: 'clan-a', ownerName: 'Клан А', capturedAt: 1, defense: 10 },
     ], null, 2));
 
     seedGuestCredentials(dataDir);
@@ -164,7 +164,7 @@ test('clan war attacks enforce per-player cooldown and accumulate real damage', 
       ['clanDonate', { amount: 100 }],
       ['clanRaid', {}],
       ['clanSeasonReward', {}],
-      ['clanTerritoryCapture', { id: 'territory-runtime' }],
+      ['clanTerritoryCapture', { id: 'crossroads' }],
       ['clanQuestClaim', { id: 'donate' }],
       ['clanUpgrade', { upgrade: 'barracks' }],
       ['clanWarChallenge', { clanId: 'clan-b' }],
