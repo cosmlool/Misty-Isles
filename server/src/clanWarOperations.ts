@@ -96,12 +96,24 @@ export function settleExpiredClanWars(
   );
   let changed = false;
 
+  if (!Number.isSafeInteger(now) || now < 0) {
+    throw new Error('Clan war settlement time must be a nonnegative safe integer.');
+  }
+
   for (const war of nextWars) {
-    if (war.status !== 'active' || now < Number(war.endsAt || 0)) continue;
+    if (war.status !== 'active') continue;
+    if (!Number.isSafeInteger(war.endsAt) || war.endsAt < 0) {
+      throw new Error('Active clan war has an invalid end timestamp.');
+    }
+    const aDamage = Number(war.aDamage ?? 0);
+    const bDamage = Number(war.bDamage ?? 0);
+    if (!Number.isSafeInteger(aDamage) || aDamage < 0
+      || !Number.isSafeInteger(bDamage) || bDamage < 0) {
+      throw new Error('Active clan war has invalid damage counters.');
+    }
+    if (now < war.endsAt) continue;
     war.status = 'finished';
     war.finishedAt = now;
-    const aDamage = Math.max(0, Number(war.aDamage) || 0);
-    const bDamage = Math.max(0, Number(war.bDamage) || 0);
     const winnerId = aDamage === bDamage ? '' : aDamage > bDamage ? war.a : war.b;
     war.winnerId = winnerId;
     if (winnerId) {
