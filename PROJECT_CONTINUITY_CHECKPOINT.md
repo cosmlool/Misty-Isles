@@ -728,3 +728,6 @@ PR #15 остаётся Draft/open и не объединён. Слияние б
 - Кодовую авторизацию не менял. Изменён только `server/ADMIN_SETUP.md` и этот checkpoint. Требуется новый GitHub Actions Quality Gate для нового HEAD; локальные тесты не запускались.
 
 - Дополнительная проверка клиентского UI обнаружила ту же устаревшую формулировку в `client/src/main.ts`: интерфейс утверждал, что админ-панель открыта всем аккаунтам. Текст исправлен: панель может отображаться, но каждое действие авторизуется сервером по allowlist. Само наличие UI не даёт полномочий. Изменение только текста; admin transport/permission logic не менялись. Новый Quality Gate требуется для HEAD после UI-коммита.
+
+
+- Admin authorization regression coverage: added `server/test/adminAuthorizationRuntime.test.ts`, which starts an isolated real server with a server-side admin allowlist, connects two authenticated Colyseus clients, confirms the non-allowlisted player is denied even when sending forged `playerId`, `isAdmin`, and `role` payload fields, and confirms the allowlisted player's command persists while the regular player's balance remains unchanged. Added the test to `server/package.json` test script. This is test-only coverage; authorization/gameplay code was not changed. Awaiting GitHub Actions for the new HEAD; no local tests were run.
