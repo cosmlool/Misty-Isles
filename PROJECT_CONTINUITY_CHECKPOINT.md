@@ -937,3 +937,13 @@ PR #15 остаётся Draft/open и не объединён. Слияние б
 - Local tests were not run; Quality Gate required on the resulting HEAD.
 
 - Test review correction: adjusted the two overflow fixtures so the participant receiving the 20% transfer is already near `Number.MAX_SAFE_INTEGER`; this exercises the actual recipient-overflow branch rather than a valid transfer. Commit: `14dfafa41ff69a4af52b62cff0555a48800ac3d6`. Latest HEAD requires its own Quality Gate.
+
+
+## Reward issuance and currency replay audit — 2026-11-16
+- Reviewed one-time claim paths for story/faction chapters, faction max rewards, daily/weekly challenges, race daily claims, ordinary quests, and achievements. Claim flags are checked and set synchronously before reward mutation; existing live-server regression coverage exercises duplicate story/faction/daily/weekly/achievement claims. Daily login uses UTC date gating and has a runtime same-day replay test. Return reward uses its availability flag and seven-day timestamp; fountain uses a same-UTC-day timestamp guard.
+- Confirmed replay gap: `openChest` accepted missing `itemId` and missing `expectedCount` even though the client already sends both. A stale/replayed inventory index could open an adjacent stacked chest after the first one was consumed. Added `validateInventoryStackAction()` and made `openChest` require exact item ID, valid index, and positive safe-integer displayed stack count matching current inventory before consuming or rolling any reward.
+- Added regression tests for missing/mismatched fields, stale stack count, invalid/fractional/unsafe counts, invalid indices, and replay after consuming one chest from a stack. Chest odds, reward table, currency, and item behavior are unchanged.
+- Currency review: one-way `exchangeGem` is bounded to 1..100000 gems and checks balance before conversion; no external payment integration exists. Direct economy counter arithmetic in other gameplay reward handlers remains a separate hardening scope; no blanket legacy save coercion applied.
+- Detailed report: `REWARD_ISSUANCE_AUDIT.md`.
+- Commits: `47cb3966bb90db85b26c2b1ce43715f2f904a9f4` (snapshot validator), `87452f290b829e1961fc11b81e700a47038a62c9` (openChest handler), `b57c96b759ce7004908603ba617e2722b8b1ffc8` (tests), `ef2174e00bf9ac2989a28dfca55e85c56b5f7e16` (audit report).
+- Local tests were not run; Quality Gate required on final HEAD.
