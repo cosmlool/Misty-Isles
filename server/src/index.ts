@@ -11,7 +11,6 @@ import { calculatePvpCombatStats, resolvePvpSetBonuses } from './pvpCombat.js';
 import { calculateCombatSpeed } from './monsterBattle.js';
 import { calculatePlayerMonsterCombatStats, parseMonsterCombatEffectClauses, resolveEquipmentSetCombatEffects, resolveEquipmentSetTierDescriptions, resolveGoldEquipmentStatProfile, resolveMonsterCombatProperty, resolvePlayerMonsterLifestealRate, resolveMonsterPendantCombatEffect } from './monsterCombatStats.js';
 import { applyPlayerSave, createPlayerSaveStore } from './playerSaves.js';
-import { writeJsonFileAtomic } from './atomicJsonPersistence.js';
 import { startPlayerAutosave } from './playerAutosave.js';
 import { canSaveRoomPlayerSnapshot, isCurrentRoomSession } from './playerSessionOwnership.js';
 import { readJsonFile as readPersistentJson } from './jsonPersistence.js';
@@ -98,6 +97,9 @@ const sharedStateTransactions = createSharedStateTransactionStore({
     huntGroups: HUNT_GROUP_FILE,
     dungeonRuns: DUNGEON_RUN_FILE,
     dungeonOutbox: DUNGEON_OUTBOX_FILE,
+    accounts: ACCOUNT_FILE,
+    sessions: SESSION_FILE,
+    guestCredentials: GUEST_CREDENTIAL_FILE,
   },
 });
 // One recovery gate handles legacy migration and the shared WAL. If both legacy
@@ -513,23 +515,23 @@ type SessionRecord = { tokenHash:string; playerId:string; accountKey:string|null
 const AUTH_SESSION_MS = 30 * 24 * 60 * 60 * 1000;
 const AUTH_RATE_WINDOW_MS=15*60*1000;const AUTH_RATE_LIMIT=10;const AUTH_ATTEMPTS=new Map<string,{count:number;resetAt:number}>();let authRateOps=0;
 function allowAuthAttempt(ip:string){const now=Date.now();let entry=AUTH_ATTEMPTS.get(ip);if(!entry||entry.resetAt<=now){entry={count:0,resetAt:now+AUTH_RATE_WINDOW_MS};AUTH_ATTEMPTS.set(ip,entry);}entry.count++;if(++authRateOps%100===0){for(const [key,value] of AUTH_ATTEMPTS)if(value.resetAt<=now)AUTH_ATTEMPTS.delete(key);if(AUTH_ATTEMPTS.size>10000){const oldest=Array.from(AUTH_ATTEMPTS.entries()).sort((a,b)=>a[1].resetAt-b[1].resetAt).slice(0,AUTH_ATTEMPTS.size-10000);for(const [key] of oldest)AUTH_ATTEMPTS.delete(key);}}return entry.count<=AUTH_RATE_LIMIT;}
-/** Write a complete JSON snapshot to a sibling temp file, then atomically replace the target.
- * This protects existing saves from being truncated if the process stops during serialization/write.
- * It does not remove synchronous-I/O latency; database migration/load testing remain separate work.
- */
-function writeJsonAtomic(file:string,value:unknown) { writeJsonFileAtomic(file,value); }
 function isPlainObject(value:any):value is Record<string,any>{return !!value&&typeof value==='object'&&!Array.isArray(value);}
 function loadAccounts():AccountRecord[] { return readPersistentJson<AccountRecord[]>(ACCOUNT_FILE,[],value=>Array.isArray(value)&&value.every((x:any)=>isPlainObject(x)&&typeof x.username==='string'&&typeof x.usernameKey==='string'&&typeof x.playerId==='string'&&typeof x.salt==='string'&&typeof x.passwordHash==='string'&&Number.isFinite(x.createdAt))); }
-function saveAccounts(value:AccountRecord[]) { writeJsonAtomic(ACCOUNT_FILE,value); }
 function loadSessions():SessionRecord[] { return readPersistentJson<SessionRecord[]>(SESSION_FILE,[],value=>Array.isArray(value)&&value.every((x:any)=>isPlainObject(x)&&typeof x.tokenHash==='string'&&typeof x.playerId==='string'&&(x.accountKey===null||typeof x.accountKey==='string')&&Number.isFinite(x.expiresAt))); }
-function saveSessions(value:SessionRecord[]) { writeJsonAtomic(SESSION_FILE,value); }
 type GuestCredentialRecord = { playerId:string; tokenHash:string; createdAt:number };
 function loadGuestCredentials():GuestCredentialRecord[] { return readPersistentJson<GuestCredentialRecord[]>(GUEST_CREDENTIAL_FILE,[],value=>Array.isArray(value)&&value.every((x:any)=>isPlainObject(x)&&typeof x.playerId==='string'&&typeof x.tokenHash==='string'&&Number.isFinite(x.createdAt))); }
-function saveGuestCredentials(value:GuestCredentialRecord[]) { writeJsonAtomic(GUEST_CREDENTIAL_FILE,value); }
 function tokenDigest(token:string) { return createHash('sha256').update(token).digest('hex'); }
-function issueGuestCredential(playerId:string) { const proof=randomBytes(32).toString('hex');const records=loadGuestCredentials().filter(x=>x.playerId!==playerId);records.push({playerId,tokenHash:tokenDigest(proof),createdAt:Date.now()});saveGuestCredentials(records);return proof; }
+function issueGuestCredential(playerId:string) {
+  const proof=randomBytes(32).toString('hex');
+  sharedStateRuntime.transact(()=>{const records=loadGuestCredentials().filter(x=>x.playerId!==playerId);records.push({playerId,tokenHash:tokenDigest(proof),createdAt:Date.now()});return {files:{guestCredentials:records},result:undefined};});
+  return proof;
+}
 function verifyGuestCredential(playerId:string,proof:string) { if(!proof||proof.length>256)return false;const record=loadGuestCredentials().find(x=>x.playerId===playerId);if(!record)return false;const actual=Buffer.from(tokenDigest(proof),'hex');const expected=Buffer.from(record.tokenHash,'hex');return actual.length===expected.length&&timingSafeEqual(actual,expected); }
-function issueSession(playerId:string, accountKey:string|null) { const token=randomBytes(32).toString('hex'); const sessions=loadSessions().filter(x=>x.expiresAt>Date.now()); sessions.push({tokenHash:tokenDigest(token),playerId,accountKey,expiresAt:Date.now()+AUTH_SESSION_MS}); saveSessions(sessions); return token; }
+function issueSession(playerId:string, accountKey:string|null) {
+  const token=randomBytes(32).toString('hex');
+  sharedStateRuntime.transact(()=>{const sessions=loadSessions().filter(x=>x.expiresAt>Date.now());sessions.push({tokenHash:tokenDigest(token),playerId,accountKey,expiresAt:Date.now()+AUTH_SESSION_MS});return {files:{sessions},result:undefined};});
+  return token;
+}
 function verifySession(token:string):SessionRecord|null { if(!token||token.length>256)return null;const hash=tokenDigest(token);const sessions=loadSessions();const session=sessions.find(x=>x.tokenHash===hash&&x.expiresAt>Date.now());if(!session)return null;const account=loadAccounts().find(x=>x.playerId===session.playerId);if(session.accountKey===null?Boolean(account):!account||account.usernameKey!==session.accountKey)return null;return session; }
 function publicPlayerCode(id:string) { return createHash('sha256').update(`MistyIslesPublic:${id}`).digest('hex').slice(0,24); }
 function resolvePublicPlayerCode(code:string, players:Record<string,any>=loadPlayers()) { for(const [id,online] of ONLINE_PLAYERS)players[id]=online.toJSON();const key=String(code||'');return Object.keys(players).find(id=>publicPlayerCode(id)===key)||''; }
@@ -575,12 +577,26 @@ function authHttpHandler(req:IncomingMessage,res:ServerResponse) {
         const username=String(d.username||'').trim();const usernameKey=username.toLocaleLowerCase('en-US');const password=String(d.password||'');
         if(!/^[A-Za-z0-9_-]{3,20}$/.test(username)){sendJson(res,400,{error:'Логин: 3–20 символов, латинские буквы, цифры, _ или -.'});return;}
         if(password.length<8||password.length>128){sendJson(res,400,{error:'Пароль должен содержать от 8 до 128 символов.'});return;}
-        const accounts=loadAccounts();if(accounts.some(a=>a.usernameKey===usernameKey)){sendJson(res,409,{error:'Такой логин уже занят.'});return;}
-        const guestId=d.playerId?String(d.playerId):'';const guestProof=String(d.guestProof||'');
-        if(guestId&&!verifyGuestCredential(guestId,guestProof)){sendJson(res,401,{error:'Не удалось подтвердить гостевого персонажа. Войди в гостевой режим и повтори.'});return;}
-        const existing=accounts.find(a=>a.playerId===guestId);if(existing){sendJson(res,409,{error:'Этот персонаж уже привязан к другому аккаунту.'});return;}
-        const playerId=guestId||`acct_${randomBytes(12).toString('hex')}`;const salt=randomBytes(16).toString('hex');const passwordHash=scryptSync(password,salt,64).toString('hex');
-        accounts.push({username,usernameKey,playerId,salt,passwordHash,createdAt:Date.now()});saveAccounts(accounts);if(guestId){saveGuestCredentials(loadGuestCredentials().filter(x=>x.playerId!==playerId));saveSessions(loadSessions().filter(x=>x.playerId!==playerId));}const token=issueSession(playerId,usernameKey);sendJson(res,201,{ok:true,playerId,token,username});return;
+        const guestId=d.playerId?String(d.playerId):'';
+        const guestProof=String(d.guestProof||'');
+        const playerId=guestId||`acct_${randomBytes(12).toString('hex')}`;
+        const salt=randomBytes(16).toString('hex');
+        const passwordHash=scryptSync(password,salt,64).toString('hex');
+        const token=randomBytes(32).toString('hex');
+        const registration=sharedStateRuntime.transact(()=>{
+          const accounts=loadAccounts();
+          if(accounts.some(a=>a.usernameKey===usernameKey))return {files:{},result:{status:409,error:'Такой логин уже занят.'},skipWrite:true};
+          if(guestId&&!verifyGuestCredential(guestId,guestProof))return {files:{},result:{status:401,error:'Не удалось подтвердить гостевого персонажа. Войди в гостевой режим и повтори.'},skipWrite:true};
+          if(accounts.some(a=>a.playerId===playerId))return {files:{},result:{status:409,error:'Этот персонаж уже привязан к другому аккаунту.'},skipWrite:true};
+          const nextAccounts=[...accounts,{username,usernameKey,playerId,salt,passwordHash,createdAt:Date.now()}];
+          const nextSessions=loadSessions().filter(x=>x.expiresAt>Date.now()&&(!guestId||x.playerId!==playerId));
+          nextSessions.push({tokenHash:tokenDigest(token),playerId,accountKey:usernameKey,expiresAt:Date.now()+AUTH_SESSION_MS});
+          const files:any={accounts:nextAccounts,sessions:nextSessions};
+          if(guestId)files.guestCredentials=loadGuestCredentials().filter(x=>x.playerId!==playerId);
+          return {files,result:{status:201,playerId,token,username}};
+        });
+        if(registration.status!==201){sendJson(res,registration.status,{error:registration.error});return;}
+        sendJson(res,201,{ok:true,playerId:registration.playerId,token:registration.token,username});return;
       }
       if(path==='/auth/login'){
         const usernameKey=String(d.username||'').trim().toLocaleLowerCase('en-US');const password=String(d.password||'');const account=loadAccounts().find(a=>a.usernameKey===usernameKey);
@@ -591,7 +607,7 @@ function authHttpHandler(req:IncomingMessage,res:ServerResponse) {
         const session=verifySession(String(d.token||''));if(!session){sendJson(res,401,{error:'Сессия истекла. Войди снова.'});return;}sendJson(res,200,{ok:true,playerId:session.playerId});return;
       }
       if(path==='/auth/logout'){
-        const token=String(d.token||'');const session=verifySession(token);if(!session){sendJson(res,401,{error:'Сессия не найдена или истекла.'});return;}const hash=tokenDigest(token);saveSessions(loadSessions().filter(x=>x.tokenHash!==hash));if(ONLINE_SESSION_HASHES.get(session.playerId)===hash)ONLINE_CLIENTS.get(session.playerId)?.leave(4021);sendJson(res,200,{ok:true});return;
+        const token=String(d.token||'');const session=verifySession(token);if(!session){sendJson(res,401,{error:'Сессия не найдена или истекла.'});return;}const hash=tokenDigest(token);sharedStateRuntime.transact(()=>({files:{sessions:loadSessions().filter(x=>x.tokenHash!==hash)},result:undefined}));if(ONLINE_SESSION_HASHES.get(session.playerId)===hash)ONLINE_CLIENTS.get(session.playerId)?.leave(4021);sendJson(res,200,{ok:true});return;
       }
       sendJson(res,404,{error:'Неизвестный запрос.'});
     } catch { sendJson(res,400,{error:'Не удалось обработать запрос.'}); }
