@@ -117,3 +117,27 @@ test('disbanding a clan cancels its active wars and releases its territories', (
   assert.deepEqual(result.territories[0], { id: 'isle-a', owner: '', ownerName: '', capturedAt: 0, defense: 0 });
   assert.equal(result.territories[1].owner, 'clan-b');
 });
+
+
+test('clan war settlement rejects vault and progression counter overflow without mutating source state', () => {
+  const wars = [activeWar({ aDamage: 200, bDamage: 100 })];
+  const clans = {
+    'clan-a': { level: 1, vault: Number.MAX_SAFE_INTEGER, seasonPoints: 0, questProgress: { war: 0 } },
+    'clan-b': { level: 1, vault: 0, seasonPoints: 0, questProgress: { war: 0 } },
+  };
+  assert.throws(() => settleExpiredClanWars(wars, clans, 10_000), /safe-integer|safe integer/i);
+  assert.equal(wars[0].status, 'active');
+  assert.equal(clans['clan-a'].vault, Number.MAX_SAFE_INTEGER);
+  assert.equal(clans['clan-a'].seasonPoints, 0);
+});
+
+test('clan war damage accumulation rejects unsafe legacy counters and overflow', () => {
+  assert.throws(() => recordClanWarDamage(
+    activeWar({ aDamage: Number.MAX_SAFE_INTEGER }),
+    'clan-a', 'player-a', 1, 1_000,
+  ), /safe integer/i);
+  assert.throws(() => recordClanWarDamage(
+    activeWar({ aDamage: 1.5 }),
+    'clan-a', 'player-a', 1, 1_000,
+  ), /safe integer/i);
+});
