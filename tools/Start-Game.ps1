@@ -56,7 +56,7 @@ Say 'Запускаю сервер Colyseus...'
 $serverProc = Start-Process -FilePath $env:ComSpec -ArgumentList @('/k', $serverCmd) -WorkingDirectory (Join-Path $Root 'server') -PassThru
 Start-Sleep -Seconds 2
 if ($serverProc.HasExited) { $env:MISTY_SHUTDOWN_TOKEN = $null; Remove-Item $stateFile -Force -ErrorAction SilentlyContinue; Fail 'Окно сервера завершилось сразу после запуска. Посмотрите сообщение в окне сервера.' }
-@{ serverPid = $serverProc.Id; clientPid = $null; serverPort = $serverPort; shutdownToken = $shutdownToken; startedAt = (Get-Date).ToString('o'); root = $Root } | ConvertTo-Json | Set-Content -Encoding UTF8 $stateFile
+@{ serverPid = $serverProc.Id; clientPid = $null; serverPort = $serverPort; dataDir = $env:MISTY_DATA_DIR; shutdownToken = $shutdownToken; startedAt = (Get-Date).ToString('o'); root = $Root } | ConvertTo-Json | Set-Content -Encoding UTF8 $stateFile
 Say 'Ожидаю сервер на порту 2567 (до 45 секунд)...'
 $ready = $false
 for ($i=0; $i -lt 45; $i++) {
