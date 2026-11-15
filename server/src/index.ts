@@ -139,8 +139,8 @@ function restoreHuntGroupsFromDisk(){
 restoreHuntGroupsFromDisk();
 function persistHuntGroups(players:Player[]=[],playerQuestOverrides:Record<string,string>={}){
   try{
-    sharedStateRuntime.transact((recovered)=>{
-      if(recovered)throw new Error('Shared state was recovered during a group mutation; retry the action.');
+    sharedStateRuntime.transactWithRecovery((recovery)=>{
+      if(recovery.recovered)throw new Error('Shared state was recovered during a group mutation; retry the action.');
       for(const online of ONLINE_PLAYERS.values())normalizePlayerProfessionData(online);
       const all=loadPlayers();
       for(const player of Object.values(all))normalizePlayerProfessionData(player);
