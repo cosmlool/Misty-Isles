@@ -128,7 +128,7 @@ test('local shutdown saves online players, releases the data lock, and blocks a 
     assert.equal(players[guest.playerId]?.name, 'ShutdownSaveHero');
     assert.equal(players[guest.playerId]?.race, 'Кот');
   } finally {
-    if (room) await room.leave().catch(() => undefined);
+    if (room) await Promise.race([room.leave().catch(() => undefined), delay(500)]);
     await stopServer(second);
     await stopServer(child);
     rmSync(dataDir, { recursive: true, force: true });
