@@ -615,3 +615,14 @@ PR #15 остаётся Draft/open и не объединён. Слияние б
 
 - Regression coverage дополнена: `server/test/pvpRuntime.test.ts` теперь отдельно создаёт pending shared WAL перед HTTP `/auth/check`, а затем выполняет PvP mutation. Проверка баланса после боя подтверждает, что HTTP-triggered recovery синхронизировал живого атакующего, а не позволил stale in-memory gold перезаписать восстановленные 888 золота. Предыдущий этап этого теста по-прежнему проверяет recovery, инициированный непосредственно WebSocket `pvpList`.
 - Текущий regression coverage commit: `b9de76ba5a568c21bd202195de44b5f32a2b8302`. Требуется CI на актуальном HEAD.
+
+
+## Разделение recovery player-state и auth-only WAL — 2026-11-15
+
+- Дополнительный аудит выявил, что синхронизация `ONLINE_PLAYERS` после любого recovery слишком широка: новые auth-only journals могут затрагивать только `accounts`, `sessions` или `guestCredentials`. Перечитывание `players.json` в таком случае способно отбросить ещё не сохранённые изменения живых Player objects.
+- `server/src/sharedStateTransactions.ts` теперь предоставляет `hasPendingPlayers()`: метод проверяет и валидирует pending shared journal до replay и определяет, содержит ли он target `players`.
+- `server/src/sharedStateRuntime.ts` различает `recoverPendingState()` (любой recovery) и `recoverPendingPlayerState()` (recovery, который действительно заменил player snapshot). Callback аргументы `transact`, `commitAuction` и `commitClan` теперь означают именно `playersRecovered`; legacy auction/clan journals всегда учитываются как player recovery.
+- Auth HTTP, `verifySession`, общий player-mutation recovery и persistence-failure reconciliation синхронизируют live players только при восстановлении player target. Auth-only recovery больше не должен обновлять Player objects со старых disk snapshots.
+- Добавлен regression test: auth-only journal recovery сообщает `playersRecovered=false` и сохраняет существующий player snapshot; отдельный pending journal с `players` сообщает `true` и replay-ит player state.
+- Коммиты этой корректировки: `3d2c3b1aec8aed2f2d837228d934bb862263c54e` (shared WAL target inspection), `f8b0d679d3211fb2afd40ebc5e92f7325b1d3621` (runtime recovery semantics), `cba57b095eddf1e378be75e433f58fbbe8ea5300` (server integration), `fcf691c7854886139bc7040f70134cd2210a39f4` (regression test).
+- Требуется новый Quality Gate на текущем HEAD; предыдущие запуски отменены/устарели после новых commits и не подтверждают эту корректировку.
