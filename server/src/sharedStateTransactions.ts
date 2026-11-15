@@ -178,6 +178,18 @@ export function createSharedStateTransactionStore(options: Options) {
     return true;
   }
 
+  function hasPendingPlayers(): boolean {
+    if (!existsSync(journalFile)) return false;
+    let parsed: unknown;
+    try {
+      parsed = JSON.parse(readFileSync(journalFile, 'utf8'));
+    } catch (error) {
+      throw new Error(`Shared-state transaction journal is unreadable; refusing all writes: ${String(error)}`);
+    }
+    validateJournal(parsed);
+    return Object.prototype.hasOwnProperty.call(parsed.files, 'players');
+  }
+
   function transact<T>(prepareAfterRecovery: () => { files: SharedStateSnapshot; result: T; skipWrite?: boolean }): T {
     // Critical ordering: no snapshot is prepared until all prior committed
     // transactions have been replayed successfully.
@@ -209,5 +221,5 @@ export function createSharedStateTransactionStore(options: Options) {
     return prepared.result;
   }
 
-  return { transact, recover, journalFile };
+  return { transact, recover, hasPendingPlayers, journalFile };
 }
