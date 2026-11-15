@@ -267,13 +267,13 @@ test('finalization recovers after every shared-WAL write boundary', () => {
       const runtimeModule = new URL('../src/sharedStateRuntime.ts', import.meta.url).href;
       const stateModule = new URL('../src/dungeonRunState.ts', import.meta.url).href;
       const finalizationModule = new URL('../src/dungeonRunFinalizationRuntime.ts', import.meta.url).href;
-      const childScript = \`
-        import { createSharedStateTransactionStore } from \${JSON.stringify(transactionModule)};
-        import { createSharedStateRuntime } from \${JSON.stringify(runtimeModule)};
-        import { createDungeonRunRecord, createDungeonRoundPlan } from \${JSON.stringify(stateModule)};
-        import { commitDungeonRunFinalization } from \${JSON.stringify(finalizationModule)};
-        const dataDir = \${JSON.stringify(dataDir)};
-        const files = \${JSON.stringify(files)};
+      const childScript = `
+        import { createSharedStateTransactionStore } from ${JSON.stringify(transactionModule)};
+        import { createSharedStateRuntime } from ${JSON.stringify(runtimeModule)};
+        import { createDungeonRunRecord, createDungeonRoundPlan } from ${JSON.stringify(stateModule)};
+        import { commitDungeonRunFinalization } from ${JSON.stringify(finalizationModule)};
+        const dataDir = ${JSON.stringify(dataDir)};
+        const files = ${JSON.stringify(files)};
         const base = createDungeonRunRecord({
           runId: 'run_finalize_matrix', requestId: 'request_finalize_matrix', dungeonId: 'dungeon_20',
           groupId: 'group_1', leaderId: 'p1',
@@ -299,7 +299,7 @@ test('finalization recovers after every shared-WAL write boundary', () => {
           runId: run.runId, playerId: 'p1', messageType: 'combatResult',
           payload: { requestId: run.requestId, text: 'Dungeon complete', report: { result: 'win' } },
         };
-        const boundary = \${JSON.stringify(boundary.name)};
+        const boundary = ${JSON.stringify(boundary.name)};
         const store = createSharedStateTransactionStore({
           dataDir, files,
           testHooks: {
@@ -315,7 +315,7 @@ test('finalization recovers after every shared-WAL write boundary', () => {
           outcome: 'win', players, runs: { [run.runId]: run }, now: 300, events: [event],
         });
         process.exit(0);
-      \`;
+      `;
       const child = spawnSync(process.execPath, ['--import', 'tsx', '--input-type=module', '-e', childScript], {
         cwd: process.cwd(), encoding: 'utf8', timeout: 10_000,
       });
