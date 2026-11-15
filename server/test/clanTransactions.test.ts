@@ -4,7 +4,7 @@ import { spawnSync } from 'node:child_process';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import test from 'node:test';
-import { createClanTransactionStore, prepareClanVaultCredit, prepareClanVaultDebit, type ClanTransactionSnapshot } from '../src/clanTransactions.js';
+import { createClanTransactionStore, prepareClanVaultCredit, prepareClanVaultDebit, prepareClanProgressCredit, type ClanTransactionSnapshot } from '../src/clanTransactions.js';
 
 function fixture() {
   const dataDir = mkdtempSync(join(tmpdir(), 'misty-clan-transaction-'));
@@ -148,5 +148,18 @@ test('clan vault debits reject malformed balances and insufficient funds', () =>
   assert.throws(() => prepareClanVaultDebit(100, 101));
   for (const value of [-1, 1.5, Number.NaN, Number.POSITIVE_INFINITY]) {
     assert.throws(() => prepareClanVaultDebit(value, 1));
+  }
+});
+
+
+test('clan progression credits preserve safe integers without balance caps', () => {
+  assert.equal(prepareClanProgressCredit(500, 250, 'experience'), 750);
+  assert.equal(prepareClanProgressCredit(Number.MAX_SAFE_INTEGER - 1, 1), Number.MAX_SAFE_INTEGER);
+  assert.throws(() => prepareClanProgressCredit(Number.MAX_SAFE_INTEGER, 1), /safe integer/i);
+  for (const value of [-1, 1.5, Number.NaN, Number.POSITIVE_INFINITY, Number.MAX_SAFE_INTEGER + 1]) {
+    assert.throws(() => prepareClanProgressCredit(value, 1), /safe integer/i);
+  }
+  for (const amount of [-1, 1.5, Number.NaN, Number.POSITIVE_INFINITY, Number.MAX_SAFE_INTEGER + 1]) {
+    assert.throws(() => prepareClanProgressCredit(0, amount), /safe integer/i);
   }
 });
