@@ -153,6 +153,34 @@ test('recovery after a simulated disconnect restores both players and the auctio
   } finally { f.cleanup(); }
 });
 
+test('listing rejects an overflowing gold-spent counter without changing the input snapshot', () => {
+  const start = initial();
+  start.players.seller.goldSpent = Number.MAX_SAFE_INTEGER;
+  assert.throws(() => listAuctionItem({ snapshot: start, sellerId: 'seller', index: 0, price: 500,
+    currency: 'gold', validItemIds: itemIds, itemName: 'Iron sword', now: 10, lotId: 'overflow-list' }),
+    /counter would exceed/);
+  assert.equal(start.players.seller.gold, 1000);
+  assert.equal(JSON.parse(start.players.seller.inventory).length, 2);
+});
+
+test('purchase rejects overflowing recipient currency and counters atomically', () => {
+  const base = listAuctionItem({ snapshot: initial(), sellerId: 'seller', index: 0, price: 500,
+    currency: 'gold', validItemIds: itemIds, itemName: 'Iron sword', now: 10, lotId: 'overflow-buy' }).snapshot;
+  const sellerOverflow = structuredClone(base);
+  sellerOverflow.players.seller.gold = Number.MAX_SAFE_INTEGER - 100;
+  assert.throws(() => buyAuctionItem({ snapshot: sellerOverflow, buyerId: 'buyer', lotId: 'overflow-buy',
+    validItemIds: itemIds, now: 20 }), /currency balance would exceed/);
+  assert.equal(sellerOverflow.players.buyer.gold, 2000);
+  assert.equal(sellerOverflow.auction.length, 1);
+
+  const counterOverflow = structuredClone(base);
+  counterOverflow.players.seller.itemsSold = Number.MAX_SAFE_INTEGER;
+  assert.throws(() => buyAuctionItem({ snapshot: counterOverflow, buyerId: 'buyer', lotId: 'overflow-buy',
+    validItemIds: itemIds, now: 20 }), /counter would exceed/);
+  assert.equal(counterOverflow.players.buyer.gold, 2000);
+  assert.equal(counterOverflow.auction.length, 1);
+});
+
 test('malformed lot data is rejected before any player balance or inventory changes', () => {
   const broken = initial();
   broken.auction.push({ id: 'bad', itemId: 'iron_sword', sellerId: 'seller', price: -10, currency: 'gold', status: 'active' } as any);
