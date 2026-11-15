@@ -21,7 +21,7 @@ import { purchaseResurrectionScroll, RESURRECTION_SCROLL_ID } from './resurrecti
 import { readPlayerArray as readArray, readPlayerObject as readObject } from './playerJson.js';
 import { createAuctionTransactionStore } from './auctionTransactions.js';
 import { projectAuctionHistory, projectAuctionLots, projectPublicMarketHistory } from './auctionPresentation.js';
-import { createClanTransactionStore } from './clanTransactions.js';
+import { createClanTransactionStore, prepareClanVaultCredit, prepareClanVaultDebit } from './clanTransactions.js';
 import { createSharedStateTransactionStore } from './sharedStateTransactions.js';
 import { createSharedStateRuntime } from './sharedStateRuntime.js';
 import { validateDungeonRunStore, type DungeonRunRecord } from './dungeonRunState.js';
@@ -950,7 +950,7 @@ class GameRoom extends Room<RoomState> {
         const clan=clans[p.clan];
         if(!clan)return {error:'Клан не найден.'};
         if(!isClanMember(clan,this.playerId))return {error:'Персонаж не состоит в этом клане.'};
-        p.gold-=amount;p.goldSpent+=amount;clan.vault+=amount;clan.xp+=Math.floor(amount/100);
+        p.gold-=amount;p.goldSpent+=amount;clan.vault=prepareClanVaultCredit(clan.vault??0,amount);clan.xp+=Math.floor(amount/100);
         ensureClanQuests(clan);clan.questProgress=clan.questProgress||{};
         clan.questProgress.donate=(clan.questProgress.donate||0)+amount;
         clan.seasonPoints=Number(clan.seasonPoints||0)+Math.floor(amount/1000);
@@ -979,7 +979,7 @@ class GameRoom extends Room<RoomState> {
           const territoryBonus=1+ownedTerritories.length*.03;
           const treasuryBonus=1+Number((clan.upgrades||{}).treasury||0)*.03;
           const finalGold=Math.floor(gold*territoryBonus*treasuryBonus);
-          clan.vault+=finalGold;
+          clan.vault=prepareClanVaultCredit(clan.vault??0,finalGold);
           const receivedCrystals=ownedTerritories.some((t:any)=>t.id==='crystalcourt');
           if(receivedCrystals)p.crystals=creditCrystals(p.crystals,2).balance;
           clan.xp+=10+clan.level*3;ensureClanQuests(clan);
@@ -1030,7 +1030,7 @@ class GameRoom extends Room<RoomState> {
         if(level>=5)return {error:`${spec.name} уже достигла 5 уровня.`};
         const cost=spec.base*(level+1);
         if(Number(clan.vault||0)<cost)return {error:`В казне недостаточно золота. Нужно ${cost}.`};
-        clan.vault-=cost;clan.upgrades[id]=level+1;
+        clan.vault=prepareClanVaultDebit(clan.vault??0,cost);clan.upgrades[id]=level+1;
         return {name:spec.name,level:level+1,cost};
       });
       if(typeof result.error==='string')return this.notice(c,result.error);
@@ -1050,7 +1050,7 @@ class GameRoom extends Room<RoomState> {
         if(now-Number(clan.lastTerritoryCaptureAt||0)<6*60*60*1000)return {error:`Новая экспедиция доступна через ${Math.ceil((6*60*60*1000-(now-Number(clan.lastTerritoryCaptureAt||0)))/3600000)} ч.`};
         const cost=1000+Number(t.level||1)*750;
         if(Number(clan.vault||0)<cost)return {error:`В клановой казне нужно ${cost} золота.`};
-        clan.vault-=cost;clan.lastTerritoryCaptureAt=now;
+        clan.vault=prepareClanVaultDebit(clan.vault??0,cost);clan.lastTerritoryCaptureAt=now;
         const upgrades=clan.upgrades||{};
         const strength=Number(clan.level||1)*5+clan.members.length*3+Number(p.level||1)*(1+activeBuffValue(p,'attack',now)+activeBuffValue(p,'crit',now)*.5)+Number(p.defense||0)*.1*activeBuffValue(p,'defense',now)+rand(0,20)+Number(upgrades.barracks||0)*2;
         const defense=Number(t.defense||0)||Number(t.level||1)*12+rand(0,20);
@@ -1083,7 +1083,7 @@ class GameRoom extends Room<RoomState> {
         if(q.progress<q.goal)return {error:'Общая цель клана ещё не выполнена.'};
         const upgrades=clan.upgrades||{};
         const reward=Math.floor((1000+Number(clan.level||1)*250)*(1+Number(upgrades.treasury||0)*.03));
-        q.claimed=true;clan.vault=Number(clan.vault||0)+reward;
+        clan.vault=prepareClanVaultCredit(clan.vault??0,reward);q.claimed=true;
         clan.xp=Number(clan.xp||0)+20;clan.seasonPoints=Number(clan.seasonPoints||0)+15;
         return {reward};
       });
@@ -1103,7 +1103,7 @@ class GameRoom extends Room<RoomState> {
           .sort((a:any,b:any)=>b.seasonPoints-a.seasonPoints||b.territories-a.territories);
         const rank=board.findIndex((x:any)=>x.id===clan.id)+1;
         const reward=rank===1?5000:rank<=3?2500:1000;
-        clan.vault=Number(clan.vault||0)+reward;clan.lastSeasonRewardWeek=week;
+        clan.vault=prepareClanVaultCredit(clan.vault??0,reward);clan.lastSeasonRewardWeek=week;
         return {rank,reward};
       });
       if(typeof result.error==='string')return this.notice(c,result.error);
