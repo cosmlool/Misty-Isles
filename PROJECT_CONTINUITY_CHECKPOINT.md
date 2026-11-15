@@ -974,3 +974,16 @@ PR #15 остаётся Draft/open и не объединён. Слияние б
   - 362c136f43069fecb72cde99e9ce4f638ec08b10 — привести PvP legacy-cap test assertions к фактическому правилу 20%-ного перевода после cap.
 - Следующий HEAD проверить через PR #18 / branch; запущенный на него Quality Gate обязателен. Локальные тесты не запускались. Не считать исправление подтверждённым до CI.
 - PR #18 остаётся Draft/open, merged=false. Не сливать без отдельного разрешения.
+
+
+## Currency transaction hardening and auction typecheck correction — 2026-11-16
+
+- Quality Gate run 43763965444 on HEAD d7308dc failed at the server TypeScript compile step. All 437 server tests passed; client build, Playwright, and data/docs jobs passed. Compiler identified that validated auction presentation values had widened to `string` rather than the declared literal unions.
+- Fixed `projectAuctionLots` and `projectAuctionHistory` to preserve the validated currency/status literal-union types. Commit: `0232d1e688612d3f3c1f5e9c955d75f1a5f01e36`.
+- Extended the currency audit beyond credit paths. Confirmed that `exchangeGem` debited gems before validating the crystal balance; because the authenticated message wrapper does not roll back arbitrary in-memory handler mutations on thrown exceptions, a malformed legacy crystal balance could leave a partial debit in the live Player snapshot.
+- Added pure `prepareGemExchange`: it validates the gem balance and computes the capped crystal credit before either balance is assigned. The handler now commits both prepared balances only after validation succeeds, and the response reports crystals actually credited plus burned overflow. Exchange rate remains 1 gem → 10 crystals; existing request amount bounds remain unchanged.
+- Added `preparePlayerCurrencyBalances` and integrated it into `requireCharacter`. Every character-gated gameplay action now rejects negative, fractional, non-finite, or unsafe in-cap gold/crystal balances and invalid gem balances before entering its handler. Finite over-cap legacy gold/crystal balances are still lazily clamped to the approved caps and saved; no bulk migration or save rewrite was introduced. This also protects direct currency spending paths from malformed legacy snapshots.
+- Added regression tests for atomic gem exchange preparation, invalid crystal/gem balances, burned crystal overflow, legacy cap normalization, and malformed balance rejection.
+- Commits: `62497c415baed43ad6114fe27c28f5c36d9a1528`, `3f516abf7a601fa9d5a0c9a7f8f91913222c77ec`, `fffdacdeb0ddb3380e9ddae7f89f383242c8e285`, `f7bc3a7cb067a75633355277d1ba42bad12a7b39`, `63b9eea0ce65b82a327097d2bfcd3c2b50a39db7`, `7a26e579aa20873c157e8ec34c5b835e3ed0cba1`.
+- Quality Gate runs 43764923020 (push) and 43764921963 (pull_request) are pending/in progress for the evolving branch; final validation must use the final HEAD after all commits. Local tests were not run.
+- PR #18 remains Draft/open/unmerged. No changes to `main`, game balance formulas, or existing save files.
