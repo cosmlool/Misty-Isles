@@ -1,6 +1,6 @@
 import { createServer, type IncomingMessage, type ServerResponse } from 'http';
 import { createHash, randomBytes, scryptSync, timingSafeEqual } from 'crypto';
-import { existsSync, mkdirSync, readFileSync, renameSync, unlinkSync, writeFileSync } from 'fs';
+import { existsSync, mkdirSync, readFileSync } from 'fs';
 import { isAbsolute, join, resolve } from 'path';
 import { Server, Room, Client } from '@colyseus/core';
 import { WebSocketTransport } from '@colyseus/ws-transport';
