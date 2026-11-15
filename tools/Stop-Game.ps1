@@ -23,12 +23,12 @@ try {
     try {
       $null = Invoke-RestMethod -Uri "http://127.0.0.1:$serverPort/internal/shutdown" -Method Post -Headers @{ 'X-Misty-Shutdown-Token' = [string]$state.shutdownToken } -TimeoutSec 5
       Write-Host 'Запрошено штатное завершение сервера. Ожидаю сохранения персонажей...' -ForegroundColor Cyan
-      for ($i = 0; $i -lt 60; $i++) {
-        Start-Sleep -Milliseconds 500
-        if ((-not (Test-ServerListener $serverPort)) -and (-not (Test-Path $lockFile))) { $serverStopped = $true; break }
-      }
     } catch {
-      Write-Host 'Не удалось подтвердить штатное завершение сервера.' -ForegroundColor Yellow
+      Write-Host 'Команда остановки не ответила. Проверяю, не завершается ли сервер уже сейчас.' -ForegroundColor Yellow
+    }
+    for ($i = 0; $i -lt 60; $i++) {
+      Start-Sleep -Milliseconds 500
+      if ((-not (Test-ServerListener $serverPort)) -and (-not (Test-Path $lockFile))) { $serverStopped = $true; break }
     }
   }
 
