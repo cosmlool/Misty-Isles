@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { projectAuctionHistory, projectAuctionLots } from '../src/auctionPresentation.js';
+import { projectAuctionHistory, projectAuctionLots, projectPublicMarketHistory } from '../src/auctionPresentation.js';
 
 test('active lot projection allowlists client fields and omits malformed legacy rows', () => {
   const result = projectAuctionLots([
@@ -62,4 +62,24 @@ test('history projection keeps valid legacy event shape and safely defaults opti
     sellerId: 'seller', sellerName: '', price: 25, currency: 'crystals', fee: 1,
     createdAt: 50, status: 'listed',
   }]);
+});
+
+test('public market analytics omit internal player identifiers and participant names', () => {
+  const result = projectPublicMarketHistory([{
+    id: 'tx-sale', lotId: 'lot-1', type: 'sold', itemId: 'sword', itemName: 'Sword',
+    sellerId: 'internal-seller-id', sellerName: 'Seller', buyerId: 'internal-buyer-id',
+    buyerName: 'Buyer', price: 500, currency: 'gold', fee: 25, createdAt: 200,
+    status: 'completed', privateExtra: 'must not leak',
+  }, {
+    id: 'tx-listed', lotId: 'lot-2', type: 'listed', itemId: 'shield', sellerId: 'seller',
+    price: 100, currency: 'gold', fee: 2, createdAt: 201, status: 'listed',
+  }]);
+  assert.deepEqual(result, [{
+    type: 'sold', itemName: 'Sword', price: 500, currency: 'gold',
+    fee: 25, createdAt: 200, status: 'completed',
+  }]);
+  assert.equal('sellerId' in result[0], false);
+  assert.equal('buyerId' in result[0], false);
+  assert.equal('sellerName' in result[0], false);
+  assert.equal('buyerName' in result[0], false);
 });
