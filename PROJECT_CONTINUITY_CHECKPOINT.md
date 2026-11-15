@@ -935,3 +935,5 @@ PR #15 остаётся Draft/open и не объединён. Слияние б
 - Full mapping and rationale: `ECONOMY_COUNTER_AUDIT.md`.
 - Commits: `cee84b00da9bf7aa47d9a13c406c51b300e49760` (PvP guard), `dfaf57f34634f9ad1ac3fae8efd238a7de2f003e` (tests), `96f9314df03a3261848f0ee06f1304c6d63ab905` (audit report).
 - Local tests were not run; Quality Gate required on the resulting HEAD.
+
+- Test review correction: adjusted the two overflow fixtures so the participant receiving the 20% transfer is already near `Number.MAX_SAFE_INTEGER`; this exercises the actual recipient-overflow branch rather than a valid transfer. Commit: `14dfafa41ff69a4af52b62cff0555a48800ac3d6`. Latest HEAD requires its own Quality Gate.
