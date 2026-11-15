@@ -53,9 +53,16 @@ export function createSharedStateRuntime(options: Options) {
     return recoverPendingStateDetails().playersRecovered;
   }
 
+  function transactWithRecovery<T>(prepareAfterRecovery: (recovery: { recovered: boolean; playersRecovered: boolean }) => { files: SharedStateSnapshot; result: T; skipWrite?: boolean }): T {
+    const recovery = recoverPendingStateDetails();
+    return options.shared.transact(() => prepareAfterRecovery(recovery));
+  }
+
+  // Existing player-mutation callers need only know whether players.json was
+  // replayed; dungeon lifecycle callers must also see journals that only
+  // touched dungeonRuns or dungeonOutbox.
   function transact<T>(prepareAfterRecovery: (playersRecovered: boolean) => { files: SharedStateSnapshot; result: T; skipWrite?: boolean }): T {
-    const { playersRecovered } = recoverPendingStateDetails();
-    return options.shared.transact(() => prepareAfterRecovery(playersRecovered));
+    return transactWithRecovery(recovery => prepareAfterRecovery(recovery.playersRecovered));
   }
 
   function commitAuction<T>(prepareAfterRecovery: (playersRecovered: boolean) => { snapshot: unknown; result: T }): T {
@@ -83,5 +90,5 @@ export function createSharedStateRuntime(options: Options) {
     });
   }
 
-  return { transact, commitAuction, commitClan, recoverPendingState, recoverPendingPlayerState };
+  return { transact, transactWithRecovery, commitAuction, commitClan, recoverPendingState, recoverPendingPlayerState };
 }
