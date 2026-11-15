@@ -6,6 +6,7 @@ import {
   creditGold,
   MAX_CRYSTALS_BALANCE,
   MAX_GOLD_BALANCE,
+  prepareGemCredit,
 } from '../src/currencyOperations.js';
 
 test('gold balance never exceeds 9,999,999,999 and excess is burned', () => {
@@ -85,4 +86,22 @@ test('player currency validation clamps finite over-cap legacy balances and reje
     assert.throws(() => preparePlayerCurrencyBalances(10, 10, invalid));
   }
   assert.equal(preparePlayerCurrencyBalances(10, 20, 0).capped, false);
+});
+
+
+test('gem credits remain uncapped but reject unsafe-integer overflow atomically', () => {
+  assert.equal(prepareGemCredit(10, 25), 35);
+  assert.equal(prepareGemCredit(Number.MAX_SAFE_INTEGER - 1, 1), Number.MAX_SAFE_INTEGER);
+  for (const [balance, amount] of [
+    [-1, 1],
+    [1.5, 1],
+    [Number.NaN, 1],
+    [Number.POSITIVE_INFINITY, 1],
+    [Number.MAX_SAFE_INTEGER, 1],
+    [Number.MAX_SAFE_INTEGER - 1, 2],
+    [10, -1],
+    [10, 1.5],
+  ]) {
+    assert.throws(() => prepareGemCredit(balance, amount));
+  }
 });
