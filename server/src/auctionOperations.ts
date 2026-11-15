@@ -22,6 +22,21 @@ function equipmentOf(player: EconomyPlayer): Record<string, any> {
   return value as Record<string, any>;
 }
 function validPrice(price: number): boolean { return Number.isSafeInteger(price) && price >= 1 && price <= 100_000_000; }
+function safeCounter(player: EconomyPlayer, field: string): number {
+  const value = Number(player[field] ?? 0);
+  if (!Number.isSafeInteger(value) || value < 0) throw new Error('Player economy counter is invalid.');
+  return value;
+}
+function addSafeCounter(player: EconomyPlayer, field: string, amount: number): number {
+  const result = safeCounter(player, field) + amount;
+  if (!Number.isSafeInteger(result)) throw new Error('Player economy counter would exceed the safe integer range.');
+  return result;
+}
+function safeBalance(player: EconomyPlayer, field: 'gold' | 'crystals'): number {
+  const value = Number(player[field] ?? 0);
+  if (!Number.isSafeInteger(value) || value < 0) throw new Error('Player currency balance is invalid.');
+  return value;
+}
 function validateLots(lots: AuctionLot[], validItemIds: ReadonlySet<string>) {
   if (!Array.isArray(lots)) throw new Error('Auction listing data is invalid.');
   for (const lot of lots) {
@@ -65,9 +80,10 @@ export function listAuctionItem(input: {
   if (next.auction.filter(x => x.sellerId === input.sellerId).length >= 10) throw new Error('Maximum 10 active lots per player.');
   const fee = Math.max(1, Math.floor(input.price * 0.02));
   const field = input.currency === 'gold' ? 'gold' : 'crystals';
-  if (!Number.isSafeInteger(Number(seller[field])) || Number(seller[field]) < fee) throw new Error('Not enough currency for the listing fee.');
-  seller[field] = Number(seller[field]) - fee;
-  if (field === 'gold') seller.goldSpent = Number(seller.goldSpent || 0) + fee;
+  const sellerBalance = safeBalance(seller, field);
+  if (sellerBalance < fee) throw new Error('Not enough currency for the listing fee.');
+  seller[field] = sellerBalance - fee;
+  if (field === 'gold') seller.goldSpent = addSafeCounter(seller, 'goldSpent', fee);
   const removal = removeInventoryCopy(inventory, equipmentOf(seller), input.index);
   seller.inventory = JSON.stringify(removal.inventory);
   seller.equipment = JSON.stringify(removal.equipment);
@@ -134,13 +150,19 @@ export function buyAuctionItem(input: {
     throw new Error('This unique item is already owned.');
   }
   const field = lot.currency;
-  if (!Number.isSafeInteger(Number(buyer[field])) || Number(buyer[field]) < lot.price) throw new Error('Insufficient currency.');
+  const buyerBalance = safeBalance(buyer, field);
+  if (buyerBalance < lot.price) throw new Error('Insufficient currency.');
+  const sellerBalance = safeBalance(seller, field);
   const fee = field === 'gold' ? Math.max(1, Math.floor(lot.price * 0.05)) : 0;
   const net = lot.price - fee;
-  buyer[field] = Number(buyer[field]) - lot.price;
-  if (field === 'gold') buyer.goldSpent = Number(buyer.goldSpent || 0) + lot.price;
-  seller[field] = Number(seller[field] || 0) + net;
-  seller.itemsSold = Number(seller.itemsSold || 0) + 1;
+  const nextSellerBalance = sellerBalance + net;
+  if (!Number.isSafeInteger(nextSellerBalance)) throw new Error('Seller currency balance would exceed the safe integer range.');
+  const nextBuyerGoldSpent = field === 'gold' ? addSafeCounter(buyer, 'goldSpent', lot.price) : undefined;
+  const nextSellerItemsSold = addSafeCounter(seller, 'itemsSold', 1);
+  buyer[field] = buyerBalance - lot.price;
+  if (field === 'gold') buyer.goldSpent = nextBuyerGoldSpent;
+  seller[field] = nextSellerBalance;
+  seller.itemsSold = nextSellerItemsSold;
   inventory.push(lot.itemId);
   buyer.inventory = JSON.stringify(inventory);
   next.auction.splice(index, 1);
