@@ -923,3 +923,5 @@ PR #15 остаётся Draft/open и не объединён. Слияние б
 - No player saves, auction files, balances, item IDs, prices, fee formulas, or game rules were changed. Local tests were not run; await Quality Gate on the final HEAD.
 
 - Added `server/test/auctionPresentation.test.ts` to the explicit `server` test command in `server/package.json`; the regression suite will run in Quality Gate rather than merely existing as an uninvoked test file. Commit: `5c1eeef6b2a924c651753d599e41cb79ab71c18a`.
+
+- Privacy refinement: public `marketHistory` only needs aggregate sale facts for the current client. Added a separate projection that omits seller/buyer IDs and participant names from public analytics while retaining those fields in the authenticated player's own auction history. Added regression coverage. Commits: `10d96e9b2eb94c97acf50a078896af20c794a309`, `e95400d362230d5232898a46d482064310d7c6d4`, `a844aba6fd9ba9e2ca544087b6020e2d9a6c91ca`.
