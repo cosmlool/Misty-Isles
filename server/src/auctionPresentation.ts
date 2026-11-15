@@ -40,7 +40,7 @@ export function projectAuctionLots(value: unknown): Array<{
     result.push({
       id: raw.id, itemId: raw.itemId, itemName: optionalName(raw.itemName) || raw.itemId,
       sellerId: raw.sellerId, sellerName: optionalName(raw.sellerName),
-      price: raw.price, currency: raw.currency, createdAt: raw.createdAt, status: 'active' as const,
+      price: raw.price, currency: raw.currency as 'gold' | 'crystals', createdAt: raw.createdAt, status: 'active' as const,
     });
   }
   return result;
@@ -71,8 +71,8 @@ export function projectAuctionHistory(value: unknown): Array<{
       sellerId: raw.sellerId, sellerName: optionalName(raw.sellerName),
       ...(nonEmptyString(raw.buyerId) ? { buyerId: raw.buyerId } : {}),
       ...(typeof raw.buyerName === 'string' && raw.buyerName.length <= 256 ? { buyerName: raw.buyerName } : {}),
-      price: raw.price, currency: raw.currency, fee: raw.fee, createdAt: raw.createdAt,
-      status: expectedStatus,
+      price: raw.price, currency: raw.currency as 'gold' | 'crystals', fee: raw.fee, createdAt: raw.createdAt,
+      status: expectedStatus as 'listed' | 'cancelled' | 'completed',
     });
   }
   return result;
