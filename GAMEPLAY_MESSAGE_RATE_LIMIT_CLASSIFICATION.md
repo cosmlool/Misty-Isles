@@ -69,3 +69,14 @@ The message surface is now mapped sufficiently to design a rate limiter without 
 - The client `guardedActions` set blocks repeated clicks for selected actions while an action is pending, but it is not a transport-level limiter: many read-shaped refresh actions are not guarded, the timeout releases a guard after 8 seconds, and any `notice` clears all pending action keys. Server enforcement remains mandatory.
 - The startup burst is legitimate connection initialization and should be accounted for in any ingress budget (or deliberately grouped/coalesced) rather than treated as malicious behavior. Future policy should distinguish connection bootstrap, user-triggered refreshes, and mutations.
 - Static source inspection only. No code changed, no benchmark or runtime test performed; no numerical thresholds selected.
+
+
+## Follow-up: duplicated per-packet recovery scan — 2026-11-15
+
+- Exact wrapper flow in `GameRoom.onAuthenticatedMessage` is: `verifySession(this.sessionToken)` -> local player/client identity checks -> `recoverPlayerStateBeforeMutation()` -> handler.
+- `verifySession()` itself calls `sharedStateRuntime.recoverPendingPlayerState()` before checking token shape/hash, then reads `sessions.json` and `accounts.json` through `loadSessions()` and `loadAccounts()` to validate expiry and account binding.
+- `recoverPlayerStateBeforeMutation()` immediately calls `sharedStateRuntime.recoverPendingPlayerState()` again. Therefore every authenticated gameplay packet currently performs two consecutive shared/legacy journal recovery scans, even when no journal is pending, plus the session/account reads. This is confirmed from source; exact filesystem syscall cost has not been benchmarked.
+- Each recovery scan checks legacy auction/clan `hasPending`, then invokes their `recover()` methods and shared journal `recover()`; it is not just one in-memory boolean lookup. The wrapper's second scan is a concrete optimization candidate.
+- Safe design direction: consolidate the wrapper's authentication/recovery work into one explicit ingress gate with one recovery result passed onward, while preserving authoritative session validation and recovery-before-mutation semantics. Do not simply remove `verifySession` or trust `ONLINE_SESSION_HASHES`: those maps only describe this process's current room ownership and do not independently prove durable session revocation state across server instances.
+- A limiter can be considered before expensive durable checks only after defining the trusted per-room player identity, stale-room handling, logout revocation semantics, and multi-instance deployment assumptions. Cheap `ONLINE_CLIENTS` ownership check is useful but is not a replacement for authoritative token validation.
+- No implementation or behavior change made. No syscall benchmark/runtime test; CI still pending at time of note.
