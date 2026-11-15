@@ -76,3 +76,11 @@ test('pre-journal player persistence failures restore existing online players fr
   assert.match(helper, /if\(!existsSync\(sharedStateTransactions\.journalFile\)\)syncOnlinePlayersAfterRecovery\(\)/);
   assert.match(helper, /No journal means publication never happened/);
 });
+test('PvP opponent refresh reconciles live player state when its transaction fails', () => {
+  const start = source.indexOf("this.onAuthenticatedMessage('pvpList'");
+  const end = source.indexOf("this.onAuthenticatedMessage('pvpChallenge'", start);
+  assert.ok(start >= 0 && end > start, 'PvP list handler must be present');
+  const handler = source.slice(start, end);
+  assert.match(handler, /try\{[\s\S]*sharedStateRuntime\.transact/);
+  assert.match(handler, /catch\(error\)\{[\s\S]*reconcileOnlinePlayersAfterPersistenceFailure\(\);[\s\S]*throw error/);
+});
