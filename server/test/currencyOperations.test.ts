@@ -72,3 +72,17 @@ test('invalid crystal balance rejects gem exchange before either balance can be 
   }
   assert.throws(() => prepareGemExchange(1, 100, 2));
 });
+
+
+test('player currency validation clamps finite over-cap legacy balances and rejects malformed balances', async () => {
+  const { preparePlayerCurrencyBalances } = await import('../src/currencyOperations.js');
+  assert.deepEqual(preparePlayerCurrencyBalances(MAX_GOLD_BALANCE + 10, MAX_CRYSTALS_BALANCE + 5, 7), {
+    gold: MAX_GOLD_BALANCE, crystals: MAX_CRYSTALS_BALANCE, gems: 7, capped: true,
+  });
+  for (const invalid of [-1, 1.5, Number.NaN, Number.POSITIVE_INFINITY]) {
+    assert.throws(() => preparePlayerCurrencyBalances(invalid, 10, 0));
+    assert.throws(() => preparePlayerCurrencyBalances(10, invalid, 0));
+    assert.throws(() => preparePlayerCurrencyBalances(10, 10, invalid));
+  }
+  assert.equal(preparePlayerCurrencyBalances(10, 20, 0).capped, false);
+});
