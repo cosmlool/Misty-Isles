@@ -1066,3 +1066,13 @@ PR #15 остаётся Draft/open и не объединён. Слияние б
 - Added helper regression tests for valid boundaries, malformed balances/increments and overflow.
 - Commits: `9191f3d3971b1c290ccf78a3453fefd10fe7de0e`, `3bc94cb89d3f7481fb516ccf9f7bd946d612ea6f`, `502ef80957ff65d8e332eb362404f074ab5dbb86`.
 - Local tests not run. Full Quality Gate required on final HEAD. PR #18 remains Draft/open/unmerged; no main changes or save migration.
+
+
+## Clan and territory save integrity follow-up (2026-11-16)
+- Previous HEAD `60cb217f09cbb9e5ee73095bc183a7ae990dd8b7` passed Quality Gate run `43772044264` (all 4/4 jobs successful).
+- Added strict, read-only validation for persisted clan records: key/id consistency, nonempty identity, level range, nonnegative safe-integer counters, nonempty unique member roster, leader membership, and upgrade levels 0–5. Duplicate player membership across separate clans is rejected.
+- Added territory validation for known territory IDs, unique records, valid counters, and owner references to an existing clan. Corrupt or ambiguous saves now fail closed rather than falling back to defaults or silently losing ownership.
+- Optional legacy counters/upgrades may remain absent; no save migration or automatic repair is performed. Existing clan progression, rewards, and formulas are unchanged.
+- Added focused regression tests and included them in the server test command.
+- Source review found clan leave can still clear an orphaned player clan reference when the clan record itself is missing; that behavior is separate from validated clan/territory store loading and should be reviewed with save reconciliation semantics before changing it.
+- Local tests were not run. Full Quality Gate is required for the final HEAD.
