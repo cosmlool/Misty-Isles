@@ -160,7 +160,7 @@ test('a real process crash after transport send leaves the event pending for at-
       cwd: process.cwd(), encoding: 'utf8', timeout: 10_000,
     });
     assert.equal(child.status, 74, child.stderr || child.stdout);
-    assert.equal(readFileSync(sentFile, 'utf8').trim().split('\\n').length, 1);
+    assert.equal(readFileSync(sentFile, 'utf8').trim().split(/\r?\n/).length, 1);
     assert.equal(readJson(f.files.dungeonOutbox)[event.eventId].status, 'pending');
 
     const restarted = f.createStore();
