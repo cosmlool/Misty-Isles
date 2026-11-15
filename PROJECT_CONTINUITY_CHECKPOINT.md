@@ -921,3 +921,5 @@ PR #15 остаётся Draft/open и не объединён. Слияние б
 - Added regression tests for unknown-property stripping, malformed rows, duplicate lot IDs, status validation, and supported legacy records.
 - Commits: `32f8dd98d76bfd92ea92cb619d7e660552ae427b` (projection helpers), `c808d98f1aa51913becf6535d518d50e41b66991` (tests), `ae7b25ac34f68c4016c12a3d55b1042c179901d9` (production handlers).
 - No player saves, auction files, balances, item IDs, prices, fee formulas, or game rules were changed. Local tests were not run; await Quality Gate on the final HEAD.
+
+- Added `server/test/auctionPresentation.test.ts` to the explicit `server` test command in `server/package.json`; the regression suite will run in Quality Gate rather than merely existing as an uninvoked test file. Commit: `5c1eeef6b2a924c651753d599e41cb79ab71c18a`.
