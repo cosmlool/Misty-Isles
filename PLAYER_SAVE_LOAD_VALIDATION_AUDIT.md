@@ -57,3 +57,46 @@ Confirmed hardening gaps, not demonstrated remote exploits:
 ## Validation status
 
 Source review only. No production code, tests, or save files changed. No local tests run. Existing CI validates the unchanged implementation, not a proposed schema/migration refactor.
+
+
+## Player field inventory and compatibility map — 2026-11-15
+
+### Persisted Player shape
+
+The current Colyseus `Player` declares these fields in `server/src/PlayerSchema.ts`; several server-only properties are ordinary class properties but are also eligible for `applyPlayerSave` because the loader matches existing instance keys.
+
+| Domain | Fields | Validation / compatibility notes |
+|---|---|---|
+| Identity & location | `id`, `name`, `race`, `profession`, `city`, `zone`, `clan`, `craftingSpecialty` | Strings only at apply time. No general allowed-value, length, cross-field, or canonical ID check at player-load boundary. Race set in current content: Кот, Собака, Птица, Грызун. Profession map: Кот → Боевой маг/Ассасин; Собака → Рыцарь/Баффер; Птица → Лучник/Ассасин птицы; Грызун → Вампир/Добытчик. Legacy alias Воин → Рыцарь. Existing normalizer does not enforce race/profession pairing. |
+| Position & timing | `zone`, `x`, `y`, `lastSeenAt`, `lastHuntAt`, `lastPvpAt`, `lastFountainAt`, `lastDailyAt`, `lastMineAt`, `lastWorkAt`, `buffUntil`, `returnRewardAt` | Numeric fields accept any finite number, including negative and unsafe integers. No common timestamp/coordinate validation at load. `lastDailyAt`, `lastMineAt`, `lastWorkAt`, `x`, `y` are ordinary properties, not synchronized Schema fields. |
+| Progression & stats | `level`, `experience`, `experienceToNext`, `statPoints`, `strength`, `defense`, `vitality`, `dexterity`, `intelligence`, `luck`, `stamina`, `accuracy`, `health`, `maxHealth` | Finite number only. `applySaved` floors level and clamps to minimum 1, then recalculates XP threshold; no maximum level. No load-time nonnegative/stat-point/health<=maxHealth invariant. Avoid inventing caps without catalog/progression history. |
+| Currency & counters | `gold`, `crystals`, `gems`, `goldSpent`, `goldEarned`, `itemsCrafted`, `itemsSold`, `pvpWins`, `pvpLosses`, `mobsKilled`, `rareMonstersKilled`, `bossesKilled`, `battles`, `victories`, `mining`, `fishing`, `crafting` | Finite number only; negative/fractional/unsafe integer values pass the generic loader. Need determine legitimate fractional fields and historical corrections before adding integer/nonnegative constraints. |
+| Buff state | `buff`, `buffValue`, `buffSecondaryEffect`, `buffSecondaryValue`, `buffUntil`, `returnBonusAvailable` | Primitive types checked, but effect enums, paired value/effect consistency, magnitude, and timestamps are not schema-validated. Runtime buff reader caps effective values to 1 and falls back for unknown/invalid values; this is not a persisted-schema migration. |
+| Serialized collections | `inventory`, `equipment`, `equipmentEnhancements`, `buildings`, `quests`, `cityReputation`, `collections`, `achievements`, `daily`, `mail`, `craftQueue`, `guildSkills`, `auctionHistory` | Stored as strings; only string type is checked during player apply. JSON parse/root checks happen lazily via `readPlayerArray` / `readPlayerObject`; nested members and size are not validated there. Gender is stored at `collections.characterGender` and accepts only `male`/ `female` when read by the dedicated helper. |
+| Other schema metadata | `lastPvpResult`, `buffSecondaryEffect`, `returnBonusAvailable` | No global enum/range validation at load. |
+
+### Compatibility behavior actually present
+
+- Profession: only the exact historical label `Воин` maps to `Рыцарь`; other values are preserved as-is. The mapping is not race-aware.
+- City: five legacy names map to current names: Вольный перекрёсток → Каменный порт; Гавань семи ветров → Изумрудная долина; Серебряный бастион → Золотые дюны; Кристальный двор → Серебряные руины; Пепельная цитадель → Северная корона.
+- City reputation migration moves an old key to the new key using the larger numeric value, then deletes the old key. Visited-city collection flags are copied to the new key and old keys deleted. This mutates the in-memory player during join; a later normal WAL save persists it.
+- Character gender is optional in old saves: missing/invalid values read as `null`; do not assign a default to existing characters without explicit compatibility decision.
+- Unknown player-save keys are ignored by `applyPlayerSave`; known keys with wrong primitive types are ignored. Object/array nested content is not deeply merged or validated because serialized fields are strings in the current schema.
+
+### Auth record schemas (current loader predicates)
+
+- Accounts: array of objects with string `username`, `usernameKey`, `playerId`, `salt`, `passwordHash` and finite `createdAt`.
+- Sessions: array of objects with string `tokenHash`, `playerId`, `accountKey` null-or-string and finite `expiresAt`.
+- Guest credentials: array of objects with string `playerId`, `tokenHash` and finite `createdAt`.
+- These predicates do not establish uniqueness, bounded lengths, digest encoding/length, safe-integer timestamps, or full account/session/guest cross-reference consistency. Some relationships are checked at use time; do not conflate that with load-time validation.
+
+### Migration safety decisions required before implementation
+
+1. Build a field-by-field legacy corpus from real shipped/test saves and commit history; establish units, integer-vs-fractional semantics, timestamp epochs, coordinate conventions, and actual enum variants.
+2. Define invariants separately from normalization. A normalizer must not invent a new value where legacy intent is ambiguous.
+3. Validate the race/profession pair without silently changing either field. Quarantine/report ambiguous records rather than assigning a different class.
+4. Keep unknown JSON keys/data recoverable until a compatibility policy exists; avoid destructive round-trip serialization that drops future fields.
+5. Treat identity, inventory, currency, progression, gender, and achievement records as preservation-critical. A failed migration must leave original bytes and backups untouched.
+6. Require migration idempotence, before/after fixtures, WAL atomicity, rollback/fail-closed behavior, and tests for loading old versions twice.
+
+No schema caps, enum coercions, or production migrations are approved by this audit. No production code/tests/data changed.
