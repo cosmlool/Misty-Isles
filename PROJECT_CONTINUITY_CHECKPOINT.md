@@ -987,3 +987,6 @@ PR #15 остаётся Draft/open и не объединён. Слияние б
 - Commits: `62497c415baed43ad6114fe27c28f5c36d9a1528`, `3f516abf7a601fa9d5a0c9a7f8f91913222c77ec`, `fffdacdeb0ddb3380e9ddae7f89f383242c8e285`, `f7bc3a7cb067a75633355277d1ba42bad12a7b39`, `63b9eea0ce65b82a327097d2bfcd3c2b50a39db7`, `7a26e579aa20873c157e8ec34c5b835e3ed0cba1`.
 - Quality Gate runs 43764923020 (push) and 43764921963 (pull_request) are pending/in progress for the evolving branch; final validation must use the final HEAD after all commits. Local tests were not run.
 - PR #18 remains Draft/open/unmerged. No changes to `main`, game balance formulas, or existing save files.
+
+- Follow-up type-safety cleanup: changed the gem exchange handler to use a narrowed prepared-result value instead of an evolving `any` variable. Commit: `d6c43c2c3f7ed8eb099801644d520095ec431042`.
+- Final branch HEAD for this package: `d6c43c2c3f7ed8eb099801644d520095ec431042`. Quality Gate runs 43764998454 (push) and 43764993063 (pull_request) are queued/pending for this exact HEAD; prior runs were cancelled by subsequent commits and are not validation for the final HEAD.
