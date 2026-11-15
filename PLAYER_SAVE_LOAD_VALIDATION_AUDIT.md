@@ -179,3 +179,12 @@ All 11 static recipe outputs and all 27 material references resolve to the curre
 The craftClaim handler looks up job.output in the current item list only to detect unique-amulet conflicts. If the lookup returns no item, it still calls claimCraftJob(), whose current behavior appends the raw job.output string to inventory. Thus a malformed or obsolete queued job can create an inventory entry that does not resolve to a known item. This is a data-integrity issue, not evidence of an exploit through ordinary client input. Before changing it, preserve the job on rejection and add regression coverage for known legacy outputs, unknown output IDs, unique amulets, and already-queued jobs whose recipe has been retired. Do not silently delete or rewrite old queue entries.
 
 No catalog IDs, recipes, drops, prices, stats, saves, or production code were changed in this stage. This was a static source/data audit; no local tests were run.
+
+
+### Craft output identity gap — remediation on 2026-11-15
+
+- Hardened claimCraftJob() to require a caller-supplied read-only set of valid runtime item IDs and reject a queued output that is not present. Rejection leaves both inventory and queue unchanged; the job remains available for manual review.
+- The live craftClaim handler supplies IDs from the complete runtime ITEMS list (original legacy items + new equipment + expedition drops), so known legacy outputs and queued jobs whose recipe is no longer visible remain claimable when their output ID is still registered.
+- Added regression coverage proving an unknown output from a retired recipe cannot be granted and the original job is retained. Existing claim/reconnect/unique-amulet tests now supply the valid item set.
+- This does not rewrite old queue entries or refund materials. If an old output ID is genuinely absent from the current runtime catalog, the job is retained rather than silently discarded or converted.
+- GitHub Actions validation is required for this production hardening change; no local tests were run.
