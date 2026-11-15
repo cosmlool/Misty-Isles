@@ -65,7 +65,7 @@ for ($i=0; $i -lt 45; $i++) {
   if ($tcp) { $ready = $true; break }
   if ($serverProc.HasExited) { break }
 }
-if (-not $ready) { $env:MISTY_SHUTDOWN_TOKEN = $null; Fail 'Сервер не открыл порт 2567 за 45 секунд. Не останавливаю его принудительно. Используйте «Остановить игру.bat» для штатного завершения, если процесс ещё работает. Проверьте окно сервера и logs\\launcher.log.' }
+if (-not $ready) { $env:MISTY_SHUTDOWN_TOKEN = $null; Fail 'Сервер не открыл порт 2567 за 45 секунд. Не останавливаю его принудительно. Используйте «Остановить игру.bat» для штатного завершения, если процесс ещё работает. Проверьте окно сервера и logs\launcher.log.' }
 $env:MISTY_SHUTDOWN_TOKEN = $null
 Say 'Сервер готов. Запускаю клиент Vite...'
 $clientProc = Start-Process -FilePath $env:ComSpec -ArgumentList @('/k', $clientCmd) -WorkingDirectory (Join-Path $Root 'client') -PassThru
