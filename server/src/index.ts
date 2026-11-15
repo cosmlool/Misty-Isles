@@ -43,6 +43,7 @@ import { resetWeeklyHuntProgress, utcIsoWeekKey } from './calendarOperations.js'
 import { checkExpeditionTravelConsistency, checkExpeditionTravelReadiness, checkExpeditionTravelStartReadiness, canInviteToHuntGroup, countHuntGroupInvites, expireHuntGroupInvites, invalidateHuntGroupInvites, isHuntGroupLevelRangeValid } from './expeditionOperations.js';
 import { parseAdminPlayerIds } from './adminAuthorization.js';
 import { isCharacterGender } from './characterIdentity.js';
+import { validateClanStore, validateTerritoryStore } from './clanStateValidation.js';
 import { parseMonsterWeakness, resolveLegacyMonsterAttackMultiplier, resolveLegacyMonsterDefenseMultiplier, resolveLegacyMonsterProfessionDamageMultiplier, resolveLegacyMonsterHitMultiplier, resolveLegacyMonsterResistance, resolveLegacyPlayerHitMultiplier, resolveLegacyHealingMultiplier, resolveLegacyMonsterWeaknessMultiplier, resolveMonsterPassive } from './monsterCombat.js';
 import { prepareXpProgression } from './xpProgression.js';
 import { isPasswordLengthWithinLimit } from './authPasswordPolicy.js';
@@ -1377,8 +1378,8 @@ function persistPlayers(players:Player[]){
   catch(error){reconcileOnlinePlayersAfterPersistenceFailure();throw error;}
 }
 function persistPlayer(p:Player){if(!p?.id)return;persistPlayers([p]);}
-function loadClans():Record<string,any>{return readPersistentJson<Record<string,any>>(CLAN_FILE,{},value=>isPlainObject(value)&&Object.values(value).every(isPlainObject));}
-function loadTerritories():any[]{const defaults=TERRITORIES.map(t=>({...t,owner:'',ownerName:'',capturedAt:0,defense:0}));return readPersistentJson<any[]>(TERRITORY_FILE,defaults,value=>Array.isArray(value)&&value.every(isPlainObject));}
+function loadClans():Record<string,any>{return readPersistentJson<Record<string,any>>(CLAN_FILE,{},validateClanStore);}
+function loadTerritories():any[]{const defaults=TERRITORIES.map(t=>({...t,owner:'',ownerName:'',capturedAt:0,defense:0}));const clans=loadClans();return readPersistentJson<any[]>(TERRITORY_FILE,defaults,value=>validateTerritoryStore(value,clans));}
 function isClanMember(clan:any,playerId:string):boolean{return !!clan&&Array.isArray(clan.members)&&clan.members.some((member:any)=>member?.id===playerId);}
 function transactClanStateMutation<T>(prepare:(state:{clans:Record<string,any>;wars:any[];territories:any[]})=>T,shouldCommit:(result:T)=>boolean=()=>true):T{
   return sharedStateRuntime.commitClan((hadRecovery)=>{
