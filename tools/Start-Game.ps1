@@ -50,7 +50,8 @@ $rng = [System.Security.Cryptography.RandomNumberGenerator]::Create()
 try { $rng.GetBytes($randomBytes) } finally { $rng.Dispose() }
 $shutdownToken = [Convert]::ToBase64String($randomBytes).TrimEnd('=').Replace('+','-').Replace('/','_')
 $env:MISTY_SHUTDOWN_TOKEN = $shutdownToken
-$serverCmd = "cd /d `"$Root\server`" && npm run dev"
+# Use the non-watch server entry on Windows: tsx watch force-terminates its child during restarts, bypassing graceful WAL shutdown.
+$serverCmd = "cd /d `"$Root\server`" && npm run start"
 $clientCmd = "cd /d `"$Root\client`" && npm run dev -- --host 127.0.0.1"
 Say 'Запускаю сервер Colyseus...'
 $serverProc = Start-Process -FilePath $env:ComSpec -ArgumentList @('/k', $serverCmd) -WorkingDirectory (Join-Path $Root 'server') -PassThru
