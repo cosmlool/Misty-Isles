@@ -20,6 +20,9 @@ function fixture(testHooks?: any, platform?: NodeJS.Platform) {
     territories: join(dataDir, 'clan_territories.json'),
     huntGroups: join(dataDir, 'hunt_groups.json'),
     dungeonRuns: join(dataDir, 'dungeon_runs.json'),
+    accounts: join(dataDir, 'accounts.json'),
+    sessions: join(dataDir, 'sessions.json'),
+    guestCredentials: join(dataDir, 'guest_credentials.json'),
   };
   return {
     dataDir, files,
@@ -120,6 +123,51 @@ test('a process crash immediately after durable journal publication replays the 
     assert.deepEqual(readJson(f.files.clans), { c1: { vault: 55 } });
     assert.equal(existsSync(restarted.journalFile), false);
   } finally { f.cleanup(); }
+});
+
+test('guest account linking replays all auth snapshots after a crash at each WAL target boundary', () => {
+  for (const crashAt of ['accounts', 'sessions', 'guestCredentials']) {
+    const f = fixture();
+    try {
+      const moduleUrl = new URL('../src/sharedStateTransactions.ts', import.meta.url).href;
+      const childScript = `
+        import { createSharedStateTransactionStore } from ${JSON.stringify(moduleUrl)};
+        const store = createSharedStateTransactionStore({
+          dataDir: ${JSON.stringify(f.dataDir)},
+          files: ${JSON.stringify(f.files)},
+          testHooks: { afterTargetWrite(key) { if (key === ${JSON.stringify(crashAt)}) process.exit(74); } },
+        });
+        store.transact(() => ({ files: {
+          accounts: [{ username: 'Misty', usernameKey: 'misty', playerId: 'guest_player', salt: 'salt', passwordHash: 'hash', createdAt: 1 }],
+          sessions: [{ tokenHash: 'account-token-hash', playerId: 'guest_player', accountKey: 'misty', expiresAt: 9999999999999 }],
+          guestCredentials: [],
+        }, result: null }));
+        process.exit(0);
+      `;
+      writeFileSync(f.files.accounts, JSON.stringify([]));
+      writeFileSync(f.files.sessions, JSON.stringify([
+        { tokenHash: 'old-guest-token-hash', playerId: 'guest_player', accountKey: null, expiresAt: 9999999999999 },
+      ]));
+      writeFileSync(f.files.guestCredentials, JSON.stringify([
+        { playerId: 'guest_player', tokenHash: 'guest-proof-hash', createdAt: 1 },
+      ]));
+      const child = spawnSync(process.execPath, ['--import', 'tsx', '--input-type=module', '-e', childScript], {
+        cwd: process.cwd(), encoding: 'utf8', timeout: 10_000,
+      });
+      assert.equal(child.status, 74, `child must stop immediately after writing ${crashAt}`);
+      assert.equal(existsSync(f.store.journalFile), true, 'the shared journal must remain after process termination');
+      const restarted = createSharedStateTransactionStore({ dataDir: f.dataDir, files: f.files });
+      assert.equal(restarted.recover(), true);
+      assert.deepEqual(readJson(f.files.accounts), [
+        { username: 'Misty', usernameKey: 'misty', playerId: 'guest_player', salt: 'salt', passwordHash: 'hash', createdAt: 1 },
+      ]);
+      assert.deepEqual(readJson(f.files.sessions), [
+        { tokenHash: 'account-token-hash', playerId: 'guest_player', accountKey: 'misty', expiresAt: 9999999999999 },
+      ], 'restart must revoke the old guest sessions and publish the account session');
+      assert.deepEqual(readJson(f.files.guestCredentials), [], 'restart must remove the guest recovery proof');
+      assert.equal(existsSync(restarted.journalFile), false);
+    } finally { f.cleanup(); }
+  }
 });
 
 test('a process crash between target writes is replayed from the single shared journal', () => {
