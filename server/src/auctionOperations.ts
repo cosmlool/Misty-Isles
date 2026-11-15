@@ -139,7 +139,7 @@ export function cancelAuctionItem(input: {
 export function buyAuctionItem(input: {
   snapshot: EconomySnapshot; buyerId: string; lotId: string; validItemIds: ReadonlySet<string>;
   uniqueItemIds?: ReadonlySet<string>; now: number;
-}): { snapshot: EconomySnapshot; fee: number; net: number; lot: AuctionLot } {
+}): { snapshot: EconomySnapshot; fee: number; net: number; burned: number; lot: AuctionLot } {
   const next = clone(input.snapshot);
   validateLots(next.auction, input.validItemIds);
   const index = next.auction.findIndex(x => x.id === input.lotId);
