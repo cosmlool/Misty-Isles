@@ -57,7 +57,7 @@ export function prepareDungeonEncounterCommit(input: {
 }
 
 type DungeonEncounterCommitRuntime = {
-  transact<T>(prepare: (recovered: boolean) => {
+  transactWithRecovery<T>(prepare: (recovery: { recovered: boolean; playersRecovered: boolean }) => {
     files: { players: Record<string, Record<string, unknown>>; dungeonRuns: DungeonRunStore };
     result: T;
     skipWrite?: boolean;
@@ -72,8 +72,8 @@ export function commitPreparedDungeonEncounter(input: {
   players: Record<string, Record<string, unknown>>;
   encounter: PreparedDungeonEncounter;
 }): PreparedDungeonEncounterCommit {
-  return input.runtime.transact(recovered => {
-    if (recovered) {
+  return input.runtime.transactWithRecovery(recovery => {
+    if (recovery.recovered) {
       throw new Error('Shared state was recovered during encounter preparation; reload player and run snapshots before retrying.');
     }
     const prepared = prepareDungeonEncounterCommit(input);
