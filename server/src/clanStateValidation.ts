@@ -11,6 +11,7 @@ function isOptionalCounter(value: unknown): boolean {
 /** Reject ambiguous clan records rather than silently hiding or repairing member/leader state. */
 export function validateClanStore(value: unknown): value is ClanStore {
   if (!isRecord(value)) return false;
+  const membership = new Set<string>();
   for (const [key, clan] of Object.entries(value)) {
     if (!isRecord(clan) || typeof clan.id !== 'string' || !clan.id || clan.id !== key
       || typeof clan.name !== 'string' || clan.name.trim().length < 3
@@ -25,6 +26,8 @@ export function validateClanStore(value: unknown): value is ClanStore {
       if (!isRecord(member) || typeof member.id !== 'string' || !member.id || memberIds.has(member.id)
         || (member.contribution !== undefined && !isOptionalCounter(member.contribution))
         || (member.joinedAt !== undefined && (!Number.isSafeInteger(member.joinedAt) || member.joinedAt < 0))) return false;
+      if (membership.has(member.id)) return false;
+      membership.add(member.id);
       memberIds.add(member.id);
     }
     if (!memberIds.has(clan.leader)) return false;
