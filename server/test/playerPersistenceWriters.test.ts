@@ -64,6 +64,7 @@ test('group persistence does not roll runtime membership back while its durable 
   const end = source.indexOf('const EXPEDITION_DATA', start);
   assert.ok(start >= 0 && end > start, 'group persistence helper must be present');
   const helper = source.slice(start, end);
+  assert.match(helper, /sharedStateRuntime\.transactWithRecovery\(\(recovery\)=>\{[\s\S]*?if\(recovery\.recovered\)/);
   assert.match(helper, /if\(!existsSync\(sharedStateTransactions\.journalFile\)\)\{[\s\S]*?restoreHuntGroupsFromDisk\(\);[\s\S]*?reconcileOnlinePlayersAfterPersistenceFailure\(\);/);
   assert.match(helper, /durable WAL remains[\s\S]*?Keep the intended in-memory roster/);
 });
