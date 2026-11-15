@@ -7,7 +7,7 @@ import {
 import type { DungeonRunRecord, DungeonRunStore } from './dungeonRunState.js';
 
 type DungeonEntryRuntime = {
-  transact<T>(prepare: (recovered: boolean) => {
+  transactWithRecovery<T>(prepare: (recovery: { recovered: boolean; playersRecovered: boolean }) => {
     files: SharedStateSnapshot;
     result: T;
     skipWrite?: boolean;
@@ -28,8 +28,8 @@ export function commitDungeonRunStart(input: {
   day: string;
   dailyLimit?: number;
 }): PreparedDungeonRunStart {
-  return input.runtime.transact(recovered => {
-    if (recovered) {
+  return input.runtime.transactWithRecovery(recovery => {
+    if (recovery.recovered) {
       throw new Error('Shared state was recovered during dungeon entry; reload player and run snapshots before retrying.');
     }
     const prepared = prepareDungeonRunStart({
