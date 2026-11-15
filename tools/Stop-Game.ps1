@@ -15,7 +15,9 @@ if (-not (Test-Path $stateFile)) {
 try {
   $state = Get-Content -Raw $stateFile | ConvertFrom-Json
   $serverPort = if ($state.serverPort) { [int]$state.serverPort } else { 2567 }
-  $serverStopped = -not (Test-ServerListener $serverPort)
+  $dataDir = if ($state.dataDir) { [string]$state.dataDir } else { Join-Path $Root '.local-data' }
+  $lockFile = Join-Path $dataDir '.misty-server.lock'
+  $serverStopped = (-not (Test-ServerListener $serverPort)) -and (-not (Test-Path $lockFile))
 
   if (-not $serverStopped -and $state.shutdownToken) {
     try {
@@ -23,7 +25,7 @@ try {
       Write-Host 'Запрошено штатное завершение сервера. Ожидаю сохранения персонажей...' -ForegroundColor Cyan
       for ($i = 0; $i -lt 60; $i++) {
         Start-Sleep -Milliseconds 500
-        if (-not (Test-ServerListener $serverPort)) { $serverStopped = $true; break }
+        if ((-not (Test-ServerListener $serverPort)) -and (-not (Test-Path $lockFile))) { $serverStopped = $true; break }
       }
     } catch {
       Write-Host 'Не удалось подтвердить штатное завершение сервера.' -ForegroundColor Yellow
