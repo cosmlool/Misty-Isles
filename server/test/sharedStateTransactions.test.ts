@@ -85,6 +85,43 @@ test('snapshot preparation runs only after a pending journal has been recovered'
   } finally { f.cleanup(); }
 });
 
+test('a process crash immediately after durable journal publication replays the full transaction', () => {
+  const f = fixture();
+  try {
+    const moduleUrl = new URL('../src/sharedStateTransactions.ts', import.meta.url).href;
+    const childScript = `
+      import { createSharedStateTransactionStore } from ${JSON.stringify(moduleUrl)};
+      const store = createSharedStateTransactionStore({
+        dataDir: ${JSON.stringify(f.dataDir)},
+        files: ${JSON.stringify(f.files)},
+        testHooks: { afterJournalPersisted() { process.exit(72); } },
+      });
+      store.transact(() => ({ files: {
+        players: { p1: { gold: 45 } },
+        auction: [{ id: 'journal_first_lot' }],
+        clans: { c1: { vault: 55 } },
+      }, result: null }));
+      process.exit(0);
+    `;
+    writeFileSync(f.files.players, JSON.stringify({ p1: { gold: 10 } }));
+    const child = spawnSync(process.execPath, ['--import', 'tsx', '--input-type=module', '-e', childScript], {
+      cwd: process.cwd(), encoding: 'utf8', timeout: 10_000,
+    });
+    assert.equal(child.status, 72);
+    assert.equal(existsSync(f.store.journalFile), true, 'the durable journal must survive the process exit');
+    assert.deepEqual(readJson(f.files.players), { p1: { gold: 10 } }, 'no transaction target may be written before journal publication completes');
+    assert.equal(existsSync(f.files.auction), false);
+    assert.equal(existsSync(f.files.clans), false);
+
+    const restarted = createSharedStateTransactionStore({ dataDir: f.dataDir, files: f.files });
+    assert.equal(restarted.recover(), true);
+    assert.deepEqual(readJson(f.files.players), { p1: { gold: 45 } });
+    assert.deepEqual(readJson(f.files.auction), [{ id: 'journal_first_lot' }]);
+    assert.deepEqual(readJson(f.files.clans), { c1: { vault: 55 } });
+    assert.equal(existsSync(restarted.journalFile), false);
+  } finally { f.cleanup(); }
+});
+
 test('a process crash between target writes is replayed from the single shared journal', () => {
   const f = fixture();
   try {
