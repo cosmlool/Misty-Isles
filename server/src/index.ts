@@ -532,7 +532,7 @@ function issueSession(playerId:string, accountKey:string|null) {
   sharedStateRuntime.transact(()=>{const sessions=loadSessions().filter(x=>x.expiresAt>Date.now());sessions.push({tokenHash:tokenDigest(token),playerId,accountKey,expiresAt:Date.now()+AUTH_SESSION_MS});return {files:{sessions},result:undefined};});
   return token;
 }
-function verifySession(token:string):SessionRecord|null { if(sharedStateRuntime.recoverPendingState())syncOnlinePlayersAfterRecovery();if(!token||token.length>256)return null;const hash=tokenDigest(token);const sessions=loadSessions();const session=sessions.find(x=>x.tokenHash===hash&&x.expiresAt>Date.now());if(!session)return null;const account=loadAccounts().find(x=>x.playerId===session.playerId);if(session.accountKey===null?Boolean(account):!account||account.usernameKey!==session.accountKey)return null;return session; }
+function verifySession(token:string):SessionRecord|null { if(sharedStateRuntime.recoverPendingPlayerState())syncOnlinePlayersAfterRecovery();if(!token||token.length>256)return null;const hash=tokenDigest(token);const sessions=loadSessions();const session=sessions.find(x=>x.tokenHash===hash&&x.expiresAt>Date.now());if(!session)return null;const account=loadAccounts().find(x=>x.playerId===session.playerId);if(session.accountKey===null?Boolean(account):!account||account.usernameKey!==session.accountKey)return null;return session; }
 function publicPlayerCode(id:string) { return createHash('sha256').update(`MistyIslesPublic:${id}`).digest('hex').slice(0,24); }
 function resolvePublicPlayerCode(code:string, players:Record<string,any>=loadPlayers()) { for(const [id,online] of ONLINE_PLAYERS)players[id]=online.toJSON();const key=String(code||'');return Object.keys(players).find(id=>publicPlayerCode(id)===key)||''; }
 function passwordMatches(password:string,salt:string,expected:string) { try { const actual=scryptSync(password,salt,64);const target=Buffer.from(expected,'hex');return target.length===actual.length&&timingSafeEqual(actual,target); } catch { return false; } }
@@ -546,7 +546,7 @@ function authHttpHandler(req:IncomingMessage,res:ServerResponse) {
   let body='';req.on('data',chunk=>{body+=String(chunk);if(body.length>8192){sendJson(res,413,{error:'Слишком большой запрос.'});req.destroy();}});
   req.on('end',()=>{
     try {
-      const d=JSON.parse(body||'{}');if(sharedStateRuntime.recoverPendingState())syncOnlinePlayersAfterRecovery();
+      const d=JSON.parse(body||'{}');if(sharedStateRuntime.recoverPendingPlayerState())syncOnlinePlayersAfterRecovery();
       if(path==='/auth/guest'){
         const rawPlayerId=String(d.playerId||'').trim();
         const suppliedProof=String(d.guestProof||'');
@@ -1328,13 +1328,11 @@ function safeId(v:any){return String(v||'').replace(/[^a-zA-Z0-9_-]/g,'').slice(
 function loadPlayersWithOnline():Record<string,any>{const all=loadPlayers();for(const player of Object.values(all))normalizePlayerProfessionData(player);for(const [id,online] of ONLINE_PLAYERS){normalizePlayerProfessionData(online);all[id]=online.toJSON();}return all;}
 function syncOnlinePlayersAfterRecovery(){const recovered=loadPlayers();for(const [id,online] of ONLINE_PLAYERS){const saved=recovered[id];if(saved)applyPlayerSave(online as any,saved);}}
 function reconcileOnlinePlayersAfterPersistenceFailure(){
-  try{sharedStateRuntime.recoverPendingState();}
+  try{if(sharedStateRuntime.recoverPendingPlayerState())syncOnlinePlayersAfterRecovery();}
   catch(error){console.error('Shared-state recovery remains pending after player persistence failure:',error);}
-  try{syncOnlinePlayersAfterRecovery();}
-  catch(error){console.error('Could not synchronize online players after persistence failure:',error);}
 }
 function loadPlayersForAuction():Record<string,any>{return loadPlayersWithOnline();}
-function recoverPlayerStateBeforeMutation(){const recovered=sharedStateRuntime.recoverPendingState();if(recovered)syncOnlinePlayersAfterRecovery();return recovered;}
+function recoverPlayerStateBeforeMutation(){const playersRecovered=sharedStateRuntime.recoverPendingPlayerState();if(playersRecovered)syncOnlinePlayersAfterRecovery();return playersRecovered;}
 function persistPlayers(players:Player[]){
   try{sharedStateRuntime.transact((hadRecovery)=>{if(hadRecovery)throw new Error('Player state was recovered during a mutation; retry the action after state synchronization.');for(const online of ONLINE_PLAYERS.values())normalizePlayerProfessionData(online);const all=loadPlayers();for(const player of Object.values(all))normalizePlayerProfessionData(player);for(const [id,online] of ONLINE_PLAYERS)all[id]=online.toJSON();for(const p of players)if(p?.id)all[p.id]=p.toJSON();return {files:{players:all},result:undefined};});}
   catch(error){reconcileOnlinePlayersAfterPersistenceFailure();throw error;}
