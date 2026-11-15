@@ -166,3 +166,25 @@ test('invalid settlement data leaves the original war and clan records untouched
   assert.equal(clan.seasonPoints, 0);
   assert.equal(clan.questProgress.war, 0);
 });
+
+
+test('clan war cooldown fails closed for malformed persisted timestamps', () => {
+  for (const value of [-1, 1.5, Number.NaN, Number.POSITIVE_INFINITY, Number.MAX_SAFE_INTEGER + 1, '5000' as unknown as number]) {
+    assert.throws(
+      () => clanWarCooldownRemaining(activeWar({ lastAttackAtByPlayer: { playerA: value } }), 'playerA', 6_000),
+      /timestamp is invalid/i,
+    );
+  }
+  assert.throws(() => clanWarCooldownRemaining(activeWar(), 'playerA', -1), /clock and duration/i);
+  assert.throws(() => clanWarCooldownRemaining(activeWar(), 'playerA', 6_000, 1.5), /clock and duration/i);
+});
+
+test('malformed cooldown timestamp cannot be bypassed by a new war attack', () => {
+  const war = activeWar({ lastAttackAtByPlayer: { playerA: 5_000.5 } });
+  assert.throws(
+    () => recordClanWarDamage(war, 'clan-a', 'playerA', 10, 6_000),
+    /timestamp is invalid/i,
+  );
+  assert.equal(war.aDamage, 0);
+  assert.equal(war.lastAttackAtByPlayer?.playerA, 5_000.5);
+});
