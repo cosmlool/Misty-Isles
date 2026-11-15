@@ -961,3 +961,16 @@ PR #15 остаётся Draft/open и не объединён. Слияние б
 - Commits in this stage include `2154571` currency helper, `153ce79` helper tests, `5be86be` gameplay credit integration, `2e26829` auction cap, `b466b10` PvP cap, `b8a6dee` combat settlement display, `c78178e` auction notice, `02dd013` legacy balance clamp, `50dcc0d` runtime test, and `a2dac79` cap specification.
 
 - Follow-up boundary refinement: legacy balances are clamped when finite and above the cap even if the stored number is outside JavaScript's safe-integer range; non-finite/negative balances and fractional in-cap balances still fail closed. PvP and auction balance readers use the same normalization. Added regressions for unsafe finite over-cap legacy values. Details updated in `CURRENCY_CAPS.md`.
+
+## Контрольная точка — 2026-11-16 (валютные лимиты / CI correction)
+
+- Утверждённые лимиты: золото 9,999,999,999; кристаллы 50,000. Излишек при начислении сгорает. Самоцветы не ограничены этим изменением.
+- CI Quality Gate run 43763284070 на HEAD 94628e7 завершился failure: 434/437 server tests passed; client build, Playwright и data/docs jobs passed.
+- Подтверждённые причины трёх ошибок:
+  1. PvP legacy-cap tests ожидали 80/120 золота, что не соответствовало утверждённой 20%-ной передаче от проигравшего после нормализации его баланса до лимита. Обновлены только ожидания тестов: проигравший с 10,000,000,000 нормализуется до 9,999,999,999, отдаёт 1,999,999,999, остаток 8,000,000,000; получатель получает эту сумму в рамках своего лимита. Добавлена явная проверка gross/credited/burned значений и аналогичного сценария с unsafe legacy balance.
+  2. Auction read projection сохранял первую запись при повторяющемся lot ID, хотя безопасное поведение — исключать все неоднозначные дубликаты. Исправлен projectAuctionLots: предварительный подсчёт ID, все записи с повторяющимся ID исключаются. Существующий regression test покрывает duplicate ID.
+- Commits после неуспешного CI:
+  - 030f8aae209e69c214f8febcb0bfa1e684e21f56 — исключать все неоднозначные дубликаты из read-only auction projection.
+  - 362c136f43069fecb72cde99e9ce4f638ec08b10 — привести PvP legacy-cap test assertions к фактическому правилу 20%-ного перевода после cap.
+- Следующий HEAD проверить через PR #18 / branch; запущенный на него Quality Gate обязателен. Локальные тесты не запускались. Не считать исправление подтверждённым до CI.
+- PR #18 остаётся Draft/open, merged=false. Не сливать без отдельного разрешения.
