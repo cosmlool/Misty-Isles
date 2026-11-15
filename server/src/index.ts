@@ -41,6 +41,7 @@ import { checkExpeditionTravelConsistency, checkExpeditionTravelReadiness, check
 import { parseAdminPlayerIds } from './adminAuthorization.js';
 import { isCharacterGender } from './characterIdentity.js';
 import { parseMonsterWeakness, resolveLegacyMonsterAttackMultiplier, resolveLegacyMonsterDefenseMultiplier, resolveLegacyMonsterProfessionDamageMultiplier, resolveLegacyMonsterHitMultiplier, resolveLegacyMonsterResistance, resolveLegacyPlayerHitMultiplier, resolveLegacyHealingMultiplier, resolveLegacyMonsterWeaknessMultiplier, resolveMonsterPassive } from './monsterCombat.js';
+import { prepareXpProgression } from './xpProgression.js';
 
 const ONLINE_PLAYERS = new Map<string, Player>();
 const ONLINE_CLIENTS = new Map<string, Client>();
@@ -669,7 +670,7 @@ class GameRoom extends Room<RoomState> {
   private save() { if (!this.playerId || !canSaveRoomPlayerSnapshot(ONLINE_PLAYERS.get(this.playerId), this.state.player)) return; this.state.player.lastSeenAt=Date.now(); persistPlayers([this.state.player]); }
   private notice(c: Client, text: string) { this.save(); c.send('notice', { text }); }
   private requireCharacter(c: Client) { if(ONLINE_CLIENTS.get(this.playerId)!==c){c.leave(4021);return false;}const p=this.state.player; if(!p.race){this.notice(c,'Сначала создай персонажа.');return false;} return true; }
-  private addXp(p: Player, amount: number) { p.experience += amount; while(p.experience>=xpNeed(p.level)){p.experience-=xpNeed(p.level);p.level++;p.statPoints+=3;p.experienceToNext=xpNeed(p.level);const healthIncrease=18+p.vitality*0.5;p.maxHealth+=healthIncrease;p.health=Math.min(effectiveMaxHealth(p),p.health+healthIncrease);} }
+  private addXp(p: Player, amount: number) { const progression=prepareXpProgression(p,amount,baseMaxHealth=>effectiveMaxHealth(Object.assign(Object.create(Object.getPrototypeOf(p)),p,{maxHealth:baseMaxHealth}) as Player));Object.assign(p,progression); }
   private finishCraftJobs(p: Player) { /* completed jobs stay claimable until the player collects them */ }
   private runExpeditionDungeon(c:Client,dungeon:any,requestIdRaw:unknown) {
     if(recoverPlayerStateBeforeMutation())return this.notice(c,'Состояние игроков восстановлено. Повтори вход в подземелье.');
