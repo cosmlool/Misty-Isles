@@ -761,3 +761,10 @@ PR #15 остаётся Draft/open и не объединён. Слияние б
 - Identified stricter-cost classes: auction shared-WAL mutations; clan/war transactions and broadcasts; PvP combat; expedition group combat and multi-player persistence; synchronous dungeon runs. Player writes and `notice()` paths also require mutation budgets because invalid actions can trigger persistence.
 - Design constraints and full event grouping are recorded in `GAMEPLAY_MESSAGE_RATE_LIMIT_CLASSIFICATION.md`. Recommended design is server-side per-authenticated-player token buckets with separate general, mutation, and expensive-operation budgets; bounded rejection without persistence; explicit reconnect/session semantics; and runtime tests including proof rejected packets do not write saves/WAL.
 - No numerical thresholds selected and no gameplay code changed. Static source review only; no local tests run.
+ 
+## Authenticated gameplay ingress follow-up — 2026-11-15
+
+- Additional review found that every inbound authenticated gameplay message currently runs `verifySession(this.sessionToken)` and then `recoverPlayerStateBeforeMutation()`. `verifySession` itself calls pending-player-WAL recovery and reads session and account JSON data, so a message can trigger repeated recovery checks and disk-backed authentication reads before its handler.
+- Limiter placement must account for this: a cheap room/client ownership check can precede a per-player ingress budget, then expensive session/WAL checks and handler execution. However, session revocation semantics must remain intact: logout removes the durable session and closes the matching live client. Do not replace validation with an unchecked cache.
+- Current server topology allows one client per room and one online room per player. A process-scoped player bucket would cover reconnects in that process, but resets on process restart and is not coordinated across multiple server instances. Multi-instance deployment needs shared coordination or explicit single-process deployment guarantees.
+- No implementation, benchmark, or runtime test was performed. Detailed constraints are in `GAMEPLAY_MESSAGE_RATE_LIMIT_CLASSIFICATION.md`.
