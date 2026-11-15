@@ -42,8 +42,14 @@ test('zero credit preserves a valid balance', () => {
 });
 
 test('invalid, fractional, negative and unsafe amounts fail closed', () => {
-  for (const value of [-1, 1.5, Number.NaN, Number.POSITIVE_INFINITY, Number.MAX_SAFE_INTEGER + 1]) {
+  for (const value of [-1, 1.5, Number.NaN, Number.POSITIVE_INFINITY]) {
     assert.throws(() => creditGold(value, 1));
     assert.throws(() => creditCrystals(1, value));
   }
+});
+
+
+test('finite legacy balances above the cap clamp even when outside the safe-integer range', () => {
+  assert.equal(creditGold(Number.MAX_SAFE_INTEGER + 1, 1).balance, MAX_GOLD_BALANCE);
+  assert.equal(creditCrystals(Number.MAX_SAFE_INTEGER + 1, 1).balance, MAX_CRYSTALS_BALANCE);
 });
