@@ -611,3 +611,7 @@ PR #15 остаётся Draft/open и не объединён. Слияние б
 - Дополнительная проверка auth entry points выявила ту же границу и для HTTP: `authHttpHandler` сам вызывает recovery до обработки `/auth/*`, а `verifySession` также используется при WebSocket join. Поэтому синхронизация только в WebSocket message wrapper была недостаточной для всех путей.
 - Усиление исправления в `17ef9e42816d8978c4ee9a4c304fee343cd3ccfc`: `verifySession` теперь сам синхронизирует `ONLINE_PLAYERS`, если recovery сработал; `authHttpHandler` делает то же после собственного recovery. Это покрывает session verification при join, повторную проверку в сообщениях и HTTP auth requests, не меняя auth token/session semantics.
 - Текущая ветка должна получить новый CI запуск после HEAD `17ef9e42816d8978c4ee9a4c304fee343cd3ccfc` и обновления этого checkpoint.
+
+
+- Regression coverage дополнена: `server/test/pvpRuntime.test.ts` теперь отдельно создаёт pending shared WAL перед HTTP `/auth/check`, а затем выполняет PvP mutation. Проверка баланса после боя подтверждает, что HTTP-triggered recovery синхронизировал живого атакующего, а не позволил stale in-memory gold перезаписать восстановленные 888 золота. Предыдущий этап этого теста по-прежнему проверяет recovery, инициированный непосредственно WebSocket `pvpList`.
+- Текущий regression coverage commit: `b9de76ba5a568c21bd202195de44b5f32a2b8302`. Требуется CI на актуальном HEAD.
