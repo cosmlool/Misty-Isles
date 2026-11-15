@@ -106,9 +106,9 @@ test('PvP rejects malformed, fractional, negative and unsafe persisted gold bala
 });
 
 test('PvP rejects a transfer that would overflow the winner safe-integer balance', () => {
-  assert.throws(() => resolvePvpOutcome(Number.MAX_SAFE_INTEGER, 100, false, 1_000),
+  assert.throws(() => resolvePvpOutcome(Number.MAX_SAFE_INTEGER, 100, true, 1_000),
     /exceed the safe integer range/);
-  assert.throws(() => resolvePvpOutcome(100, Number.MAX_SAFE_INTEGER, true, 1_000),
+  assert.throws(() => resolvePvpOutcome(100, Number.MAX_SAFE_INTEGER, false, 1_000),
     /exceed the safe integer range/);
 });
 
