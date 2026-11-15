@@ -699,3 +699,10 @@ PR #15 остаётся Draft/open и не объединён. Слияние б
 - `expeditionTravelClaim` similarly requires consistent moving states and a completed timer, then atomically persists the updated participant locations. No autonomous AFK watchdog or scheduled settlement was found in this live expedition path.
 - Dungeon-specific AFK rules (leader idle 60 minutes, disconnect distinct from AFK, solo durable run survives reconnect) remain unimplemented because the production dungeon handler still does not create durable active runs. Do not infer that ordinary expedition behavior implements those dungeon rules. No gameplay code changed in this audit.
 - Source review only; no local runtime tests were run. The latest GitHub Actions run `43741125657` passed all 4/4 jobs on exact commit `0a10796a78c5467007b1ed4b27915be591725bbd`.
+
+
+## Auth input-boundary audit — 2026-11-15
+
+- Login previously passed any password string from the HTTP body (up to the 8 KiB request-body cap) directly into synchronous `scryptSync`, while registration limits passwords to 8–128 characters. This created avoidable CPU work for oversized login inputs.
+- Added `isPasswordLengthWithinLimit()` and reject passwords longer than 128 characters before `scryptSync`; valid registered passwords and password hashing parameters are unchanged. Added unit coverage for 128, 129, and 8192 characters.
+- Changes: `server/src/authPasswordPolicy.ts`, `server/test/authPasswordPolicy.test.ts`, and the `passwordMatches()` guard in `server/src/index.ts`. Awaiting GitHub Actions on the latest branch HEAD; no local tests were run.
