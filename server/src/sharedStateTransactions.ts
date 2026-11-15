@@ -21,6 +21,9 @@ export const SHARED_STATE_KEYS = [
   'huntGroups',
   'dungeonRuns',
   'dungeonOutbox',
+  'accounts',
+  'sessions',
+  'guestCredentials',
 ] as const;
 
 export type SharedStateKey = typeof SHARED_STATE_KEYS[number];
