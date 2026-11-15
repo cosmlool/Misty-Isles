@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict';
-import { existsSync, mkdtempSync, readFileSync, rmSync } from 'node:fs';
+import { appendFileSync, existsSync, mkdtempSync, readFileSync, rmSync } from 'node:fs';
 import { spawnSync } from 'node:child_process';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
@@ -180,7 +180,7 @@ test('a real process crash after transport send leaves the event pending for at-
       },
     });
     assert.equal(replayCount, 1);
-    assert.equal(readFileSync(sentFile, 'utf8').trim().split('\\n').length, 2);
+    assert.equal(readFileSync(sentFile, 'utf8').trim().split(/\r?\n/).length, 2);
     assert.equal(readJson(f.files.dungeonOutbox)[event.eventId].status, 'delivered');
   } finally { f.cleanup(); }
 });
