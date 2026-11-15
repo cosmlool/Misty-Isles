@@ -1002,3 +1002,16 @@ PR #15 остаётся Draft/open и не объединён. Слияние б
 - Commits: `7eb7875be7c5c5d89d11a4a3c6ddc8af26d20371` (helper), `c04682de83f038be3e80bd3608a1336c11ee2c83` (tests), `069e0bbb3e1d10509c81303dba88f0b5958afa78` (admin integration).
 - Local tests were not run. A fresh full Quality Gate for the final branch HEAD is required before treating this change as validated.
 - PR #18 remains Draft/open/unmerged. No main-branch changes, save migration, or balance cap changes.
+
+
+## Clan treasury transaction hardening — 2026-11-16
+
+- Reviewed clan donation, raid rewards, upgrades, territory capture, clan quest claims and weekly season rewards, plus PvP multi-player settlement.
+- PvP settlement is already performed inside the shared player-state transaction: both participants' balances, cooldown/immunity state, counters and combat report are prepared and persisted together; online target state is synchronized only after commit, with rollback/reconciliation on failure.
+- Found that clan vault arithmetic used unchecked `+=`, `-=` and numeric coercion. Malformed legacy values or arithmetic beyond JavaScript's safe-integer range could silently corrupt treasury balances or produce imprecise results.
+- Added `prepareClanVaultCredit` and `prepareClanVaultDebit`. Clan vaults remain uncapped; all credits/debits now require exact nonnegative safe-integer arithmetic and reject overflow, malformed balances and insufficient funds before durable commit.
+- Routed donation, raid proceeds, upgrade purchases, territory capture costs, clan quest rewards and weekly season rewards through the helpers. No reward, cost, cooldown, territory or progression formula changed.
+- Added regression tests for exact safe-integer boundaries, uncapped valid balances, invalid legacy values and insufficient funds.
+- Commits: `d1a3b560a26d074247da7f1f37bda050e1bae82e` (helpers), `5b7f61cf56093f05a554eff3c886ad81b0a2d6ea` (tests), `e76b2d54dd5b34018b8e8fd9c08262ac7cc8d2a7` (all handler integrations).
+- Local tests not run. Fresh full Quality Gate for the final branch HEAD is required.
+- PR #18 remains Draft/open/unmerged; no main changes or save migration.
