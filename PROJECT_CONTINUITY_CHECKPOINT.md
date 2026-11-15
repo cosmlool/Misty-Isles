@@ -1076,3 +1076,11 @@ PR #15 остаётся Draft/open и не объединён. Слияние б
 - Added focused regression tests and included them in the server test command.
 - Source review found clan leave can still clear an orphaned player clan reference when the clan record itself is missing; that behavior is separate from validated clan/territory store loading and should be reviewed with save reconciliation semantics before changing it.
 - Local tests were not run. Full Quality Gate is required for the final HEAD.
+
+
+## Clan-save validation compatibility correction (2026-11-16)
+- Quality Gate run `43773785466` on `eae29d9efb4b63dfd901786973ecfa33162fe7da` failed one existing clan-war runtime test; 452/453 server tests passed, client build and Playwright smoke passed.
+- Root cause: strict clan loader rejected a legacy fixture clan without a persisted `leader` field, and strict territory loader rejected the fixture's noncanonical territory ID. This was an integration-compatibility defect in the new validator, not a clan-war combat failure.
+- Corrected validation to preserve legacy leaderless clan records while still requiring any present leader to be a member; updated the runtime fixture to use canonical territory `crossroads`; added a leaderless-legacy regression case.
+- Latest corrected source HEAD at this note: `5bfc7c98ca275c2893664e6db84c63115773783f`. Quality Gate run `43776634500` is in progress; final result pending. Local tests not run.
+- Clan war source review: challenge creation is leader-only; attacks require actual membership and active participation; settlement is idempotent via active-to-finished status. Remaining follow-up: validate persisted war record identities and cross-references before any settlement.
