@@ -79,5 +79,5 @@ test('effective max-health resolver receives each updated base max-health value'
     return baseMaxHealth;
   });
 
-  assert.deepEqual(received, [123]);
+  assert.deepEqual(received, [123, 146]);
 });
