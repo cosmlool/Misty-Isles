@@ -706,3 +706,13 @@ PR #15 остаётся Draft/open и не объединён. Слияние б
 - Login previously passed any password string from the HTTP body (up to the 8 KiB request-body cap) directly into synchronous `scryptSync`, while registration limits passwords to 8–128 characters. This created avoidable CPU work for oversized login inputs.
 - Added `isPasswordLengthWithinLimit()` and reject passwords longer than 128 characters before `scryptSync`; valid registered passwords and password hashing parameters are unchanged. Added unit coverage for 128, 129, and 8192 characters.
 - Changes: `server/src/authPasswordPolicy.ts`, `server/test/authPasswordPolicy.test.ts`, and the `passwordMatches()` guard in `server/src/index.ts`. Awaiting GitHub Actions on the latest branch HEAD; no local tests were run.
+
+
+## Auth/session lifecycle review — 2026-11-15
+
+- Reviewed `/auth/guest`, `/auth/register`, `/auth/login`, `/auth/check`, `/auth/logout`, session verification, and client auth persistence.
+- Server stores SHA-256 digests of opaque random session tokens and guest recovery proofs, not the raw secrets. Sessions expire after 30 days; guest recovery requires either the stored proof or a still-valid guest session. Guest-to-account registration verifies the proof and atomically writes account + replacement session + guest-proof removal, while revoking existing guest sessions for that player.
+- Username uniqueness is case-insensitive; account registration password bounds are 8–128 characters. Login now applies the same upper bound before synchronous scrypt (see prior note).
+- Client persists session tokens and guest recovery proofs in `localStorage`. This is a known browser security trade-off: any successful same-origin script injection could read them. Do not treat localStorage as an HttpOnly-cookie equivalent; a future public deployment should prioritize strict output escaping, a restrictive Content-Security-Policy, dependency hygiene, and HTTPS/WSS. Changing the current WebSocket auth/session design is out of scope for this audit.
+- Client logout currently treats the server revocation call as best-effort and clears local credentials even if the request fails. In that case the server-side token may remain valid until expiry, although the client has discarded it. This should be considered in a future logout UX/security change (e.g. surface revocation failure or preserve a retry path) rather than silently changing current session semantics here.
+- No further auth/session code changed in this review. Source inspection only; no local tests run.
