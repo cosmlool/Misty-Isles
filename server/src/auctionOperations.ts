@@ -1,4 +1,5 @@
 import { removeInventoryCopy } from './inventoryOperations.js';
+import { creditGold, creditCrystals, MAX_GOLD_BALANCE, MAX_CRYSTALS_BALANCE } from './currencyOperations.js';
 
 export type EconomyPlayer = Record<string, any>;
 export type AuctionLot = {
@@ -35,7 +36,7 @@ function addSafeCounter(player: EconomyPlayer, field: string, amount: number): n
 function safeBalance(player: EconomyPlayer, field: 'gold' | 'crystals'): number {
   const value = Number(player[field] ?? 0);
   if (!Number.isSafeInteger(value) || value < 0) throw new Error('Player currency balance is invalid.');
-  return value;
+  return Math.min(value, field === 'gold' ? MAX_GOLD_BALANCE : MAX_CRYSTALS_BALANCE);
 }
 function validateLots(lots: AuctionLot[], validItemIds: ReadonlySet<string>) {
   if (!Array.isArray(lots)) throw new Error('Auction listing data is invalid.');
@@ -161,8 +162,8 @@ export function buyAuctionItem(input: {
   const sellerBalance = safeBalance(seller, field);
   const fee = field === 'gold' ? Math.max(1, Math.floor(lot.price * 0.05)) : 0;
   const net = lot.price - fee;
-  const nextSellerBalance = sellerBalance + net;
-  if (!Number.isSafeInteger(nextSellerBalance)) throw new Error('Seller currency balance would exceed the safe integer range.');
+  const sellerCredit = field === 'gold' ? creditGold(sellerBalance, net) : creditCrystals(sellerBalance, net);
+  const nextSellerBalance = sellerCredit.balance;
   const nextBuyerGoldSpent = field === 'gold' ? addSafeCounter(buyer, 'goldSpent', lot.price) : undefined;
   const nextSellerItemsSold = addSafeCounter(seller, 'itemsSold', 1);
   buyer[field] = buyerBalance - lot.price;
@@ -178,5 +179,5 @@ export function buyAuctionItem(input: {
     sellerName: lot.sellerName, buyerId: input.buyerId, buyerName: String(buyer.name || ''),
     price: lot.price, currency: field, fee, createdAt: input.now, status: 'completed',
   });
-  return { snapshot: next, fee, net, lot };
+  return { snapshot: next, fee, net: sellerCredit.credited, burned: sellerCredit.burned, lot };
 }
