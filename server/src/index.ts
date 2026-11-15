@@ -11,6 +11,7 @@ import { calculatePvpCombatStats, resolvePvpSetBonuses } from './pvpCombat.js';
 import { calculateCombatSpeed } from './monsterBattle.js';
 import { calculatePlayerMonsterCombatStats, parseMonsterCombatEffectClauses, resolveEquipmentSetCombatEffects, resolveEquipmentSetTierDescriptions, resolveGoldEquipmentStatProfile, resolveMonsterCombatProperty, resolvePlayerMonsterLifestealRate, resolveMonsterPendantCombatEffect } from './monsterCombatStats.js';
 import { applyPlayerSave, createPlayerSaveStore } from './playerSaves.js';
+import { writeJsonFileAtomic } from './atomicJsonPersistence.js';
 import { startPlayerAutosave } from './playerAutosave.js';
 import { canSaveRoomPlayerSnapshot, isCurrentRoomSession } from './playerSessionOwnership.js';
 import { readJsonFile as readPersistentJson } from './jsonPersistence.js';
@@ -516,7 +517,7 @@ function allowAuthAttempt(ip:string){const now=Date.now();let entry=AUTH_ATTEMPT
  * This protects existing saves from being truncated if the process stops during serialization/write.
  * It does not remove synchronous-I/O latency; database migration/load testing remain separate work.
  */
-function writeJsonAtomic(file:string,value:unknown) { const temp=`${file}.${process.pid}.${Date.now()}.${randomBytes(4).toString('hex')}.tmp`; try { writeFileSync(temp,JSON.stringify(value,null,2),{encoding:'utf8',flag:'wx'}); renameSync(temp,file); } catch(error) { try { if(existsSync(temp)) unlinkSync(temp); } catch {} throw error; } }
+function writeJsonAtomic(file:string,value:unknown) { writeJsonFileAtomic(file,value); }
 function isPlainObject(value:any):value is Record<string,any>{return !!value&&typeof value==='object'&&!Array.isArray(value);}
 function loadAccounts():AccountRecord[] { return readPersistentJson<AccountRecord[]>(ACCOUNT_FILE,[],value=>Array.isArray(value)&&value.every((x:any)=>isPlainObject(x)&&typeof x.username==='string'&&typeof x.usernameKey==='string'&&typeof x.playerId==='string'&&typeof x.salt==='string'&&typeof x.passwordHash==='string'&&Number.isFinite(x.createdAt))); }
 function saveAccounts(value:AccountRecord[]) { writeJsonAtomic(ACCOUNT_FILE,value); }
