@@ -626,3 +626,17 @@ PR #15 остаётся Draft/open и не объединён. Слияние б
 - Добавлен regression test: auth-only journal recovery сообщает `playersRecovered=false` и сохраняет существующий player snapshot; отдельный pending journal с `players` сообщает `true` и replay-ит player state.
 - Коммиты этой корректировки: `3d2c3b1aec8aed2f2d837228d934bb862263c54e` (shared WAL target inspection), `f8b0d679d3211fb2afd40ebc5e92f7325b1d3621` (runtime recovery semantics), `cba57b095eddf1e378be75e433f58fbbe8ea5300` (server integration), `fcf691c7854886139bc7040f70134cd2210a39f4` (regression test).
 - Требуется новый Quality Gate на текущем HEAD; предыдущие запуски отменены/устарели после новых commits и не подтверждают эту корректировку.
+
+## Штатная остановка и блокировка каталога данных — 2026-11-15
+
+- Подтверждённый API Colyseus 0.16.26: graceful shutdown автоматически закрывает комнаты и транспорт; `onBeforeShutdown` вызывается до закрытия комнат, `onShutdown` — после их закрытия.
+- Сервер останавливает autosave в `onBeforeShutdown`. Сохранение персонажей выполняется существующим WAL в `onLeave`; `onDispose` повторяет сохранение комнаты, а `onShutdown` делает дополнительную попытку для оставшихся в `ONLINE_PLAYERS` персонажей.
+- Добавлен локальный `POST /internal/shutdown`: доступ только с loopback и с секретом из `MISTY_SHUTDOWN_TOKEN`, сравнение токена constant-time. Ответ отправляется до запуска `gameServer.gracefullyShutdown()`.
+- Windows Start-Game генерирует случайный секрет после установки зависимостей, передаёт его только серверному процессу и хранит в игнорируемом Git файле состояния лаунчера. Клиент секрет не получает.
+- Windows Stop-Game вызывает локальный endpoint, ждёт закрытия порта и удаления lock-файла. Если штатное завершение не подтверждено, сервер не завершается принудительно; состояние сохраняется для повторной попытки.
+- Windows-лаунчер использует `npm run start`, а не `tsx watch`: в Windows Node `SIGTERM` через `child_process.kill` завершает процесс без вызова обработчиков, а watcher применяет такой способ при перезапуске. После изменений серверного кода его нужно перезапустить через BAT-файлы.
+- Добавлен `server/src/dataDirectoryLock.ts`: эксклюзивное создание `.misty-server.lock` через `open(..., 'wx')`, PID/время старта/случайный token; release выполняется на `process.exit` только при совпадении собственного token. Второй процесс с тем же `MISTY_DATA_DIR` блокируется.
+- Stale или повреждённый lock автоматически не удаляется: это fail-closed политика. Удаление вручную допускается только после проверки, что ни один сервер больше не использует каталог.
+- Добавлены `server/test/dataDirectoryLock.test.ts` и `server/test/gracefulShutdownRuntime.test.ts`: эксклюзивность, stale-lock fail-closed, запрет второго процесса, отказ неверному токену, штатное завершение, сохранение созданного персонажа и освобождение lock.
+- Quality Gate `43731571802` на HEAD `55d0745333129fb3c71374badcf739e566895cb8` завершился 4/4 success: server tests/build, Playwright, client build и data/docs audit. После этого изменён только Windows launcher (переход с `npm run dev` на `npm run start`) и README; текущий HEAD требует отдельного финального Quality Gate.
+- PR #18 остаётся Draft/open, base `stage29/clean-validation-recovery`; merge не выполнять.
