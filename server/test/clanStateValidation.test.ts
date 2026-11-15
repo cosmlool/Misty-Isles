@@ -23,6 +23,8 @@ test('malformed clan identity, level, roster, duplicate members and upgrades fai
     { ...clans.clan_a, vault: Number.MAX_SAFE_INTEGER + 1 },
   ];
   for (const clan of cases) assert.equal(validateClanStore({ clan_a: clan }), false);
+  const second = { ...clans.clan_a, id: 'clan_b', name: 'Другой клан' };
+  assert.equal(validateClanStore({ ...clans, clan_b: second }), false, 'a player cannot belong to two persisted clans');
 });
 
 test('territory ownership must be unique, known and refer to an existing clan', () => {
