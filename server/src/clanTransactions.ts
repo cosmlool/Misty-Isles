@@ -122,6 +122,16 @@ export function createClanTransactionStore(options: ClanTransactionOptions) {
 }
 
 
+/** Validate uncapped clan progression counters before applying a credit. */
+export function prepareClanProgressCredit(balance: number, amount: number, label = 'progress'): number {
+  if (!Number.isSafeInteger(balance) || balance < 0
+    || !Number.isSafeInteger(amount) || amount < 0
+    || !Number.isSafeInteger(balance + amount)) {
+    throw new Error(`Clan ${label} must remain a nonnegative safe integer.`);
+  }
+  return balance + amount;
+}
+
 /** Clan vaults are uncapped, but must remain exact nonnegative safe integers. */
 export function prepareClanVaultCredit(balance: number, amount: number): number {
   if (!Number.isSafeInteger(balance) || balance < 0
