@@ -564,7 +564,7 @@ function authHttpHandler(req:IncomingMessage,res:ServerResponse) {
     if(req.method!=='POST'){sendJson(res,405,{error:'Используй POST.'});return;}
     if(shutdownRequested){sendJson(res,202,{ok:true,shutdown:'already-requested'});return;}
     shutdownRequested=true;
-    res.once('finish',()=>{void gameServer.gracefullyShutdown();});
+    res.once('finish',()=>{void gameServer.gracefullyShutdown().catch(error=>{shutdownRequested=false;console.error('Graceful server shutdown failed; data directory lock remains held:',error);});});
     sendJson(res,202,{ok:true,shutdown:'requested'});
     return;
   }
@@ -1225,7 +1225,9 @@ class GameRoom extends Room<RoomState> {
       c.send('clanWarList',payload);
     });
     this.onAuthenticatedMessage('pvpList',(c)=>{if(!this.requireCharacter(c))return;
-      const response=sharedStateRuntime.transact((hadRecovery)=>{
+      let response:any;
+      try{
+        response=sharedStateRuntime.transact((hadRecovery)=>{
         if(hadRecovery)syncOnlinePlayersAfterRecovery();
         const p=this.state.player;
         const now=Date.now();
@@ -1252,7 +1254,11 @@ class GameRoom extends Room<RoomState> {
             &&pvpImmunityRemaining(entry.player,now)===0)
           .map(({id,player}:any)=>({id:publicPlayerCode(id),name:player.name||'Путник',race:player.race||'?',profession:player.profession||'',level:Number(player.level||1),strength:Number(player.strength||10),defense:Number(player.defense||8),health:Number(player.health||100),maxHealth:Number(player.maxHealth||100),clan:player.clan||'',isBot:false}));
         return {files:{players:all},result:{players,cooldownUntil:cooldown>0?now+cooldown:0,offersExpireAt:Number(state.offersExpireAt||0),immunityUntil:Number(readPvpStateSafe(p).immunityUntil||0)}};
-      });
+        });
+      }catch(error){
+        reconcileOnlinePlayersAfterPersistenceFailure();
+        throw error;
+      }
       c.send('pvpList',response);
     });
     this.onAuthenticatedMessage('pvpChallenge',(c,d:any)=>{if(!this.requireCharacter(c))return;
