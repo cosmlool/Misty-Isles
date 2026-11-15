@@ -67,3 +67,12 @@ test('group persistence does not roll runtime membership back while its durable 
   assert.match(helper, /if\(!existsSync\(sharedStateTransactions\.journalFile\)\)restoreHuntGroupsFromDisk\(\)/);
   assert.match(helper, /durable WAL remains[\s\S]*?Keep the intended in-memory roster/);
 });
+test('pre-journal player persistence failures restore existing online players from durable disk state', () => {
+  const start = source.indexOf('function reconcileOnlinePlayersAfterPersistenceFailure()');
+  const end = source.indexOf('function loadPlayersForAuction()', start);
+  assert.ok(start >= 0 && end > start, 'persistence failure reconciliation helper must be present');
+  const helper = source.slice(start, end);
+  assert.match(helper, /if\(sharedStateRuntime\.recoverPendingPlayerState\(\)\)[\s\S]*?syncOnlinePlayersAfterRecovery\(\)[\s\S]*?return/);
+  assert.match(helper, /if\(!existsSync\(sharedStateTransactions\.journalFile\)\)syncOnlinePlayersAfterRecovery\(\)/);
+  assert.match(helper, /No journal means publication never happened/);
+});
