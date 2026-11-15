@@ -39,6 +39,7 @@ function safeBalance(player: EconomyPlayer, field: 'gold' | 'crystals'): number 
 }
 function validateLots(lots: AuctionLot[], validItemIds: ReadonlySet<string>) {
   if (!Array.isArray(lots)) throw new Error('Auction listing data is invalid.');
+  const lotIds = new Set<string>();
   for (const lot of lots) {
     if (!lot || typeof lot !== 'object' || Array.isArray(lot)
       || typeof lot.id !== 'string' || !lot.id
@@ -48,6 +49,8 @@ function validateLots(lots: AuctionLot[], validItemIds: ReadonlySet<string>) {
       || (lot.status !== undefined && lot.status !== 'active')) {
       throw new Error('Auction listing contains an invalid lot; transaction cancelled.');
     }
+    if (lotIds.has(lot.id)) throw new Error('Auction listing contains duplicate lot IDs; transaction cancelled.');
+    lotIds.add(lot.id);
   }
 }
 function appendHistory(history: any[], entry: any): any[] {
@@ -64,6 +67,9 @@ export function listAuctionItem(input: {
 }): { snapshot: EconomySnapshot; lot: AuctionLot; fee: number } {
   const next = clone(input.snapshot);
   validateLots(next.auction, input.validItemIds);
+  if (typeof input.lotId !== 'string' || !input.lotId || next.auction.some(lot => lot.id === input.lotId)) {
+    throw new Error('Auction lot identifier is invalid or already in use.');
+  }
   const seller = next.players[input.sellerId];
   if (!seller) throw new Error('Seller is missing from the player save.');
   if (!Number.isInteger(input.index) || input.index < 0 || !validPrice(input.price)) throw new Error('Check the item and lot price.');
