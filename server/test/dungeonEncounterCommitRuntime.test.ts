@@ -70,11 +70,11 @@ test('prepared encounter cannot be attached to another run, roster, boss, or ter
 
 test('WAL recovery requires reloading snapshots and does not write stale encounter data', () => {
   let writes = 0;
-  const runtime = { transact<T>(prepare: (recovered: boolean) => {
+  const runtime = { transactWithRecovery<T>(prepare: (recovery: { recovered: boolean; playersRecovered: boolean }) => {
     files: { players: Record<string, Record<string, unknown>>; dungeonRuns: ReturnType<typeof runStore> };
     result: T; skipWrite?: boolean;
   }): T {
-    const plan = prepare(true);
+    const plan = prepare({ recovered: true, playersRecovered: false });
     if (!plan.skipWrite) writes++;
     return plan.result;
   }};
