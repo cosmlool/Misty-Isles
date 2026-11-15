@@ -142,3 +142,11 @@ test('valid PvP transfer conserves the exact total gold balance', () => {
     assert.equal(result.burnedGold, 0);
   }
 });
+
+
+test('finite unsafe legacy PvP balances above the cap are clamped instead of blocking combat', () => {
+  const result = resolvePvpOutcome(Number.MAX_SAFE_INTEGER + 1, 100, true, 1_000);
+  assert.equal(result.attackerGold, 9_999_999_999);
+  assert.equal(result.targetGold, 80);
+  assert.equal(result.burnedGold, Number.MAX_SAFE_INTEGER + 1 - 9_999_999_999);
+});
