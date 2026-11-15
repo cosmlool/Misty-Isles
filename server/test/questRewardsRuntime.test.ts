@@ -222,7 +222,7 @@ test('a completed current-week challenge pays once and records the ISO-week clai
     const token = await guestToken(port, playerId);
     room = await client.joinOrCreate('my_room', { playerId, sessionToken: token });
     const notices: string[] = [];
-    room.onMessage('notice', payload => notices.push(String(payload?.text || '')));
+    room.onMessage('notice', payload => { const message = String(payload?.text || ''); if (!message.startsWith('С возвращением, ') && message !== 'Выбери расу, чтобы начать приключение.') notices.push(message); });
     const claim = async (label: string) => {
       const before = notices.length;
       room!.send('quest', { id: 'weekly_challenge' });
