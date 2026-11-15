@@ -193,13 +193,13 @@ test('round commit recovers after every shared-WAL write boundary', () => {
       const runtimeModule = new URL('../src/sharedStateRuntime.ts', import.meta.url).href;
       const stateModule = new URL('../src/dungeonRunState.ts', import.meta.url).href;
       const roundModule = new URL('../src/dungeonRunRoundRuntime.ts', import.meta.url).href;
-      const childScript = \`
-        import { createSharedStateTransactionStore } from \${JSON.stringify(transactionModule)};
-        import { createSharedStateRuntime } from \${JSON.stringify(runtimeModule)};
-        import { createDungeonRunRecord, createDungeonRoundPlan } from \${JSON.stringify(stateModule)};
-        import { commitDungeonRunRound } from \${JSON.stringify(roundModule)};
-        const dataDir = \${JSON.stringify(dataDir)};
-        const files = \${JSON.stringify(files)};
+      const childScript = `
+        import { createSharedStateTransactionStore } from ${JSON.stringify(transactionModule)};
+        import { createSharedStateRuntime } from ${JSON.stringify(runtimeModule)};
+        import { createDungeonRunRecord, createDungeonRoundPlan } from ${JSON.stringify(stateModule)};
+        import { commitDungeonRunRound } from ${JSON.stringify(roundModule)};
+        const dataDir = ${JSON.stringify(dataDir)};
+        const files = ${JSON.stringify(files)};
         const base = createDungeonRunRecord({
           runId: 'run_round_matrix', requestId: 'request_round_matrix', dungeonId: 'dungeon_20',
           groupId: 'group_1', leaderId: 'p1',
@@ -215,7 +215,7 @@ test('round commit recovers after every shared-WAL write boundary', () => {
         const players = Object.fromEntries(run.participantIds.map(id => [id, {
           id, health: run.participants[id].health, maxHealth: run.participants[id].maxHealth,
         }]));
-        const boundary = \${JSON.stringify(boundary.name)};
+        const boundary = ${JSON.stringify(boundary.name)};
         const store = createSharedStateTransactionStore({
           dataDir, files,
           testHooks: {
@@ -231,7 +231,7 @@ test('round commit recovers after every shared-WAL write boundary', () => {
           runs: { [run.runId]: run }, players, now: 200,
         });
         process.exit(0);
-      \`;
+      `;
       const child = spawnSync(process.execPath, ['--import', 'tsx', '--input-type=module', '-e', childScript], {
         cwd: process.cwd(), encoding: 'utf8', timeout: 10_000,
       });
