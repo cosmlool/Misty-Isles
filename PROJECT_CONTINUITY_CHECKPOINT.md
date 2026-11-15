@@ -925,3 +925,13 @@ PR #15 остаётся Draft/open и не объединён. Слияние б
 - Added `server/test/auctionPresentation.test.ts` to the explicit `server` test command in `server/package.json`; the regression suite will run in Quality Gate rather than merely existing as an uninvoked test file. Commit: `5c1eeef6b2a924c651753d599e41cb79ab71c18a`.
 
 - Privacy refinement: public `marketHistory` only needs aggregate sale facts for the current client. Added a separate projection that omits seller/buyer IDs and participant names from public analytics while retaining those fields in the authenticated player's own auction history. Added regression coverage. Commits: `10d96e9b2eb94c97acf50a078896af20c794a309`, `e95400d362230d5232898a46d482064310d7c6d4`, `a844aba6fd9ba9e2ca544087b6020e2d9a6c91ca`.
+
+
+## Economy counter and PvP transfer audit — 2026-11-16
+- Mapped current `goldEarned`, `goldSpent`, and `itemsSold` call sites. `itemsSold` is currently an auction-sale count. PvP and auction seller proceeds are transfers of existing gold, not newly generated reward gold; they intentionally do not increment `goldEarned`. Buyer gross auction spend and listing fees remain sinks.
+- Confirmed PvP transfer helper accepted negative/fractional/unsafe persisted balances and did not check winner-balance overflow, unlike the auction operations. Hardened `resolvePvpOutcome` to require nonnegative safe-integer balances and reject unsafe resulting balances. The production PvP transaction has rollback-on-error around the helper, so rejected operations restore both player snapshots and do not commit.
+- Added regression coverage for malformed/negative/fractional/NaN/Infinity/unsafe balances, winner overflow, and conservation of total gold for valid transfers. Existing 20% transfer formula and immunity behavior are unchanged.
+- Remaining finding: multiple non-auction gameplay handlers still use direct `goldEarned +=` / `goldSpent +=`; save loading has no global nonnegative safe-integer rule for every economy field. A blanket migration/validation is deferred until representative privacy-scrubbed legacy saves are available; do not coerce or rewrite deployed counters.
+- Full mapping and rationale: `ECONOMY_COUNTER_AUDIT.md`.
+- Commits: `cee84b00da9bf7aa47d9a13c406c51b300e49760` (PvP guard), `dfaf57f34634f9ad1ac3fae8efd238a7de2f003e` (tests), `96f9314df03a3261848f0ee06f1304c6d63ab905` (audit report).
+- Local tests were not run; Quality Gate required on the resulting HEAD.
