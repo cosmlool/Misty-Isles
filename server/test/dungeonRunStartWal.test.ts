@@ -192,3 +192,33 @@ test('dungeon start WAL recovers the complete entry at journal and target-write 
     }
   }
 });
+
+test('dungeon entry refuses stale run snapshots after a dungeonRuns-only WAL replay', () => {
+  const dataDir = mkdtempSync(join(tmpdir(), 'misty-dungeon-start-run-only-recovery-'));
+  const files = { players: join(dataDir, 'players.json'), dungeonRuns: join(dataDir, 'dungeon_runs.json') };
+  try {
+    const store = createSharedStateTransactionStore({ dataDir, files });
+    const existing = createDungeonRunRecord({
+      runId: 'run_already_committed', requestId: 'request_already_committed', dungeonId: 'dungeon_20',
+      groupId: 'group_1', leaderId: 'p1',
+      participants: [
+        { playerId: 'p1', health: 100, maxHealth: 100 },
+        { playerId: 'p2', health: 80, maxHealth: 100 },
+      ],
+      bossId: 'boss_20', bossHealth: 500, seed: 'seed_existing', now: 100,
+    });
+    writeFileSync(store.journalFile, JSON.stringify({
+      version: 1,
+      files: { dungeonRuns: { [existing.runId]: existing } },
+    }));
+    const runtime = runtimeFor(createSharedStateTransactionStore({ dataDir, files }));
+    assert.throws(() => commitDungeonRunStart({
+      runtime, run: createRun(), players: createPlayers(), runs: {}, day: '2026-11-12',
+    }), /Shared state was recovered during dungeon entry/);
+    const recoveredRuns = readJson(files.dungeonRuns);
+    assert.equal(recoveredRuns.run_already_committed.status, 'active');
+    assert.equal(recoveredRuns.run_start_wal, undefined, 'stale empty run map must not overwrite the recovered durable run');
+  } finally {
+    rmSync(dataDir, { recursive: true, force: true });
+  }
+});
