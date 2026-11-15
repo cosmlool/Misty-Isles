@@ -100,3 +100,34 @@ The current Colyseus `Player` declares these fields in `server/src/PlayerSchema.
 6. Require migration idempotence, before/after fixtures, WAL atomicity, rollback/fail-closed behavior, and tests for loading old versions twice.
 
 No schema caps, enum coercions, or production migrations are approved by this audit. No production code/tests/data changed.
+
+
+## Repository-history and legacy-data availability check — 2026-11-15
+
+### What the repository can and cannot prove
+
+- The current Git history for the inspected core files (server/src/PlayerSchema.ts, server/data/forgotten_lands.json, and server/data/equipment_catalog.json) contains only the initial repository import commit dated 2026-11-08. It does not provide a sequence of prior schema/catalog revisions from which to reconstruct all historical enum values.
+- The tracked tree contains static game catalogs (city_npcs.json, equipment_catalog.json, forgotten_lands.json) but no representative player-save fixtures.
+- .gitignore explicitly excludes runtime persistence, including .local-data/, server/data/players.json, its backups, auction/clan/dungeon state, accounts, sessions, guest credentials, and transaction files. This is appropriate for privacy and security, but means the repository cannot serve as a real-player legacy-save corpus.
+- Stage 28 changelog records that the five city-name migrations were introduced in the working copy on 2026-11-08 and describes preservation of reputation and first-visit flags. It is a useful change record, not proof of every city string ever used in deployed saves.
+- The current profession module has one explicit historical alias (Воин → Рыцарь). The available commit history does not establish whether there were other aliases in earlier untracked working copies or deployed saves.
+
+### Compatibility evidence classification
+
+| Evidence | What is established | What remains unknown |
+|---|---|---|
+| Current player schema/source | Current field names and current runtime normalization behavior | Older deployed schema versions and field semantics |
+| Git history | Initial import baseline for inspected files | Pre-import revisions and deleted/untracked history |
+| Static catalogs | Current catalog records and IDs | All historical catalog IDs/names ever granted to players |
+| Changelog | Recorded Stage 28 city rename and compatibility intent | Actual distribution and frequency of legacy values |
+| Runtime save files | Explicitly ignored by Git | Actual legacy player records; they must be inspected through a controlled, read-only export/fixture process |
+
+### Required next evidence before migration design
+
+1. Obtain a user-approved, privacy-scrubbed, read-only export of representative players.json snapshots and backups from each known deployed version. Do not upload credentials, session tokens, guest proofs, or personal account data.
+2. Build fixtures from copies, preserving original bytes and recording source version/date; redact names and account identifiers while preserving structural and semantic values.
+3. Inventory item IDs, profession/race/city values, achievement keys, quest keys, timestamps, coordinates, and nested serialized objects across the corpus.
+4. Compare observed values against current catalogs and source-level aliases. Distinguish confirmed legacy values from typos, corrupted records, and unknown future values.
+5. Only then specify versioned migration steps, preserve/quarantine behavior, rollback and idempotence tests. Never infer that absence from Git means a value was never used.
+
+No player data was read or changed in this stage. No migration or production code was added.
