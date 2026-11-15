@@ -892,3 +892,13 @@ PR #15 остаётся Draft/open и не объединён. Слияние б
 - Added regression tests for listing-counter overflow, seller balance overflow, and `itemsSold` overflow; rejected transactions leave the supplied snapshot unchanged.
 - Commits: `c703ece7a58405a3593892757b8ce392717da191` (guard) and `e1b8cc84678c7400eb002574743a89ea627ecd1c` (regressions).
 - Source/test changes committed through GitHub; local tests were not run. Run Quality Gate on the new HEAD before treating the fix as validated. PR #18 remains Draft/open and unmerged.
+
+
+## Auction lot identity integrity — 2026-11-15
+- Reviewed the production auction handlers and transaction path. Both purchase and withdrawal resolve a lot by its string ID; the previous validator accepted duplicate active IDs, making the selected lot ambiguous and potentially allowing the wrong listing to be acted on.
+- Listing IDs are generated from player ID, timestamp, and a random suffix, but the listing operation did not enforce uniqueness against persisted lots.
+- Added fail-closed validation for duplicate IDs in the loaded auction snapshot and reject a new listing when its supplied ID is empty or already present.
+- Added regression tests proving duplicate persisted IDs block purchase, withdrawal, and listing without changing the input snapshot; a repeated new ID is also rejected atomically.
+- No existing auction data was migrated, deleted, or rewritten. If a deployed auction file contains duplicate IDs, auction mutations will stop safely until the data is reviewed; do not auto-select or merge ambiguous lots.
+- Commits: `393e304987366fce1d9b6bb8e00bfcc0847ab5e2` (source guard), `c6c8034ae785fbb445f7f398ba97aa74a66efe3d` (regression tests).
+- Awaiting GitHub Actions for the new HEAD; local tests were not run. PR #18 remains Draft/open and unmerged.
