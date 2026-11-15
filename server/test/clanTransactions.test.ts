@@ -4,7 +4,7 @@ import { spawnSync } from 'node:child_process';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import test from 'node:test';
-import { createClanTransactionStore, type ClanTransactionSnapshot } from '../src/clanTransactions.js';
+import { createClanTransactionStore, prepareClanVaultCredit, prepareClanVaultDebit, type ClanTransactionSnapshot } from '../src/clanTransactions.js';
 
 function fixture() {
   const dataDir = mkdtempSync(join(tmpdir(), 'misty-clan-transaction-'));
@@ -130,4 +130,23 @@ test('legacy clan recovery fsyncs target publication and journal removal', () =>
     assert.ok(firstDirectorySync > playerTempSync, 'target directory entry must be fsynced after rename');
     assert.equal(events.at(-1), f.dataDir, 'journal removal must be followed by a directory fsync');
   } finally { f.cleanup(); }
+});
+
+
+test('clan vault credits preserve exact safe-integer balances without imposing a cap', () => {
+  assert.equal(prepareClanVaultCredit(500, 250), 750);
+  assert.equal(prepareClanVaultCredit(Number.MAX_SAFE_INTEGER - 1, 1), Number.MAX_SAFE_INTEGER);
+  assert.throws(() => prepareClanVaultCredit(Number.MAX_SAFE_INTEGER, 1));
+  for (const value of [-1, 1.5, Number.NaN, Number.POSITIVE_INFINITY, Number.MAX_SAFE_INTEGER + 1]) {
+    assert.throws(() => prepareClanVaultCredit(value, 1));
+  }
+});
+
+test('clan vault debits reject malformed balances and insufficient funds', () => {
+  assert.equal(prepareClanVaultDebit(750, 250), 500);
+  assert.equal(prepareClanVaultDebit(750, 750), 0);
+  assert.throws(() => prepareClanVaultDebit(100, 101));
+  for (const value of [-1, 1.5, Number.NaN, Number.POSITIVE_INFINITY]) {
+    assert.throws(() => prepareClanVaultDebit(value, 1));
+  }
 });
