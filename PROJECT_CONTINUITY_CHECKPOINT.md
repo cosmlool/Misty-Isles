@@ -731,3 +731,14 @@ PR #15 остаётся Draft/open и не объединён. Слияние б
 
 
 - Admin authorization regression coverage: added `server/test/adminAuthorizationRuntime.test.ts`, which starts an isolated real server with a server-side admin allowlist, connects two authenticated Colyseus clients, confirms the non-allowlisted player is denied even when sending forged `playerId`, `isAdmin`, and `role` payload fields, and confirms the allowlisted player's command persists while the regular player's balance remains unchanged. Added the test to `server/package.json` test script. This is test-only coverage; authorization/gameplay code was not changed. Awaiting GitHub Actions for the new HEAD; no local tests were run.
+
+
+## Client/browser security review — 2026-11-15
+
+- Reviewed `client/index.html`, `client/src/main.ts`, and `tools/Start-Game.ps1`. The launcher serves the browser client through Vite dev server on loopback port 5173 and the game/auth server on port 2567. There is no CSP meta/header in the current client entry document.
+- `client/src/main.ts` has four `innerHTML` assignments (auth view, character creation, main view, item tooltip). The inspected player/item/name/description interpolation paths use the shared `esc()` HTML escaping helper; no `eval`, `new Function`, `document.write`, `insertAdjacentHTML`, or `outerHTML` use was found in the file. This is a focused source review, not a proof that every template path is safe.
+- The HTTP auth handler currently sends `Access-Control-Allow-Origin: *` and accepts OPTIONS broadly. This does not by itself expose localStorage tokens cross-origin (the app uses body-supplied bearer tokens, not cookies), but it allows arbitrary browser origins to call/read the local auth API and unnecessarily broadens the browser attack surface.
+- Auth endpoints already have an in-memory per-IP limiter: 10 requests per 15-minute window for login, registration, and guest creation, with expired-entry cleanup and a 10,000-entry cap. This is process-local and does not coordinate multiple server instances; the current launcher runs one local process.
+- No CSP/CORS code was changed in this pass. The correct CSP and exact CORS allowlist depend on the intended production client origin, WebSocket endpoint, and asset/font sources; setting a guessed policy could break Vite HMR, game WebSockets, or a future hosted deployment. Before public launch, define explicit allowed origins, HTTPS/WSS, CSP response headers (including frame-ancestors), and a deployment-specific binding policy for the server listener.
+- No confirmed exploitable XSS was identified in the focused source review. The existing localStorage session/recovery secret exposure remains the principal consequence if a same-origin XSS is introduced.
+- Source inspection only; no local tests run. Existing GitHub Actions run 43743989279 passed all four jobs on HEAD 7bb26af3f7ce8b1f1b211295291b16b6b43a9907.
