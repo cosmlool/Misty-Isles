@@ -73,3 +73,30 @@ export function prepareGemExchange(
     crystalsBurned: crystalCredit.burned,
   };
 }
+
+
+export type PlayerCurrencyBalances = {
+  gold: number;
+  crystals: number;
+  gems: number;
+  capped: boolean;
+};
+
+/** Validate legacy balances and normalize only finite over-cap gold/crystals. */
+export function preparePlayerCurrencyBalances(
+  gold: number,
+  crystals: number,
+  gems: number,
+): PlayerCurrencyBalances {
+  const normalizedGold = creditGold(gold, 0).balance;
+  const normalizedCrystals = creditCrystals(crystals, 0).balance;
+  if (!Number.isSafeInteger(gems) || gems < 0) {
+    throw new Error('Gem balance must be a nonnegative safe integer.');
+  }
+  return {
+    gold: normalizedGold,
+    crystals: normalizedCrystals,
+    gems,
+    capped: normalizedGold !== gold || normalizedCrystals !== crystals,
+  };
+}
