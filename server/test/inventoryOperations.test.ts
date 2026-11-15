@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { filterAvailableUniqueItems, isLastEquippedCopy, ownsItemCopy, removeInventoryCopy } from '../src/inventoryOperations.js';
+import { filterAvailableUniqueItems, isLastEquippedCopy, ownsItemCopy, removeInventoryCopy, validateInventoryStackAction } from '../src/inventoryOperations.js';
 
 test('removing one duplicate keeps the remaining equipped copy equipped', () => {
   const inventory = ['iron_sword', 'iron_sword', 'herb_material'];
@@ -47,4 +47,32 @@ test('random reward pools exclude unique items already owned or equipped', () =>
   const unique = new Set(['amulet_power', 'amulet_guard']);
   const available = filterAvailableUniqueItems(pool, unique, ['amulet_power'], { amulet: 'amulet_guard' });
   assert.deepEqual(available, ['tempered_sword', 'mystery_chest']);
+});
+
+
+test('inventory stack action requires the exact item, index and displayed stack count', () => {
+  const inventory = ['mystery_chest', 'mystery_chest', 'health_potion'];
+  assert.equal(validateInventoryStackAction(inventory, 0, 'mystery_chest', 2), true);
+  assert.equal(validateInventoryStackAction(inventory, 0, undefined, 2), false);
+  assert.equal(validateInventoryStackAction(inventory, 0, 'mystery_chest', undefined), false);
+  assert.equal(validateInventoryStackAction(inventory, 0, 'health_potion', 2), false);
+  assert.equal(validateInventoryStackAction(inventory, 0, 'mystery_chest', 1), false);
+  assert.equal(validateInventoryStackAction(inventory, 3, 'mystery_chest', 2), false);
+  assert.deepEqual(inventory, ['mystery_chest', 'mystery_chest', 'health_potion']);
+});
+
+test('replaying a consumed inventory index cannot consume an adjacent duplicate', () => {
+  const inventory = ['mystery_chest', 'mystery_chest'];
+  assert.equal(validateInventoryStackAction(inventory, 0, 'mystery_chest', 2), true);
+  inventory.splice(0, 1);
+  // The second request carries the original stack count and is rejected.
+  assert.equal(validateInventoryStackAction(inventory, 0, 'mystery_chest', 2), false);
+  assert.deepEqual(inventory, ['mystery_chest']);
+});
+
+test('inventory stack action rejects unsafe or fractional snapshot counts', () => {
+  const inventory = ['mystery_chest'];
+  assert.equal(validateInventoryStackAction(inventory, 0, 'mystery_chest', 1.5), false);
+  assert.equal(validateInventoryStackAction(inventory, 0, 'mystery_chest', Number.MAX_SAFE_INTEGER + 1), false);
+  assert.equal(validateInventoryStackAction(inventory, -1, 'mystery_chest', 1), false);
 });
