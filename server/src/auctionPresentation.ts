@@ -25,16 +25,18 @@ export function projectAuctionLots(value: unknown): Array<{
   price: number; currency: 'gold' | 'crystals'; createdAt: number; status: 'active';
 }> {
   if (!Array.isArray(value)) return [];
-  const seen = new Set<string>();
+  const idCounts = new Map<string, number>();
+  for (const raw of value) {
+    if (isRecord(raw) && nonEmptyString(raw.id)) idCounts.set(raw.id, (idCounts.get(raw.id) ?? 0) + 1);
+  }
   const result = [];
   for (const raw of value) {
     if (!isRecord(raw)) continue;
     const status = raw.status ?? 'active';
-    if (!nonEmptyString(raw.id) || seen.has(raw.id)
+    if (!nonEmptyString(raw.id) || idCounts.get(raw.id) !== 1
       || !nonEmptyString(raw.itemId) || !nonEmptyString(raw.sellerId)
       || !safePrice(raw.price) || (raw.currency !== 'gold' && raw.currency !== 'crystals')
       || !safeTimestamp(raw.createdAt) || status !== 'active') continue;
-    seen.add(raw.id);
     result.push({
       id: raw.id, itemId: raw.itemId, itemName: optionalName(raw.itemName) || raw.itemId,
       sellerId: raw.sellerId, sellerName: optionalName(raw.sellerName),
