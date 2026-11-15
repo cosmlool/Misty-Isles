@@ -1,3 +1,4 @@
+import { acquireDataDirectoryLock } from './dataDirectoryLock.js';
 import { createServer, type IncomingMessage, type ServerResponse } from 'http';
 import { createHash, randomBytes, scryptSync, timingSafeEqual } from 'crypto';
 import { existsSync, mkdirSync, readFileSync } from 'fs';
@@ -82,6 +83,8 @@ const ACCOUNT_FILE = join(DATA_DIR, 'accounts.json');
 const SESSION_FILE = join(DATA_DIR, 'sessions.json');
 const GUEST_CREDENTIAL_FILE = join(DATA_DIR, 'guest_credentials.json');
 if (!existsSync(DATA_DIR)) mkdirSync(DATA_DIR, { recursive: true });
+const releaseDataDirectoryLock = acquireDataDirectoryLock(DATA_DIR);
+process.once('exit', releaseDataDirectoryLock);
 const { loadPlayers } = createPlayerSaveStore(SAVE_FILE, DATA_DIR);
 const auctionTransactions = createAuctionTransactionStore({ dataDir: DATA_DIR, playersFile: SAVE_FILE, auctionFile: AUCTION_FILE, historyFile: AUCTION_HISTORY_FILE });
 const clanTransactions = createClanTransactionStore({ dataDir: DATA_DIR, playersFile: SAVE_FILE, clansFile: CLAN_FILE, warsFile: WAR_FILE, territoriesFile: TERRITORY_FILE });
