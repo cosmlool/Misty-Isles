@@ -1042,3 +1042,15 @@ PR #15 остаётся Draft/open и не объединён. Слияние б
 - Commits: `593c0fdf3f79bb441b60a41eb7bba4f756269165` (validation), `6a21ad8aea6e5964aff2eac5ee0ce1dc3f7739ae` (tests).
 - Local tests not run. CI for previous HEAD was in progress during this stage; full Quality Gate for final HEAD is required.
 - PR #18 remains Draft/open/unmerged; no main changes or save migration.
+
+
+## Clan war cooldown and concurrency boundary audit — 2026-11-16
+
+- Rechecked PR #18 and Quality Gate on HEAD `895702223c4f2c52771174c8e860ce8f59d311cb`: run `43771732019` was still in progress when this stage began.
+- Traced clan war challenge, attack, list/expiry settlement and disband paths. All production mutations use the synchronous shared-state WAL coordinator. In the current single-server-process architecture, handlers do not interleave inside a synchronous transaction callback; two simultaneous requests are serialized by the event loop and transaction coordinator. This is not a multi-process distributed lock.
+- Found cooldown timestamps were coerced with `Number(value || 0)`; malformed persisted values (fractional, negative, string, NaN, unsafe) could be treated as no cooldown and allow an attack.
+- Fixed cooldown evaluation and attack recording to require nonnegative safe-integer clocks/durations and positive safe-integer persisted timestamps. Invalid legacy timestamps now fail closed before damage or cooldown state is changed.
+- Added regression tests for malformed timestamps, invalid clock/duration, attack bypass prevention, and source-state immutability.
+- Existing one-second cooldown and damage/reward formulas unchanged.
+- Commits: `7f0008461394ac558f07d8b4cc56eb3437b8f415` (validation), `ee1da5036a9ae7a02330d4b8883fe397f81aac49` (tests).
+- Local tests not run. CI must validate final HEAD. PR #18 remains Draft/open/unmerged; no main changes or save migration.
