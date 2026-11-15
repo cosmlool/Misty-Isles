@@ -32,6 +32,41 @@ function fixture(testHooks?: any, platform?: NodeJS.Platform) {
 }
 function readJson(file: string) { return JSON.parse(readFileSync(file, 'utf8')); }
 
+test('auth-only WAL recovery does not mark live player snapshots as recovered', () => {
+  const f = fixture();
+  try {
+    const auction = createAuctionTransactionStore({
+      dataDir: f.dataDir, playersFile: f.files.players,
+      auctionFile: f.files.auction, historyFile: f.files.auctionHistory,
+    });
+    const clans = createClanTransactionStore({
+      dataDir: f.dataDir, playersFile: f.files.players,
+      clansFile: f.files.clans, warsFile: f.files.wars,
+      territoriesFile: f.files.territories,
+    });
+    const runtime = createSharedStateRuntime({ shared: f.store, auction, clans });
+
+    writeFileSync(f.files.players, JSON.stringify({ p1: { gold: 99 } }));
+    writeFileSync(f.store.journalFile, JSON.stringify({
+      version: 1, files: { sessions: [{ tokenHash: 'recovered-session' }] },
+    }));
+    let playersRecovered: boolean | undefined;
+    runtime.transact(recovered => {
+      playersRecovered = recovered;
+      return { files: { sessions: [{ tokenHash: 'next-session' }] }, result: undefined };
+    });
+    assert.equal(playersRecovered, false, 'recovering only auth files must not trigger online Player refresh');
+    assert.deepEqual(readJson(f.files.players), { p1: { gold: 99 } });
+    assert.deepEqual(readJson(f.files.sessions), [{ tokenHash: 'next-session' }]);
+
+    writeFileSync(f.store.journalFile, JSON.stringify({
+      version: 1, files: { players: { p1: { gold: 77 } } },
+    }));
+    assert.equal(runtime.recoverPendingPlayerState(), true, 'a journal that replaces players.json must report player recovery');
+    assert.deepEqual(readJson(f.files.players), { p1: { gold: 77 } });
+  } finally { f.cleanup(); }
+});
+
 test('one journal atomically applies a transaction spanning player, auction and clan state', () => {
   const f = fixture();
   try {
