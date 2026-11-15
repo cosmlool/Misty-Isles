@@ -716,3 +716,13 @@ PR #15 остаётся Draft/open и не объединён. Слияние б
 - Client persists session tokens and guest recovery proofs in `localStorage`. This is a known browser security trade-off: any successful same-origin script injection could read them. Do not treat localStorage as an HttpOnly-cookie equivalent; a future public deployment should prioritize strict output escaping, a restrictive Content-Security-Policy, dependency hygiene, and HTTPS/WSS. Changing the current WebSocket auth/session design is out of scope for this audit.
 - Client logout currently treats the server revocation call as best-effort and clears local credentials even if the request fails. In that case the server-side token may remain valid until expiry, although the client has discarded it. This should be considered in a future logout UX/security change (e.g. surface revocation failure or preserve a retry path) rather than silently changing current session semantics here.
 - No further auth/session code changed in this review. Source inspection only; no local tests run.
+
+
+## Admin authorization audit — 2026-11-15
+
+- Проверены `MISTY_ADMIN_PLAYER_IDS`, `parseAdminPlayerIds()`, admin message handler, общий `onAuthenticatedMessage()` wrapper и auth guest/register/login flow.
+- Админ-команды отключены по умолчанию: пустой/отсутствующий env даёт пустой allowlist. Доступ проверяется по серверному `this.playerId`, а не по полям payload. До обработчика проверяется действующая сессия, совпадение session.playerId с room player ID и текущая принадлежность клиента персонажу.
+- Guest player ID генерируется сервером из случайных байтов; повторное использование существующего гостевого ID требует guest recovery proof или действующий guest session. Account ID при обычной регистрации также генерируется сервером. По просмотренному auth flow не найдено клиентского пути самостоятельно назначить себе доверенный ID.
+- Найдено устаревшее и опасно вводящее в заблуждение описание в `server/ADMIN_SETUP.md`: оно утверждало, что админ-команды открыты всем аккаунтам. Документ обновлён и теперь описывает серверный env allowlist, точное сравнение ID, отключение по умолчанию, список команд и ограничения тестового режима.
+- Текущие unit tests проверяют parsing allowlist, но не выполняют end-to-end проверку авторизации admin message через поднятый Colyseus room. Это остаётся полезным усилением тестового покрытия; подтверждённого обхода авторизации при source review не найдено.
+- Кодовую авторизацию не менял. Изменён только `server/ADMIN_SETUP.md` и этот checkpoint. Требуется новый GitHub Actions Quality Gate для нового HEAD; локальные тесты не запускались.
