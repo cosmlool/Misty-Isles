@@ -947,3 +947,15 @@ PR #15 остаётся Draft/open и не объединён. Слияние б
 - Detailed report: `REWARD_ISSUANCE_AUDIT.md`.
 - Commits: `47cb3966bb90db85b26c2b1ce43715f2f904a9f4` (snapshot validator), `87452f290b829e1961fc11b81e700a47038a62c9` (openChest handler), `b57c96b759ce7004908603ba617e2722b8b1ffc8` (tests), `ef2174e00bf9ac2989a28dfca55e85c56b5f7e16` (audit report).
 - Local tests were not run; Quality Gate required on final HEAD.
+
+
+## Approved player currency caps — 2026-11-16
+- User-approved hard balance limits: gold `9,999,999,999`; crystals `50,000`. Any amount above the remaining capacity burns immediately; no overflow storage or deferred credit. Gems have no new cap in this change.
+- Added shared `server/src/currencyOperations.ts` with safe-integer validation and capped-credit results (`credited`, `burned`). Added `server/test/currencyOperations.test.ts` and registered it in the server test command.
+- Routed every direct player gold/crystal credit in `server/src/index.ts` through the cap: dungeon/expedition, daily/fountain, race/quest/challenge/achievement/return, tavern, chest, crystal rewards, gem exchange, clan-territory crystal reward, and allowlisted admin grants. Authenticated actions lazily clamp existing safe-integer over-cap balances and persist; no bulk save migration.
+- PvP retains the 20% transfer rule, clamps legacy balances, and burns any amount the winner cannot receive. Result payload distinguishes gross stolen, credited and burned gold. Added PvP regressions.
+- Auction buyer still pays full price; seller's gold/crystal proceeds are capped and excess burns. Fees and prices unchanged. Added auction regressions.
+- `goldEarned` remains a lifetime gross-generated counter; it records generated rewards even if balance overflow burns. No reward amounts, fees, conversion rates, or gameplay formulas changed.
+- Added live isolated-server regression for daily gold reward and gem-to-crystal conversion at the caps. Local tests not run; GitHub Actions Quality Gate required.
+- Detailed specification: `CURRENCY_CAPS.md`.
+- Commits in this stage include `2154571` currency helper, `153ce79` helper tests, `5be86be` gameplay credit integration, `2e26829` auction cap, `b466b10` PvP cap, `b8a6dee` combat settlement display, `c78178e` auction notice, `02dd013` legacy balance clamp, `50dcc0d` runtime test, and `a2dac79` cap specification.
