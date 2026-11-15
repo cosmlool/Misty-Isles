@@ -885,3 +885,10 @@ PR #15 остаётся Draft/open и не объединён. Слияние б
 - Production craftClaim supplies the complete runtime ITEMS ID set, which includes the original legacy item definitions, current equipment catalog and expedition drops. A known legacy output remains claimable even if its old recipe is no longer in the visible recipe catalogue.
 - Added regression test for an unknown output attached to a retired recipe; it verifies inventory and queue remain unchanged. Updated existing claim tests to pass the valid output set.
 - No old jobs are migrated/deleted/refunded. Unknown historical outputs remain queued for manual review. Awaiting GitHub Actions on the new HEAD; local tests not run.
+
+## Auction integer-boundary hardening (2026-11-15)
+- Review of `server/src/auctionOperations.ts` found that seller currency credit and economy counters (`goldSpent`, `itemsSold`) used unchecked JavaScript number addition. A valid transaction near or beyond `Number.MAX_SAFE_INTEGER`, or a malformed persisted counter, could silently lose integer precision or write an invalid counter.
+- Added fail-closed safe-integer/nonnegative validation for currency balances and counters, and checked resulting seller balances before completing a purchase. Existing fee formulas, prices, item transfer order, and normal transaction behavior are unchanged.
+- Added regression tests for listing-counter overflow, seller balance overflow, and `itemsSold` overflow; rejected transactions leave the supplied snapshot unchanged.
+- Commits: `c703ece7a58405a3593892757b8ce392717da191` (guard) and `e1b8cc84678c7400eb002574743a89ea627ecd1c` (regressions).
+- Source/test changes committed through GitHub; local tests were not run. Run Quality Gate on the new HEAD before treating the fix as validated. PR #18 remains Draft/open and unmerged.
