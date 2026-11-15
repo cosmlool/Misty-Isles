@@ -203,12 +203,13 @@ test('auction seller receives only remaining gold capacity and excess proceeds b
 test('crystal auction proceeds above 50,000 burn instead of overflowing the seller balance', () => {
   const start = initial();
   start.players.seller.crystals = 49_990;
+  start.players.buyer.crystals = 200;
   const listed = listAuctionItem({ snapshot: start, sellerId: 'seller', index: 0, price: 100,
     currency: 'crystals', validItemIds: itemIds, itemName: 'Iron sword', now: 10, lotId: 'crystal-cap' }).snapshot;
   const bought = buyAuctionItem({ snapshot: listed, buyerId: 'buyer', lotId: 'crystal-cap',
     validItemIds: itemIds, now: 20 });
   assert.equal(bought.snapshot.players.seller.crystals, 50_000);
-  assert.equal(bought.net, 11);
+  assert.equal(bought.net, 12);
   assert.equal(bought.burned, 88);
 });
 
