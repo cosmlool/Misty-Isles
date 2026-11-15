@@ -1054,3 +1054,15 @@ PR #15 остаётся Draft/open и не объединён. Слияние б
 - Existing one-second cooldown and damage/reward formulas unchanged.
 - Commits: `7f0008461394ac558f07d8b4cc56eb3437b8f415` (validation), `ee1da5036a9ae7a02330d4b8883fe397f81aac49` (tests).
 - Local tests not run. CI must validate final HEAD. PR #18 remains Draft/open/unmerged; no main changes or save migration.
+
+
+## Clan progression counter hardening — 2026-11-16
+
+- Rechecked PR #18 at HEAD `a05241caede461befd8452fe51c0437f37452b2a`; Quality Gate run `43771841340` was still in progress at the start of this stage.
+- Audited all direct production increments of clan XP, season points, donation/raid/territory quest progress and member contribution.
+- Found these uncapped persisted counters used unchecked arithmetic. Malformed legacy values or overflow could produce fractional, non-finite or unsafe values and then be committed with clan/player state.
+- Added `prepareClanProgressCredit` to validate nonnegative safe-integer balances, increments and sums without introducing a cap.
+- Applied validation to clan donations, raid rewards, territory capture, clan quest rewards, and member contribution. Existing progression amounts, level-up formulas, reward amounts and caps are unchanged.
+- Added helper regression tests for valid boundaries, malformed balances/increments and overflow.
+- Commits: `9191f3d3971b1c290ccf78a3453fefd10fe7de0e`, `3bc94cb89d3f7481fb516ccf9f7bd946d612ea6f`, `502ef80957ff65d8e332eb362404f074ab5dbb86`.
+- Local tests not run. Full Quality Gate required on final HEAD. PR #18 remains Draft/open/unmerged; no main changes or save migration.
