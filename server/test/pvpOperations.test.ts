@@ -91,6 +91,8 @@ test('both PvP outcomes transfer gold to the winner and protect the loser', () =
     attackerGold: 800,
     targetGold: 450,
     stolenGold: 200,
+    receivedGold: 200,
+    burnedGold: 0,
     immunityRecipient: 'attacker',
     immunityUntil: 20_000 + PVP_IMMUNITY_MS,
   });
