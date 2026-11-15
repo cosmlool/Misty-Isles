@@ -59,3 +59,13 @@ The message surface is now mapped sufficiently to design a rate limiter without 
 - Current topology enforces one client per room and one online room per player via `maxClients = 1`, `ONLINE_PLAYERS`, and `ONLINE_CLIENTS`. A per-player bucket stored at process scope would naturally survive reconnects in that process and cover the player's room, but it resets on process restart and is not shared across multiple server processes/instances.
 - Suggested ordering for future implementation: cheap room/client ownership guard first; consume a per-player ingress budget before disk-backed session/WAL checks; preserve authoritative session revocation by ensuring logout closes the room and by defining a bounded revalidation policy. Do not implement this ordering until its stale-session and recovery race behavior has explicit tests.
 - No code changed. Static source inspection only; no benchmark or runtime test performed.
+
+
+## Follow-up: official client request cadence — 2026-11-15
+
+- Static review of the official client action dispatcher and connection bootstrap found a 13-message startup request burst on every successful room connection. It loads catalog, expedition state, hunt group, clan, PvP, auction, market, dungeon, clan-war, and craft-queue data.
+- The `clanList` response handler unconditionally sends `clanQuests` and `clanTerritories`, although both are already sent in the startup burst. This duplicates those two requests on every connection. It is a concrete low-risk optimization candidate, but no code change was made in this audit.
+- The one-second client interval updates visible countdown text locally; it does not send a packet every second. PvP refresh is a one-shot request when the tracked cooldown/offer-expiry timestamp is reached, guarded by `pvpRefreshRequestedFor` until a response resets it.
+- The client `guardedActions` set blocks repeated clicks for selected actions while an action is pending, but it is not a transport-level limiter: many read-shaped refresh actions are not guarded, the timeout releases a guard after 8 seconds, and any `notice` clears all pending action keys. Server enforcement remains mandatory.
+- The startup burst is legitimate connection initialization and should be accounted for in any ingress budget (or deliberately grouped/coalesced) rather than treated as malicious behavior. Future policy should distinguish connection bootstrap, user-triggered refreshes, and mutations.
+- Static source inspection only. No code changed, no benchmark or runtime test performed; no numerical thresholds selected.
