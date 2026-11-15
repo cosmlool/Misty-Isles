@@ -860,3 +860,11 @@ PR #15 остаётся Draft/open и не объединён. Слияние б
 - Updated PLAYER_SAVE_LOAD_VALIDATION_AUDIT.md with evidence classification and the required next step: obtain user-approved, privacy-scrubbed, read-only representative save snapshots/backups; preserve original bytes; exclude credentials/session/guest secrets; build fixtures; inventory historical IDs/enums/keys/timestamps/coordinates; then define idempotent, rollback-safe versioned migrations.
 - No player save was accessed, no production code/tests/data changed, and no migration behavior was introduced.
 - CI run 43755771841 on HEAD 1593860b: data/docs/structure, client TypeScript/Vite build, and Playwright smoke tests succeeded. Server transaction recovery test remains in progress; compile step has not started. Do not call the full CI green until the server job completes.
+
+
+## Equipment catalog identity audit — 2026-11-15
+- Parsed current tracked equipment_catalog.json: 387 entries; all IDs/names non-empty; no duplicate IDs or names; kinds are 56 weapons, 320 armor, 11 amulets.
+- Server source treats the new catalog as authoritative for new equipment, marks the original in-code equipment entries as legacy, and appends new catalog plus expedition drops. Source comment explicitly preserves legacy IDs for existing saves, auctions, and recipes.
+- Compatibility rule: never repurpose/rename an item ID without a verified migration plan. Current catalog and history are insufficient to prove the full historical ID population.
+- Forgotten Lands signatureDrop values are names; gatekeeper references are IDs. Keep those namespaces distinct.
+- No cross-reference against real player saves was possible because runtime saves are gitignored. No IDs, prices, stats, saves, or production code changed.
