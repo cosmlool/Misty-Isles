@@ -131,3 +131,15 @@ No schema caps, enum coercions, or production migrations are approved by this au
 5. Only then specify versioned migration steps, preserve/quarantine behavior, rollback and idempotence tests. Never infer that absence from Git means a value was never used.
 
 No player data was read or changed in this stage. No migration or production code was added.
+
+
+## Equipment catalog identity audit — 2026-11-15
+
+- Parsed the tracked current equipment catalog: 387 entries, all with non-empty string IDs and names; no duplicate IDs or duplicate names in this file.
+- Current kinds: 56 weapons, 320 armor entries, 11 amulets. No unknown/missing kind values were found in this snapshot.
+- The server loads this catalog as the authoritative source for new equipment, marks the pre-existing in-code weapon/armor/amulet entries as legacy, then appends the new catalog and expedition drop items to the shared runtime item list.
+- Source comment explicitly states legacy IDs remain available for existing saves, auctions, and recipes. This is a compatibility invariant: do not repurpose or rename an existing item ID merely because its display name/catalog entry changes.
+- The current equipment catalog is a single static snapshot; Git history for this file contains only the initial import. There is no complete historical catalog-ID ledger or player-save fixture corpus in the repository.
+- Zone signature drops in the current Forgotten Lands data are display-name strings, while gatekeeper references are IDs. These namespaces must not be conflated; any future migration must resolve them against the appropriate drop/bestiary source.
+- This is a current-snapshot structural check, not proof that every historical item ID remains present or that all runtime references resolve. A follow-up should build a cross-reference report for legacy in-code items, recipes, auctions, player inventory/equipment, expedition drops, and bestiary/gatekeeper IDs using sanitized fixtures.
+- No catalog IDs, prices, stats, items, saves, or production code were changed.
