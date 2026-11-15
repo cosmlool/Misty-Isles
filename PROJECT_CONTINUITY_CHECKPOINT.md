@@ -1015,3 +1015,17 @@ PR #15 остаётся Draft/open и не объединён. Слияние б
 - Commits: `d1a3b560a26d074247da7f1f37bda050e1bae82e` (helpers), `5b7f61cf56093f05a554eff3c886ad81b0a2d6ea` (tests), `e76b2d54dd5b34018b8e8fd9c08262ac7cc8d2a7` (all handler integrations).
 - Local tests not run. Fresh full Quality Gate for the final branch HEAD is required.
 - PR #18 remains Draft/open/unmerged; no main changes or save migration.
+
+
+## Clan war settlement and counter overflow audit — 2026-11-16
+
+- Checked the latest CI for previous checkpoint HEAD `aefb3f0dc4ca25f6d087a12f6f8fcec9828e6723`: run `43771535302` was still in progress at audit start.
+- Reviewed war challenge, attack, cooldown, expiry settlement, tie handling, disband cancellation, season points, war quest progress, and the clan transaction write-ahead journal.
+- Found a remaining bypass of the treasury hardening: `settleExpiredClanWars` credited the winning clan vault with unchecked arithmetic. This could bypass `prepareClanVaultCredit` and silently exceed safe integer precision. Season points and war quest progress were also unchecked.
+- Found clan war damage accumulation accepted malformed persisted damage and could exceed safe integer precision.
+- Fixed settlement to use the shared safe clan-vault credit helper; season points, war quest progress and accumulated damage now require exact nonnegative safe-integer arithmetic. Calculations happen on cloned settlement state, so a rejected settlement does not partially mutate the source state.
+- Added regression tests for treasury overflow during war settlement, malformed/overflowing damage counters, and no source-state mutation after rejected settlement.
+- Existing war behavior preserved: 24-hour duration, per-player cooldown, damage formula, winner/tie outcome, reward formula, season +20 and quest progress +1.
+- Commits: `56ed72e412fecc9c45ed73c42875eec3b80e3509` (hardening), `9b87fbaf02e59e653de3b0a2ffd0e899bb0e4e8d` (tests).
+- Local tests not run. New full Quality Gate required for final HEAD.
+- PR #18 remains Draft/open/unmerged; no main changes or save migration.
