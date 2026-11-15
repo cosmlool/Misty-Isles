@@ -20,7 +20,8 @@ export function calculateCappedCurrencyCredit(
   currency: PlayerCurrency,
 ): CurrencyCreditResult {
   const cap = currency === 'gold' ? MAX_GOLD_BALANCE : MAX_CRYSTALS_BALANCE;
-  if (!Number.isSafeInteger(currentBalance) || currentBalance < 0) {
+  if (!Number.isFinite(currentBalance) || currentBalance < 0
+    || (currentBalance <= cap && !Number.isSafeInteger(currentBalance))) {
     throw new Error('Currency balance must be a nonnegative safe integer.');
   }
   if (!Number.isSafeInteger(amount) || amount < 0) {
