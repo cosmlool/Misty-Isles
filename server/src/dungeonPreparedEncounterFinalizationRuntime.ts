@@ -55,7 +55,7 @@ export function prepareCommittedDungeonEncounterFinalization(input: {
 }
 
 type CommittedEncounterFinalizationRuntime = {
-  transact<T>(prepare: (recovered: boolean) => {
+  transactWithRecovery<T>(prepare: (recovery: { recovered: boolean; playersRecovered: boolean }) => {
     files: {
       players?: Record<string, Record<string, unknown>>;
       dungeonRuns?: DungeonRunStore;
@@ -75,8 +75,8 @@ export function commitCommittedDungeonEncounterFinalization(input: {
   outbox?: DungeonResultOutbox;
   events?: Parameters<typeof prepareDungeonRunFinalization>[0]['events'];
 }): PreparedEncounterFinalization {
-  return input.runtime.transact(recovered => {
-    if (recovered) {
+  return input.runtime.transactWithRecovery(recovery => {
+    if (recovery.recovered) {
       throw new Error('Shared state was recovered during committed encounter finalization; reload run and outbox snapshots before retrying.');
     }
     const prepared = prepareCommittedDungeonEncounterFinalization(input);
