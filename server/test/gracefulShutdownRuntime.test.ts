@@ -11,6 +11,7 @@ import test from 'node:test';
 
 const serverDir = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const staticDataFiles = ['city_npcs.json', 'equipment_catalog.json', 'forgotten_lands.json'];
+const serverSource = readFileSync(join(serverDir, 'src', 'index.ts'), 'utf8');
 
 async function unusedPort(): Promise<number> {
   const probe = createServer();
@@ -76,6 +77,12 @@ async function waitFor<T>(read: () => T | undefined, label: string): Promise<T> 
   }
   throw new Error(label + ' timed out.');
 }
+
+
+test('graceful shutdown rejection is handled without an unhandled promise', () => {
+  assert.match(serverSource, /gameServer\.gracefullyShutdown\(\)\.catch\(error=>\{/);
+  assert.match(serverSource, /shutdownRequested=false;console\.error\('Graceful server shutdown failed; data directory lock remains held:'/);
+});
 
 test('local shutdown saves online players, releases the data lock, and blocks a second server', { timeout: 45_000 }, async () => {
   const dataDir = mkdtempSync(join(tmpdir(), 'misty-graceful-shutdown-'));
