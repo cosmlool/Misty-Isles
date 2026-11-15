@@ -15,7 +15,7 @@ export function validateClanStore(value: unknown): value is ClanStore {
   for (const [key, clan] of Object.entries(value)) {
     if (!isRecord(clan) || typeof clan.id !== 'string' || !clan.id || clan.id !== key
       || typeof clan.name !== 'string' || clan.name.trim().length < 3
-      || typeof clan.leader !== 'string' || !clan.leader
+      || (clan.leader !== undefined && (typeof clan.leader !== 'string' || !clan.leader))
       || !Number.isSafeInteger(clan.level) || clan.level < 1 || clan.level > 10
       || !isOptionalCounter(clan.xp) || !isOptionalCounter(clan.vault)
       || !isOptionalCounter(clan.seasonPoints) || !Array.isArray(clan.members) || clan.members.length === 0) {
@@ -30,7 +30,7 @@ export function validateClanStore(value: unknown): value is ClanStore {
       membership.add(member.id);
       memberIds.add(member.id);
     }
-    if (!memberIds.has(clan.leader)) return false;
+    if (clan.leader !== undefined && !memberIds.has(clan.leader)) return false;
     if (clan.upgrades !== undefined) {
       if (!isRecord(clan.upgrades)) return false;
       for (const name of ['barracks', 'treasury', 'banner']) {
