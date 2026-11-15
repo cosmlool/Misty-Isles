@@ -547,7 +547,6 @@ function authHttpHandler(req:IncomingMessage,res:ServerResponse) {
   if(req.method==='OPTIONS'){res.writeHead(204);res.end();return;}
   const path=String(req.url||'').split('?')[0];
   if(path==='/internal/shutdown'){
-    if(req.method!=='POST'){sendJson(res,405,{error:'Используй POST.'});return;}
     const remoteAddress=String(req.socket.remoteAddress||'');
     const isLoopback=remoteAddress==='::1'||remoteAddress==='::ffff:127.0.0.1'||remoteAddress.startsWith('127.');
     const expected=String(process.env.MISTY_SHUTDOWN_TOKEN||'');
@@ -556,6 +555,7 @@ function authHttpHandler(req:IncomingMessage,res:ServerResponse) {
     if(!isLoopback||!expected||expectedBytes.length!==suppliedBytes.length||!timingSafeEqual(expectedBytes,suppliedBytes)){
       sendJson(res,404,{error:'Not found'});return;
     }
+    if(req.method!=='POST'){sendJson(res,405,{error:'Используй POST.'});return;}
     if(shutdownRequested){sendJson(res,202,{ok:true,shutdown:'already-requested'});return;}
     shutdownRequested=true;
     res.once('finish',()=>{void gameServer.gracefullyShutdown();});
