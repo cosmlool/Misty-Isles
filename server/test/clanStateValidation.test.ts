@@ -12,6 +12,8 @@ test('valid clan records and legacy records with omitted optional counters remai
   assert.equal(validateClanStore(clans), true);
   const legacy = { clan_a: { ...clans.clan_a, xp: undefined, seasonPoints: undefined, upgrades: undefined } };
   assert.equal(validateClanStore(legacy), true);
+  const legacyLeaderless = { clan_a: { ...clans.clan_a, leader: undefined } };
+  assert.equal(validateClanStore(legacyLeaderless), true);
 });
 
 test('malformed clan identity, level, roster, duplicate members and upgrades fail closed', () => {
