@@ -754,7 +754,6 @@ class GameRoom extends Room<RoomState> {
       if(affectedIds.some(id=>!ONLINE_PLAYERS.has(id)&&!persistedPlayers[id])){
         return this.notice(c,'Не удалось изменить группу: сохранение участника не найдено.');
       }
-      const previousQuests=new Map<string,string>();
       const affectedPlayers:Player[]=[];
       const playerQuestOverrides:Record<string,string>={};
       for(const id of affectedIds){
@@ -767,7 +766,6 @@ class GameRoom extends Room<RoomState> {
         quests.expedition=expedition;
         const nextQuests=JSON.stringify(quests);
         if(member){
-          previousQuests.set(id,member.quests);
           member.quests=nextQuests;
           affectedPlayers.push(member);
         }else{
@@ -782,15 +780,9 @@ class GameRoom extends Room<RoomState> {
         PLAYER_GROUP.delete(this.playerId);
         if(!group.members.length)HUNT_GROUPS.delete(group.id);
       }
-      try{
-        persistHuntGroups(affectedPlayers,playerQuestOverrides);
-      }catch(error){
-        for(const [id,quests] of previousQuests){
-          const member=ONLINE_PLAYERS.get(id);
-          if(member)member.quests=quests;
-        }
-        throw error;
-      }
+      // persistHuntGroups owns rollback/reconciliation. Do not undo the live
+      // target roster when a durable journal remains pending recovery.
+      persistHuntGroups(affectedPlayers,playerQuestOverrides);
       if(wasLeader){
         invalidateHuntGroupInvites(GROUP_INVITES,group.id,GROUP_INVITE_EXPIRES);
         for(const id of affectedIds){
