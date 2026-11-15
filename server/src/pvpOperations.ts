@@ -2,6 +2,8 @@ const PVP_BOT_IDS = new Set(['bot_ember', 'bot_bastion', 'bot_gale', 'bot_relic'
 
 export const PVP_ATTACK_COOLDOWN_MS = 15 * 60 * 1000;
 export const PVP_IMMUNITY_MS = 60 * 60 * 1000;
+import { creditGold } from './currencyOperations.js';
+
 export const PVP_GOLD_STEAL_RATE = 0.20;
 export const PVP_OPPONENT_COUNT = 4;
 
@@ -83,6 +85,8 @@ export type PvpOutcomeResult = {
   attackerGold: number;
   targetGold: number;
   stolenGold: number;
+  receivedGold: number;
+  burnedGold: number;
   immunityRecipient: 'attacker' | 'target';
   immunityUntil: number;
 };
@@ -97,16 +101,18 @@ export function resolvePvpOutcome(
     || !Number.isSafeInteger(targetGold) || targetGold < 0) {
     throw new Error('PvP gold balances must be nonnegative safe integers.');
   }
-  const stolenGold = calculatePvpGoldTransfer(attackerWon ? targetGold : attackerGold);
-  const nextAttackerGold = attackerWon ? attackerGold + stolenGold : attackerGold - stolenGold;
-  const nextTargetGold = attackerWon ? targetGold - stolenGold : targetGold + stolenGold;
-  if (!Number.isSafeInteger(nextAttackerGold) || !Number.isSafeInteger(nextTargetGold)) {
-    throw new Error('PvP gold transfer would exceed the safe integer range.');
-  }
+  const cappedAttackerGold = creditGold(attackerGold, 0).balance;
+  const cappedTargetGold = creditGold(targetGold, 0).balance;
+  const stolenGold = calculatePvpGoldTransfer(attackerWon ? cappedTargetGold : cappedAttackerGold);
+  const recipientCredit = creditGold(attackerWon ? cappedAttackerGold : cappedTargetGold, stolenGold);
+  const nextAttackerGold = attackerWon ? recipientCredit.balance : cappedAttackerGold - stolenGold;
+  const nextTargetGold = attackerWon ? cappedTargetGold - stolenGold : recipientCredit.balance;
   return {
     attackerGold: nextAttackerGold,
     targetGold: nextTargetGold,
     stolenGold,
+    receivedGold: recipientCredit.credited,
+    burnedGold: recipientCredit.burned,
     immunityRecipient: attackerWon ? 'target' : 'attacker',
     immunityUntil: now + PVP_IMMUNITY_MS,
   };
