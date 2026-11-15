@@ -549,7 +549,7 @@ function authHttpHandler(req:IncomingMessage,res:ServerResponse) {
   if(path==='/internal/shutdown'){
     if(req.method!=='POST'){sendJson(res,405,{error:'Используй POST.'});return;}
     const remoteAddress=String(req.socket.remoteAddress||'');
-    const isLoopback=remoteAddress==='::1'||remoteAddress==='::ffff:127.0.0.1'||/^127(?:\\.\\d{1,3}){3}$/.test(remoteAddress);
+    const isLoopback=remoteAddress==='::1'||remoteAddress==='::ffff:127.0.0.1'||remoteAddress.startsWith('127.');
     const expected=String(process.env.MISTY_SHUTDOWN_TOKEN||'');
     const supplied=String(req.headers['x-misty-shutdown-token']||'');
     const expectedBytes=Buffer.from(expected),suppliedBytes=Buffer.from(supplied);
