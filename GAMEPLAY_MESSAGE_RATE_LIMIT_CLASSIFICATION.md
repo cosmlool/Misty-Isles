@@ -92,3 +92,13 @@ The message surface is now mapped sufficiently to design a rate limiter without 
 - Regression coverage required before implementation: (1) count recovery scans per authenticated packet and prove one ingress scan; (2) player-snapshot WAL replay propagates `playersRecovered=true` into dungeon guard and prevents that run; (3) auth-only/outbox-only recovery does not falsely trigger player-recovery retry; (4) valid session remains accepted after recovery; (5) logout revokes token and closes active room; (6) stale room/client is rejected; (7) onJoin loads recovered player snapshot; (8) ambiguous legacy journals fail closed; (9) no handler or persistence mutation runs after failed recovery.
 - Existing runtime test infrastructure already includes real Colyseus clients and isolated data directories in `authLogoutRuntime.test.ts`, `duplicateSessionRuntime.test.ts`, and `authAccountRuntime.test.ts`; shared recovery behavior has unit coverage in `sharedStateRuntime.test.ts`. Extend these rather than inventing a weaker mock-only replacement.
 - No code changed, no benchmark or runtime test performed. Latest docs commits require their own CI validation.
+
+
+## Auth HTTP recovery call-site follow-up — 2026-11-15
+
+- The authenticated HTTP handler performs an unconditional `recoverPendingPlayerState()` after parsing every `/auth/*` POST body.
+- `/auth/check` and `/auth/logout` then call `verifySession()`, which performs another player-recovery scan before reading session/account files. This duplicates the preflight scan on both endpoints.
+- `/auth/guest` can call `verifySession()` for legacy-session recovery, causing a second scan on that branch. Guest/session issuance and account registration also enter `sharedStateRuntime.transact()`, which performs its own recovery coordinator pass after the HTTP preflight. Thus the duplication is broader than gameplay WebSocket messages.
+- The shared runtime's `transact()` then delegates to the shared store's own transaction wrapper, which performs its own internal recovery check; this is another call boundary to inspect before consolidating. Preserve WAL ordering and fail-closed behavior; do not simply delete preflights without proving transaction callbacks cannot observe stale state.
+- Next safe design step: expose one explicit recovery context per request/ingress operation and make transaction APIs accept/consume that context only if their atomicity contract can be preserved. Otherwise keep recovery at transaction boundaries and remove only redundant outer scans after tests prove correctness.
+- No code changed; source inspection only. No syscall benchmark or runtime test performed.
