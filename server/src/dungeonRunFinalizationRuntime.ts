@@ -190,8 +190,8 @@ export function markDungeonResultEventDelivered(input: {
   now: number;
 }): DungeonResultOutbox {
   if (!input.eventId || !Number.isFinite(input.now)) throw new Error('Invalid dungeon outbox acknowledgement.');
-  return input.runtime.transact(recovered => {
-    if (recovered) throw new Error('Shared state was recovered during dungeon outbox acknowledgement; reload the outbox before retrying.');
+  return input.runtime.transactWithRecovery(recovery => {
+    if (recovery.recovered) throw new Error('Shared state was recovered during dungeon outbox acknowledgement; reload the outbox before retrying.');
     const current = input.outbox[input.eventId];
     if (!current) throw new Error('Dungeon result outbox event does not exist.');
     if (current.status === 'delivered') {
