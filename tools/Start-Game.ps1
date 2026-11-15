@@ -7,11 +7,6 @@ $env:MISTY_DATA_DIR = [System.IO.Path]::GetFullPath((Join-Path $Root '.local-dat
 $serverPort = 2567
 $env:MISTY_PORT = [string]$serverPort
 $env:VITE_SERVER_URL = 'http://127.0.0.1:2567'
-$randomBytes = New-Object byte[] 32
-$rng = [System.Security.Cryptography.RandomNumberGenerator]::Create()
-try { $rng.GetBytes($randomBytes) } finally { $rng.Dispose() }
-$shutdownToken = [Convert]::ToBase64String($randomBytes).TrimEnd('=').Replace('+','-').Replace('/','_')
-$env:MISTY_SHUTDOWN_TOKEN = $shutdownToken
 $stateFile = Join-Path $Root '.misty-game-processes.json'
 $LogDir = Join-Path $Root 'logs'
 New-Item -ItemType Directory -Force -Path $LogDir | Out-Null
@@ -50,6 +45,11 @@ foreach ($port in @(2567,5173)) {
   $listener = Get-NetTCPConnection -LocalPort $port -State Listen -ErrorAction SilentlyContinue | Select-Object -First 1
   if ($listener) { Fail "Порт $port уже занят процессом PID $($listener.OwningProcess). Закройте предыдущий запуск игры или проверьте, какое приложение использует порт." }
 }
+$randomBytes = New-Object byte[] 32
+$rng = [System.Security.Cryptography.RandomNumberGenerator]::Create()
+try { $rng.GetBytes($randomBytes) } finally { $rng.Dispose() }
+$shutdownToken = [Convert]::ToBase64String($randomBytes).TrimEnd('=').Replace('+','-').Replace('/','_')
+$env:MISTY_SHUTDOWN_TOKEN = $shutdownToken
 $serverCmd = "cd /d `"$Root\server`" && npm run dev"
 $clientCmd = "cd /d `"$Root\client`" && npm run dev -- --host 127.0.0.1"
 Say 'Запускаю сервер Colyseus...'
