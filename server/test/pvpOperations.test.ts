@@ -93,3 +93,29 @@ test('both PvP outcomes transfer gold to the winner and protect the loser', () =
     immunityUntil: 20_000 + PVP_IMMUNITY_MS,
   });
 });
+
+test('PvP rejects malformed, fractional, negative and unsafe persisted gold balances', () => {
+  for (const [attackerGold, targetGold] of [
+    [-1, 100], [100, -1], [1.5, 100], [100, 2.5],
+    [Number.NaN, 100], [100, Number.POSITIVE_INFINITY],
+    [Number.MAX_SAFE_INTEGER + 1, 100],
+  ]) {
+    assert.throws(() => resolvePvpOutcome(attackerGold, targetGold, true, 1_000),
+      /nonnegative safe integers/);
+  }
+});
+
+test('PvP rejects a transfer that would overflow the winner safe-integer balance', () => {
+  assert.throws(() => resolvePvpOutcome(Number.MAX_SAFE_INTEGER, 100, false, 1_000),
+    /exceed the safe integer range/);
+  assert.throws(() => resolvePvpOutcome(100, Number.MAX_SAFE_INTEGER, true, 1_000),
+    /exceed the safe integer range/);
+});
+
+test('valid PvP transfer conserves the exact total gold balance', () => {
+  for (const [attacker, target, won] of [[250, 1_000, true], [1_000, 250, false]] as const) {
+    const result = resolvePvpOutcome(attacker, target, won, 5_000);
+    assert.equal(result.attackerGold + result.targetGold, attacker + target);
+    assert.equal(result.stolenGold, Math.floor((won ? target : attacker) * PVP_GOLD_STEAL_RATE));
+  }
+});
