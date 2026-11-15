@@ -131,3 +131,15 @@ test('empty stored material snapshots fall back to the recipe instead of silentl
   assert.deepEqual(result.inventory, ['herb', 'herb']);
   assert.deepEqual(result.queue, []);
 });
+
+
+test('unknown queued output is rejected without granting an item or deleting the job', () => {
+  const inventory = ['ore'];
+  const queue = [{ id: 'job-unknown-output', recipe: 'retired_recipe', output: 'removed_item_id', count: 1, finishAt: 100, materials: { ore: 2 } }];
+  assert.throws(() => claimCraftJob({
+    inventory, queue, jobId: 'job-unknown-output', now: 100, validOutputIds: VALID_OUTPUTS,
+  }), /not in the current item catalog/);
+  assert.deepEqual(inventory, ['ore']);
+  assert.equal(queue.length, 1);
+  assert.equal(queue[0].output, 'removed_item_id');
+});
