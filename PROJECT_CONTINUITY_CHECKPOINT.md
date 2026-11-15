@@ -776,3 +776,10 @@ PR #15 остаётся Draft/open и не объединён. Слияние б
 - The one-second interval is local UI countdown rendering, not a one-second network poll. PvP list refresh is a guarded one-shot request at the tracked expiry timestamp.
 - Client `guardedActions` prevents some duplicate UI clicks but is not a security/rate-limit boundary: it does not cover all refreshes, has an 8-second timeout, and any notice clears all pending keys. Server-side ingress controls are still required.
 - Preserve the legitimate startup burst when designing limits; distinguish bootstrap, read/refresh, mutation, and expensive transaction/combat traffic. Source review only; no benchmark or runtime test; no threshold selected.
+
+
+## Per-packet recovery duplication finding — 2026-11-15
+
+- `onAuthenticatedMessage` currently calls `verifySession`, then `recoverPlayerStateBeforeMutation`, then the handler. `verifySession` already calls `recoverPendingPlayerState`; the explicit mutation preflight calls it a second time. Thus each authenticated gameplay packet scans shared and legacy auction/clan journals twice, then reads session and account JSON for authoritative token/account validation.
+- The duplicate journal scan is a concrete optimization target. Proposed safe direction is one combined ingress gate with a single recovery result, retaining durable session checks and recovery-before-mutation. Do not replace durable revocation validation with `ONLINE_SESSION_HASHES` or room maps; those only establish process-local ownership and do not prove cross-instance revocation.
+- Any future pre-auth ingress limiter must be keyed from trusted room-bound player identity and preserve stale-room/logout/recovery behavior. No code changed; no syscall benchmark or runtime test performed.
