@@ -902,3 +902,12 @@ PR #15 остаётся Draft/open и не объединён. Слияние б
 - No existing auction data was migrated, deleted, or rewritten. If a deployed auction file contains duplicate IDs, auction mutations will stop safely until the data is reviewed; do not auto-select or merge ambiguous lots.
 - Commits: `393e304987366fce1d9b6bb8e00bfcc0847ab5e2` (source guard), `c6c8034ae785fbb445f7f398ba97aa74a66efe3d` (regression tests).
 - Awaiting GitHub Actions for the new HEAD; local tests were not run. PR #18 remains Draft/open and unmerged.
+
+
+## Inventory ↔ auction consistency review — 2026-11-15
+- Quality Gate run `43758046741` for HEAD `807b69d7cc544ea31c25dd0635ae7a82dc0708d3` completed successfully.
+- Reviewed `inventoryOperations.ts`, auction transaction operations, the production `auctionSell/auctionCancel/auctionBuy` handlers, and the inventory/equipment mutation paths in the server.
+- Confirmed intended duplicate-item behavior: listing/removing one copy preserves an equipped duplicate; removing the final copy clears the corresponding equipment slot. Purchase and withdrawal check unique amulets against both inventory and equipment. The live auction handlers use the shared atomic transaction path and merge online player state before committing.
+- No additional confirmed inventory/auction corruption defect was established in this pass. No game data, balance, inventory, or equipment behavior was changed.
+- Follow-up review target: read-only auction list/history loading accepts plain objects at the persistence boundary and should be assessed separately for response-field allowlisting and malformed legacy data presentation. Do not tighten persisted-data validation without checking real legacy compatibility.
+- Current branch HEAD remains `807b69d7cc544ea31c25dd0635ae7a82dc0708d3`; PR #18 remains Draft/open/unmerged. No local tests were run.
