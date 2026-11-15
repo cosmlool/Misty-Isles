@@ -140,22 +140,22 @@ test('a real process crash after transport send leaves the event pending for at-
     }));
     const transactionModule = new URL('../src/sharedStateTransactions.ts', import.meta.url).href;
     const deliveryModule = new URL('../src/dungeonResultOutboxDelivery.ts', import.meta.url).href;
-    const childScript = \`
+    const childScript = `
       import { appendFileSync } from 'node:fs';
-      import { createSharedStateTransactionStore } from \${JSON.stringify(transactionModule)};
-      import { dispatchPendingDungeonResultEvents } from \${JSON.stringify(deliveryModule)};
-      const outbox = JSON.parse(await (await import('node:fs/promises')).readFile(\${JSON.stringify(f.files.dungeonOutbox)}, 'utf8'));
+      import { createSharedStateTransactionStore } from ${JSON.stringify(transactionModule)};
+      import { dispatchPendingDungeonResultEvents } from ${JSON.stringify(deliveryModule)};
+      const outbox = JSON.parse(await (await import('node:fs/promises')).readFile(${JSON.stringify(f.files.dungeonOutbox)}, 'utf8'));
       dispatchPendingDungeonResultEvents({
         playerId: 'p1',
         outbox,
         send: (type, payload) => {
-          appendFileSync(\${JSON.stringify(sentFile)}, JSON.stringify({ type, payload }) + '\\\\n');
+          appendFileSync(${JSON.stringify(sentFile)}, JSON.stringify({ type, payload }) + '\\\\n');
           process.exit(74);
         },
         acknowledge: () => process.exit(75),
       });
       process.exit(0);
-    \`;
+    `;
     const child = spawnSync(process.execPath, ['--import', 'tsx', '--input-type=module', '-e', childScript], {
       cwd: process.cwd(), encoding: 'utf8', timeout: 10_000,
     });
