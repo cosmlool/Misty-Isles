@@ -878,3 +878,10 @@ PR #15 остаётся Draft/open и не объединён. Слияние б
 - Existing auction validation receives the combined runtime item IDs, preserving legacy IDs. New craft jobs persist a materials snapshot, allowing cancellation even when a recipe later becomes hidden because its output is legacy; if old queue entries lack both stored materials and an active recipe fallback, cancellation fails closed.
 - Confirmed integrity gap for follow-up: craftClaim only uses catalog lookup to detect unique-amulet conflicts; unknown job.output still reaches claimCraftJob and is appended to inventory. A safe fix must retain the job on rejection and cover legacy queued outputs, retired recipes, unknown IDs and unique amulets. No production change made yet.
 - No player saves were available, so historical craftQueue shape remains unverified. No IDs/data/stats/prices/saves changed; static source/data review only.
+
+
+## Craft queue output identity hardening — 2026-11-15
+- Fixed confirmed gap: claimCraftJob now requires a set of known runtime item IDs and rejects unknown output IDs without modifying inventory or removing the queued job.
+- Production craftClaim supplies the complete runtime ITEMS ID set, which includes the original legacy item definitions, current equipment catalog and expedition drops. A known legacy output remains claimable even if its old recipe is no longer in the visible recipe catalogue.
+- Added regression test for an unknown output attached to a retired recipe; it verifies inventory and queue remain unchanged. Updated existing claim tests to pass the valid output set.
+- No old jobs are migrated/deleted/refunded. Unknown historical outputs remain queued for manual review. Awaiting GitHub Actions on the new HEAD; local tests not run.
