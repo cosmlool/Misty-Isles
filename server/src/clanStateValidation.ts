@@ -5,7 +5,7 @@ function isRecord(value: unknown): value is Record<string, any> {
 }
 
 function isOptionalCounter(value: unknown): boolean {
-  return value === undefined || (Number.isSafeInteger(value) && Number(value) >= 0);
+  return value === undefined || (typeof value === 'number' && Number.isSafeInteger(value) && value >= 0);
 }
 
 /** Reject ambiguous clan records rather than silently hiding or repairing member/leader state. */
