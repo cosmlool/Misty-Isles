@@ -1353,8 +1353,18 @@ function safeId(v:any){return String(v||'').replace(/[^a-zA-Z0-9_-]/g,'').slice(
 function loadPlayersWithOnline():Record<string,any>{const all=loadPlayers();for(const player of Object.values(all))normalizePlayerProfessionData(player);for(const [id,online] of ONLINE_PLAYERS){normalizePlayerProfessionData(online);all[id]=online.toJSON();}return all;}
 function syncOnlinePlayersAfterRecovery(){const recovered=loadPlayers();for(const [id,online] of ONLINE_PLAYERS){const saved=recovered[id];if(saved)applyPlayerSave(online as any,saved);}}
 function reconcileOnlinePlayersAfterPersistenceFailure(){
-  try{if(sharedStateRuntime.recoverPendingPlayerState())syncOnlinePlayersAfterRecovery();}
-  catch(error){console.error('Shared-state recovery remains pending after player persistence failure:',error);}
+  try{
+    if(sharedStateRuntime.recoverPendingPlayerState()){
+      syncOnlinePlayersAfterRecovery();
+      return;
+    }
+    // No journal means publication never happened (or recovery already completed).
+    // Restore every existing online character from the last durable snapshot so
+    // a failed pre-journal write cannot leak uncommitted memory into a later save.
+    if(!existsSync(sharedStateTransactions.journalFile))syncOnlinePlayersAfterRecovery();
+  }catch(error){
+    console.error('Shared-state recovery remains pending after player persistence failure:',error);
+  }
 }
 function loadPlayersForAuction():Record<string,any>{return loadPlayersWithOnline();}
 function recoverPlayerStateBeforeMutation(){const playersRecovered=sharedStateRuntime.recoverPendingPlayerState();if(playersRecovered)syncOnlinePlayersAfterRecovery();return playersRecovered;}
