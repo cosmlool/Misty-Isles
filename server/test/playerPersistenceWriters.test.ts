@@ -84,3 +84,11 @@ test('PvP opponent refresh reconciles live player state when its transaction fai
   assert.match(handler, /try\{[\s\S]*sharedStateRuntime\.transact/);
   assert.match(handler, /catch\(error\)\{[\s\S]*reconcileOnlinePlayersAfterPersistenceFailure\(\);[\s\S]*throw error/);
 });
+test('hunt-group leave delegates rollback to WAL-aware persistence reconciliation', () => {
+  const start = source.indexOf("this.onAuthenticatedMessage('huntGroupLeave'");
+  const end = source.indexOf("this.onAuthenticatedMessage('expeditionState'", start);
+  assert.ok(start >= 0 && end > start, 'hunt-group leave handler must be present');
+  const handler = source.slice(start, end);
+  assert.match(handler, /persistHuntGroups\(affectedPlayers,playerQuestOverrides\)/);
+  assert.doesNotMatch(handler, /previousQuests|member\.quests=quests/);
+});
