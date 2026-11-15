@@ -125,10 +125,10 @@ test('PvP burns the portion of a transfer that would exceed the winner gold cap'
 
 test('PvP clamps legacy balances above the cap before transferring gold', () => {
   const result = resolvePvpOutcome(10_000_000_000, 100, false, 1_000);
-  assert.equal(result.attackerGold, 80);
-  assert.equal(result.targetGold, 120);
-  assert.equal(result.stolenGold, 20);
-  assert.equal(result.receivedGold, 20);
+  assert.equal(result.attackerGold, 8_000_000_000);
+  assert.equal(result.targetGold, 2_000_000_099);
+  assert.equal(result.stolenGold, 1_999_999_999);
+  assert.equal(result.receivedGold, 1_999_999_999);
   assert.equal(result.burnedGold, 1);
 });
 
@@ -145,7 +145,9 @@ test('valid PvP transfer conserves the exact total gold balance', () => {
 
 test('finite unsafe legacy PvP balances above the cap are clamped instead of blocking combat', () => {
   const result = resolvePvpOutcome(Number.MAX_SAFE_INTEGER + 1, 100, false, 1_000);
-  assert.equal(result.attackerGold, 80);
-  assert.equal(result.targetGold, 120);
+  assert.equal(result.attackerGold, 8_000_000_000);
+  assert.equal(result.targetGold, 2_000_000_099);
+  assert.equal(result.stolenGold, 1_999_999_999);
+  assert.equal(result.receivedGold, 1_999_999_999);
   assert.equal(result.burnedGold, Number.MAX_SAFE_INTEGER + 1 - 9_999_999_999);
 });
