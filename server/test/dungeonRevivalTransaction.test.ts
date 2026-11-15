@@ -20,7 +20,7 @@ function createRun() {
 function playerSnapshots() {
   return {
     p1: { id: 'p1', inventory: JSON.stringify(['moon_dust', RESURRECTION_SCROLL_ID, RESURRECTION_SCROLL_ID]) },
-    p2: { id: 'p2', inventory: JSON.stringify(['iron_scrap']) },
+    p2: { id: 'p2', health: 0, inventory: JSON.stringify(['iron_scrap']) },
   };
 }
 
@@ -37,6 +37,8 @@ test('resurrection prepares player inventory and dungeon participant changes tog
     'moon_dust', RESURRECTION_SCROLL_ID,
   ]);
   assert.deepEqual(JSON.parse(prepared.players.p2.inventory), ['iron_scrap']);
+  assert.equal(prepared.players.p2.health, 25, 'the durable Player snapshot must match the revived run HP');
+  assert.equal(players.p2.health, 0, 'preparation must not mutate the original target snapshot');
   assert.equal(players.p1.inventory, JSON.stringify([
     'moon_dust', RESURRECTION_SCROLL_ID, RESURRECTION_SCROLL_ID,
   ]), 'preparation must not mutate the caller snapshot');
@@ -66,7 +68,16 @@ test('prepared resurrection survives JSON serialization as a paired snapshot', (
   const restored = JSON.parse(JSON.stringify(prepared));
   assert.equal(restored.run.participants.p2.status, 'revived');
   assert.equal(restored.run.participants.p2.health, 25);
+  assert.equal(restored.players.p2.health, 25);
   assert.equal(JSON.parse(restored.players.p1.inventory).filter(
     (id: string) => id === RESURRECTION_SCROLL_ID,
   ).length, 1);
+});
+
+test('resurrection rejects a missing target player snapshot before changing either side', () => {
+  const players = playerSnapshots();
+  delete (players as any).p2;
+  assert.throws(() => prepareDungeonRevival({
+    run: createRun(), players, rescuerId: 'p1', targetId: 'p2', reviveHealth: 25, now: 200,
+  }), /Target player snapshot is missing/);
 });
