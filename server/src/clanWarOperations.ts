@@ -38,9 +38,16 @@ export function clanWarCooldownRemaining(
   now: number,
   cooldownMs = CLAN_WAR_ATTACK_COOLDOWN_MS,
 ): number {
-  const lastAttackAt = Number(war.lastAttackAtByPlayer?.[playerId] || 0);
-  if (!Number.isFinite(lastAttackAt) || lastAttackAt <= 0) return 0;
-  return Math.max(0, cooldownMs - (now - lastAttackAt));
+  if (!Number.isSafeInteger(now) || now < 0
+    || !Number.isSafeInteger(cooldownMs) || cooldownMs < 0) {
+    throw new Error('Clan war cooldown clock and duration must be nonnegative safe integers.');
+  }
+  const rawLastAttackAt = war.lastAttackAtByPlayer?.[playerId];
+  if (rawLastAttackAt === undefined) return 0;
+  if (!Number.isSafeInteger(rawLastAttackAt) || rawLastAttackAt <= 0) {
+    throw new Error('Clan war player cooldown timestamp is invalid.');
+  }
+  return Math.max(0, cooldownMs - (now - rawLastAttackAt));
 }
 
 export function calculateClanWarDamage(
@@ -64,7 +71,7 @@ export function recordClanWarDamage(
   if (war.status !== 'active' || ![war.a, war.b].includes(clanId)) {
     throw new Error('Clan is not participating in an active war.');
   }
-  if (!playerId || !Number.isSafeInteger(damage) || damage < 1 || !Number.isFinite(now)) {
+  if (!playerId || !Number.isSafeInteger(damage) || damage < 1 || !Number.isSafeInteger(now) || now < 0) {
     throw new Error('Clan war attack is invalid.');
   }
   if (clanWarCooldownRemaining(war, playerId, now) > 0) {
