@@ -115,7 +115,7 @@ test('story, faction, daily challenge and achievement rewards cannot be claimed 
     room = await client.joinOrCreate('my_room', { playerId, sessionToken: token });
 
     const notices: string[] = [];
-    room.onMessage('notice', payload => notices.push(String(payload?.text || '')));
+    room.onMessage('notice', payload => { const message=String(payload?.text||''); if(!message.startsWith('С возвращением, ')&&message!=='Выбери расу, чтобы начать приключение.')notices.push(message); });
     const sendAndWait = async (type: string, data: Record<string, unknown>, label: string) => {
       const before = notices.length;
       room!.send(type, data);
