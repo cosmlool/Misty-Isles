@@ -4,7 +4,15 @@ Set-Location $Root
 # Keep local test accounts and world state separate from the normal server/data directory.
 $env:MISTY_DATA_DIR = [System.IO.Path]::GetFullPath((Join-Path $Root '.local-data'))
 # Pin the browser client to the local server even if the page is opened through another hostname.
+$serverPort = 2567
+$env:MISTY_PORT = [string]$serverPort
 $env:VITE_SERVER_URL = 'http://127.0.0.1:2567'
+$randomBytes = New-Object byte[] 32
+$rng = [System.Security.Cryptography.RandomNumberGenerator]::Create()
+try { $rng.GetBytes($randomBytes) } finally { $rng.Dispose() }
+$shutdownToken = [Convert]::ToBase64String($randomBytes).TrimEnd('=').Replace('+','-').Replace('/','_')
+$env:MISTY_SHUTDOWN_TOKEN = $shutdownToken
+$stateFile = Join-Path $Root '.misty-game-processes.json'
 $LogDir = Join-Path $Root 'logs'
 New-Item -ItemType Directory -Force -Path $LogDir | Out-Null
 $Log = Join-Path $LogDir 'launcher.log'
@@ -47,7 +55,8 @@ $clientCmd = "cd /d `"$Root\client`" && npm run dev -- --host 127.0.0.1"
 Say 'Запускаю сервер Colyseus...'
 $serverProc = Start-Process -FilePath $env:ComSpec -ArgumentList @('/k', $serverCmd) -WorkingDirectory (Join-Path $Root 'server') -PassThru
 Start-Sleep -Seconds 2
-if ($serverProc.HasExited) { Fail 'Окно сервера завершилось сразу после запуска. Посмотрите сообщение в окне сервера.' }
+if ($serverProc.HasExited) { $env:MISTY_SHUTDOWN_TOKEN = $null; Remove-Item $stateFile -Force -ErrorAction SilentlyContinue; Fail 'Окно сервера завершилось сразу после запуска. Посмотрите сообщение в окне сервера.' }
+@{ serverPid = $serverProc.Id; clientPid = $null; serverPort = $serverPort; shutdownToken = $shutdownToken; startedAt = (Get-Date).ToString('o'); root = $Root } | ConvertTo-Json | Set-Content -Encoding UTF8 $stateFile
 Say 'Ожидаю сервер на порту 2567 (до 45 секунд)...'
 $ready = $false
 for ($i=0; $i -lt 45; $i++) {
@@ -57,8 +66,10 @@ for ($i=0; $i -lt 45; $i++) {
   if ($serverProc.HasExited) { break }
 }
 if (-not $ready) { try { Stop-Process -Id $serverProc.Id -Force -ErrorAction SilentlyContinue } catch {}; Fail 'Сервер не открыл порт 2567 за 45 секунд. Проверьте окно сервера и logs\launcher.log.' }
+$env:MISTY_SHUTDOWN_TOKEN = $null
 Say 'Сервер готов. Запускаю клиент Vite...'
 $clientProc = Start-Process -FilePath $env:ComSpec -ArgumentList @('/k', $clientCmd) -WorkingDirectory (Join-Path $Root 'client') -PassThru
+@{ serverPid = $serverProc.Id; clientPid = $clientProc.Id; serverPort = $serverPort; shutdownToken = $shutdownToken; startedAt = (Get-Date).ToString('o'); root = $Root } | ConvertTo-Json | Set-Content -Encoding UTF8 $stateFile
 $ready = $false
 for ($i=0; $i -lt 45; $i++) {
   Start-Sleep -Seconds 1
@@ -67,7 +78,7 @@ for ($i=0; $i -lt 45; $i++) {
   if ($clientProc.HasExited) { break }
 }
 if (-not $ready) { Fail 'Клиент Vite не открыл порт 5173 за 45 секунд. Проверьте окно клиента.' }
-@{ serverPid = $serverProc.Id; clientPid = $clientProc.Id; startedAt = (Get-Date).ToString('o'); root = $Root } | ConvertTo-Json | Set-Content -Encoding UTF8 (Join-Path $Root '.misty-game-processes.json')
+
 Say 'Готово. Открываю игру в браузере: http://127.0.0.1:5173'
 Start-Process 'http://127.0.0.1:5173'
 Write-Host ''
