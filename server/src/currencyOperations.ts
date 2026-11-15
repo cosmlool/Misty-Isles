@@ -82,6 +82,18 @@ export type PlayerCurrencyBalances = {
   capped: boolean;
 };
 
+/** Prepare an uncapped gem credit without allowing JavaScript integer overflow. */
+export function prepareGemCredit(currentBalance: number, amount: number): number {
+  if (!Number.isSafeInteger(currentBalance) || currentBalance < 0) {
+    throw new Error('Gem balance must be a nonnegative safe integer.');
+  }
+  if (!Number.isSafeInteger(amount) || amount < 0
+    || !Number.isSafeInteger(currentBalance + amount)) {
+    throw new Error('Gem credit would exceed the safe-integer range.');
+  }
+  return currentBalance + amount;
+}
+
 /** Validate legacy balances and normalize only finite over-cap gold/crystals. */
 export function preparePlayerCurrencyBalances(
   gold: number,
