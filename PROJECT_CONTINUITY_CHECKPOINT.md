@@ -768,3 +768,11 @@ PR #15 остаётся Draft/open и не объединён. Слияние б
 - Limiter placement must account for this: a cheap room/client ownership check can precede a per-player ingress budget, then expensive session/WAL checks and handler execution. However, session revocation semantics must remain intact: logout removes the durable session and closes the matching live client. Do not replace validation with an unchecked cache.
 - Current server topology allows one client per room and one online room per player. A process-scoped player bucket would cover reconnects in that process, but resets on process restart and is not coordinated across multiple server instances. Multi-instance deployment needs shared coordination or explicit single-process deployment guarantees.
 - No implementation, benchmark, or runtime test was performed. Detailed constraints are in `GAMEPLAY_MESSAGE_RATE_LIMIT_CLASSIFICATION.md`.
+
+
+## Official client request cadence audit — 2026-11-15
+
+- The official client sends 13 initialization requests after each successful Colyseus connection. `clanList` response handling then repeats `clanQuests` and `clanTerritories`, already included in that initialization batch. This is a confirmed duplicate-request optimization opportunity; no code was changed.
+- The one-second interval is local UI countdown rendering, not a one-second network poll. PvP list refresh is a guarded one-shot request at the tracked expiry timestamp.
+- Client `guardedActions` prevents some duplicate UI clicks but is not a security/rate-limit boundary: it does not cover all refreshes, has an 8-second timeout, and any notice clears all pending keys. Server-side ingress controls are still required.
+- Preserve the legitimate startup burst when designing limits; distinguish bootstrap, read/refresh, mutation, and expensive transaction/combat traffic. Source review only; no benchmark or runtime test; no threshold selected.
