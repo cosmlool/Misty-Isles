@@ -141,3 +141,28 @@ test('clan war damage accumulation rejects unsafe legacy counters and overflow',
     'clan-a', 'player-a', 1, 1_000,
   ), /safe integer/i);
 });
+
+
+test('war settlement fails closed on malformed persisted damage counters', () => {
+  for (const value of [-1, 1.5, Number.NaN, Number.POSITIVE_INFINITY, Number.MAX_SAFE_INTEGER + 1]) {
+    assert.throws(
+      () => settleExpiredClanWars([activeWar({ aDamage: value as number })], {}, 10_000),
+      /invalid damage counters/i,
+    );
+  }
+  const malformed = [activeWar({ endsAt: Number.NaN }), activeWar({ endsAt: -1 })];
+  for (const war of malformed) {
+    assert.throws(() => settleExpiredClanWars([war], {}, 10_000), /invalid end timestamp/i);
+  }
+});
+
+test('invalid settlement data leaves the original war and clan records untouched', () => {
+  const war = activeWar({ aDamage: Number.MAX_SAFE_INTEGER + 1, bDamage: 0 });
+  const clan = { level: 1, vault: 100, seasonPoints: 0, questProgress: { war: 0 } };
+  assert.throws(() => settleExpiredClanWars([war], { 'clan-a': clan }, 10_000));
+  assert.equal(war.status, 'active');
+  assert.equal(war.winnerId, undefined);
+  assert.equal(clan.vault, 100);
+  assert.equal(clan.seasonPoints, 0);
+  assert.equal(clan.questProgress.war, 0);
+});
