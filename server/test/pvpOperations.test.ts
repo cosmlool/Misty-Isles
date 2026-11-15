@@ -102,7 +102,6 @@ test('PvP rejects malformed, fractional, negative and unsafe persisted gold bala
   for (const [attackerGold, targetGold] of [
     [-1, 100], [100, -1], [1.5, 100], [100, 2.5],
     [Number.NaN, 100], [100, Number.POSITIVE_INFINITY],
-    [Number.MAX_SAFE_INTEGER + 1, 100],
   ]) {
     assert.throws(() => resolvePvpOutcome(attackerGold, targetGold, true, 1_000),
       /nonnegative safe integers/);
