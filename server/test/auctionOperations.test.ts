@@ -24,6 +24,30 @@ function initial(): EconomySnapshot {
     buyer: player('Buyer', 2000, 80, []) }, auction: [], history: [] };
 }
 
+test('duplicate active lot IDs fail closed before any auction transaction can choose an ambiguous lot', () => {
+  const listed = listAuctionItem({ snapshot: initial(), sellerId: 'seller', index: 0, price: 500,
+    currency: 'gold', validItemIds: itemIds, itemName: 'Iron sword', now: 10, lotId: 'duplicate-id' }).snapshot;
+  listed.auction.push({ ...listed.auction[0] });
+  const before = structuredClone(listed);
+  assert.throws(() => buyAuctionItem({ snapshot: listed, buyerId: 'buyer', lotId: 'duplicate-id',
+    validItemIds: itemIds, now: 20 }), /duplicate lot IDs/);
+  assert.throws(() => cancelAuctionItem({ snapshot: listed, sellerId: 'seller', lotId: 'duplicate-id',
+    validItemIds: itemIds, now: 20 }), /duplicate lot IDs/);
+  assert.throws(() => listAuctionItem({ snapshot: listed, sellerId: 'seller', index: 0, price: 100,
+    currency: 'gold', validItemIds: itemIds, itemName: 'Iron sword', now: 20, lotId: 'another-id' }), /duplicate lot IDs/);
+  assert.deepEqual(listed, before);
+});
+
+test('listing rejects a lot ID that is already present', () => {
+  const listed = listAuctionItem({ snapshot: initial(), sellerId: 'seller', index: 0, price: 500,
+    currency: 'gold', validItemIds: itemIds, itemName: 'Iron sword', now: 10, lotId: 'same-id' }).snapshot;
+  const before = structuredClone(listed);
+  assert.throws(() => listAuctionItem({ snapshot: listed, sellerId: 'seller', index: 0, price: 100,
+    currency: 'gold', validItemIds: itemIds, itemName: 'Iron sword', now: 20, lotId: 'same-id' }),
+    /already in use/);
+  assert.deepEqual(listed, before);
+});
+
 test('listing removes exactly one item, charges the 2% fee and persists the lot and history', () => {
   const f = fixture();
   try {
