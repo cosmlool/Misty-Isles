@@ -93,12 +93,19 @@ export function resolvePvpOutcome(
   attackerWon: boolean,
   now: number,
 ): PvpOutcomeResult {
-  const attackerBalance = Math.max(0, Number(attackerGold) || 0);
-  const targetBalance = Math.max(0, Number(targetGold) || 0);
-  const stolenGold = calculatePvpGoldTransfer(attackerWon ? targetBalance : attackerBalance);
+  if (!Number.isSafeInteger(attackerGold) || attackerGold < 0
+    || !Number.isSafeInteger(targetGold) || targetGold < 0) {
+    throw new Error('PvP gold balances must be nonnegative safe integers.');
+  }
+  const stolenGold = calculatePvpGoldTransfer(attackerWon ? targetGold : attackerGold);
+  const nextAttackerGold = attackerWon ? attackerGold + stolenGold : attackerGold - stolenGold;
+  const nextTargetGold = attackerWon ? targetGold - stolenGold : targetGold + stolenGold;
+  if (!Number.isSafeInteger(nextAttackerGold) || !Number.isSafeInteger(nextTargetGold)) {
+    throw new Error('PvP gold transfer would exceed the safe integer range.');
+  }
   return {
-    attackerGold: attackerWon ? attackerBalance + stolenGold : attackerBalance - stolenGold,
-    targetGold: attackerWon ? targetBalance - stolenGold : targetBalance + stolenGold,
+    attackerGold: nextAttackerGold,
+    targetGold: nextTargetGold,
     stolenGold,
     immunityRecipient: attackerWon ? 'target' : 'attacker',
     immunityUntil: now + PVP_IMMUNITY_MS,
