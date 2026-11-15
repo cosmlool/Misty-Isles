@@ -35,8 +35,11 @@ function addSafeCounter(player: EconomyPlayer, field: string, amount: number): n
 }
 function safeBalance(player: EconomyPlayer, field: 'gold' | 'crystals'): number {
   const value = Number(player[field] ?? 0);
-  if (!Number.isSafeInteger(value) || value < 0) throw new Error('Player currency balance is invalid.');
-  return Math.min(value, field === 'gold' ? MAX_GOLD_BALANCE : MAX_CRYSTALS_BALANCE);
+  const cap = field === 'gold' ? MAX_GOLD_BALANCE : MAX_CRYSTALS_BALANCE;
+  if (!Number.isFinite(value) || value < 0 || (value <= cap && !Number.isSafeInteger(value))) {
+    throw new Error('Player currency balance is invalid.');
+  }
+  return Math.min(value, cap);
 }
 function validateLots(lots: AuctionLot[], validItemIds: ReadonlySet<string>) {
   if (!Array.isArray(lots)) throw new Error('Auction listing data is invalid.');
