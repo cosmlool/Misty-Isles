@@ -2,7 +2,7 @@ const PVP_BOT_IDS = new Set(['bot_ember', 'bot_bastion', 'bot_gale', 'bot_relic'
 
 export const PVP_ATTACK_COOLDOWN_MS = 15 * 60 * 1000;
 export const PVP_IMMUNITY_MS = 60 * 60 * 1000;
-import { creditGold } from './currencyOperations.js';
+import { creditGold, MAX_GOLD_BALANCE } from './currencyOperations.js';
 
 export const PVP_GOLD_STEAL_RATE = 0.20;
 export const PVP_OPPONENT_COUNT = 4;
@@ -97,8 +97,10 @@ export function resolvePvpOutcome(
   attackerWon: boolean,
   now: number,
 ): PvpOutcomeResult {
-  if (!Number.isSafeInteger(attackerGold) || attackerGold < 0
-    || !Number.isSafeInteger(targetGold) || targetGold < 0) {
+  if (!Number.isFinite(attackerGold) || attackerGold < 0
+    || (attackerGold <= MAX_GOLD_BALANCE && !Number.isSafeInteger(attackerGold))
+    || !Number.isFinite(targetGold) || targetGold < 0
+    || (targetGold <= MAX_GOLD_BALANCE && !Number.isSafeInteger(targetGold))) {
     throw new Error('PvP gold balances must be nonnegative safe integers.');
   }
   const attackerCap = creditGold(attackerGold, 0);
