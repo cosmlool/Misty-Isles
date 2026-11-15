@@ -123,3 +123,64 @@ test('restart replays an unacknowledged send, then never resends an acknowledged
     assert.equal(afterAckRestart.recover(), false);
   } finally { f.cleanup(); }
 });
+
+
+test('a real process crash after transport send leaves the event pending for at-least-once replay', () => {
+  const f = fixture();
+  try {
+    const sentFile = join(f.dataDir, 'transport_sent.json');
+    const initial = f.createStore();
+    const event = resultEvent();
+    initial.transact(() => ({
+      files: {
+        players: { p1: { health: 80 } },
+        dungeonOutbox: enqueueDungeonResultEvents({ outbox: {}, events: [event], now: 100 }),
+      },
+      result: null,
+    }));
+    const transactionModule = new URL('../src/sharedStateTransactions.ts', import.meta.url).href;
+    const deliveryModule = new URL('../src/dungeonResultOutboxDelivery.ts', import.meta.url).href;
+    const childScript = \`
+      import { appendFileSync } from 'node:fs';
+      import { createSharedStateTransactionStore } from \${JSON.stringify(transactionModule)};
+      import { dispatchPendingDungeonResultEvents } from \${JSON.stringify(deliveryModule)};
+      const outbox = JSON.parse(await (await import('node:fs/promises')).readFile(\${JSON.stringify(f.files.dungeonOutbox)}, 'utf8'));
+      dispatchPendingDungeonResultEvents({
+        playerId: 'p1',
+        outbox,
+        send: (type, payload) => {
+          appendFileSync(\${JSON.stringify(sentFile)}, JSON.stringify({ type, payload }) + '\\\\n');
+          process.exit(74);
+        },
+        acknowledge: () => process.exit(75),
+      });
+      process.exit(0);
+    \`;
+    const child = spawnSync(process.execPath, ['--import', 'tsx', '--input-type=module', '-e', childScript], {
+      cwd: process.cwd(), encoding: 'utf8', timeout: 10_000,
+    });
+    assert.equal(child.status, 74, child.stderr || child.stdout);
+    assert.equal(readFileSync(sentFile, 'utf8').trim().split('\\n').length, 1);
+    assert.equal(readJson(f.files.dungeonOutbox)[event.eventId].status, 'pending');
+
+    const restarted = f.createStore();
+    const replayCount = dispatchPendingDungeonResultEvents({
+      playerId: 'p1',
+      outbox: readJson(f.files.dungeonOutbox),
+      send: (type, payload) => {
+        appendFileSync(sentFile, JSON.stringify({ type, payload }) + '\\n');
+      },
+      acknowledge: (eventId) => {
+        const currentOutbox = readJson(f.files.dungeonOutbox);
+        const next = {
+          ...currentOutbox,
+          [eventId]: { ...currentOutbox[eventId], status: 'delivered', deliveredAt: 200 },
+        };
+        restarted.transact(() => ({ files: { dungeonOutbox: next }, result: null }));
+      },
+    });
+    assert.equal(replayCount, 1);
+    assert.equal(readFileSync(sentFile, 'utf8').trim().split('\\n').length, 2);
+    assert.equal(readJson(f.files.dungeonOutbox)[event.eventId].status, 'delivered');
+  } finally { f.cleanup(); }
+});
