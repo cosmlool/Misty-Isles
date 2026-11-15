@@ -532,7 +532,7 @@ function issueSession(playerId:string, accountKey:string|null) {
   sharedStateRuntime.transact(()=>{const sessions=loadSessions().filter(x=>x.expiresAt>Date.now());sessions.push({tokenHash:tokenDigest(token),playerId,accountKey,expiresAt:Date.now()+AUTH_SESSION_MS});return {files:{sessions},result:undefined};});
   return token;
 }
-function verifySession(token:string):SessionRecord|null { if(!token||token.length>256)return null;const hash=tokenDigest(token);const sessions=loadSessions();const session=sessions.find(x=>x.tokenHash===hash&&x.expiresAt>Date.now());if(!session)return null;const account=loadAccounts().find(x=>x.playerId===session.playerId);if(session.accountKey===null?Boolean(account):!account||account.usernameKey!==session.accountKey)return null;return session; }
+function verifySession(token:string):SessionRecord|null { sharedStateRuntime.recoverPendingState();if(!token||token.length>256)return null;const hash=tokenDigest(token);const sessions=loadSessions();const session=sessions.find(x=>x.tokenHash===hash&&x.expiresAt>Date.now());if(!session)return null;const account=loadAccounts().find(x=>x.playerId===session.playerId);if(session.accountKey===null?Boolean(account):!account||account.usernameKey!==session.accountKey)return null;return session; }
 function publicPlayerCode(id:string) { return createHash('sha256').update(`MistyIslesPublic:${id}`).digest('hex').slice(0,24); }
 function resolvePublicPlayerCode(code:string, players:Record<string,any>=loadPlayers()) { for(const [id,online] of ONLINE_PLAYERS)players[id]=online.toJSON();const key=String(code||'');return Object.keys(players).find(id=>publicPlayerCode(id)===key)||''; }
 function passwordMatches(password:string,salt:string,expected:string) { try { const actual=scryptSync(password,salt,64);const target=Buffer.from(expected,'hex');return target.length===actual.length&&timingSafeEqual(actual,target); } catch { return false; } }
@@ -546,7 +546,7 @@ function authHttpHandler(req:IncomingMessage,res:ServerResponse) {
   let body='';req.on('data',chunk=>{body+=String(chunk);if(body.length>8192){sendJson(res,413,{error:'Слишком большой запрос.'});req.destroy();}});
   req.on('end',()=>{
     try {
-      const d=JSON.parse(body||'{}');
+      const d=JSON.parse(body||'{}');sharedStateRuntime.recoverPendingState();
       if(path==='/auth/guest'){
         const rawPlayerId=String(d.playerId||'').trim();
         const suppliedProof=String(d.guestProof||'');
@@ -583,17 +583,17 @@ function authHttpHandler(req:IncomingMessage,res:ServerResponse) {
         const salt=randomBytes(16).toString('hex');
         const passwordHash=scryptSync(password,salt,64).toString('hex');
         const token=randomBytes(32).toString('hex');
-        const registration=sharedStateRuntime.transact(()=>{
+        const registration=sharedStateRuntime.transact<{status:201;playerId:string;token:string;username:string}|{status:409|401;error:string}>(()=>{
           const accounts=loadAccounts();
-          if(accounts.some(a=>a.usernameKey===usernameKey))return {files:{},result:{status:409,error:'Такой логин уже занят.'},skipWrite:true};
-          if(guestId&&!verifyGuestCredential(guestId,guestProof))return {files:{},result:{status:401,error:'Не удалось подтвердить гостевого персонажа. Войди в гостевой режим и повтори.'},skipWrite:true};
-          if(accounts.some(a=>a.playerId===playerId))return {files:{},result:{status:409,error:'Этот персонаж уже привязан к другому аккаунту.'},skipWrite:true};
+          if(accounts.some(a=>a.usernameKey===usernameKey))return {files:{},result:{status:409 as const,error:'Такой логин уже занят.'},skipWrite:true};
+          if(guestId&&!verifyGuestCredential(guestId,guestProof))return {files:{},result:{status:401 as const,error:'Не удалось подтвердить гостевого персонажа. Войди в гостевой режим и повтори.'},skipWrite:true};
+          if(accounts.some(a=>a.playerId===playerId))return {files:{},result:{status:409 as const,error:'Этот персонаж уже привязан к другому аккаунту.'},skipWrite:true};
           const nextAccounts=[...accounts,{username,usernameKey,playerId,salt,passwordHash,createdAt:Date.now()}];
           const nextSessions=loadSessions().filter(x=>x.expiresAt>Date.now()&&(!guestId||x.playerId!==playerId));
           nextSessions.push({tokenHash:tokenDigest(token),playerId,accountKey:usernameKey,expiresAt:Date.now()+AUTH_SESSION_MS});
           const files:any={accounts:nextAccounts,sessions:nextSessions};
           if(guestId)files.guestCredentials=loadGuestCredentials().filter(x=>x.playerId!==playerId);
-          return {files,result:{status:201,playerId,token,username}};
+          return {files,result:{status:201 as const,playerId,token,username}};
         });
         if(registration.status!==201){sendJson(res,registration.status,{error:registration.error});return;}
         sendJson(res,201,{ok:true,playerId:registration.playerId,token:registration.token,username});return;
