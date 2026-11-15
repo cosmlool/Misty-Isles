@@ -558,8 +558,8 @@ function authHttpHandler(req:IncomingMessage,res:ServerResponse) {
     }
     if(shutdownRequested){sendJson(res,202,{ok:true,shutdown:'already-requested'});return;}
     shutdownRequested=true;
-    sendJson(res,202,{ok:true,shutdown:'requested'});
     res.once('finish',()=>{void gameServer.gracefullyShutdown();});
+    sendJson(res,202,{ok:true,shutdown:'requested'});
     return;
   }
   if(!path?.startsWith('/auth/')){res.writeHead(404);res.end('Not found');return;}
