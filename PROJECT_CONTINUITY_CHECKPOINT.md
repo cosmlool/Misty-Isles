@@ -487,6 +487,16 @@ PR #15 остаётся Draft/open и не объединён. Слияние б
 - Следующий этап: проверить существующие durable runtime tests на failure injection для каждого crash boundary, а также проверить outbox replay/ack при повторном подключении; затем оформить полную таблицу crash matrix и acceptance tests до проектирования live integration.
 
 
+## Shared WAL — crash сразу после публикации журнала — 2026-11-15
+
+- Повторно проверены актуальные `sharedStateTransactions.ts`, `sharedStateRuntime.ts`, legacy auction/clan recovery adapters и `sharedStateTransactions.test.ts`.
+- В WAL тестах уже были покрыты сбой между target writes, recovery до подготовки следующего snapshot, fsync barrier, отказ синхронизации каталога, повреждённый journal и backup players. Не хватало отдельного реального child-process crash сразу после `afterJournalPersisted`, до первого target write.
+- Добавлен тест `a process crash immediately after durable journal publication replays the full transaction`: дочерний процесс завершается с exit code 72 после публикации WAL; проверяется, что целевые файлы ещё не изменены, затем новый store восстанавливает полный snapshot и удаляет journal.
+- Коммит: `fcd2abf49d1ba54285f71a132525eca0abee87e1` в `staging/local-isolated-launcher`.
+- Изменён только `server/test/sharedStateTransactions.test.ts`; runtime-код, правила игры и сохранения пользователей не затронуты.
+- Локально тест не запускался через этот GitHub workflow; обязательный CI для нового HEAD должен подтвердить тест и сборку.
+- Следующий шаг: проверить CI на точном новом PR HEAD, затем продолжить аудит общих транзакций и восстановления legacy journals; не подключать durable dungeon lifecycle к live handler без отдельного согласования.
+
 ## Проверка crash-matrix и outbox test coverage — 2026-11-14
 
 - `dungeonRunStartTransaction.test.ts` покрывает pure preparation, attempt charge, duplicate request idempotency, overlap, exhausted attempts и invalid snapshots, но не проверяет реальную shared-WAL commit/crash/restart границу для старта.
