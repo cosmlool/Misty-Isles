@@ -187,22 +187,39 @@ test('listing rejects an overflowing gold-spent counter without changing the inp
   assert.equal(JSON.parse(start.players.seller.inventory).length, 2);
 });
 
-test('purchase rejects overflowing recipient currency and counters atomically', () => {
+test('auction seller receives only remaining gold capacity and excess proceeds burn', () => {
   const base = listAuctionItem({ snapshot: initial(), sellerId: 'seller', index: 0, price: 500,
     currency: 'gold', validItemIds: itemIds, itemName: 'Iron sword', now: 10, lotId: 'overflow-buy' }).snapshot;
-  const sellerOverflow = structuredClone(base);
-  sellerOverflow.players.seller.gold = Number.MAX_SAFE_INTEGER - 100;
-  assert.throws(() => buyAuctionItem({ snapshot: sellerOverflow, buyerId: 'buyer', lotId: 'overflow-buy',
-    validItemIds: itemIds, now: 20 }), /currency balance would exceed/);
-  assert.equal(sellerOverflow.players.buyer.gold, 2000);
-  assert.equal(sellerOverflow.auction.length, 1);
+  base.players.seller.gold = 9_999_999_900;
+  const bought = buyAuctionItem({ snapshot: base, buyerId: 'buyer', lotId: 'overflow-buy',
+    validItemIds: itemIds, now: 20 });
+  assert.equal(bought.snapshot.players.buyer.gold, 1500);
+  assert.equal(bought.snapshot.players.seller.gold, 9_999_999_999);
+  assert.equal(bought.net, 99);
+  assert.equal(bought.burned, 376);
+  assert.equal(bought.snapshot.auction.length, 0);
+});
 
-  const counterOverflow = structuredClone(base);
-  counterOverflow.players.seller.itemsSold = Number.MAX_SAFE_INTEGER;
-  assert.throws(() => buyAuctionItem({ snapshot: counterOverflow, buyerId: 'buyer', lotId: 'overflow-buy',
+test('crystal auction proceeds above 50,000 burn instead of overflowing the seller balance', () => {
+  const start = initial();
+  start.players.seller.crystals = 49_990;
+  const listed = listAuctionItem({ snapshot: start, sellerId: 'seller', index: 0, price: 100,
+    currency: 'crystals', validItemIds: itemIds, itemName: 'Iron sword', now: 10, lotId: 'crystal-cap' }).snapshot;
+  const bought = buyAuctionItem({ snapshot: listed, buyerId: 'buyer', lotId: 'crystal-cap',
+    validItemIds: itemIds, now: 20 });
+  assert.equal(bought.snapshot.players.seller.crystals, 50_000);
+  assert.equal(bought.net, 11);
+  assert.equal(bought.burned, 88);
+});
+
+test('purchase still rejects overflowing counters atomically', () => {
+  const base = listAuctionItem({ snapshot: initial(), sellerId: 'seller', index: 0, price: 500,
+    currency: 'gold', validItemIds: itemIds, itemName: 'Iron sword', now: 10, lotId: 'counter-overflow' }).snapshot;
+  base.players.seller.itemsSold = Number.MAX_SAFE_INTEGER;
+  assert.throws(() => buyAuctionItem({ snapshot: base, buyerId: 'buyer', lotId: 'counter-overflow',
     validItemIds: itemIds, now: 20 }), /counter would exceed/);
-  assert.equal(counterOverflow.players.buyer.gold, 2000);
-  assert.equal(counterOverflow.auction.length, 1);
+  assert.equal(base.players.buyer.gold, 2000);
+  assert.equal(base.auction.length, 1);
 });
 
 test('malformed lot data is rejected before any player balance or inventory changes', () => {
