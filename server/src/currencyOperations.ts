@@ -44,3 +44,32 @@ export function creditGold(currentBalance: number, amount: number): CurrencyCred
 export function creditCrystals(currentBalance: number, amount: number): CurrencyCreditResult {
   return calculateCappedCurrencyCredit(currentBalance, amount, 'crystals');
 }
+
+
+export type GemExchangeResult = {
+  gemsBalance: number;
+  crystalsBalance: number;
+  crystalsCredited: number;
+  crystalsBurned: number;
+};
+
+/** Prepare both sides of a gem exchange before mutating either player balance. */
+export function prepareGemExchange(
+  gemsBalance: number,
+  crystalsBalance: number,
+  amount: number,
+): GemExchangeResult {
+  if (!Number.isSafeInteger(gemsBalance) || gemsBalance < 0) {
+    throw new Error('Gem balance must be a nonnegative safe integer.');
+  }
+  if (!Number.isSafeInteger(amount) || amount < 1 || amount > gemsBalance) {
+    throw new Error('Gem exchange amount must be a positive safe integer within the available balance.');
+  }
+  const crystalCredit = creditCrystals(crystalsBalance, amount * 10);
+  return {
+    gemsBalance: gemsBalance - amount,
+    crystalsBalance: crystalCredit.balance,
+    crystalsCredited: crystalCredit.credited,
+    crystalsBurned: crystalCredit.burned,
+  };
+}
