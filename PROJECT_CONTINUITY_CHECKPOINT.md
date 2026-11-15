@@ -559,3 +559,15 @@ PR #15 остаётся Draft/open и не объединён. Слияние б
 - Коммиты этого этапа: `de8a4ae` (helper), `b666013` (тест), `ea85e5f` (интеграция), `e286cf6` (уточнение теста), `f4b8a28` (регистрация теста).
 - Это только безопасное выделение XP progression; live dungeon handler всё ещё не интегрирован с durable encounter/finalization flow.
 - Локально тесты не запускались. Не считать этап проверенным до прохождения обязательных CI jobs на точном актуальном HEAD.
+
+
+## Долговечность auth credentials — 2026-11-15
+
+- Аудит `server/src/index.ts` подтвердил, что `accounts.json`, `sessions.json` и `guest_credentials.json` сохранялись через `writeJsonAtomic()`: temp-файл + rename защищали от частично записанного JSON, но не выполняли `fsync` содержимого и каталога перед успешным HTTP-ответом.
+- Риск: после ответа регистрации/гостевого входа/логина внезапное отключение питания или сбой ОС могло потерять последнее изменение каталога или данные temp-файла, несмотря на успешный rename.
+- Добавлен `server/src/atomicJsonPersistence.ts`: сериализация JSON, запись уникального temp-файла, `fsync` temp-файла, атомарный rename, затем `fsync` родительского каталога на POSIX. На Windows directory fsync пропускается, file fsync остаётся обязательным — в соответствии с уже принятой платформенной стратегией WAL.
+- `saveAccounts`, `saveSessions`, `saveGuestCredentials` теперь используют этот helper. Форматы, token hashes, password hashing, guest proof и правила авторизации не менялись.
+- Добавлены тесты порядка file-fsync → rename → directory-fsync, fail-closed при file-fsync failure и Windows поведения; тест зарегистрирован в `server/package.json`.
+- Изменения: `9a4b3fd` helper, `c6ce552` tests, `57403a2` auth integration, `f029943` test registration, `caa0b85` cleanup imports.
+- Не запускал тесты локально; CI нового HEAD обязателен. Старый Quality Gate на предыдущем HEAD не подтверждает эти изменения.
+- Ограничения: это синхронное одно-процессное JSON-хранилище, не межпроцессная блокировка и не полноценная БД. Rate limiting и CORS отдельно не менялись. Следующий этап — проверить CI, затем аудит авторизации/сессий и границ конкурентного доступа; не менять контракт логина или гостевого восстановления без отдельного основания.
