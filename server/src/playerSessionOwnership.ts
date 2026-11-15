@@ -11,5 +11,8 @@ export function canSaveRoomPlayerSnapshot<TPlayer extends object>(
   onlinePlayer: TPlayer | undefined,
   roomPlayer: TPlayer,
 ): boolean {
-  return onlinePlayer === undefined || onlinePlayer === roomPlayer;
+  // A room may persist only while it is still the registered owner. onLeave
+  // already commits the final snapshot before removing that ownership; allowing
+  // onDispose to save after removal can overwrite newer offline transactions.
+  return onlinePlayer === roomPlayer;
 }
