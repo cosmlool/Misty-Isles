@@ -101,8 +101,10 @@ export function resolvePvpOutcome(
     || !Number.isSafeInteger(targetGold) || targetGold < 0) {
     throw new Error('PvP gold balances must be nonnegative safe integers.');
   }
-  const cappedAttackerGold = creditGold(attackerGold, 0).balance;
-  const cappedTargetGold = creditGold(targetGold, 0).balance;
+  const attackerCap = creditGold(attackerGold, 0);
+  const targetCap = creditGold(targetGold, 0);
+  const cappedAttackerGold = attackerCap.balance;
+  const cappedTargetGold = targetCap.balance;
   const stolenGold = calculatePvpGoldTransfer(attackerWon ? cappedTargetGold : cappedAttackerGold);
   const recipientCredit = creditGold(attackerWon ? cappedAttackerGold : cappedTargetGold, stolenGold);
   const nextAttackerGold = attackerWon ? recipientCredit.balance : cappedAttackerGold - stolenGold;
@@ -112,7 +114,7 @@ export function resolvePvpOutcome(
     targetGold: nextTargetGold,
     stolenGold,
     receivedGold: recipientCredit.credited,
-    burnedGold: recipientCredit.burned,
+    burnedGold: attackerCap.burned + targetCap.burned + recipientCredit.burned,
     immunityRecipient: attackerWon ? 'target' : 'attacker',
     immunityUntil: now + PVP_IMMUNITY_MS,
   };
