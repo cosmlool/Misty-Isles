@@ -990,3 +990,15 @@ PR #15 остаётся Draft/open и не объединён. Слияние б
 
 - Follow-up type-safety cleanup: changed the gem exchange handler to use a narrowed prepared-result value instead of an evolving `any` variable. Commit: `d6c43c2c3f7ed8eb099801644d520095ec431042`.
 - Final branch HEAD for this package: `d6c43c2c3f7ed8eb099801644d520095ec431042`. Quality Gate runs 43764998454 (push) and 43764993063 (pull_request) are queued/pending for this exact HEAD; prior runs were cancelled by subsequent commits and are not validation for the final HEAD.
+
+
+## Currency handler coverage and gem integer-boundary hardening — 2026-11-16
+
+- Re-audited all authenticated message handlers in `server/src/index.ts` against `requireCharacter`. All handlers that mutate player currency or execute player economy transactions are character-gated and therefore run the shared balance preflight before handler logic.
+- The non-gated handlers found in this pass are read-only projections/history/catalog/state endpoints, clan-wide state maintenance that does not debit or credit the player's wallet, and first-time `createCharacter` initialization. No currency-mutating gameplay handler bypass was found in the inspected registry.
+- Found one remaining numeric-boundary issue in the privileged admin grant path: gem balances are intentionally uncapped, but `p.gems += amount` could exceed JavaScript's safe-integer range and silently lose integer precision.
+- Added pure `prepareGemCredit`: validates the current uncapped gem balance and requested amount as nonnegative safe integers, calculates the result before mutation, and rejects any sum outside the safe-integer range. Admin gem grants now fail closed without changing the balance when the sum is unsafe. No gem cap was introduced.
+- Added regression coverage for valid credits, exact `Number.MAX_SAFE_INTEGER` boundary, overflow, invalid balances, and invalid amounts.
+- Commits: `7eb7875be7c5c5d89d11a4a3c6ddc8af26d20371` (helper), `c04682de83f038be3e80bd3608a1336c11ee2c83` (tests), `069e0bbb3e1d10509c81303dba88f0b5958afa78` (admin integration).
+- Local tests were not run. A fresh full Quality Gate for the final branch HEAD is required before treating this change as validated.
+- PR #18 remains Draft/open/unmerged. No main-branch changes, save migration, or balance cap changes.
