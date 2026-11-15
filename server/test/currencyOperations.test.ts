@@ -53,3 +53,22 @@ test('finite legacy balances above the cap clamp even when outside the safe-inte
   assert.equal(creditGold(Number.MAX_SAFE_INTEGER + 1, 1).balance, MAX_GOLD_BALANCE);
   assert.equal(creditCrystals(Number.MAX_SAFE_INTEGER + 1, 1).balance, MAX_CRYSTALS_BALANCE);
 });
+
+
+test('gem exchange prepares both balances atomically and burns crystal overflow', async () => {
+  const { prepareGemExchange } = await import('../src/currencyOperations.js');
+  assert.deepEqual(prepareGemExchange(10, 49_950, 10), {
+    gemsBalance: 0, crystalsBalance: 50_000, crystalsCredited: 50, crystalsBurned: 50,
+  });
+});
+
+test('invalid crystal balance rejects gem exchange before either balance can be changed', async () => {
+  const { prepareGemExchange } = await import('../src/currencyOperations.js');
+  for (const crystals of [-1, 1.5, Number.NaN, Number.POSITIVE_INFINITY]) {
+    assert.throws(() => prepareGemExchange(25, crystals, 2));
+  }
+  for (const gems of [-1, 1.5, Number.NaN, Number.POSITIVE_INFINITY, Number.MAX_SAFE_INTEGER + 1]) {
+    assert.throws(() => prepareGemExchange(gems, 100, 2));
+  }
+  assert.throws(() => prepareGemExchange(1, 100, 2));
+});
