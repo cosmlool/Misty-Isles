@@ -43,6 +43,7 @@ import { parseAdminPlayerIds } from './adminAuthorization.js';
 import { isCharacterGender } from './characterIdentity.js';
 import { parseMonsterWeakness, resolveLegacyMonsterAttackMultiplier, resolveLegacyMonsterDefenseMultiplier, resolveLegacyMonsterProfessionDamageMultiplier, resolveLegacyMonsterHitMultiplier, resolveLegacyMonsterResistance, resolveLegacyPlayerHitMultiplier, resolveLegacyHealingMultiplier, resolveLegacyMonsterWeaknessMultiplier, resolveMonsterPassive } from './monsterCombat.js';
 import { prepareXpProgression } from './xpProgression.js';
+import { isPasswordLengthWithinLimit } from './authPasswordPolicy.js';
 
 const ONLINE_PLAYERS = new Map<string, Player>();
 const ONLINE_CLIENTS = new Map<string, Client>();
@@ -546,7 +547,7 @@ function issueSession(playerId:string, accountKey:string|null) {
 function verifySession(token:string):SessionRecord|null { if(sharedStateRuntime.recoverPendingPlayerState())syncOnlinePlayersAfterRecovery();if(!token||token.length>256)return null;const hash=tokenDigest(token);const sessions=loadSessions();const session=sessions.find(x=>x.tokenHash===hash&&x.expiresAt>Date.now());if(!session)return null;const account=loadAccounts().find(x=>x.playerId===session.playerId);if(session.accountKey===null?Boolean(account):!account||account.usernameKey!==session.accountKey)return null;return session; }
 function publicPlayerCode(id:string) { return createHash('sha256').update(`MistyIslesPublic:${id}`).digest('hex').slice(0,24); }
 function resolvePublicPlayerCode(code:string, players:Record<string,any>=loadPlayers()) { for(const [id,online] of ONLINE_PLAYERS)players[id]=online.toJSON();const key=String(code||'');return Object.keys(players).find(id=>publicPlayerCode(id)===key)||''; }
-function passwordMatches(password:string,salt:string,expected:string) { if(password.length>128)return false; try { const actual=scryptSync(password,salt,64);const target=Buffer.from(expected,'hex');return target.length===actual.length&&timingSafeEqual(actual,target); } catch { return false; } }
+function passwordMatches(password:string,salt:string,expected:string) { if(!isPasswordLengthWithinLimit(password))return false; try { const actual=scryptSync(password,salt,64);const target=Buffer.from(expected,'hex');return target.length===actual.length&&timingSafeEqual(actual,target); } catch { return false; } }
 function sendJson(res:ServerResponse,status:number,data:any) { res.writeHead(status,{'Content-Type':'application/json; charset=utf-8','Cache-Control':'no-store','Access-Control-Allow-Origin':'*','Access-Control-Allow-Headers':'Content-Type','Access-Control-Allow-Methods':'POST, OPTIONS'});res.end(JSON.stringify(data)); }
 function authHttpHandler(req:IncomingMessage,res:ServerResponse) {
   res.setHeader('Access-Control-Allow-Origin','*');res.setHeader('Access-Control-Allow-Headers','Content-Type');res.setHeader('Access-Control-Allow-Methods','POST, OPTIONS');
