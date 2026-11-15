@@ -851,3 +851,12 @@ PR #15 остаётся Draft/open и не объединён. Слияние б
 - Recorded the five legacy city-name mappings and reputation/visited-key migration behavior, plus optional gender compatibility under `collections.characterGender` (missing/invalid remains null). Existing city migration mutates the in-memory Player; later WAL persistence writes it.
 - Auth loader predicates were inspected: accounts, sessions, and guest credentials have array/object/primitive checks, but not full uniqueness, bounded-string, digest-format, safe-integer, or cross-file referential validation.
 - No field caps, enum coercions, or migration code were added. Need real legacy save corpus and field semantics before selecting constraints. Preserve identity, inventory, currency, progression, gender, and achievements; require idempotence and WAL rollback tests for any future migration.
+
+
+## Legacy save corpus / Git history evidence — 2026-11-15
+- Inspected Git history for PlayerSchema and current static world/equipment catalogs. Each inspected core file has only the initial repository import commit dated 2026-11-08; the repository history cannot reconstruct pre-import schema/catalog variants.
+- The tracked repository contains current static catalogs but no representative player-save fixtures. .gitignore explicitly excludes players.json, player backups, .local-data, and runtime account/session/game-state persistence. This is a deliberate privacy boundary, not evidence that no older save formats exist.
+- Stage 28 changelog documents the five city-name migration and preservation intent; current profession source documents only Воин → Рыцарь. Neither source proves the complete population of values in deployed legacy saves.
+- Updated PLAYER_SAVE_LOAD_VALIDATION_AUDIT.md with evidence classification and the required next step: obtain user-approved, privacy-scrubbed, read-only representative save snapshots/backups; preserve original bytes; exclude credentials/session/guest secrets; build fixtures; inventory historical IDs/enums/keys/timestamps/coordinates; then define idempotent, rollback-safe versioned migrations.
+- No player save was accessed, no production code/tests/data changed, and no migration behavior was introduced.
+- CI run 43755771841 on HEAD 1593860b: data/docs/structure, client TypeScript/Vite build, and Playwright smoke tests succeeded. Server transaction recovery test remains in progress; compile step has not started. Do not call the full CI green until the server job completes.
