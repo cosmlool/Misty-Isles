@@ -149,7 +149,7 @@ test('a real process crash after transport send leaves the event pending for at-
         playerId: 'p1',
         outbox,
         send: (type, payload) => {
-          appendFileSync(${JSON.stringify(sentFile)}, JSON.stringify({ type, payload }) + '\\\\n');
+          appendFileSync(${JSON.stringify(sentFile)}, JSON.stringify({ type, payload }) + String.fromCharCode(10));
           process.exit(74);
         },
         acknowledge: () => process.exit(75),
