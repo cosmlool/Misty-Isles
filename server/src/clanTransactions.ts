@@ -120,3 +120,23 @@ export function createClanTransactionStore(options: ClanTransactionOptions) {
 
   return { commit, recover, hasPending, journalFile };
 }
+
+
+/** Clan vaults are uncapped, but must remain exact nonnegative safe integers. */
+export function prepareClanVaultCredit(balance: number, amount: number): number {
+  if (!Number.isSafeInteger(balance) || balance < 0
+    || !Number.isSafeInteger(amount) || amount < 0
+    || !Number.isSafeInteger(balance + amount)) {
+    throw new Error('Clan vault credit must preserve a nonnegative safe-integer balance.');
+  }
+  return balance + amount;
+}
+
+/** Validate and prepare a clan-vault debit before committing related state. */
+export function prepareClanVaultDebit(balance: number, amount: number): number {
+  if (!Number.isSafeInteger(balance) || balance < 0
+    || !Number.isSafeInteger(amount) || amount < 0 || amount > balance) {
+    throw new Error('Clan vault debit exceeds a valid available balance.');
+  }
+  return balance - amount;
+}
