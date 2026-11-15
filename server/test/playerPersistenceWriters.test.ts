@@ -58,3 +58,12 @@ test('local save directory does not redirect bundled static game data', () => {
   }
   assert.match(source, /const SAVE_FILE = join\(DATA_DIR, 'players\.json'\)/);
 });
+
+test('group persistence does not roll runtime membership back while its durable WAL is pending', () => {
+  const start = source.indexOf('function persistHuntGroups(');
+  const end = source.indexOf('const EXPEDITION_DATA', start);
+  assert.ok(start >= 0 && end > start, 'group persistence helper must be present');
+  const helper = source.slice(start, end);
+  assert.match(helper, /if\(!existsSync\(sharedStateTransactions\.journalFile\)\)restoreHuntGroupsFromDisk\(\)/);
+  assert.match(helper, /durable WAL remains[\s\S]*?Keep the intended in-memory roster/);
+});
