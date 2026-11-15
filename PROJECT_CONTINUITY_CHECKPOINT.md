@@ -584,3 +584,15 @@ PR #15 остаётся Draft/open и не объединён. Слияние б
 - Дополнительно подтверждено ограничение: shared-state WAL и auth JSON writers рассчитаны на один процесс сервера на каталог данных; межпроцессной блокировки нет. Не запускать два сервера с одним `MISTY_DATA_DIR`.
 - Quality Gate run `43713419370` на точном PR HEAD `142cf8a018b6073cd088725af62d0a531ec0ec0f` завершился успешно: 4/4 jobs — server tests/build, client build, Playwright smoke tests, data/docs/structure.
 - Следующий этап: подготовить и протестировать auth WAL transaction для account-link и только затем интегрировать её; не менять парольный контракт, сроки сессий, guest recovery semantics или данные существующих игроков.
+
+## WAL-транзакция привязки гостевого персонажа к аккаунту — 2026-11-15
+
+- Расширен общий `shared_state_transaction.json` WAL тремя auth targets: `accounts`, `sessions`, `guestCredentials`. Существующие версии журнала продолжают поддерживаться; новые targets валидируются тем же allowlist/configured-files механизмом.
+- `/auth/register` теперь после recovery готовит один snapshot: новый account record, account session и (при привязке гостя) удаление guest recovery proof и всех прежних сессий этого персонажа. Все файлы публикуются под одним durable journal; raw session token возвращается клиенту только после завершения commit/recovery.
+- Обычные операции создания guest proof, выдачи сессии и logout также переведены на shared WAL. Auth HTTP requests и `verifySession` сначала выполняют recovery, чтобы незавершённый journal не позволял читать устаревшее auth-состояние.
+- Не менялись парольный контракт, scrypt параметры, token/proof формат, срок сессии (30 дней), guest recovery semantics, коды штатных ответов регистрации, игровые данные и баланс.
+- Добавлен crash/restart regression test для привязки аккаунта: дочерний процесс аварийно завершается после записи каждого из трёх targets (`accounts`, `sessions`, `guestCredentials`); после restart проверяется полный согласованный snapshot, отзыв старой guest session и удаление recovery proof.
+- Изменённые файлы этого этапа: `server/src/index.ts`, `server/src/sharedStateTransactions.ts`, `server/test/sharedStateTransactions.test.ts`.
+- Коммиты: WAL auth targets `e090939f04f054cf6931d1fcad387c88c902510a`; auth runtime integration `1e0beb17e50600e5b7f61915b22cab90bd91a750`; crash-boundary tests `371e41e8aa52b97c3b4306b71392ba94a947aa8a`; auth recovery-before-read `1adfd7f8eedc2ab5b38b082551adf2bc696b7504`.
+- Проверка исходников и PR diff выполнена через GitHub. Локально тесты не запускались. Новый Quality Gate для текущего HEAD обязателен; до его завершения изменение не объявлять проверенным.
+- Следующий шаг: проверить полный CI на точном HEAD, исправить только подтверждённые регрессии. После зелёного CI продолжить аудит гостевого создания/восстановления и конкурентных границ auth persistence.
