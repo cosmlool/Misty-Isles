@@ -752,3 +752,12 @@ PR #15 остаётся Draft/open и не объединён. Слияние б
 - This is a resource-exhaustion/availability hardening finding, not evidence of reward duplication or a confirmed remote unauthenticated exploit. Impact depends on deployment scale and persistence throughput. No rate-limit code or gameplay behavior was changed in this audit.
 - Recommended next step: design a server-side token bucket per authenticated player with a modest global message budget plus stricter buckets for expensive/write-heavy actions; exempt or separately budget legitimate high-frequency state traffic. Return a bounded throttling response, avoid saving on every rejected packet, and add runtime tests for burst rejection, refill, per-player isolation, and reconnect behavior. Choose thresholds only after classifying all inbound message types so normal gameplay is not disrupted.
 - Source inspection only; no local tests run. Quality Gate run 43744832354 passed all 4/4 jobs on HEAD 33b9873b9d03f5808716185247192b132f3b8686.
+
+
+## Authenticated gameplay message classification — 2026-11-15
+
+- Static source review mapped all 74 distinct official-client gameplay event names to matching server `onAuthenticatedMessage` handlers. Two server handlers (`combatHistory`, `rename`) are not present in static client sends.
+- Classified handlers by execution cost rather than names. Several list/read-shaped handlers are stateful: `craftQueue` can settle jobs; `clanQuests` maintains quest state; `clanWarList` settles expired wars; `pvpList` runs a shared-state transaction and may persist refreshed offers. `achievements` is conservatively treated as stateful pending a separate proof of read-only behavior.
+- Identified stricter-cost classes: auction shared-WAL mutations; clan/war transactions and broadcasts; PvP combat; expedition group combat and multi-player persistence; synchronous dungeon runs. Player writes and `notice()` paths also require mutation budgets because invalid actions can trigger persistence.
+- Design constraints and full event grouping are recorded in `GAMEPLAY_MESSAGE_RATE_LIMIT_CLASSIFICATION.md`. Recommended design is server-side per-authenticated-player token buckets with separate general, mutation, and expensive-operation budgets; bounded rejection without persistence; explicit reconnect/session semantics; and runtime tests including proof rejected packets do not write saves/WAL.
+- No numerical thresholds selected and no gameplay code changed. Static source review only; no local tests run.
