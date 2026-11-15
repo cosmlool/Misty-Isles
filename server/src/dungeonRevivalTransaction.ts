@@ -28,6 +28,8 @@ export function prepareDungeonRevival(input: {
 }): PreparedDungeonRevival {
   const rescuer = input.players[input.rescuerId];
   if (!rescuer) throw new Error('Rescuer player snapshot is missing.');
+  const target = input.players[input.targetId];
+  if (!target) throw new Error('Target player snapshot is missing.');
 
   let inventory: unknown;
   try {
@@ -56,6 +58,10 @@ export function prepareDungeonRevival(input: {
       [input.rescuerId]: {
         ...rescuer,
         inventory: JSON.stringify(nextInventory),
+      },
+      [input.targetId]: {
+        ...target,
+        health: input.reviveHealth,
       },
     },
   };
