@@ -50,3 +50,12 @@ These handlers can change Player state and/or call `notice()`, which saves the p
 
 ## Finding
 The message surface is now mapped sufficiently to design a rate limiter without blindly applying one threshold to every event. The absence of a shared gameplay limiter remains an availability/resource-exhaustion hardening issue; this review does not demonstrate reward duplication or an unauthenticated exploit.
+
+## Follow-up: authentication cost and bucket ownership
+
+- The current shared `onAuthenticatedMessage` wrapper verifies the room's stored session token on every gameplay packet, then calls player-state WAL recovery, then invokes the handler.
+- `verifySession()` itself calls pending-player-WAL recovery and reads the sessions and accounts JSON files to validate the token/account relationship. Thus each inbound packet can trigger repeated recovery checks and disk-backed auth reads before reaching the gameplay handler. This is a separate ingress-cost amplification point and should be measured/considered in limiter placement.
+- A safe limiter cannot simply replace session validation with an unchecked cache. Logout removes the session from the durable session store and closes the matching live client; any optimization must preserve prompt revocation semantics.
+- Current topology enforces one client per room and one online room per player via `maxClients = 1`, `ONLINE_PLAYERS`, and `ONLINE_CLIENTS`. A per-player bucket stored at process scope would naturally survive reconnects in that process and cover the player's room, but it resets on process restart and is not shared across multiple server processes/instances.
+- Suggested ordering for future implementation: cheap room/client ownership guard first; consume a per-player ingress budget before disk-backed session/WAL checks; preserve authoritative session revocation by ensuring logout closes the room and by defining a bounded revalidation policy. Do not implement this ordering until its stale-session and recovery race behavior has explicit tests.
+- No code changed. Static source inspection only; no benchmark or runtime test performed.
