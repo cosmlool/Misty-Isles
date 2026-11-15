@@ -143,3 +143,39 @@ No player data was read or changed in this stage. No migration or production cod
 - Zone signature drops in the current Forgotten Lands data are display-name strings, while gatekeeper references are IDs. These namespaces must not be conflated; any future migration must resolve them against the appropriate drop/bestiary source.
 - This is a current-snapshot structural check, not proof that every historical item ID remains present or that all runtime references resolve. A follow-up should build a cross-reference report for legacy in-code items, recipes, auctions, player inventory/equipment, expedition drops, and bestiary/gatekeeper IDs using sanitized fixtures.
 - No catalog IDs, prices, stats, items, saves, or production code were changed.
+
+
+## Cross-catalog identity and reference audit — 2026-11-15
+
+### Current static snapshot results
+
+| Dataset / reference family | Result |
+|---|---:|
+| Original in-code item definitions | 149 unique IDs |
+| New equipment catalog | 387 unique IDs |
+| Forgotten Lands drop items | 125 unique IDs |
+| Combined current runtime item IDs | 661 unique IDs; no overlap or duplicates across the three sources |
+| Recipes declared directly in index.ts | 11 |
+| Forgotten Lands monsters / zones | 100 / 10 |
+| Monster drop references | All resolve to dropItems; no duplicate drop IDs per monster; all chances are finite and within 0..1 |
+| Drop sourceMonster references | All resolve to monster IDs |
+| Monster zoneId references | All resolve to zone IDs |
+| Dungeon bossId/resource references | All four dungeons resolve |
+| Zone gatekeeperId references | All resolve to monster IDs |
+| Armor sets in new catalog | 64 sets; each has exactly five distinct required slots, consistent profession and setBonus |
+| Legacy set references | All item IDs resolve in the current runtime item union |
+
+All 11 static recipe outputs and all 27 material references resolve to the current runtime item ID union. The 40 legendary armor pieces are also used to generate additional recipes at runtime; their required special materials FLDROP-10-10-A and FLDROP-10-10-B are present in the drop catalog.
+
+### Compatibility behavior confirmed in source
+
+- The server item list is assembled from the original in-code items, the new equipment catalog, and Forgotten Lands drop items. The auction's valid-item set is built from this combined runtime list, so legacy item IDs remain eligible for existing auction lots.
+- Recipes whose output item is marked legacy are removed from the visible recipe list, but a queued job stores its output ID and a copy of its materials when startCraftJob() is called. Claiming a queued job uses the stored output ID and does not require the recipe to remain visible.
+- A queued job whose stored materials are absent can use recipe fallback materials during cancellation. If its recipe was retired and the job has no stored materials, cancellation fails closed and retains the job rather than guessing a refund.
+- The repository contains no real legacy craftQueue snapshots, so it cannot establish whether every deployed old job has the newer stored materials field.
+
+### Confirmed hardening gap — craft output identity
+
+The craftClaim handler looks up job.output in the current item list only to detect unique-amulet conflicts. If the lookup returns no item, it still calls claimCraftJob(), whose current behavior appends the raw job.output string to inventory. Thus a malformed or obsolete queued job can create an inventory entry that does not resolve to a known item. This is a data-integrity issue, not evidence of an exploit through ordinary client input. Before changing it, preserve the job on rejection and add regression coverage for known legacy outputs, unknown output IDs, unique amulets, and already-queued jobs whose recipe has been retired. Do not silently delete or rewrite old queue entries.
+
+No catalog IDs, recipes, drops, prices, stats, saves, or production code were changed in this stage. This was a static source/data audit; no local tests were run.
