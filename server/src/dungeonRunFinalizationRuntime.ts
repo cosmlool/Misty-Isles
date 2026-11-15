@@ -137,7 +137,7 @@ export function prepareDungeonRunFinalization(input: {
 }
 
 type DungeonFinalizationRuntime = {
-  transact<T>(prepare: (recovered: boolean) => {
+  transactWithRecovery<T>(prepare: (recovery: { recovered: boolean; playersRecovered: boolean }) => {
     files: { players?: Record<string, DungeonFinalizationPlayerSnapshot>; dungeonRuns?: DungeonRunStore; dungeonOutbox?: DungeonResultOutbox };
     result: T;
     skipWrite?: boolean;
@@ -160,8 +160,8 @@ export function commitDungeonRunFinalization(input: {
   outbox?: DungeonResultOutbox;
   events?: Array<Omit<DungeonResultOutboxEvent, 'status' | 'createdAt' | 'deliveredAt'>>;
 }): PreparedDungeonFinalization {
-  return input.runtime.transact(recovered => {
-    if (recovered) {
+  return input.runtime.transactWithRecovery(recovery => {
+    if (recovery.recovered) {
       throw new Error('Shared state was recovered during dungeon finalization; reload player and dungeon run snapshots before retrying.');
     }
     const prepared = prepareDungeonRunFinalization(input);
