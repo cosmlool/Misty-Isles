@@ -155,7 +155,10 @@ function persistHuntGroups(players:Player[]=[],playerQuestOverrides:Record<strin
       },result:undefined};
     });
   }catch(error){
-    restoreHuntGroupsFromDisk();
+    // If a durable WAL remains, this transaction may already be partially
+    // applied. Keep the intended in-memory roster so it matches the journal
+    // when recovery completes; only roll back from disk before publication.
+    if(!existsSync(sharedStateTransactions.journalFile))restoreHuntGroupsFromDisk();
     throw error;
   }
 }
