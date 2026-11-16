@@ -172,12 +172,22 @@ test('clan war attacks enforce per-player cooldown and accumulate real damage', 
       ['clanWarChallenge', { clanId: 'clan-b' }],
       ['clanWarAttack', { id: 'war-runtime' }],
     ];
+    const nonmemberRejectionByAction: Record<string, string> = {
+      clanDonate: 'Сначала вступи в клан.',
+      clanRaid: 'Для кланового похода нужен клан.',
+      clanSeasonReward: 'Сначала вступи в клан.',
+      clanTerritoryCapture: 'Сначала вступи в клан.',
+      clanQuestClaim: 'Сначала вступи в клан.',
+      clanUpgrade: 'Сначала вступи в клан.',
+      clanWarChallenge: 'Сначала вступи в клан.',
+      clanWarAttack: 'Сначала вступи в клан.',
+    };
     for (const [action, payload] of unauthorizedClanActions) {
       const before = noticesC.length;
       roomC.send(action, payload);
       try {
         await waitFor(
-          () => noticesC.slice(before).find(text => text === 'Сначала вступи в клан.'),
+          () => noticesC.slice(before).find(text => text === nonmemberRejectionByAction[action]),
           `roster-based nonmember rejection for ${action}`,
         );
       } catch (error) {
