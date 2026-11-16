@@ -3108,3 +3108,28 @@ Quality Gate 43931230374 failed because the new dungeon test file contained a li
 - Repository metadata confirms admin permission, but the available connector has no repository-description update operation. Intended Russian description remains: `Misty-Isles — MMORPG в разработке. Технический аудит и разработка ведутся в основной ветке main. Проект сопровождается журналом изменений, контрольными точками, регрессионными тестами и проверками CI.`
 - Group persistence/autosave audit: restored hunt-group roster is loaded independently and validated for malformed/duplicate memberships; missing player-save entries are intentionally not pruned. Login for a roster member without a durable save fails closed before session/player mutation. `persistHuntGroups` merges existing durable players with online/explicit snapshots and writes the roster in the same shared-state transaction; absent offline roster members are not synthesized. Periodic autosave writes only player snapshots and does not rewrite the group roster. Existing runtime regression verifies rejected missing-member login leaves both players.json and hunt_groups.json byte-equivalent in parsed content. No production changes made in this audit step.
 - Remaining verification: add/consider a targeted regression for periodic autosave while a missing-save roster member remains offline; inspect dungeon lifecycle/replay integration next. Preserve player saves and group roster; no automatic repair or pruning.
+
+
+## Dungeon lifecycle and public-launch security audit (2026-11-17)
+
+### Dungeon lifecycle
+- Production `dungeonRun` still calls the synchronous legacy `runExpeditionDungeon()` path: one configured boss, one aggregate combat calculation, one result settlement. It does not call the durable run start, round, encounter-commit, or terminal-finalization helpers.
+- Durable run modules are present and covered by unit/WAL tests (entry attempt charge, round commit, finalization, recovery, revival transaction, outbox), but are not wired into the production handler. `ACTIVE_DUNGEON_RUNS` is restored/validated at startup and read for overlap checks/recovery display, but the production handler does not add/remove active runs.
+- On join, the server sends a recovery view; the client displays a saved-run banner and blocks new entries. There are no live resume/round/abort/revive message handlers or client actions. This is not yet a playable durable-resume flow.
+- The legacy path still atomically commits all participant player snapshots plus result outbox in shared WAL; request replay is bound to dungeon/group/leader/ordered participants and requires the complete participant set. Outbox delivery remains at-least-once with event-ID client deduplication.
+- Current `dungeon_encounters.json` contains four entries, each with one encounter, one wave, and one spawn. Production still resolves the legacy `bossId` path; multi-wave data is not active.
+- Do not wire the dormant durable lifecycle until gameplay semantics are explicitly resolved: legacy HP settlement clamps at 1, while durable participant state models zero-HP spectators; AFK/leader-death/revival behavior and the scope of the three-round limit also need decisions. No gameplay behavior changed in this audit.
+
+### Public-launch security review
+- Auth HTTP responses currently emit `Access-Control-Allow-Origin: *`; no origin allowlist is configured.
+- No Content-Security-Policy was found in the client HTML or server response headers reviewed.
+- The server constructs a plain Node HTTP server and calls `gameServer.listen(PORT)` without an explicit host or in-process TLS. The client derives HTTP/HTTPS from the page scheme and defaults to `hostname:2567`; a documented TLS reverse proxy / WSS deployment contract is not present in the repository.
+- Authentication throttling is an in-memory per-process map: 10 attempts per 15 minutes keyed by `req.socket.remoteAddress`. It resets on restart and does not account for trusted proxy forwarding; a reverse proxy may collapse many users into one bucket.
+- No generic WebSocket message rate limiter, explicit WebSocket origin policy, or explicit max-payload setting was found in the server transport setup. The authenticated message wrapper validates the session but does not impose a global per-player/per-message budget.
+- These are launch blockers to address before public exposure, not permission to change deployment or balance settings blindly. Next: define trusted origins/proxy topology, TLS/WSS and bind policy, durable/distributed auth throttling, WebSocket rate/payload limits, and security-header ownership; add tests before enabling production values.
+
+### Next steps
+1. Add a focused regression for periodic autosave with a missing-save offline group roster member, without waiting 30 seconds if a safe test seam can be introduced.
+2. Resolve the dungeon HP/death, AFK/leader-death, revival, round-limit, and drop-scope decisions; only then plan the production durable-run integration.
+3. Complete a launch-security implementation plan and tests; do not expose the server publicly until the blockers above are closed.
+4. Administrative cleanup remains pending: close no more PRs (none open after the current documentation checkpoint), update the Russian repository description, and delete all remote branches except `main`. The available GitHub connector still has no repository-description mutation or branch-delete action.
