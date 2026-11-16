@@ -1228,3 +1228,6 @@ PR #15 остаётся Draft/open и не объединён. Слияние б
 - Changed only `server/test/clanWarRuntime.test.ts`: nonmember action loop accepts either established rejection text and still requires a new notice per action. Existing disk assertions continue to prove no player currency or clan treasury/reward mutation. No production code, save schema, balance or `main` changes.
 - Test commit: `4fd4b96fd1807a8b80a101adda85a1d726dd5352`. No local tests run. PR #18 remains Draft/open/unmerged.
 - Next action: check Quality Gate on the latest docs-updated HEAD. If the server suite passes, continue the combat stat runtime coverage audit; if it fails, inspect exact logs and correct only confirmed regressions.
+
+- Precision follow-up: tightened the regression to assert the single canonical response `Сначала вступи в клан.` for this fixture, rather than accepting either message. This locks the roster-authoritative contract instead of broadening the assertion. Commit `88e5b3ee367c8da9176ec73790c5e6a5a7997cad`.
+- Current continuation: run/inspect CI for the exact latest documentation HEAD, then proceed with the equipment combat runtime-channel audit.
