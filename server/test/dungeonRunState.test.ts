@@ -53,6 +53,42 @@ test('terminal result is durable and duplicate same-result completion is idempot
   assert.throws(() => finishDungeonRun(completed, 'loss', 4000), /different terminal result/);
 });
 
+test('manual round snapshots reject invalid HP and cannot bypass a deterministic round plan', () => {
+  const base = run();
+  assert.throws(() => advanceDungeonRunRound(base, {
+    now: 2000, bossHealth: 400, participantHealth: { p1: 0, p2: 60 },
+  }), /invalid health snapshot/);
+  assert.throws(() => advanceDungeonRunRound(base, {
+    now: 2000, bossHealth: 501, participantHealth: { p1: 80, p2: 60 },
+  }), /Invalid dungeon round snapshot/);
+  assert.throws(() => advanceDungeonRunRound(base, {
+    now: 2000, bossHealth: 400, participantHealth: { p1: 80, p2: 60, rogue: 10 },
+  }), /exactly one health value/);
+  const planned = {
+    ...base,
+    roundPlan: createDungeonRoundPlan({
+      totalRounds: 2, totalBossDamage: 100,
+      totalIncomingDamageByParticipant: { p1: 10, p2: 10 },
+    }),
+  };
+  assert.throws(() => advanceDungeonRunRound(planned, {
+    now: 2000, bossHealth: 450, participantHealth: { p1: 90, p2: 80 },
+  }), /deterministic round resolver/);
+});
+
+test('direct terminal transition cannot bypass unresolved planned combat rounds', () => {
+  const base = run();
+  const planned = {
+    ...base,
+    roundPlan: createDungeonRoundPlan({
+      totalRounds: 2, totalBossDamage: 100,
+      totalIncomingDamageByParticipant: { p1: 10, p2: 10 },
+    }),
+  };
+  assert.throws(() => finishDungeonRun(planned, 'win', 2000), /planned combat rounds remain unresolved/);
+  assert.throws(() => finishDungeonRun(planned, 'loss', 2000), /planned combat rounds remain unresolved/);
+});
+
 test('invalid roster, leader and terminal snapshots fail closed on startup recovery', () => {
   const state = run();
   assert.throws(() => validateDungeonRunStore({
