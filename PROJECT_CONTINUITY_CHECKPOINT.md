@@ -1360,3 +1360,13 @@ PR #15 остаётся Draft/open и не объединён. Слияние б
 - Prepared encounter settlement and durable run/WAL helpers exist, but production does not yet call durable start/round/finalization. Current dungeon combat is still synchronous one-boss settlement; durable result outbox is integrated separately.
 - Next: design a versioned encounter/wave config, strict reference/count validation, exact single-boss legacy adapter and golden tests before implementing multiple enemies. Preserve RNG order, drop allocation, attempts, rewards, quests, reports, events and persistence semantics.
 - No production or data changes. PR #18 remains Draft/open/unmerged; do not merge; do not touch main.
+
+
+## Continuation checkpoint — versioned dungeon encounter config foundation — 2026-11-16
+- Added server/data/dungeon_encounters.json, schemaVersion 1. Each existing dungeon currently maps to exactly its current bossId through one encounter, one wave and count=1.
+- Added pure validator/expander server/src/dungeonEncounterConfig.ts. It validates schema version, full dungeon coverage, known dungeon/monster IDs, unique IDs, non-empty encounter/wave/spawn structures, integer count 1–20, at most 20 waves per encounter and at most 100 expanded monsters per dungeon.
+- Added server/test/dungeonEncounterConfig.test.ts; server/package.json test script includes it. The checked-in config is tested against actual forgotten_lands.json so each live dungeon retains exactly its existing boss target.
+- Config is intentionally not connected to runExpeditionDungeon yet. This stage adds no live rooms, waves or multiple enemies. Production remains single-boss and synchronous. No combat/RNG/reward/save/client changes.
+- Previous HEAD 6c0eee2013d728e90d7fd1b14ae959a047dcf0d6 passed Quality Gate 43911118722 4/4. Check CI on the latest HEAD before advancing.
+- Next: inspect CI; if green, audit schema evolution/content authoring and add a validated legacy adapter boundary. Do not wire multi-enemy runtime until per-wave combat, loot/reward semantics, participant health, attempts, persistence and idempotency are specified and characterized.
+- PR #18 remains Draft/open/unmerged; main untouched.
