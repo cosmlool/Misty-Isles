@@ -2977,3 +2977,13 @@ Quality Gate 43931230374 failed because the new dungeon test file contained a li
 - Fixed the actual source in commit `dca7f4e3b8b3bf57237835cdc4e777225c813c77`; verified the fetched file now contains a real newline between the fixture and assertion.
 - Quality Gate 43946425041: data/docs and client jobs passed; server and Playwright jobs were in progress at last inspection. Do not mark CI green until all four jobs complete successfully.
 - Production dungeon combat remains unchanged; PR #18 remains Draft/open/unmerged; `main` untouched.
+
+
+## Multi-wave dungeon runtime integration audit — 2026-11-16
+- Quality Gate `43946549140` completed successfully on exact code HEAD `a4254a7299b50e4a8589b23537281a1494e01cb4`: all four jobs passed (server build/tests, client build, Playwright smoke, data/docs structure).
+- Traced production `dungeonRun` through `runExpeditionDungeon`: it still resolves one `dungeon.bossId`, computes one aggregate combat plan, rolls/allots drops once, and settles all players synchronously.
+- Durable `DungeonRunRecord` and `PreparedDungeonEncounter` still represent a single boss and aggregate result; round plans distribute already-computed aggregate damage and do not simulate waves/enemy turns. Durable start/round/finalization commits remain disconnected from the production handler.
+- Added `DUNGEON_WAVE_RUNTIME_CONTRACT.md` documenting the required frozen content snapshot, encounter/wave cursor, active enemy roster, deterministic RNG/prepared result, atomic transitions, single terminal settlement, and the decisions/tests required before wiring.
+- Explicit unresolved semantics include three-round scope, per-wave vs terminal healing/drop/reward policy, intermediate death vs HP clamp, passive/buff recalculation, leader AFK/death, and run schema migration. No speculative gameplay choices were made.
+- No production combat, RNG, drops, rewards, persistence, client protocol, economy, or balance changes. PR #18 remains Draft/open/unmerged; `main` untouched.
+
