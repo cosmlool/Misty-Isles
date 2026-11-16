@@ -130,7 +130,10 @@ export function validateDungeonRunStore(value: unknown): DungeonRunStore {
       if (prepared.runId !== raw.runId || prepared.requestId !== raw.requestId ||
         prepared.dungeonId !== raw.dungeonId || prepared.bossId !== raw.encounter.bossId ||
         JSON.stringify(prepared.participantIds) !== JSON.stringify(raw.participantIds) ||
-        prepared.preparedAt < raw.startedAt) {
+        prepared.preparedAt < raw.startedAt ||
+        raw.participantIds.some((id: string) =>
+          prepared.participants[id].hpBefore !== raw.participants[id].health ||
+          (prepared.playerSnapshots[id].id !== undefined && prepared.playerSnapshots[id].id !== id))) {
         throw new Error(`dungeon_runs.json contains a prepared encounter that does not match run ${key}.`);
       }
       raw.preparedEncounter = prepared;
