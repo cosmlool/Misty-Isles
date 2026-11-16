@@ -2926,3 +2926,10 @@ PEN-009 стоит 100 кристаллов и при максимальном �
 - Commits: helper `c5e3404`; fixtures `35c9a80`; handler integration `89b020f`; test script `2b801b1`.
 - No RNG calls were added, removed or reordered. No combat coefficients, balance, rewards, saves or PvP behavior were intentionally changed. CI for exact HEAD `2b801b17a80f560d2b29ce049e78eaebbf776833` is pending/not yet visible; do not treat the new code as validated until all four Quality Gate jobs pass.
 - PR #18 remains Draft/open/unmerged; `main` untouched.
+
+
+## Expedition combat CI follow-up — 2026-11-16
+- Quality Gate `43905783014` failed only in the new test `every participant must survive and rounds greater than eight lose`; 474/475 server tests passed, while client build, browser smoke and data/docs checks passed.
+- Failure was a fixture setup error, not a production formula defect: `monsterHp: 900` with the chosen party DPS did not produce more than eight rounds. Increased this fixture-only monster HP to `9000` so it actually exercises the >8-round loss branch.
+- No production source or combat coefficients changed in this correction. Exact rerun is required before treating the branch as validated.
+- Fix commit: `4fc0a65cad1db7968d5a63fcde427b195bc6fb6f`.
