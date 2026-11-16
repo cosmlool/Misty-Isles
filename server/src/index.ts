@@ -1407,7 +1407,7 @@ function loadAuction():any[]{const list=readPersistentJson<any[]>(AUCTION_FILE,[
 function loadAuctionHistory():any[]{return readPersistentJson<any[]>(AUCTION_HISTORY_FILE,[],value=>Array.isArray(value)&&value.every(isPlainObject));}
 function loadAuctionForTransaction():any[]{if(!existsSync(AUCTION_FILE))return [];const list=JSON.parse(readFileSync(AUCTION_FILE,'utf8'));if(!Array.isArray(list)||list.some((x:any)=>!x||typeof x!=='object'||Array.isArray(x)))throw new Error('Auction listing data is invalid; transaction cancelled.');return list.map((x:any)=>({...x,status:x.status||'active'}));}
 function loadAuctionHistoryForTransaction():any[]{if(!existsSync(AUCTION_HISTORY_FILE))return [];const history=JSON.parse(readFileSync(AUCTION_HISTORY_FILE,'utf8'));if(!Array.isArray(history)||history.some((x:any)=>!x||typeof x!=='object'||Array.isArray(x)))throw new Error('Auction history data is invalid; transaction cancelled.');return history;}
-function loadWars():any[]{return readPersistentJson<any[]>(WAR_FILE,[],value=>Array.isArray(value)&&value.every(isPlainObject));}
+function loadWars():any[]{const clans=loadClans();return readPersistentJson<any[]>(WAR_FILE,[],value=>validateClanWarStore(value,clans));}
 function broadcastClanOverview(clans:Record<string,any>){
   const payload={clans:Object.values(clans).map((x:any)=>({id:x.id,name:x.name,level:x.level,members:Array.isArray(x.members)?x.members.length:0,vault:x.vault,leader:x.leader,seasonPoints:x.seasonPoints||0,upgrades:x.upgrades||{barracks:0,treasury:0,banner:0}}))};
   const sent=new Set<string>();
