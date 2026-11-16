@@ -1,3 +1,4 @@
+import { validateDungeonResultDeliveryOutbox } from './dungeonResultOutboxDelivery.js';
 import {
   finishDungeonRun,
   validateDungeonRunStore,
@@ -190,15 +191,16 @@ export function markDungeonResultEventDelivered(input: {
   now: number;
 }): DungeonResultOutbox {
   if (!input.eventId || !Number.isFinite(input.now)) throw new Error('Invalid dungeon outbox acknowledgement.');
+  const outbox = validateDungeonResultDeliveryOutbox(input.outbox);
   return input.runtime.transactWithRecovery(recovery => {
     if (recovery.recovered) throw new Error('Shared state was recovered during dungeon outbox acknowledgement; reload the outbox before retrying.');
-    const current = input.outbox[input.eventId];
+    const current = outbox[input.eventId];
     if (!current) throw new Error('Dungeon result outbox event does not exist.');
     if (current.status === 'delivered') {
-      return { files: { dungeonOutbox: input.outbox }, result: input.outbox, skipWrite: true };
+      return { files: { dungeonOutbox: outbox }, result: outbox, skipWrite: true };
     }
     const next = {
-      ...input.outbox,
+      ...outbox,
       [input.eventId]: { ...current, status: 'delivered' as const, deliveredAt: input.now },
     };
     return { files: { dungeonOutbox: next }, result: next };
