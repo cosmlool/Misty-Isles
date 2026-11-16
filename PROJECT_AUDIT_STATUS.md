@@ -2933,3 +2933,10 @@ PEN-009 стоит 100 кристаллов и при максимальном �
 - Failure was a fixture setup error, not a production formula defect: `monsterHp: 900` with the chosen party DPS did not produce more than eight rounds. Increased this fixture-only monster HP to `9000` so it actually exercises the >8-round loss branch.
 - No production source or combat coefficients changed in this correction. Exact rerun is required before treating the branch as validated.
 - Fix commit: `4fc0a65cad1db7968d5a63fcde427b195bc6fb6f`.
+
+
+## Expedition legacy-formula comparison matrix — 2026-11-16
+- Added a deterministic 36-scenario comparison test that independently evaluates the prior inline arithmetic and deep-compares every result field against `calculateExpeditionCombatPlan`.
+- Scenarios vary party sizes 1–3, attack/defense/health, resistance/weakness/hit modifiers, incoming profession/evasion modifiers, monster HP/defense/attack and Knight guard.
+- The earlier Quality Gate failure was isolated to an insufficient >8-round fixture input; that fixture was increased from 900 to 9000 HP. This does not modify production formulas.
+- The correction commit is `4fc0a65`; the parity matrix commit is `fc9bf89`. GitHub Actions has not yet exposed a run for the latest branch head, so neither the fixture correction nor parity matrix is considered CI-validated yet.
