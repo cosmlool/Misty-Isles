@@ -23,9 +23,14 @@ test('rejects partial group cache instead of replaying only one member', () => {
 });
 test('rejects reuse for another dungeon, group, leader or ordered roster', () => {
   for (const changed of [
-    { ...binding, dungeonId: 'dungeon-2' }, { ...binding, groupId: 'group-2' },
-    { ...binding, leaderId: 'p2' }, { ...binding, participantIds: ['p2', 'p1'] },
-  ]) assert.deepEqual(resolveLegacyDungeonRequestReplay({ requestId: 'req_123', binding: changed, participants: participants() }),
+    { binding: { ...binding, dungeonId: 'dungeon-2' }, party: participants() },
+    { binding: { ...binding, groupId: 'group-2' }, party: participants() },
+    { binding: { ...binding, leaderId: 'p2' }, party: participants() },
+    { binding: { ...binding, participantIds: ['p2', 'p1'] }, party: [
+      { playerId: 'p2', entries: [entry('req_123', 'p2')] },
+      { playerId: 'p1', entries: [entry('req_123', 'p1')] },
+    ] },
+  ]) assert.deepEqual(resolveLegacyDungeonRequestReplay({ requestId: 'req_123', binding: changed.binding, participants: changed.party }),
     { kind: 'conflict', reason: 'identity' });
 });
 test('fails closed for pre-binding records and invalid participant order', () => {
