@@ -73,3 +73,67 @@ The fixture injects no RNG and does not change production combat code or formula
 ## Safe next step
 
 Build an isolated characterization harness for the existing expedition formula and the full player-stat resolver before considering any engine migration. The harness must compare fixed inputs and outputs without changing the live formula, RNG calls, reward allocation, quest/history/report behavior or save semantics. Any later production routing change still requires a separate compatibility review and explicit approval of unresolved effect mappings.
+
+
+## Detailed coverage audit — 2026-11-16
+
+### Verified existing test ownership
+
+| Concern | Existing test | What is actually locked |
+|---|---|---|
+| Legacy stat helpers and typed-engine isolation | `server/test/monsterCombat.test.ts` | Passive/weakness/resistance parsing, hit/evasion, healing, profession modifiers, turn order, buff suppression, typed-engine mechanics and stat-adapter behavior |
+| Dungeon arithmetic | `server/test/dungeonCombatMath.test.ts` | Solo/party formulas, participant-specific multipliers, max 3 rounds, strict positive-survival boundary, invalid input and DUN-TRIO-01 |
+| Dungeon HP settlement | `server/test/dungeonMemberHealthOutcome.test.ts` | Incoming damage → lifesteal → buffer healing order, max-HP caps and loss behavior |
+| Dungeon drop RNG and allocation | `server/test/dungeonDropPreparation.test.ts` | Injected RNG, source-order rolls, 95% optional-drop cap, guaranteed drops and recipient allocation order |
+| Dungeon reports | `server/test/dungeonGroupCombatReport.test.ts`, `server/test/dungeonMemberCombatReport.test.ts` | Legacy report fields, exact line ordering, personal stats/rewards and input immutability |
+| Dungeon quest/history/replay | `server/test/dungeonMemberQuestSettlement.test.ts`, `server/test/dungeonRequestResultPreparation.test.ts` | Detached quest snapshots, bounded request history, stable event identity and no source mutation |
+| Dungeon prepared settlement | `server/test/dungeonEncounterPreparation.test.ts` | Frozen prepared result, serialization/revalidation, roster consistency, loot recipient consistency and HP parity |
+| PvP isolation | `server/test/pvpCombat.test.ts`, `server/test/pvpRuntime.test.ts` | Separate arena formula and live persistence/reward behavior; not a PvE parity oracle |
+| Expedition connection/group safety | `server/test/expeditionSafetyRuntime.test.ts` | Live server, reconnect/disconnect and group participation safety; it is not a golden combat/reward fixture |
+
+### Expedition formula: observed deterministic and random boundaries
+
+The current `expeditionSearchClaim` handler in `server/src/index.ts` performs combat inline. For fixed monster data and resolved player snapshots, its arithmetic is deterministic:
+
+1. Scale monster HP by party size: `monster.hp * (1 + 0.55 * (partySize - 1))`.
+2. Sum participant attack after monster defense, profession resistance, profession weakness and passive accuracy multipliers.
+3. Calculate rounds with ceiling and a minimum DPS of 1.
+4. Calculate group Knight guard and each participant's incoming damage using passive profession damage and evasion/monster accuracy.
+5. Win only when rounds are at most 8 and every participant's pre-settlement HP is strictly greater than incoming damage.
+
+The handler currently owns random decisions outside that arithmetic:
+- Monster selection: a 5% gatekeeper check after zone clear, otherwise a random candidate selection (or a forced gatekeeper after all candidates have been seen).
+- On victory, one random roll per configured optional drop, in source order; gatekeeper fallback may add the first drop if none rolled.
+- On victory, one random recipient selection per assigned drop, in drop order.
+- No optional-drop or recipient rolls occur on a loss.
+
+The exact call sequence is part of compatibility. A refactor must not move a roll before/after another roll, add a roll for a guaranteed item, or change the number/order of recipient draws. Injected deterministic RNG must be introduced only at a characterization boundary; production must preserve the existing random stream semantics until parity is demonstrated.
+
+### Gaps prioritized for the next implementation stage
+
+**P0 — expedition golden characterization (not yet covered)**
+- Extract the arithmetic-only expedition combat plan into a pure helper, preserving the current operation order and formulas byte-for-byte where possible.
+- Add solo, duo and trio fixtures with mixed professions, accuracy/evasion, passive resistance/weakness, Knight guard and healing/lifesteal.
+- Lock exact rounds, outgoing damage, incoming damage, win/loss and strict HP/8-round boundaries.
+- Keep monster selection, optional drop rolls and recipient selection outside the pure helper.
+
+**P1 — stat-resolution closure**
+- Add fixtures around the real `resolvePlayerMonsterStats(Player, monster, options)` closure, or a narrow exported adapter, proving weapon/armor/attributes/enhancement/set/rare-property/pendant/buff sources are included exactly once.
+- Include legacy armor-description parsing, structured `combatStats`, malformed/compound descriptions and the currently inactive typed channels.
+- Do not activate any currently inactive effect as part of this test work.
+
+**P1 — complete expedition settlement characterization**
+- With deterministic monster selection and RNG sequence, assert both win and loss snapshots for every participant: HP, battle/victory/kill counters, rare/boss counters, XP, gold, inventory/drop recipient, quest/daily progress, zone seen/cleared/opened state, activity, combat history, report fields and emitted event order.
+- Assert that loss consumes no XP/gold/drop rewards, does not progress victory counters, and preserves current HP floor behavior.
+- Add replay/retry and persistence-failure assertions without changing the current request/recovery contract.
+
+**P2 — dungeon integration golden fixture**
+- DUN-TRIO-01 currently locks the pure math helper, not the complete live `runExpeditionDungeon` settlement. Add an integration fixture only after the expedition characterization boundary is established.
+- Lock attempt consumption on both outcomes, participant HP, healing order, XP/gold credit and overflow, drop rolls/allocation, reports, quests, request cache, outbox event identity and persisted player snapshots.
+
+### Safe extraction constraints
+
+- First extraction should move only the deterministic arithmetic; do not move RNG, rewards, quest mutation, report construction, or persistence into the helper.
+- Do not alter the legacy inline call order or round/damage rounding. Compare old and extracted outputs on the same fixed input corpus before replacing the inline calculation.
+- Keep a copy of representative pre-extraction outputs as golden JSON fixtures.
+- Keep the typed battle engine and PvP outside this change. No effect mapping, formula, coefficient, RNG, reward or save behavior is approved by this coverage inventory.
