@@ -82,3 +82,14 @@ The result outbox now validates every stored event before enqueue, dispatch, and
 Malformed records fail closed rather than being silently skipped and left pending indefinitely. Regression tests cover mismatched keys, unsupported status and missing delivery timestamps.
 
 Delivery remains **at-least-once**, not exactly-once: the server sends first and persists acknowledgement second. A crash between those actions can cause replay. The client uses the stable event ID to suppress duplicate UI application. This behavior is intentional and unchanged by the validation hardening.
+
+
+## Follow-up audit: prepared encounter identity and participant snapshot binding — 2026-11-16
+
+Prepared encounter identity validation now extends beyond run/request/dungeon/boss/roster identifiers. For each participant:
+- the prepared combat snapshot's hpBefore must match the participant HP frozen in the durable run;
+- if the embedded player snapshot has an id field, it must match the participant's ID/key.
+
+The invariant is enforced both when attaching a prepared encounter and when validating dungeon_runs.json after restart. This prevents a stale settlement or a snapshot for a different player from being accepted merely because the outer run identity matches. Regression tests cover both commit-time rejection and startup recovery rejection.
+
+This does not change combat calculations, RNG, reward/drop allocation, round resolution, or production wiring.
