@@ -1119,3 +1119,13 @@ PR #15 остаётся Draft/open и не объединён. Слияние б
 - No leader-transfer/kick endpoint exists in the current server handler set; no new gameplay feature was invented. Existing transaction WAL/recovery behavior unchanged.
 - Commits: `ec69db3afb7f8ddaef75763e3ed952ae726e7c4c` (resolver), `cab12c35299810e4787b97391bf616c523a49172` (tests), `fa829b77ca873257dcb37ebf9e9689764f38e21b` (leave handler).
 - Local tests not run; final-head CI required. No save migration, no main changes, PR remains unmerged.
+
+
+## Clan roster authority across gameplay and client UI — 2026-11-16
+- Rechecked PR #18 at pre-stage HEAD `0ba6217a73ff892d88fe05f7b3c68314f238371d`; Quality Gate run `43779350476` completed successfully on that exact HEAD (4/4 jobs). PR remains Draft/open/unmerged.
+- Extended the roster-authoritative membership rule beyond leave: donations, raids, upgrades, territory capture, clan quest claims, season rewards, war challenges, war attacks, and clan quest-state projection now resolve the acting player's clan from the persisted clan roster instead of trusting a stale `player.clan` pointer.
+- Found the corresponding client dead-end: the clan screen selected the player's clan only from `player.clan`, so a stale pointer hid the clan panel and its leave button. The `clanList` response now includes the authenticated player's roster-derived `myClanId`, and the client renders the panel from that value.
+- Create/join continue to reject any existing roster membership; leave continues to prioritize roster membership with saved-field fallback only for orphan cleanup. Existing leader permissions and game formulas are unchanged.
+- Commits: `29c470b0826f9b08fba9bbfad16596efedcb29cc`, `0710a84301adf82ec81718bbfc3ed73ecf23d351`, `aadb98e10d3e3e7afeb3a1d741789d43ee0e421b`, `084f614f34daf1b59f000da31f334739b79c8140`.
+- Existing helper regression tests cover roster lookup and leave resolution. No new dedicated end-to-end stale-pointer runtime test was added in this pass. Local tests were not run; Quality Gate is pending for the evolving final HEAD.
+- No save migration, automatic repair, balance change, `main` change, or PR merge.
