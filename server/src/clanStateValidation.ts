@@ -90,3 +90,13 @@ export function validateClanWarStore(value: unknown, clans: ClanStore): value is
   }
   return true;
 }
+
+
+/** Return the clan roster that currently contains a player, if any. */
+export function findPlayerClanMembership(clans: ClanStore, playerId: string): string | null {
+  if (!playerId) return null;
+  for (const [clanId, clan] of Object.entries(clans)) {
+    if (Array.isArray(clan.members) && clan.members.some((member: any) => member?.id === playerId)) return clanId;
+  }
+  return null;
+}
