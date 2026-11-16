@@ -1342,3 +1342,11 @@ PR #15 остаётся Draft/open и не объединён. Слияние б
 - Fix commit: `4fc0a65cad1db7968d5a63fcde427b195bc6fb6f`. Current HEAD at checkpoint update: `4fc0a65cad1db7968d5a63fcde427b195bc6fb6f`.
 - Next: inspect new Quality Gate run and ensure the full server suite and all other jobs pass. Then compare legacy inline and extracted arithmetic across a deterministic scenario matrix; do not alter RNG, settlement or reward behavior.
 - PR #18 remains Draft/open/unmerged; main untouched.
+
+
+## Continuation checkpoint — expedition parity matrix — 2026-11-16
+- Latest code/test commit before this log: `fc9bf892dde9294f0e1d47dc9c2fad38ba4f2808` (parity matrix); audit/checkpoint commits will advance HEAD.
+- Added 36 deterministic scenario comparisons between a test-local copy of the previous inline arithmetic and the extracted helper. The matrix compares all output fields and covers party sizes 1–3 and varied combat multipliers/stats.
+- Prior Quality Gate on `00ff903` failed solely because the >8-round fixture did not actually exceed eight rounds. Fixture corrected to 9000 monster HP; production helper and handler were not changed by this fix.
+- No current Quality Gate run has appeared for the corrected/matrix HEAD. Verify Actions on the exact resulting HEAD before proceeding to any further production refactor.
+- PR #18 remains Draft/open/unmerged; `main` untouched. Preserve all RNG, reward, quest, report and persistence ordering.
