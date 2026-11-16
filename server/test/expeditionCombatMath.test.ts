@@ -28,5 +28,5 @@ test('exactly lethal incoming damage loses; one additional HP survives',()=>{
 test('every participant must survive and rounds greater than eight lose',()=>{
  const input={monsterHp:1,partySize:2,monsterDefense:0,monsterDefenseMultiplier:1,monsterAttack:100,monsterAttackMultiplier:1,groupGuard:.08,participants:[member({attack:100,health:100}),member({attack:100,health:1})]};
  assert.equal(calculateExpeditionCombatPlan(input).win,false);
- const slow=calculateExpeditionCombatPlan({...input,monsterHp:900,participants:input.participants.map(p=>({...p,health:1000}))});assert.ok(slow.rounds>8);assert.equal(slow.win,false);
+ const slow=calculateExpeditionCombatPlan({...input,monsterHp:9000,participants:input.participants.map(p=>({...p,health:1000}))});assert.ok(slow.rounds>8);assert.equal(slow.win,false);
 });
