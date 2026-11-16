@@ -38,6 +38,8 @@ type Options = {
   testHooks?: {
     afterJournalPersisted?: () => void;
     afterTargetWrite?: (key: SharedStateKey) => void;
+    afterJournalRemoved?: () => void;
+    afterJournalDirectorySynced?: () => void;
     afterSync?: (path: string) => void;
   };
 };
@@ -183,7 +185,9 @@ export function createSharedStateTransactionStore(options: Options) {
     validateJournal(parsed);
     apply(parsed.files);
     unlinkSync(journalFile);
+    options.testHooks?.afterJournalRemoved?.();
     syncDirectory(dataDir);
+    options.testHooks?.afterJournalDirectorySynced?.();
     return true;
   }
 
@@ -216,7 +220,9 @@ export function createSharedStateTransactionStore(options: Options) {
       options.testHooks?.afterJournalPersisted?.();
       apply(prepared.files);
       unlinkSync(journalFile);
+      options.testHooks?.afterJournalRemoved?.();
       syncDirectory(dataDir);
+      options.testHooks?.afterJournalDirectorySynced?.();
     } catch (error) {
       // A successful replay means the journaled transaction committed despite
       // the interrupted first attempt. If replay fails, keep the journal and
