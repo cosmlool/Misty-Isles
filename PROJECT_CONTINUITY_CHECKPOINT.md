@@ -1138,3 +1138,13 @@ PR #15 остаётся Draft/open и не объединён. Слияние б
 - Added a regression test that blocks a later target, forces repeated WAL recovery failures, verifies the backup count stays at one, then unblocks recovery and checks the final snapshots and original backup.
 - Commits: `85f4ac494ebd97d8e2bd5e282f6da347b2cd0f6b` (implementation), `890e8d0c2f01f4329f62388185e2bfdbe02edf0e` (test).
 - Local tests were not run. Full Quality Gate is required on the new final HEAD. No save migration, automatic restore, balance change, `main` change, or PR merge.
+
+
+## Full shared WAL target-boundary crash matrix — 2026-11-16
+- Rechecked PR #18 before work: HEAD `b3a6ad7343e90fe840749f759ea7c79bda7a8344`; runs `43780523990` and `43780518731` were still in progress. PR remains Draft/open/unmerged.
+- Added a child-process crash/restart regression for every configured shared WAL target boundary in deterministic apply order: players, auction, auction history, clans, wars, territories, mining, hunt groups, dungeon runs, dungeon outbox, accounts, sessions, and guest credentials.
+- Each case terminates the writer immediately after one target is applied, verifies the journal remains, starts a fresh store, replays the complete transaction, checks every configured target against the exact committed snapshot, confirms journal removal, and confirms a second recovery is a no-op.
+- Expanded the shared-state test fixture to configure mining and dungeon outbox, which were previously absent from its file map.
+- Test-only change; no production logic changed in this stage. The previous stage's WAL backup retry fix remains in place.
+- Commit: `23c0c642dcae214485020ed91723d0e68bee8f54`.
+- Local tests were not run. Await fresh Quality Gate on the new final HEAD. No save migration, auto-restore, balance change, `main` change, or PR merge.
