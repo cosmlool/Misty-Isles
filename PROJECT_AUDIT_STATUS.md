@@ -3031,3 +3031,15 @@ Quality Gate 43931230374 failed because the new dungeon test file contained a li
 - No gameplay code changed in this audit: enabling the durable path safely still requires complete preparation/recovery integration and resolution of the already documented death/round/multi-wave semantics. Do not partially switch the live handler.
 - No balance, combat formula, RNG order, reward allocation, quest semantics, client protocol, or real player data changed.
 - PR #18 remains Draft/open/unmerged; main untouched.
+
+
+## Legacy dungeon request replay identity hardening (2026-11-17)
+
+- Found a production replay-boundary gap: legacy dungeon results were looked up by requestId alone. A reused ID could replay a saved report for a different dungeon or party. If only one member had a matching record, the handler returned early and replayed to only the members whose local cache happened to match.
+- Added `dungeonLegacyRequestReplay.ts`: replay now requires a complete matching cache entry for every participant in the exact ordered roster, and validates dungeonId, groupId, leaderId and participantIds. Partial cache, pre-binding legacy entries, malformed roster and any identity mismatch fail closed with a notice; no combat is rerun and no reward is issued on that conflict path.
+- New successful legacy settlements persist the immutable request binding in each participant's request-history entry. Both win and loss paths use the same binding. The compatibility `dungeonLastRequest` fallback is still checked, but a pre-binding record is rejected rather than trusted.
+- Added pure regression coverage for valid group replay, unknown requests, partial member cache, cross-dungeon/group/leader/ordered-roster reuse, pre-binding records and malformed participant order. Added an end-to-end group runtime regression that attempts to reuse a completed request ID for another dungeon and verifies neither member receives another result.
+- The request cache is still intentionally bounded to the latest five records per player; this change does not create a global permanent request-ID registry. A request evicted from all participants' histories is no longer recognizable as a replay. Durable run-level idempotency remains a prerequisite for the future durable lifecycle.
+- Existing pre-migration request records without identity binding now fail closed if encountered as replay candidates; users must create a fresh request rather than risk replaying an unbound result. No player migration or destructive cleanup was performed.
+- Combat formulas, RNG order, attempts, XP/gold/drop allocation, quests, health, client protocol and durable multi-wave wiring are otherwise unchanged. Added tests have not yet been run locally; require the new exact-HEAD Quality Gate.
+- PR #18 remains Draft/open/unmerged; main untouched.
