@@ -2785,3 +2785,12 @@ PEN-009 стоит 100 кристаллов и при максимальном �
 - Added `dungeon_runs.json` to shared WAL and startup recovery/strict validation after WAL replay.
 - Added unit coverage for snapshot round-trip, terminal idempotency, invalid snapshots, and shared-WAL crash replay including a dungeon snapshot.
 - This is persistence/model foundation only. The synchronous dungeon handler has not yet been replaced, so production active-run resume is not yet enabled.
+
+
+### Equipment combat and set-bonus audit — 2026-11-16
+- Audited the PvP rating path and the legacy hunt/dungeon equipment-stat path against the typed monster combat engine and regression tests.
+- Confirmed intentional PvP compatibility constraints: three-slot legacy set lookup; no five-piece armor slot input; no catalog attributes/combatStats or amulet effect contribution; only current weapon/armor property channels attack, defense and crit affect rating. Existing tests characterize these rules.
+- Current five-piece armor catalog: 64 complete sets; structural validation covers unique IDs, all five slots, profession consistency and set description consistency.
+- Found an integration boundary, not changed for balance safety: typed set/equipment effects are prepared, but production hunt/dungeon callers continue to use legacy attack/defense simulation and selected typed channels; the newer `resolveMonsterBattle()` engine is not wired into `index.ts`. `applyFivePieceSetBonus` is passed to `resolvePlayerMonsterStats()` but unused by the calculation helper.
+- No combat formula, RNG, equipment catalog or set bonus changed. Follow-up requires an approved authoritative mapping of effect channels across hunt/dungeon/PvP.
+- Exact pre-documentation code HEAD `6cadf0677c19f9e0eebc5b01e34217e955784755`: Quality Gate `43785383974` failed 468/469 server tests due to the recurring clan-war nonmember `clanDonate` timeout; client build, data/docs, and Playwright passed. Local tests not run.
