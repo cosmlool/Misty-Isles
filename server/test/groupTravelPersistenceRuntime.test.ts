@@ -328,3 +328,55 @@ test('group expedition travel start and claim persist every member together', { 
     rmSync(dataDir, { recursive: true, force: true });
   }
 });
+
+
+test('missing saved player who remains in a persisted hunt group cannot join or create a blank save', { timeout: 45_000 }, async () => {
+  const dataDir = mkdtempSync(join(tmpdir(), 'misty-missing-group-save-'));
+  const savedMemberId = 'runtime_missing_save_saved_member';
+  const missingMemberId = 'runtime_missing_save_member';
+  const groupId = 'runtime_missing_save_group';
+  const port = await unusedPort();
+  let child: ChildProcess | undefined;
+  let client: Client | undefined;
+  const rooms: Room[] = [];
+  try {
+    for (const file of staticDataFiles) copyFileSync(join(serverDir, 'data', file), join(dataDir, file));
+    const savedPlayer = {
+      id: savedMemberId, name: 'Saved Member', race: 'Кот', profession: '',
+      level: 10, health: 100, maxHealth: 100, gold: 321, experience: 45,
+      inventory: '[]', equipment: '{}', collections: '{}',
+      quests: JSON.stringify({ expedition: { branchId: 'forgotten_lands', currentZoneId: 'el1', opened: 1, cleared: [], seen: {}, state: 'idle', endsAt: 0, groupId } }),
+    };
+    const initialPlayers = { [savedMemberId]: savedPlayer };
+    const initialRoster = [{ id: groupId, leader: savedMemberId, members: [savedMemberId, missingMemberId] }];
+    writeFileSync(join(dataDir, 'players.json'), JSON.stringify(initialPlayers, null, 2));
+    writeFileSync(join(dataDir, 'hunt_groups.json'), JSON.stringify(initialRoster, null, 2));
+    seedGuestCredentials(dataDir, [missingMemberId]);
+
+    child = spawn(process.execPath, ['--import', 'tsx', 'src/index.ts'], {
+      cwd: serverDir,
+      env: { ...process.env, MISTY_DATA_DIR: dataDir, MISTY_PORT: String(port) },
+      stdio: 'ignore',
+    });
+    await waitForServer(port, child);
+    client = new Client(`ws://127.0.0.1:${port}`);
+
+    await assert.rejects(
+      client.joinOrCreate('my_room', {
+        playerId: missingMemberId,
+        sessionToken: await guestToken(port, missingMemberId),
+      }),
+      /save|сохран|join|closed|error/i,
+      'a persisted group member without a player save must not enter as a new blank character',
+    );
+
+    assert.deepEqual(readPlayers(join(dataDir, 'players.json')), initialPlayers,
+      'rejected join must not synthesize or persist a default player record');
+    assert.deepEqual(JSON.parse(readFileSync(join(dataDir, 'hunt_groups.json'), 'utf8')), initialRoster,
+      'rejected join must preserve the complete persisted group roster');
+  } finally {
+    for (const room of rooms) await leaveRoomSafely(room);
+    if (child) await stopServer(child);
+    rmSync(dataDir, { recursive: true, force: true });
+  }
+});
