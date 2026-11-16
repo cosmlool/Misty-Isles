@@ -1391,3 +1391,12 @@ PR #15 остаётся Draft/open и не объединён. Слияние б
 - Replaced the literal escape with a true newline in commit `dca7f4e3b8b3bf57237835cdc4e777225c813c77` and verified the exact source at the new HEAD.
 - Run 43946425041 is active: data/docs + client passed; server + Playwright remained in progress. Next action: recheck this run and inspect logs if any job fails.
 - No production dungeon integration, combat, rewards, RNG or persistence behavior changed. PR #18 remains Draft/open/unmerged; `main` untouched.
+
+
+## Latest continuation checkpoint — multi-wave runtime contract — 2026-11-16
+- Exact prior code HEAD `a4254a7299b50e4a8589b23537281a1494e01cb4` passed Quality Gate `43946549140` 4/4.
+- New audit confirms production `dungeonRun` remains synchronous single-boss; durable run/prepared encounter types also remain single-boss/aggregate, and durable start/round/finalization helpers are not called from production.
+- Added `DUNGEON_WAVE_RUNTIME_CONTRACT.md` with state requirements, transition/settlement invariants, unresolved gameplay semantics, and a safe staged implementation sequence.
+- No live dungeon code or gameplay behavior changed. Next: review/approve the unresolved semantics before implementing a versioned multi-wave durable run schema; do not wire live combat or activate new waves prematurely.
+- PR #18 remains Draft/open/unmerged; `main` untouched.
+
