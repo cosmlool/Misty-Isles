@@ -57,3 +57,36 @@ export function validateTerritoryStore(value: unknown, clans: ClanStore): value 
   }
   return true;
 }
+
+
+/** Validate persisted war identity and active-clan references before any mutation or settlement. */
+export function validateClanWarStore(value: unknown, clans: ClanStore): value is Array<Record<string, any>> {
+  if (!Array.isArray(value)) return false;
+  const ids = new Set<string>();
+  for (const war of value) {
+    if (!isRecord(war) || typeof war.id !== 'string' || !war.id.trim() || ids.has(war.id)
+      || typeof war.a !== 'string' || !war.a || typeof war.b !== 'string' || !war.b || war.a === war.b
+      || !['active', 'finished', 'cancelled'].includes(war.status)
+      || !Number.isSafeInteger(war.endsAt) || war.endsAt < 0
+      || !isOptionalCounter(war.aDamage) || !isOptionalCounter(war.bDamage)
+      || (war.createdAt !== undefined && !isOptionalCounter(war.createdAt))
+      || (war.finishedAt !== undefined && !isOptionalCounter(war.finishedAt))
+      || (war.reward !== undefined && !isOptionalCounter(war.reward))
+      || (war.winnerId !== undefined && war.winnerId !== '' && war.winnerId !== war.a && war.winnerId !== war.b)
+      || (war.aName !== undefined && typeof war.aName !== 'string')
+      || (war.bName !== undefined && typeof war.bName !== 'string')) return false;
+
+    // Historical finished/cancelled wars intentionally outlive a disbanded clan.
+    // Only active wars must still point to two extant, distinct clan records.
+    if (war.status === 'active' && (!clans[war.a] || !clans[war.b])) return false;
+
+    if (war.lastAttackAtByPlayer !== undefined) {
+      if (!isRecord(war.lastAttackAtByPlayer)) return false;
+      for (const [playerId, timestamp] of Object.entries(war.lastAttackAtByPlayer)) {
+        if (!playerId || !Number.isSafeInteger(timestamp) || (timestamp as number) <= 0) return false;
+      }
+    }
+    ids.add(war.id);
+  }
+  return true;
+}
