@@ -1,10 +1,12 @@
 import assert from 'node:assert/strict';
-import { existsSync, mkdtempSync, readFileSync, rmSync } from 'node:fs';
+import { appendFileSync, existsSync, mkdtempSync, readFileSync, rmSync } from 'node:fs';
 import { spawnSync } from 'node:child_process';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import test from 'node:test';
 import { dispatchPendingDungeonResultEvents, enqueueDungeonResultEvents } from '../src/dungeonResultOutboxDelivery.js';
+import { markDungeonResultEventDelivered } from '../src/dungeonRunFinalizationRuntime.js';
+import { createSharedStateRuntime } from '../src/sharedStateRuntime.js';
 import { createSharedStateTransactionStore } from '../src/sharedStateTransactions.js';
 
 function fixture() {
@@ -47,7 +49,7 @@ test('a process crash between player and outbox target writes restores the pendi
       const event = ${JSON.stringify(resultEvent())};
       store.transact(() => ({
         files: {
-          players: { p1: { health: 80, dungeonRuns: 1 } },
+          players: { p1: { health: 80, quests: JSON.stringify({ dungeonRuns: 1, dungeonRequestHistory: [{ id: 'request_1', report: { result: 'win' }, text: 'Victory', binding: { dungeonId: 'dungeon_1', groupId: '', leaderId: 'p1', participantIds: ['p1'] } }] }) } },
           dungeonOutbox: enqueueDungeonResultEvents({ outbox: {}, events: [event], now: 100 }),
         },
         result: null,
@@ -61,7 +63,7 @@ test('a process crash between player and outbox target writes restores the pendi
     const firstBoot = f.createStore();
     assert.equal(existsSync(firstBoot.journalFile), true);
     assert.equal(firstBoot.recover(), true);
-    assert.deepEqual(readJson(f.files.players), { p1: { health: 80, dungeonRuns: 1 } });
+    assert.deepEqual(readJson(f.files.players), { p1: { health: 80, quests: JSON.stringify({ dungeonRuns: 1, dungeonRequestHistory: [{ id: 'request_1', report: { result: 'win' }, text: 'Victory', binding: { dungeonId: 'dungeon_1', groupId: '', leaderId: 'p1', participantIds: ['p1'] } }] }) } });
     assert.deepEqual(readJson(f.files.dungeonOutbox), {
       [resultEvent().eventId]: { ...resultEvent(), status: 'pending', createdAt: 100 },
     });
@@ -121,5 +123,118 @@ test('restart replays an unacknowledged send, then never resends an acknowledged
     assert.equal(replayAfterAck, 0);
     assert.equal(sends, 2);
     assert.equal(afterAckRestart.recover(), false);
+  } finally { f.cleanup(); }
+});
+
+
+test('a real process crash after transport send leaves the event pending for at-least-once replay', () => {
+  const f = fixture();
+  try {
+    const sentFile = join(f.dataDir, 'transport_sent.json');
+    const initial = f.createStore();
+    const event = resultEvent();
+    initial.transact(() => ({
+      files: {
+        players: { p1: { health: 80 } },
+        dungeonOutbox: enqueueDungeonResultEvents({ outbox: {}, events: [event], now: 100 }),
+      },
+      result: null,
+    }));
+    const transactionModule = new URL('../src/sharedStateTransactions.ts', import.meta.url).href;
+    const deliveryModule = new URL('../src/dungeonResultOutboxDelivery.ts', import.meta.url).href;
+    const childScript = `
+      import { appendFileSync } from 'node:fs';
+      import { createSharedStateTransactionStore } from ${JSON.stringify(transactionModule)};
+      import { dispatchPendingDungeonResultEvents } from ${JSON.stringify(deliveryModule)};
+      const outbox = JSON.parse(await (await import('node:fs/promises')).readFile(${JSON.stringify(f.files.dungeonOutbox)}, 'utf8'));
+      dispatchPendingDungeonResultEvents({
+        playerId: 'p1',
+        outbox,
+        send: (type, payload) => {
+          appendFileSync(${JSON.stringify(sentFile)}, JSON.stringify({ type, payload }) + String.fromCharCode(10));
+          process.exit(74);
+        },
+        acknowledge: () => process.exit(75),
+      });
+      process.exit(0);
+    `;
+    const child = spawnSync(process.execPath, ['--import', 'tsx', '--input-type=module', '-e', childScript], {
+      cwd: process.cwd(), encoding: 'utf8', timeout: 10_000,
+    });
+    assert.equal(child.status, 74, child.stderr || child.stdout);
+    assert.equal(readFileSync(sentFile, 'utf8').trim().split(/\r?\n/).length, 1);
+    assert.equal(readJson(f.files.dungeonOutbox)[event.eventId].status, 'pending');
+
+    const restarted = f.createStore();
+    const replayCount = dispatchPendingDungeonResultEvents({
+      playerId: 'p1',
+      outbox: readJson(f.files.dungeonOutbox),
+      send: (type, payload) => {
+        appendFileSync(sentFile, JSON.stringify({ type, payload }) + '\\n');
+      },
+      acknowledge: (eventId) => {
+        const currentOutbox = readJson(f.files.dungeonOutbox);
+        const next = {
+          ...currentOutbox,
+          [eventId]: { ...currentOutbox[eventId], status: 'delivered', deliveredAt: 200 },
+        };
+        restarted.transact(() => ({ files: { dungeonOutbox: next }, result: null }));
+      },
+    });
+    assert.equal(replayCount, 1);
+    assert.equal(readFileSync(sentFile, 'utf8').trim().split(/\r?\n/).length, 2);
+    assert.equal(readJson(f.files.dungeonOutbox)[event.eventId].status, 'delivered');
+  } finally { f.cleanup(); }
+});
+
+test('outbox-only WAL recovery is visible to the acknowledgement helper and cannot be overwritten by a stale snapshot', () => {
+  const f = fixture();
+  try {
+    const event = resultEvent();
+    const initial = f.createStore();
+    initial.transact(() => ({
+      files: {
+        players: { p1: { health: 80 } },
+        dungeonOutbox: enqueueDungeonResultEvents({ outbox: {}, events: [event], now: 100 }),
+      },
+      result: null,
+    }));
+    const transactionModule = new URL('../src/sharedStateTransactions.ts', import.meta.url).href;
+    const childScript = `
+      import { createSharedStateTransactionStore } from ${JSON.stringify(transactionModule)};
+      const store = createSharedStateTransactionStore({
+        dataDir: ${JSON.stringify(f.dataDir)},
+        files: ${JSON.stringify(f.files)},
+        testHooks: { afterJournalPersisted() { process.exit(76); } },
+      });
+      const current = JSON.parse((await import('node:fs')).readFileSync(${JSON.stringify(f.files.dungeonOutbox)}, 'utf8'));
+      const next = { ...current, [${JSON.stringify(event.eventId)}]: { ...current[${JSON.stringify(event.eventId)}], status: 'delivered', deliveredAt: 200 } };
+      store.transact(() => ({ files: { dungeonOutbox: next }, result: null }));
+      process.exit(0);
+    `;
+    const child = spawnSync(process.execPath, ['--import', 'tsx', '--input-type=module', '-e', childScript], {
+      cwd: process.cwd(), encoding: 'utf8', timeout: 10_000,
+    });
+    assert.equal(child.status, 76, child.stderr || child.stdout);
+    const staleOutbox = readJson(f.files.dungeonOutbox);
+    assert.equal(staleOutbox[event.eventId].status, 'pending');
+
+    const restartedStore = f.createStore();
+    const runtime = createSharedStateRuntime({
+      shared: restartedStore,
+      auction: { recover: () => false },
+      clans: { recover: () => false },
+    });
+    assert.throws(() => markDungeonResultEventDelivered({
+      runtime,
+      outbox: staleOutbox,
+      eventId: event.eventId,
+      now: 300,
+    }), /state was recovered during dungeon outbox acknowledgement/);
+
+    const recoveredOutbox = readJson(f.files.dungeonOutbox);
+    assert.equal(recoveredOutbox[event.eventId].status, 'delivered');
+    assert.equal(recoveredOutbox[event.eventId].deliveredAt, 200);
+    assert.equal(existsSync(restartedStore.journalFile), false);
   } finally { f.cleanup(); }
 });

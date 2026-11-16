@@ -33,6 +33,7 @@ const child = spawn(
     env: {
       ...process.env,
       MISTY_DATA_DIR: dataDir,
+      MISTY_GAME_DATA_DIR: dataDir,
       MISTY_PORT: process.env.MISTY_PORT || '2567'
     },
     stdio: 'inherit'

@@ -47,3 +47,25 @@ po/*~
 
 # RStudio Connect folder
 rsconnect/
+# Local development/test runtime state (never commit player saves or launcher state)
+/.local-data/
+/.misty-game-processes.json
+/logs/
+
+# Runtime persistence and process state when the server uses its default data directory
+/server/data/.misty-server.lock
+/server/data/players.json
+/server/data/players.json.*.bak
+/server/data/auction.json
+/server/data/auction_history.json
+/server/data/clans.json
+/server/data/clan_wars.json
+/server/data/clan_territories.json
+/server/data/hunt_groups.json
+/server/data/dungeon_runs.json
+/server/data/dungeon_outbox.json
+/server/data/accounts.json
+/server/data/sessions.json
+/server/data/guest_credentials.json
+/server/data/*_transaction.json
+/server/data/*.tmp

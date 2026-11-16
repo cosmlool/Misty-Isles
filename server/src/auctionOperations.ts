@@ -1,4 +1,5 @@
 import { removeInventoryCopy } from './inventoryOperations.js';
+import { creditGold, creditCrystals, MAX_GOLD_BALANCE, MAX_CRYSTALS_BALANCE } from './currencyOperations.js';
 
 export type EconomyPlayer = Record<string, any>;
 export type AuctionLot = {
@@ -22,8 +23,27 @@ function equipmentOf(player: EconomyPlayer): Record<string, any> {
   return value as Record<string, any>;
 }
 function validPrice(price: number): boolean { return Number.isSafeInteger(price) && price >= 1 && price <= 100_000_000; }
+function safeCounter(player: EconomyPlayer, field: string): number {
+  const value = Number(player[field] ?? 0);
+  if (!Number.isSafeInteger(value) || value < 0) throw new Error('Player economy counter is invalid.');
+  return value;
+}
+function addSafeCounter(player: EconomyPlayer, field: string, amount: number): number {
+  const result = safeCounter(player, field) + amount;
+  if (!Number.isSafeInteger(result)) throw new Error('Player economy counter would exceed the safe integer range.');
+  return result;
+}
+function safeBalance(player: EconomyPlayer, field: 'gold' | 'crystals'): number {
+  const value = Number(player[field] ?? 0);
+  const cap = field === 'gold' ? MAX_GOLD_BALANCE : MAX_CRYSTALS_BALANCE;
+  if (!Number.isFinite(value) || value < 0 || (value <= cap && !Number.isSafeInteger(value))) {
+    throw new Error('Player currency balance is invalid.');
+  }
+  return Math.min(value, cap);
+}
 function validateLots(lots: AuctionLot[], validItemIds: ReadonlySet<string>) {
   if (!Array.isArray(lots)) throw new Error('Auction listing data is invalid.');
+  const lotIds = new Set<string>();
   for (const lot of lots) {
     if (!lot || typeof lot !== 'object' || Array.isArray(lot)
       || typeof lot.id !== 'string' || !lot.id
@@ -33,6 +53,8 @@ function validateLots(lots: AuctionLot[], validItemIds: ReadonlySet<string>) {
       || (lot.status !== undefined && lot.status !== 'active')) {
       throw new Error('Auction listing contains an invalid lot; transaction cancelled.');
     }
+    if (lotIds.has(lot.id)) throw new Error('Auction listing contains duplicate lot IDs; transaction cancelled.');
+    lotIds.add(lot.id);
   }
 }
 function appendHistory(history: any[], entry: any): any[] {
@@ -49,6 +71,9 @@ export function listAuctionItem(input: {
 }): { snapshot: EconomySnapshot; lot: AuctionLot; fee: number } {
   const next = clone(input.snapshot);
   validateLots(next.auction, input.validItemIds);
+  if (typeof input.lotId !== 'string' || !input.lotId || next.auction.some(lot => lot.id === input.lotId)) {
+    throw new Error('Auction lot identifier is invalid or already in use.');
+  }
   const seller = next.players[input.sellerId];
   if (!seller) throw new Error('Seller is missing from the player save.');
   if (!Number.isInteger(input.index) || input.index < 0 || !validPrice(input.price)) throw new Error('Check the item and lot price.');
@@ -65,9 +90,10 @@ export function listAuctionItem(input: {
   if (next.auction.filter(x => x.sellerId === input.sellerId).length >= 10) throw new Error('Maximum 10 active lots per player.');
   const fee = Math.max(1, Math.floor(input.price * 0.02));
   const field = input.currency === 'gold' ? 'gold' : 'crystals';
-  if (!Number.isSafeInteger(Number(seller[field])) || Number(seller[field]) < fee) throw new Error('Not enough currency for the listing fee.');
-  seller[field] = Number(seller[field]) - fee;
-  if (field === 'gold') seller.goldSpent = Number(seller.goldSpent || 0) + fee;
+  const sellerBalance = safeBalance(seller, field);
+  if (sellerBalance < fee) throw new Error('Not enough currency for the listing fee.');
+  seller[field] = sellerBalance - fee;
+  if (field === 'gold') seller.goldSpent = addSafeCounter(seller, 'goldSpent', fee);
   const removal = removeInventoryCopy(inventory, equipmentOf(seller), input.index);
   seller.inventory = JSON.stringify(removal.inventory);
   seller.equipment = JSON.stringify(removal.equipment);
@@ -116,7 +142,7 @@ export function cancelAuctionItem(input: {
 export function buyAuctionItem(input: {
   snapshot: EconomySnapshot; buyerId: string; lotId: string; validItemIds: ReadonlySet<string>;
   uniqueItemIds?: ReadonlySet<string>; now: number;
-}): { snapshot: EconomySnapshot; fee: number; net: number; lot: AuctionLot } {
+}): { snapshot: EconomySnapshot; fee: number; net: number; burned: number; lot: AuctionLot } {
   const next = clone(input.snapshot);
   validateLots(next.auction, input.validItemIds);
   const index = next.auction.findIndex(x => x.id === input.lotId);
@@ -134,13 +160,19 @@ export function buyAuctionItem(input: {
     throw new Error('This unique item is already owned.');
   }
   const field = lot.currency;
-  if (!Number.isSafeInteger(Number(buyer[field])) || Number(buyer[field]) < lot.price) throw new Error('Insufficient currency.');
+  const buyerBalance = safeBalance(buyer, field);
+  if (buyerBalance < lot.price) throw new Error('Insufficient currency.');
+  const sellerBalance = safeBalance(seller, field);
   const fee = field === 'gold' ? Math.max(1, Math.floor(lot.price * 0.05)) : 0;
   const net = lot.price - fee;
-  buyer[field] = Number(buyer[field]) - lot.price;
-  if (field === 'gold') buyer.goldSpent = Number(buyer.goldSpent || 0) + lot.price;
-  seller[field] = Number(seller[field] || 0) + net;
-  seller.itemsSold = Number(seller.itemsSold || 0) + 1;
+  const sellerCredit = field === 'gold' ? creditGold(sellerBalance, net) : creditCrystals(sellerBalance, net);
+  const nextSellerBalance = sellerCredit.balance;
+  const nextBuyerGoldSpent = field === 'gold' ? addSafeCounter(buyer, 'goldSpent', lot.price) : undefined;
+  const nextSellerItemsSold = addSafeCounter(seller, 'itemsSold', 1);
+  buyer[field] = buyerBalance - lot.price;
+  if (field === 'gold') buyer.goldSpent = nextBuyerGoldSpent;
+  seller[field] = nextSellerBalance;
+  seller.itemsSold = nextSellerItemsSold;
   inventory.push(lot.itemId);
   buyer.inventory = JSON.stringify(inventory);
   next.auction.splice(index, 1);
@@ -150,5 +182,5 @@ export function buyAuctionItem(input: {
     sellerName: lot.sellerName, buyerId: input.buyerId, buyerName: String(buyer.name || ''),
     price: lot.price, currency: field, fee, createdAt: input.now, status: 'completed',
   });
-  return { snapshot: next, fee, net, lot };
+  return { snapshot: next, fee, net: sellerCredit.credited, burned: sellerCredit.burned, lot };
 }

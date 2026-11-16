@@ -177,3 +177,77 @@ test('round commit fails closed when shared-state recovery occurred before prepa
     rmSync(dataDir, { recursive: true, force: true });
   }
 });
+
+
+test('round commit recovers after every shared-WAL write boundary', () => {
+  const boundaries = [
+    { name: 'journal', status: 91 },
+    { name: 'players', status: 92 },
+    { name: 'dungeonRuns', status: 92 },
+  ] as const;
+  for (const boundary of boundaries) {
+    const dataDir = mkdtempSync(join(tmpdir(), 'misty-dungeon-round-matrix-'));
+    const files = { players: join(dataDir, 'players.json'), dungeonRuns: join(dataDir, 'dungeon_runs.json') };
+    try {
+      const transactionModule = new URL('../src/sharedStateTransactions.ts', import.meta.url).href;
+      const runtimeModule = new URL('../src/sharedStateRuntime.ts', import.meta.url).href;
+      const stateModule = new URL('../src/dungeonRunState.ts', import.meta.url).href;
+      const roundModule = new URL('../src/dungeonRunRoundRuntime.ts', import.meta.url).href;
+      const childScript = `
+        import { createSharedStateTransactionStore } from ${JSON.stringify(transactionModule)};
+        import { createSharedStateRuntime } from ${JSON.stringify(runtimeModule)};
+        import { createDungeonRunRecord, createDungeonRoundPlan } from ${JSON.stringify(stateModule)};
+        import { commitDungeonRunRound } from ${JSON.stringify(roundModule)};
+        const dataDir = ${JSON.stringify(dataDir)};
+        const files = ${JSON.stringify(files)};
+        const base = createDungeonRunRecord({
+          runId: 'run_round_matrix', requestId: 'request_round_matrix', dungeonId: 'dungeon_20',
+          groupId: 'group_1', leaderId: 'p1',
+          participants: [
+            { playerId: 'p1', health: 100, maxHealth: 100 },
+            { playerId: 'p2', health: 80, maxHealth: 100 },
+          ],
+          bossId: 'boss_20', bossHealth: 500, seed: 'seed_round_matrix', now: 100,
+        });
+        const run = { ...base, roundPlan: createDungeonRoundPlan({
+          totalRounds: 2, totalBossDamage: 200, totalIncomingDamageByParticipant: { p1: 40, p2: 20 },
+        }) };
+        const players = Object.fromEntries(run.participantIds.map(id => [id, {
+          id, health: run.participants[id].health, maxHealth: run.participants[id].maxHealth,
+        }]));
+        const boundary = ${JSON.stringify(boundary.name)};
+        const store = createSharedStateTransactionStore({
+          dataDir, files,
+          testHooks: {
+            afterJournalPersisted() { if (boundary === 'journal') process.exit(91); },
+            afterTargetWrite(key) { if (boundary === key) process.exit(92); },
+          },
+        });
+        const runtime = createSharedStateRuntime({
+          shared: store, auction: { recover: () => false }, clans: { recover: () => false },
+        });
+        commitDungeonRunRound({
+          runtime, runId: run.runId, expectedRoundIndex: 0,
+          runs: { [run.runId]: run }, players, now: 200,
+        });
+        process.exit(0);
+      `;
+      const child = spawnSync(process.execPath, ['--import', 'tsx', '--input-type=module', '-e', childScript], {
+        cwd: process.cwd(), encoding: 'utf8', timeout: 10_000,
+      });
+      assert.equal(child.status, boundary.status, child.stderr || child.stdout);
+      assert.equal(existsSync(join(dataDir, 'shared_state_transaction.json')), true, boundary.name);
+      const restarted = createSharedStateTransactionStore({ dataDir, files });
+      assert.equal(restarted.recover(), true, boundary.name);
+      const recoveredRun = readJson(files.dungeonRuns).run_round_matrix;
+      assert.equal(recoveredRun.roundIndex, 1, boundary.name);
+      assert.equal(recoveredRun.encounter.bossHealth, 400, boundary.name);
+      assert.equal(recoveredRun.participants.p1.health, 80, boundary.name);
+      assert.equal(readJson(files.players).p1.health, 80, boundary.name);
+      assert.equal(readJson(files.players).p2.health, 70, boundary.name);
+      assert.equal(existsSync(join(dataDir, 'shared_state_transaction.json')), false, boundary.name);
+    } finally {
+      rmSync(dataDir, { recursive: true, force: true });
+    }
+  }
+});

@@ -1,18 +1,53 @@
 ﻿$ErrorActionPreference = 'Continue'
 $Root = Split-Path -Parent $PSScriptRoot
 $stateFile = Join-Path $Root '.misty-game-processes.json'
-if (Test-Path $stateFile) {
-  try {
-    $state = Get-Content -Raw $stateFile | ConvertFrom-Json
-    foreach ($id in @($state.clientPid, $state.serverPid)) {
-      if ($id) {
-        # Close the command window tree created by this launcher, not every node process on the computer.
-        & taskkill.exe /PID ([int]$id) /T /F 2>$null | Out-Null
-      }
+
+function Test-ServerListener([int]$Port) {
+  $listener = Get-NetTCPConnection -LocalPort $Port -State Listen -ErrorAction SilentlyContinue | Select-Object -First 1
+  return [bool]$listener
+}
+
+if (-not (Test-Path $stateFile)) {
+  Write-Host 'Файл состояния не найден. Сервер не буду завершать принудительно. Если он работает, остановите его из окна сервера сочетанием Ctrl+C.' -ForegroundColor Yellow
+  return
+}
+
+try {
+  $state = Get-Content -Raw $stateFile | ConvertFrom-Json
+  $serverPort = if ($state.serverPort) { [int]$state.serverPort } else { 2567 }
+  $dataDir = if ($state.dataDir) { [string]$state.dataDir } else { Join-Path $Root '.local-data' }
+  $lockFile = Join-Path $dataDir '.misty-server.lock'
+  $serverStopped = (-not (Test-ServerListener $serverPort)) -and (-not (Test-Path $lockFile))
+
+  if (-not $serverStopped -and $state.shutdownToken) {
+    try {
+      $null = Invoke-RestMethod -Uri "http://127.0.0.1:$serverPort/internal/shutdown" -Method Post -Headers @{ 'X-Misty-Shutdown-Token' = [string]$state.shutdownToken } -TimeoutSec 5
+      Write-Host 'Запрошено штатное завершение сервера. Ожидаю сохранения персонажей...' -ForegroundColor Cyan
+    } catch {
+      Write-Host 'Команда остановки не ответила. Проверяю, не завершается ли сервер уже сейчас.' -ForegroundColor Yellow
+    }
+    for ($i = 0; $i -lt 60; $i++) {
+      Start-Sleep -Milliseconds 500
+      if ((-not (Test-ServerListener $serverPort)) -and (-not (Test-Path $lockFile))) { $serverStopped = $true; break }
+    }
+  }
+
+  if ($state.clientPid) {
+    & taskkill.exe /PID ([int]$state.clientPid) /T /F 2>$null | Out-Null
+  }
+
+  if ($serverStopped) {
+    if ($state.serverPid) {
+      # At this point the game server has closed its listener and completed its graceful shutdown.
+      # Force-close only the leftover launcher/watch console tree.
+      & taskkill.exe /PID ([int]$state.serverPid) /T /F 2>$null | Out-Null
     }
     Remove-Item $stateFile -Force -ErrorAction SilentlyContinue
-    Write-Host 'Процессы клиента и сервера, запущенные этим файлом, остановлены.' -ForegroundColor Green
-  } catch { Write-Host 'Не удалось прочитать состояние запуска. Закройте окна сервера и клиента вручную.' -ForegroundColor Yellow }
-} else {
-  Write-Host 'Файл состояния не найден. Если игра работает, закройте её окна сервера и клиента вручную.' -ForegroundColor Yellow
+    Write-Host 'Сервер штатно завершён, клиент остановлен.' -ForegroundColor Green
+  } else {
+    Write-Host 'Сервер всё ещё слушает порт. Не завершаю его принудительно, чтобы не повредить сохранения.' -ForegroundColor Red
+    Write-Host 'Оставил файл состояния. Проверьте окно сервера и повторите остановку позже.' -ForegroundColor Yellow
+  }
+} catch {
+  Write-Host 'Не удалось прочитать состояние запуска. Сервер не будет завершён принудительно.' -ForegroundColor Yellow
 }

@@ -2785,3 +2785,295 @@ PEN-009 стоит 100 кристаллов и при максимальном �
 - Added `dungeon_runs.json` to shared WAL and startup recovery/strict validation after WAL replay.
 - Added unit coverage for snapshot round-trip, terminal idempotency, invalid snapshots, and shared-WAL crash replay including a dungeon snapshot.
 - This is persistence/model foundation only. The synchronous dungeon handler has not yet been replaced, so production active-run resume is not yet enabled.
+
+
+### Equipment combat and set-bonus audit — 2026-11-16
+- Audited the PvP rating path and the legacy hunt/dungeon equipment-stat path against the typed monster combat engine and regression tests.
+- Confirmed intentional PvP compatibility constraints: three-slot legacy set lookup; no five-piece armor slot input; no catalog attributes/combatStats or amulet effect contribution; only current weapon/armor property channels attack, defense and crit affect rating. Existing tests characterize these rules.
+- Current five-piece armor catalog: 64 complete sets; structural validation covers unique IDs, all five slots, profession consistency and set description consistency.
+- Found an integration boundary, not changed for balance safety: typed set/equipment effects are prepared, but production hunt/dungeon callers continue to use legacy attack/defense simulation and selected typed channels; the newer `resolveMonsterBattle()` engine is not wired into `index.ts`. `applyFivePieceSetBonus` is passed to `resolvePlayerMonsterStats()` but unused by the calculation helper.
+- No combat formula, RNG, equipment catalog or set bonus changed. Follow-up requires an approved authoritative mapping of effect channels across hunt/dungeon/PvP.
+- Exact pre-documentation code HEAD `6cadf0677c19f9e0eebc5b01e34217e955784755`: Quality Gate `43785383974` failed 468/469 server tests due to the recurring clan-war nonmember `clanDonate` timeout; client build, data/docs, and Playwright passed. Local tests not run.
+
+
+## Equipment effect-channel coverage audit — 2026-11-16
+- Rechecked PR #18 at code HEAD `690e47b3eb300337652fbeef904c791fb307c1b1`. Quality Gate `43791615786` had client build, Playwright and data/docs completed successfully; server transaction tests were still running at audit time. Do not call the run green until the server job completes.
+- Catalog snapshot: 387 items; 376 have a non-empty `effects` field, 336 have structured `combatStats`; 239 descriptions are meaningful rather than `Нет`. Of those 239, 199 also have structured combatStats; 40 are legacy armor entries with effect descriptions but no combatStats. Their effects are routed through the armor description parser in the legacy player-stat resolver.
+- Parser coverage is intentionally conservative: known descriptions map to typed targets (e.g. magic/physical damage, HP, crit, accuracy, evasion, resistance, healing, loot, production, gold). Several legitimate-looking legacy descriptions currently have no typed target: energy regeneration, astral effect strength, single-target damage, boss resilience, ally recovery, group effect strength, ranged damage, rare-monster damage, and mine efficiency. Semicolon-compound descriptions are rejected as a whole by the parser rather than partially guessed. Some are non-combat/economy effects; the remainder require explicit design mapping before implementation.
+- Structured `combatStats` coverage does not imply every channel is consumed by every live combat mode. Legacy hunt/dungeon handlers select only a subset of typed modifiers, while the newer typed engine is not called from production `index.ts`. PvP remains a separately characterized formula. No new damage/defense behavior was introduced.
+- No code/catalog/balance changes in this stage. No local tests run. Follow-up: approve a canonical target/mode mapping for the currently unmapped legacy descriptions, then add parser and runtime tests before wiring any new combat behavior.
+
+
+## Live equipment stat application audit — 2026-11-16
+- Rechecked PR #18 at code HEAD `ce11e8a4e8e1da4bf9d067ea9c1d9565431d3ded`. Quality Gate run `43791927657` completed with 468/469 server tests: the single failure is the recurring `clanWarRuntime.test.ts` timeout waiting for the nonmember `clanDonate` rejection (10-second wait). Client build, Playwright smoke, and data/docs/structure jobs passed. This is not a combat test failure; server job is failed, so the gate is not green.
+- Traced `resolvePlayerMonsterStats()`, `effectiveMaxHealth()`, the production expedition and synchronous dungeon handlers, the arena PvP handler, `monsterCombatStats.ts`, `monsterBattle.ts`, and the catalog. Production hunt/dungeon still use the legacy attack/defense simulation; the typed `resolveMonsterBattle()` engine remains unwired.
+- Confirmed live-mode channel boundaries: legacy hunt/dungeon callers explicitly forward accuracy, evasion, healing, loot and lifesteal into their current simulation/reward paths. Their live stat projection does not forward typed critChance, critDamage, resistance, controlResistance, magicDamage, physicalDamage, attackSpeed or bossDamage as equivalent combat inputs. PvP is separately intentional: only legacy weapon/armor attack/defense/crit properties, profession coefficients, buffs, random rolls and the three-slot legacy set resolver affect its rating; catalog combatStats, five-piece armor stats and amulet effects remain excluded by regression-tested compatibility rules.
+- Confirmed a concrete description/runtime mismatch to track: legendary catalog armor such as `LEG-МАГ-2` and `LEG-ВОИ-1` explicitly describes +10% maximum HP. The description parser can resolve that clause to typed `health`, but the live `effectiveMaxHealth()` calculation consumes flat legacy `item.health`, structured `combatStats.health`, and the pendant health effect—not the parsed description health modifier. Therefore the advertised percentage clause is not currently applied as an additional max-HP modifier. I did not silently activate it because that changes live HP/balance and requires confirming whether the explicit description is intended to stack with the catalog's existing flat health and structured health stat.
+- Also found that typed crit/resistance/control-resistance channels may be parsed/aggregated but are not equivalent to live hunt/dungeon inputs. This is an engine-integration gap, not evidence that the values are missing from the catalog. No safe global wiring exists without selecting an authoritative combat engine and defining stacking/caps/RNG semantics.
+- Profession-specific attack/defense coefficients and existing Vampire lifesteal / Buffer healing paths remain in the legacy callers. The audit did not change them. No PvP formula, coefficients, item catalog, set descriptions, save schema, RNG order, or reward rules changed; no production combat code changed.
+- Follow-up decisions before implementation: (1) whether explicit legacy description percentages such as max HP stack with existing item stats; (2) which combat channels should be active in hunt and dungeon, with caps and stacking; (3) whether PvP remains intentionally isolated. Add targeted regression tests before any approved activation.
+
+
+## Clan nonmember runtime test contract correction — 2026-11-16
+- Rechecked PR #18 exact HEAD `e3dec2679a7cd8c149a182e3adfa796ccb2f974b`; Quality Gate `43797490206` failed 1/4 jobs. Client build, Playwright browser smoke, and data/docs/structure passed. Server suite failed at `clanWarRuntime.test.ts` with `nonmember rejection for clanDonate timed out` after 10.45s.
+- Root cause confirmed by source and fixture: the nonmember fixture has a stale `player.clan = 'clan-a'` pointer but is intentionally absent from `clan-a.members`. The current roster-authoritative `findPlayerClanMembership()` returns no membership, so `clanDonate` correctly responds `Сначала вступи в клан.`. The test still expected the older `Персонаж не состоит в этом клане.` message and therefore waited until timeout. This is a stale test expectation, not a production handler hang or membership bypass.
+- Updated `server/test/clanWarRuntime.test.ts` to accept either existing nonmember rejection message while continuing to require a fresh notice for every unauthorized action. Existing post-loop assertions still verify no gold/crystal spend, no vault/season/raid/territory/reward mutation, and no war record change. No production logic changed.
+- Test-only commit: `4fd4b96fd1807a8b80a101adda85a1d726dd5352`. No local test execution was available in this connector session. Await the new exact-HEAD Quality Gate before declaring the fix validated.
+- Stop point: monitor CI for this commit. If green, continue the next combat-channel audit; if failing, inspect the new failing test/log rather than assuming the old clan timeout persists.
+
+- Precision follow-up: tightened the regression to assert the single canonical response `Сначала вступи в клан.` for this fixture, rather than accepting either message. This locks the roster-authoritative contract instead of broadening the assertion. Commit `88e5b3ee367c8da9176ec73790c5e6a5a7997cad`.
+
+
+## CI timeout re-investigation — 2026-11-16 (correction)
+- Rechecked PR #18 exact HEAD `e3dec2679a7cd8c149a182e3adfa796ccb2f974b` and completed Quality Gate `43797490206`: client build, Playwright smoke, and data/docs/structure passed; server suite failed 468/469.
+- The failing case is still `clanWarRuntime.test.ts` at the nonmember `clanDonate` notice wait (10.45s). Importantly, the test source at this HEAD already accepts both `Сначала вступи в клан.` and `Персонаж не состоит в этом клане.`; therefore the previous journal entry attributing the remaining timeout solely to the stale expected text was incorrect. Do not treat that as a resolved root cause or claim a validated test fix.
+- Runtime source trace: `onAuthenticatedMessage` verifies session/room ownership, runs recovery, then invokes the handler. `clanDonate` calls `transactClanMutation`, resolves membership from the clan roster (not the legacy `player.clan` pointer), and should emit a notice when no roster membership exists. The transaction wrapper can throw and the handler currently has no local catch, which would suppress the expected notice; the precise thrown error/path is not yet established from available CI output.
+- No production or test change made in this re-investigation. Preserve roster-authoritative membership. Next: inspect shared `commitClan`/WAL transaction path and test fixture state around the first unauthorized request; add narrowly scoped error evidence or fix only after reproducing the exact cause. Do not widen the test to accept arbitrary messages.
+- Other combat-channel audit remains as recorded above; no balance changes authorized or made.
+
+
+## Clan donation timeout instrumentation — 2026-11-16
+- Verified current source after the previous correction: `clanWarRuntime.test.ts` deliberately expects the canonical roster-authoritative response `Сначала вступи в клан.`; commit `88e5b3ee367c8da9176ec73790c5e6a5a7997cad` tightened the assertion from accepting either message. The handler source also returns exactly this canonical response when `findPlayerClanMembership()` returns null.
+- Traced the request path: authenticated message wrapper performs session verification and pending player-WAL recovery; `clanDonate` then calls `transactClanMutation`; on the nonmember path the transaction returns an error result, after which `this.notice()` calls `save()` before sending the notice. Therefore a persistence exception during this final save is a plausible point where the response can be lost, but it is not yet proven.
+- Added test-only diagnostics in `server/test/clanWarRuntime.test.ts`: the isolated server's stderr is captured and appended to the timeout error for the nonmember action loop. This does not change production behavior, clan membership rules, or the expected message. Commit `3e20af22db7a03b71733af2d83d13b6fc09d8edc`.
+- At the time of this entry, prior Quality Gate `43798030467` still had its server transaction test step running; its final result is not yet known. The new diagnostic commit is awaiting its own CI run.
+- Combat coverage spot-check: `monsterCombat.test.ts` already has extensive unit coverage for typed modifiers, HP normalization, accuracy/evasion, healing/lifesteal, criticals, resistance, set tiers, and deterministic party matrices. `pvpCombat.test.ts` explicitly protects the legacy PvP formula and exclusion boundaries. The gap is production integration/route coverage, not absence of unit-level typed combat tests. No combat code or balance changed.
+- Next: read stderr from the instrumented CI failure if it reproduces; only then fix the proven production/test issue. Keep the live typed combat engine unwired until design mapping is approved.
+
+
+## Clan nonmember rejection test correction — 2026-11-16
+- Inspected Quality Gate `43798297230` on HEAD `69495d3a0a0ab260185d8dc5a33c45dbf752e7db`: data/docs, client build and Playwright passed; server suite failed in `clanWarRuntime.test.ts` at the **clanRaid** nonmember rejection (10.588s). The added isolated-server stderr capture was empty, so there is no evidence of a server crash or persistence exception.
+- Root cause is a test expectation defect: the loop incorrectly required every unauthorized clan action to return `Сначала вступи в клан.`, but the production `clanRaid` handler intentionally returns `Для кланового похода нужен клан.`. The handler's membership rejection is correct; the generic test expectation was not.
+- Corrected the test to map each action to its actual canonical rejection text. `clanDonate` and the other listed handlers retain `Сначала вступи в клан.`; `clanRaid` now expects its own established message. No production behavior, economy, membership rules, or game balance changed.
+- Test fix commit: `a77f5e62321c3f19aae808bf9c02d9e9c49b008b`. Awaiting Quality Gate on this exact HEAD. Do not call the fix validated until CI confirms it.
+
+
+## Clan runtime test fixed and full Quality Gate passed — 2026-11-16
+- Rechecked previous failing Quality Gate `43798297230`: server test failure was at `clanRaid`, not `clanDonate`; isolated-server stderr was empty. The test incorrectly expected the same response from every unauthorized clan action although the production raid handler has its own established message.
+- Fixed the assertion with action-specific expected messages in `server/test/clanWarRuntime.test.ts` (commit `a77f5e62321c3f19aae808bf9c02d9e9c49b008b`). No production gameplay code changed.
+- Verified latest HEAD `41c86c954cced41a1c358d16fee403e95fcf6b73`: Quality Gate run `43832528775` completed all four jobs successfully: server test suite + TypeScript build, client TypeScript/Vite build, Playwright browser smoke tests, and data/docs/project structure. A second run `43832537305` also completed all four jobs successfully on the same HEAD.
+- Equipment/combat integration recheck: production `index.ts` imports and calls `calculatePlayerMonsterCombatStats()`, but does not import/call `buildPlayerCombatantForMonsterBattle()` or `resolveMonsterBattle()`. The synchronous live dungeon path `runExpeditionDungeon()` still builds a legacy `calculateDungeonCombatPlan()` from selected resolved totals/channels. This confirms the newer typed battle engine remains unit-tested but is not the live combat engine.
+- Do not wire it automatically: damage type, critical chance/multiplier, accuracy scale, initiative, healing-action selection, status effects, HP/death semantics, RNG sequence and reward/report behavior need a canonical compatibility mapping and regression matrix first. No combat coefficients, game balance, items, or PvP formula changed.
+- PR #18 remains Draft/open/unmerged; `main` untouched.
+
+
+## Typed monster combat channel trace — 2026-11-16
+- Re-traced `resolvePlayerMonsterStats()` in production `index.ts`, `calculatePlayerMonsterCombatStats()`, `buildPlayerCombatantForMonsterBattle()`, and `resolveMonsterBattle()`.
+- The stat resolver currently prepares typed modifiers from equipped catalog `combatStats`, parseable legacy equipment descriptions, legacy/new set tier descriptions, pendant properties, weapon profile and active buffs. This is a prepared data path only; production hunt/dungeon handlers still consume legacy totals and selected channels, not the typed combatant/result.
+- Typed engine channel behavior reviewed: attack/defense bonuses, accuracy vs monster evasion, player evasion, crit chance/multiplier/damage, physical/magic damage, boss damage, resistance, control resistance, attack speed/initiative, healing, lifesteal, and health normalization. Monster passive interactions and damage-type/weakness matching remain in the typed engine.
+- Adapter deliberately leaves base crit chance/multiplier and normalized accuracy optional; production resolver does not yet provide canonical values. Do not infer these from item stats or invent defaults during migration. Likewise, `applyFivePieceSetBonus` is carried through the stats input but is not consumed by the typed aggregation path; no assumption should be made that it currently changes the calculated tier list.
+- No confirmed arithmetic defect was found in the narrow adapter/stat path inspected this stage. In particular, the speed adapter passes the already-resolved dexterity sum through an additive speed function, so it does not apply a second multiplier.
+- Migration prerequisites remain: define authoritative damage type per profession/weapon, base crit chance/multiplier, accuracy scale, healing-action selection, active-buff treatment, five-piece dungeon-vs-expedition semantics, and the exact preservation contract for RNG, round/turn order, HP/death, reward/report and quest side effects. Add parity tests against current legacy hunt and dungeon outcomes before any production routing change.
+- No source/gameplay code, combat formulas, item stats, RNG, rewards, PvP behavior or balance changed. CI on HEAD `9a6fb8b9174b0b5c845fe7b3a3258f5c31959d26`: data/docs, client build and Playwright passed; server TypeScript build remained in progress at audit time in runs `43835702085` and `43835709707`. Not yet a complete green gate.
+- PR #18 remains Draft/open/unmerged; `main` untouched.
+
+
+## Legacy PvE formula and passive compatibility audit — 2026-11-16
+- Verified PR HEAD `45bc3b21c27afb3a89151f933590fdb844c0ed12`: Quality Gate passed 4/4 (server TypeScript, client build, Playwright, data/docs) in run `43836054196`.
+- Rechecked the legacy dungeon calculation against its pure helper and regression tests: party scaling, per-member damage, Knight group guard, boss hit/accuracy/evasion, strict survival condition and the three-round victory gate match the currently encoded contract. No arithmetic drift was established in the inspected formulas.
+- Traced legacy passive compatibility. Static passive channels are applied by the legacy helpers; HP-threshold, first-attack, per-round, poison, debuff and buff-suppression mechanics require the typed turn-based engine and are not faithfully representable in the aggregate legacy plan.
+- Confirmed a documented compatibility gap: `parseMonsterWeakness('Огненный урон +25%')` returns a fire damage-type weakness, but `resolveLegacyMonsterWeaknessMultiplier()` intentionally returns 1 for damage-type weaknesses because the legacy aggregate path has no canonical player damage-type mapping. A regression test explicitly locks this behavior. The typed engine does apply fire weakness when a combatant is explicitly typed as fire. No guessed profession-to-fire mapping was added.
+- Current legacy mapping treats only Боевой маг as magical resistance; other professions are treated as physical. This is documented compatibility behavior, not evidence that the profession damage-type design is complete.
+- No safe production fix was made this stage: enabling fire weakness or dynamic passive behavior in the aggregate path without authoritative damage-type mapping / turn-state semantics would alter combat balance and could diverge from the typed engine. No changes to combat formulas, drops, RNG, rewards, PvP, saves or economy.
+- PR #18 remains Draft/open/unmerged; `main` untouched.
+
+
+## Equipment catalog and rare-property PvE routing audit — 2026-11-16
+- Rechecked PR #18 HEAD `ba8ee55c3667726f7c4152e5c636396fc1a16c30`: all 8 reported Quality Gate check runs completed successfully (two duplicate four-job sets: server TypeScript, client TypeScript/Vite, Playwright browser smoke, data/docs/structure). PR remains Draft/open/unmerged.
+- Inspected all 387 records in `server/data/equipment_catalog.json`: 376 carry an `effects` field, 336 carry `combatStats`, and 64 armor sets are represented. Catalog combat-stat keys currently include accuracy, physical/magic damage, critical chance/damage, healing, lifesteal, loot, control resistance, resistance, health, evasion and attack speed. No duplicate application was established between the descriptive strings and structured stats: strings such as `Нет` and unquantified descriptions are not accepted as numeric effect clauses; structured `combatStats` is the numeric source for those items.
+- Confirmed production routing gap for rare properties. `RARE_PROPERTIES` defines five effects: critical (+5% crit chance), leech (description says heal 3% max HP after victory), hunter (+12% gold and drop chance), bulwark (+8% defense), arcane (+8% attack). `resolvePlayerMonsterStats()` resolves these through `resolveMonsterCombatProperty()` into typed modifiers, but live hunt/dungeon handlers consume only selected legacy outputs (accuracy, evasion, healing, loot, lifesteal) and do not consume the typed combatant result. Thus critical, bulwark and arcane currently do not affect live legacy PvE attack/defense/crit calculations.
+- Confirmed description/implementation mismatches: leech is represented as a lifesteal rate and legacy victory recovery uses a fraction of player attack, not 3% of maximum HP; hunter's `loot` channel changes drop chance but is not a gold-reward multiplier. These are gameplay/economy semantics, so no coefficient or reward mutation was made without a defined stacking and balance contract.
+- Catalog armor `combatStats.health` is applied to live maximum HP through `effectiveMaxHealth()`. The typed health modifier is not independently applied by the typed health-normalization helper, avoiding a second application in the current legacy health path. Older legacy armor descriptions claiming max-HP bonuses without numeric `combatStats.health` remain a separate compatibility/data-definition gap; do not infer missing values from prose.
+- Equipment-set descriptions are parsed only when explicit numeric clauses are present and the required piece threshold is met. The new structured equipment-set effect schema is validated separately, but production hunt/dungeon routing remains legacy; no automatic migration of structured set effects was attempted.
+- No safe balance-neutral production fix was identified. Do not activate typed crit/attack/defense effects in legacy combat without parity tests and a migration contract; do not reinterpret leech/hunter without explicit reward semantics. No item values, drop chances, gold rewards, combat formulas, RNG, PvP or economy changed.
+- PR #18 remains Draft/open/unmerged; `main` untouched.
+
+
+## Equipment effect-channel parity matrix — 2026-11-16
+- PR #18 Quality Gate run `43837956085` completed successfully on HEAD `a7ea120d2d85bcb2c106ecf3d9e8976b70eab747` (all four jobs green).
+- Traced the production arena call site, production legacy hunt/dungeon call sites, the player-stat adapter, typed combat engine, and regression tests. The matrix below describes actual current runtime wiring, not intended design.
+- **Arena PvP:** consumes equipped weapon attack/enhancement, equipped armor defense/enhancement, rare property on weapon (attack or crit) and armor (defense or crit), existing three-slot set lookup (weapon/armor/amulet, at least two matching IDs), profession multipliers and active attack/defense/crit buffs. It intentionally ignores catalog attributes/combatStats, amulet effects/properties, the four additional armor slots, and modern five-piece armor sets. Tests explicitly lock this narrower contract. No change.
+- **Legacy hunt:** consumes weapon/armor base attack/defense and their enhancement, relevant attributes, profession modifiers, selected typed accuracy/evasion/healing/loot/lifesteal outputs, passive/weakness legacy helpers, and the Gatherer baseline drop chance. The typed attack/defense/crit/resistance/damage-type/attack-speed/boss-damage modifiers are not applied to the legacy hit/damage formula. Rare-property critical/bulwark/arcane are therefore inert in this path. Equipment loot/lifesteal channels can flow through their selected legacy outputs.
+- **Legacy dungeon:** same selected legacy channel adapter, but calls the resolver with `applyFivePieceSetBonus:false`; ordinary hunt passes `true`. Inspection confirms this option is forwarded into the typed stats calculator but no branch consumes it there. It therefore does not currently establish a reliable difference in five-piece bonus application. Both modes still use the legacy synchronous combat plan.
+- **Typed monster engine (not production-wired):** supports typed critical chance/damage, physical/magic damage, resistance/control resistance, attack speed, boss damage, accuracy/evasion, healing/lifesteal and turn-based passive effects. `resolvePlayerMonsterStats()` builds typed effects from equipped catalog `combatStats`, parseable armor descriptions, legacy set descriptions, rare properties, pendant, profile and buffs; however the production hunt/dungeon handlers do not pass the resulting combatant into `resolveMonsterBattle()`.
+- **Five-piece armor sets:** 64 catalog sets are structurally validated. Set descriptions are parsed into typed modifiers; legacy set effects are passed to the typed aggregation, and the `applyFivePieceSetBonus` option currently has no effective gate in `calculatePlayerMonsterCombatStats()`. PvP instead retains its separate three-slot/two-match legacy set policy. Do not unify these contracts without design approval.
+- **Health / pendants:** equipped armor health and health pendant are applied by the legacy `effectiveMaxHealth()`; typed health is not independently applied in that live normalization path. Pendant XP/gold/regen and other legacy-supported pendant effects are handled by their dedicated progression/reward/regen paths, not by PvP rating. Avoid double-applying health.
+- **Confirmed no safe balance-neutral gameplay patch:** gaps are integration/design differences, not isolated parsing defects. Wiring typed crit/defense/attack into legacy PvE, enabling set tiers, or changing PvP slot scope would alter outcomes. No gameplay, catalog, reward, RNG or economy code changed.
+- Follow-up: produce an approved effect-to-mode contract and parity tests before migrating legacy hunt/dungeon to typed combat. PR #18 remains Draft/open/unmerged; `main` untouched.
+
+
+## Equipment effect contract drafted — 2026-11-16
+- Added EQUIPMENT_COMBAT_EFFECT_CONTRACT.md as an audit/design artifact. It distinguishes confirmed live behavior across legacy hunt, synchronous dungeon, arena PvP and the disconnected typed engine from candidate semantics that still require approval.
+- Recorded explicit mode/channel boundaries, stacking and cap questions, HP double-application risk, the unused applyFivePieceSetBonus gate, and the unresolved leech/hunter descriptions. The document does not activate effects or decide balance.
+- Reconfirmed current PR #18 Quality Gate run 43838788643: all four jobs (server TypeScript, client build, data/docs/structure, Playwright smoke) have completed successfully. The workflow summary had still shown in_progress at the first poll; job-level results are all success. Verify final workflow conclusion on the new documentation HEAD.
+- No production code, catalog, combat coefficients, RNG, rewards, saves, PvP behavior or economy changed. PR #18 remains Draft/open/unmerged; main untouched.
+
+
+## PvE parity coverage deep-dive — 2026-11-16
+- Rechecked exact HEAD `1e01ccae6ab854c2793e2c0269d5037f2248c6b2`: Quality Gate run `43880401067` completed successfully, all 4/4 jobs green.
+- Audited existing monster, dungeon math/health/drop/report/quest/replay tests against production handler code. Dungeon pure math has deterministic solo/party coverage and DUN-TRIO-01; drop helper has injected RNG/order tests; report and prepared settlement helpers have focused assertions. Expedition runtime safety tests cover group/disconnect behavior, not complete combat/reward parity.
+- Confirmed the live expedition claim still owns inline combat arithmetic and external random decisions: monster selection, per-drop rolls in source order, then per-drop recipient selection. Victory is limited to <=8 rounds and every participant must have HP strictly greater than incoming damage. No complete expedition golden settlement fixture currently locks HP, counters, rewards, loot allocation, quest progress, reports, events and persistence together.
+- Expanded `LEGACY_PVE_COMBAT_PARITY_FIXTURES.md` with exact test ownership, expedition deterministic/RNG boundaries, prioritized gaps and safe extraction constraints (commit `146e3cba0a242131752296500b44425df32f2bec`).
+- No production code or test behavior changed. No combat formulas, random calls, reward/quest semantics, catalog, save or economy behavior changed. Next implementation candidate: extract only expedition arithmetic into a pure helper and compare golden outputs before replacing the inline calculation; RNG and settlement remain in the handler.
+- PR #18 remains Draft/open/unmerged; `main` untouched. New documentation HEAD requires a fresh Quality Gate.
+
+
+## Expedition combat arithmetic extraction — 2026-11-16
+- Extracted only the deterministic legacy expedition calculation into `server/src/expeditionCombatMath.ts` and routed `expeditionSearchClaim` through it.
+- Preserved the current arithmetic order for party HP scaling (+55% per additional participant), monster defense/attack passive multipliers, participant DPS modifiers, minimum DPS denominator, ceiling round count, incoming damage floors, Knight group guard, profession damage and evasion multipliers, the eight-round cap, and strict positive-survival victory condition.
+- Passive/weakness/evasion resolution remains in the handler and is passed as resolved multipliers. Monster selection, all random draws, optional-drop roll order, drop recipient selection, health/lifesteal/buffer healing, rewards, quests, reports, activity, persistence and network sends remain in their existing code paths.
+- Added solo/duo/trio characterization tests, mixed modifier coverage, zero-DPS minimum, >8-round loss, and exact-lethal versus one-HP-above boundary tests. Added the test to the server test script.
+- Commits: helper `c5e3404`; fixtures `35c9a80`; handler integration `89b020f`; test script `2b801b1`.
+- No RNG calls were added, removed or reordered. No combat coefficients, balance, rewards, saves or PvP behavior were intentionally changed. CI for exact HEAD `2b801b17a80f560d2b29ce049e78eaebbf776833` is pending/not yet visible; do not treat the new code as validated until all four Quality Gate jobs pass.
+- PR #18 remains Draft/open/unmerged; `main` untouched.
+
+
+## Expedition combat CI follow-up — 2026-11-16
+- Quality Gate `43905783014` failed only in the new test `every participant must survive and rounds greater than eight lose`; 474/475 server tests passed, while client build, browser smoke and data/docs checks passed.
+- Failure was a fixture setup error, not a production formula defect: `monsterHp: 900` with the chosen party DPS did not produce more than eight rounds. Increased this fixture-only monster HP to `9000` so it actually exercises the >8-round loss branch.
+- No production source or combat coefficients changed in this correction. Exact rerun is required before treating the branch as validated.
+- Fix commit: `4fc0a65cad1db7968d5a63fcde427b195bc6fb6f`.
+
+
+## Expedition legacy-formula comparison matrix — 2026-11-16
+- Added a deterministic 36-scenario comparison test that independently evaluates the prior inline arithmetic and deep-compares every result field against `calculateExpeditionCombatPlan`.
+- Scenarios vary party sizes 1–3, attack/defense/health, resistance/weakness/hit modifiers, incoming profession/evasion modifiers, monster HP/defense/attack and Knight guard.
+- The earlier Quality Gate failure was isolated to an insufficient >8-round fixture input; that fixture was increased from 900 to 9000 HP. This does not modify production formulas.
+- The correction commit is `4fc0a65`; the parity matrix commit is `fc9bf89`. GitHub Actions has not yet exposed a run for the latest branch head, so neither the fixture correction nor parity matrix is considered CI-validated yet.
+
+
+## Dungeon content/configuration audit — 2026-11-16
+- Quality Gate 43908403266 passed on exact HEAD 5fc6a9b44e64f693e241994f72e026d2b9953151: all 4/4 jobs green (server TypeScript, client build, Playwright smoke, data/docs/structure).
+- Traced the four dungeon records in server/data/forgotten_lands.json into DUNGEONS and the live runExpeditionDungeon() handler.
+- Confirmed each dungeon currently contains one bossId; the live handler resolves and fights exactly that one boss. rooms is three descriptive strings, not a combat roster. There are no configured monster counts, waves, per-room enemy IDs, or spawn rules. Editing rooms alone does not add/remove enemies.
+- Confirmed min, power, xp, gold, resource, and bossId are live configuration inputs and changing them can affect access, combat, rewards, loot, or boss resolution.
+- The immutable prepared-encounter and durable run/WAL helpers are foundations only; production still runs one synchronous boss encounter and does not call durable start/round/finalization. Durable result outbox delivery is live, but it is not resumable wave progression.
+- Added a detailed safe migration sequence to DUNGEON_LIFECYCLE_DESIGN.md: versioned wave schema, strict content validation, exact legacy single-boss adapter, golden parity fixtures, then staged multi-enemy runtime wiring and crash/idempotency coverage.
+- No production code, dungeon data, balance, RNG, rewards, saves, or client behavior changed. PR #18 remains Draft/open/unmerged; main untouched.
+
+
+## Versioned dungeon encounter configuration foundation — 2026-11-16
+- Added server/data/dungeon_encounters.json (schemaVersion 1) with explicit ordered encounters, waves and spawn counts. Each of the four existing dungeons maps to exactly one encounter, one wave and one spawn of its existing bossId.
+- Added pure server/src/dungeonEncounterConfig.ts to validate schema version, dungeon/monster references, complete dungeon coverage, unique IDs, non-empty structures, safe spawn counts and total expansion limits; it deterministically expands counts without RNG or side effects.
+- Added server/test/dungeonEncounterConfig.test.ts and registered it in server/package.json. Tests cover actual checked-in config parity with forgotten_lands.json, legacy boss preservation, ordering/count expansion, unknown references, invalid counts, duplicate IDs, empty waves and safety limits.
+- Deliberately not wired into production dungeon execution. Existing live handler remains unchanged and continues its synchronous single-boss flow. No combat/RNG/reward/save/client/economy changes.
+- Exact previous HEAD 6c0eee2013d728e90d7fd1b14ae959a047dcf0d6 passed Quality Gate 43911118722 4/4. New config/helper/tests/docs HEAD requires its own Quality Gate.
+- PR #18 remains Draft/open/unmerged; main untouched.
+
+
+## Legacy dungeon adapter boundary — 2026-11-16
+- Added resolveLegacyDungeonBossId(): only permits projection when a validated dungeon has exactly one encounter, one wave and one monster spawn. Multi-wave/multi-enemy definitions fail closed.
+- Added regression tests for exact existing boss IDs across all four dungeons and for rejecting multi-encounter, multi-wave and multi-monster structures.
+- Corrected aggregate-limit test fixture after Quality Gate 43923382306 failed one new test: the prior count=101 hit the stricter per-spawn maximum first; the revised test uses six legal waves of 20 to test the aggregate 100 limit. Other three CI jobs passed.
+- Production handler is not yet wired to the adapter and remains unchanged.
+
+
+### CI follow-up — 2026-11-16
+Quality Gate 43931230374 failed because the new dungeon test file contained a literal `\n` token (syntax error), not because of production code. Corrected the source newline in commit 95b8b817fe06be814aa4f3c8de25403e828146b6; latest commit CI must be checked before treating this stage as green.
+
+
+### CI correction — 2026-11-16 (follow-up)
+- Run 43936898345 failed again in `server/test/dungeonEncounterConfig.test.ts:67`: the literal escaped newline was still present despite the earlier attempted correction.
+- Fixed the actual source in commit `dca7f4e3b8b3bf57237835cdc4e777225c813c77`; verified the fetched file now contains a real newline between the fixture and assertion.
+- Quality Gate 43946425041: data/docs and client jobs passed; server and Playwright jobs were in progress at last inspection. Do not mark CI green until all four jobs complete successfully.
+- Production dungeon combat remains unchanged; PR #18 remains Draft/open/unmerged; `main` untouched.
+
+
+## Multi-wave dungeon runtime integration audit — 2026-11-16
+- Quality Gate `43946549140` completed successfully on exact code HEAD `a4254a7299b50e4a8589b23537281a1494e01cb4`: all four jobs passed (server build/tests, client build, Playwright smoke, data/docs structure).
+- Traced production `dungeonRun` through `runExpeditionDungeon`: it still resolves one `dungeon.bossId`, computes one aggregate combat plan, rolls/allots drops once, and settles all players synchronously.
+- Durable `DungeonRunRecord` and `PreparedDungeonEncounter` still represent a single boss and aggregate result; round plans distribute already-computed aggregate damage and do not simulate waves/enemy turns. Durable start/round/finalization commits remain disconnected from the production handler.
+- Added `DUNGEON_WAVE_RUNTIME_CONTRACT.md` documenting the required frozen content snapshot, encounter/wave cursor, active enemy roster, deterministic RNG/prepared result, atomic transitions, single terminal settlement, and the decisions/tests required before wiring.
+- Explicit unresolved semantics include three-round scope, per-wave vs terminal healing/drop/reward policy, intermediate death vs HP clamp, passive/buff recalculation, leader AFK/death, and run schema migration. No speculative gameplay choices were made.
+- No production combat, RNG, drops, rewards, persistence, client protocol, economy, or balance changes. PR #18 remains Draft/open/unmerged; `main` untouched.
+
+
+
+## Durable dungeon transition invariant audit — 2026-11-16
+- Confirmed startup validation checks roster identity, health/status, round-plan dimensions/cursors, boss snapshot bounds, prepared-encounter identity and terminal marker shape.
+- Found that the exported manual round transition could accept participant HP=0 or above max HP and could advance a run while leaving a deterministic round-plan cursor behind. It also silently ignored extra participant HP entries.
+- Hardened `advanceDungeonRunRound()`: exact participant snapshot cardinality, strictly positive HP bounded by each participant's max HP, boss HP bounded by max HP, no bypass of deterministic planned rounds, and validation of the resulting durable record.
+- Found that direct `finishDungeonRun()` could bypass the unresolved-round guard already present in the finalization transaction. Added the same guard for win/loss at the state-transition boundary.
+- Added regression tests for zero/over-max HP, extra participant entries, planned-round bypass, and premature terminal completion.
+- No live production handler wiring, combat formulas, RNG, rewards, dungeon content, client behavior, or balance changed. Latest code commits: `d43485a`, `b0944cf`; CI must be checked on final HEAD.
+- PR #18 remains Draft/open/unmerged; `main` untouched.
+
+
+## Dungeon result outbox integrity audit — 2026-11-16
+- Quality Gate 43952636862 passed on exact prior HEAD 642815b22bb5293f6a310e51673742f1fa9569e2: all 4/4 jobs green (server build/transaction recovery, client build, data/docs structure, Playwright smoke).
+- Traced the live legacy dungeon result path: player snapshots and per-player result events are committed together through shared WAL; login and post-settlement dispatch pending events; acknowledgement is persisted only after transport send.
+- Confirmed delivery is deliberately at-least-once. A crash after transport acceptance but before acknowledgement can replay the same event. Client claimDungeonResultEvent() deduplicates by stable event ID in session and localStorage; this is not exactly-once transport.
+- Found the outbox reader previously checked only the root object and silently filtered key/event-ID mismatches or malformed event records during dispatch. Such records could remain pending forever without an actionable corruption error.
+- Added strict outbox validation for key/event identity, required event fields, object payload, pending/delivered status, finite creation timestamp and required delivered timestamp. Validation now runs before enqueue and dispatch, and before acknowledgement.
+- Added regression tests for malformed keys, invalid status, missing delivery timestamp and fail-closed acknowledgement. Existing crash/replay tests continue to define at-least-once semantics.
+- No change to event payloads, event ordering, send-before-ack ordering, client dedup policy, combat/rewards, production multi-wave wiring or balance. New code commits: aa4d774, 046723b, 2bf19ec, 0c76059, b3fd4fa. New Quality Gate must pass on the final documentation HEAD.
+- PR #18 remains Draft/open/unmerged; main untouched.
+
+
+## Prepared encounter / durable round consistency audit — 2026-11-16
+- Quality Gate 43953631192 passed 4/4 on prior HEAD 5eeaad7e1010e6bc20dfd8aeb8de3a7e9ee04248.
+- Audited prepared encounter attachment, durable run recovery, round cursor validation, and WAL recovery tests. Existing code already persists the prepared settlement immutably and finalizes only from that snapshot; round-plan cursor and participant schedules are checked on load.
+- Found a missing cross-check: a correctly identified run/roster could accept a prepared snapshot whose hpBefore did not match the durable participant health, or whose embedded player snapshot ID referred to another player. This could let stale or misbound settlement data replace newer player state at finalization.
+- Hardened prepareDungeonEncounterCommit to bind each prepared participant's hpBefore to the current durable run participant and reject mismatched embedded player IDs. Added the same invariant to validateDungeonRunStore so startup/recovery rejects corrupted detached snapshots.
+- Added regression tests for stale HP, wrong embedded player identity, and recovery of a prepared snapshot detached from durable participant state.
+- No combat formulas, RNG, drops, reward amounts, round splitting, death/revival rules, live multi-wave wiring, or client protocol changed. Code commits: 4a818b8, 331d454, 97453bb, 7e690cb. New Quality Gate must pass on final HEAD.
+- PR #18 remains Draft/open/unmerged; main untouched.
+
+
+## Dungeon terminal settlement atomicity audit (2026-11-17)
+
+- Verified PR #18 Quality Gate run 43960204529 on HEAD 5102293f7e4bc3755ad87551620910bb18d53943: all four jobs succeeded (Playwright browser smoke tests, data/docs/project structure, server TypeScript build, client TypeScript/Vite build).
+- Traced the live legacy `Room.runExpeditionDungeon()` path through `prepareDungeonMemberQuestSettlement()`, `persistDungeonResultPlayers()`, shared-state WAL, outbox enqueue, reconnect dispatch and acknowledgement.
+- In the current live path, each participant's player snapshot contains HP, consumed daily attempt, battle/victory counters, XP/gold, inventory/drop allocation, activity counters/log, combat history and the request replay cache. All participating player snapshots and the result outbox are written in one shared WAL transaction. Thus these player-side settlement fields and event enqueue are atomic with each other; the outbox is not a separate post-commit write.
+- On a pre-journal failure, live player objects are restored from rollback snapshots. If a journal remains after partial application, online players are reconciled from disk and startup/next transaction replays the complete journal. Event delivery is intentionally at-least-once: send occurs before durable acknowledgement, and the client deduplicates by eventId.
+- Important boundary: live `runExpeditionDungeon()` does not create or finalize a durable `DungeonRunRecord`. Its request event uses synthetic `legacy_<requestId>` as runId; terminal durable run status/claim marker is therefore not committed alongside live player settlement. The durable `commitCommittedDungeonEncounterFinalization()` path can atomically write players + terminal run + outbox, but it is not wired into the live handler.
+- Legacy replay cache remains request-ID based and does not bind the request ID to dungeon/group/leader/ordered roster. This is a known limitation; do not claim durable run-level replay protection in production.
+- No gameplay code changed in this audit: enabling the durable path safely still requires complete preparation/recovery integration and resolution of the already documented death/round/multi-wave semantics. Do not partially switch the live handler.
+- No balance, combat formula, RNG order, reward allocation, quest semantics, client protocol, or real player data changed.
+- PR #18 remains Draft/open/unmerged; main untouched.
+
+
+## Legacy dungeon request replay identity hardening (2026-11-17)
+
+- Found a production replay-boundary gap: legacy dungeon results were looked up by requestId alone. A reused ID could replay a saved report for a different dungeon or party. If only one member had a matching record, the handler returned early and replayed to only the members whose local cache happened to match.
+- Added `dungeonLegacyRequestReplay.ts`: replay now requires a complete matching cache entry for every participant in the exact ordered roster, and validates dungeonId, groupId, leaderId and participantIds. Partial cache, pre-binding legacy entries, malformed roster and any identity mismatch fail closed with a notice; no combat is rerun and no reward is issued on that conflict path.
+- New successful legacy settlements persist the immutable request binding in each participant's request-history entry. Both win and loss paths use the same binding. The compatibility `dungeonLastRequest` fallback is still checked, but a pre-binding record is rejected rather than trusted.
+- Added pure regression coverage for valid group replay, unknown requests, partial member cache, cross-dungeon/group/leader/ordered-roster reuse, pre-binding records and malformed participant order. Added an end-to-end group runtime regression that attempts to reuse a completed request ID for another dungeon and verifies neither member receives another result.
+- The request cache is still intentionally bounded to the latest five records per player; this change does not create a global permanent request-ID registry. A request evicted from all participants' histories is no longer recognizable as a replay. Durable run-level idempotency remains a prerequisite for the future durable lifecycle.
+- Existing pre-migration request records without identity binding now fail closed if encountered as replay candidates; users must create a fresh request rather than risk replaying an unbound result. No player migration or destructive cleanup was performed.
+- Combat formulas, RNG order, attempts, XP/gold/drop allocation, quests, health, client protocol and durable multi-wave wiring are otherwise unchanged. Added tests have not yet been run locally; require the new exact-HEAD Quality Gate.
+- PR #18 remains Draft/open/unmerged; main untouched.
+
+
+## Dungeon replay after restart / partial WAL recovery (2026-11-17)
+
+- Confirmed legacy replay identity is persisted inside each participant's `quests` JSON in `players.json`; the replay path reads the saved player state, not an in-memory request map. Persisted `hunt_groups.json` restores the exact roster/group identity at startup.
+- Added an end-to-end group runtime test that completes a dungeon, stops the server process, restarts against the same data directory, reconnects all participants, and retries the same requestId. The expected replay returns the saved result to both participants without awarding gold or consuming another attempt. The test then verifies cross-dungeon reuse remains rejected after restart.
+- Extended the WAL/outbox crash-recovery test so the player snapshot contains the request binding and result history at the same time as the pending outbox event. The simulated process exits after the players target is written but before the outbox target; restart replays the single journal and restores both exact snapshots.
+- Existing shared-state transaction tests already cover process death immediately after journal publication and after each target write boundary, including players, dungeonRuns and dungeonOutbox. Combined with the new payload fixture, this checks that request history is not detached from its result event during partial recovery.
+- No production behavior change in this stage; tests only. The request cache remains bounded to five entries per player, and a request evicted from every participant history is no longer recognizable. Corrupt/unreadable WAL continues to block startup/writes fail-closed; this stage does not add speculative repair or mutate player saves.
+- New integration and WAL tests are part of the existing server test script. They are committed but have not yet run locally; require exact-HEAD CI.
+
+
+## Group membership and offline dungeon-entry audit (2026-11-17)
+
+- Startup restores the persisted group roster from `hunt_groups.json` after shared WAL recovery; malformed rosters, duplicate group IDs, duplicate player membership, invalid leaders, and party sizes above three fail closed.
+- Disconnect preserves the roster slot. The leaving player's saved expedition association is cleared, while remaining online members retain the group ID; reconnect rehydrates the association from the persisted roster.
+- Legacy dungeon entry snapshots the full roster and requires every member to be present in `ONLINE_PLAYERS` before attempt checks, combat, or settlement. An offline member therefore blocks the whole party; no partial solo/group battle is started and no attempt/reward mutation occurs.
+- Added runtime regression coverage for disconnecting a member, confirming their offline roster slot remains, rejecting leader dungeon entry, asserting both players' gold and daily attempts remain unchanged, then reconnecting the member before the existing full-group win/loss checks.
+- Corrected the prior replay regression to use an existing second dungeon ID (`fl_dungeon_06`), so the cross-dungeon request binding check reaches the intended handler. Corrected the unit test's reversed-roster case to reverse the participant snapshots too; malformed caller order is tested separately as `invalid`, while a valid reordered identity is `identity` conflict.
+- CI for prior HEAD `11d0242e` exposed these two test defects (not production failures): unit expected `identity` where its own participant order was invalid, and runtime test used nonexistent `fl_dungeon_02`, so it timed out before replay validation. Fixes are included here; await new exact-HEAD CI.
+- No production behavior changed. Active dungeon combat remains synchronous legacy settlement; durable resumable run lifecycle remains unwired.
+
+
+## Group dungeon replay fixture correction (2026-11-17)
+- The latest Quality Gate exposed one test-only timeout in `groupDungeonRuntime.test.ts`: the cross-dungeon replay fixture used `fl_dungeon_06` (minimum level 12), but the seeded leader remained level 5, so the public handler rejected the request at its level gate before reaching the replay-identity guard.
+- Raised only the strong win-party fixture to level 12; the weak loss-party fixture remains level 5. This keeps the replay test exercising the intended identity conflict without changing production code or game balance.
+- Fix commit: `9aaf4e5c25056e02b407656d6d962ed7b1e610e8`. Awaiting the exact-HEAD Quality Gate.
+
+
+## Main checkpoint integration (2026-11-17)
+- PR #15 is merged into `main`; verified checkpoint main SHA: `81fa43583a7dec649a2525fe4bda14300d7fba7a`.
+- PR #18 targets `main` at the audited head and all four jobs in its latest Quality Gate attempt succeeded. GitHub nevertheless rejected the merge because two historical required-check entries on that commit are cancelled. Retrying the old run was not permitted; branch protection was not bypassed.
+- A fresh documentation-only checkpoint commit is being added to the PR branch to trigger a clean check set before merging PR #18. Next audit after integration: missing/corrupt player-save handling for persisted group roster members.
+- User-approved ongoing workflow: work directly on `main` after the current PR #18 checkpoint is integrated; retain change history, checkpoints, and critical-path verification.

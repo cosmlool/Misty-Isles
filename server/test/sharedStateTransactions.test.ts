@@ -9,7 +9,7 @@ import { createAuctionTransactionStore } from '../src/auctionTransactions.js';
 import { createClanTransactionStore } from '../src/clanTransactions.js';
 import { createSharedStateRuntime } from '../src/sharedStateRuntime.js';
 
-function fixture(testHooks?: any) {
+function fixture(testHooks?: any, platform?: NodeJS.Platform) {
   const dataDir = mkdtempSync(join(tmpdir(), 'misty-shared-state-'));
   const files = {
     players: join(dataDir, 'players.json'),
@@ -18,16 +18,56 @@ function fixture(testHooks?: any) {
     clans: join(dataDir, 'clans.json'),
     wars: join(dataDir, 'clan_wars.json'),
     territories: join(dataDir, 'clan_territories.json'),
+    mining: join(dataDir, 'mining.json'),
     huntGroups: join(dataDir, 'hunt_groups.json'),
     dungeonRuns: join(dataDir, 'dungeon_runs.json'),
+    dungeonOutbox: join(dataDir, 'dungeon_outbox.json'),
+    accounts: join(dataDir, 'accounts.json'),
+    sessions: join(dataDir, 'sessions.json'),
+    guestCredentials: join(dataDir, 'guest_credentials.json'),
   };
   return {
     dataDir, files,
-    store: createSharedStateTransactionStore({ dataDir, files, testHooks }),
+    store: createSharedStateTransactionStore({ dataDir, files, testHooks, platform }),
     cleanup: () => rmSync(dataDir, { recursive: true, force: true }),
   };
 }
 function readJson(file: string) { return JSON.parse(readFileSync(file, 'utf8')); }
+
+test('auth-only WAL recovery does not mark live player snapshots as recovered', () => {
+  const f = fixture();
+  try {
+    const auction = createAuctionTransactionStore({
+      dataDir: f.dataDir, playersFile: f.files.players,
+      auctionFile: f.files.auction, historyFile: f.files.auctionHistory,
+    });
+    const clans = createClanTransactionStore({
+      dataDir: f.dataDir, playersFile: f.files.players,
+      clansFile: f.files.clans, warsFile: f.files.wars,
+      territoriesFile: f.files.territories,
+    });
+    const runtime = createSharedStateRuntime({ shared: f.store, auction, clans });
+
+    writeFileSync(f.files.players, JSON.stringify({ p1: { gold: 99 } }));
+    writeFileSync(f.store.journalFile, JSON.stringify({
+      version: 1, files: { sessions: [{ tokenHash: 'recovered-session' }] },
+    }));
+    let playersRecovered: boolean | undefined;
+    runtime.transact(recovered => {
+      playersRecovered = recovered;
+      return { files: { sessions: [{ tokenHash: 'next-session' }] }, result: undefined };
+    });
+    assert.equal(playersRecovered, false, 'recovering only auth files must not trigger online Player refresh');
+    assert.deepEqual(readJson(f.files.players), { p1: { gold: 99 } });
+    assert.deepEqual(readJson(f.files.sessions), [{ tokenHash: 'next-session' }]);
+
+    writeFileSync(f.store.journalFile, JSON.stringify({
+      version: 1, files: { players: { p1: { gold: 77 } } },
+    }));
+    assert.equal(runtime.recoverPendingPlayerState(), true, 'a journal that replaces players.json must report player recovery');
+    assert.deepEqual(readJson(f.files.players), { p1: { gold: 77 } });
+  } finally { f.cleanup(); }
+});
 
 test('one journal atomically applies a transaction spanning player, auction and clan state', () => {
   const f = fixture();
@@ -85,6 +125,88 @@ test('snapshot preparation runs only after a pending journal has been recovered'
   } finally { f.cleanup(); }
 });
 
+test('a process crash immediately after durable journal publication replays the full transaction', () => {
+  const f = fixture();
+  try {
+    const moduleUrl = new URL('../src/sharedStateTransactions.ts', import.meta.url).href;
+    const childScript = `
+      import { createSharedStateTransactionStore } from ${JSON.stringify(moduleUrl)};
+      const store = createSharedStateTransactionStore({
+        dataDir: ${JSON.stringify(f.dataDir)},
+        files: ${JSON.stringify(f.files)},
+        testHooks: { afterJournalPersisted() { process.exit(72); } },
+      });
+      store.transact(() => ({ files: {
+        players: { p1: { gold: 45 } },
+        auction: [{ id: 'journal_first_lot' }],
+        clans: { c1: { vault: 55 } },
+      }, result: null }));
+      process.exit(0);
+    `;
+    writeFileSync(f.files.players, JSON.stringify({ p1: { gold: 10 } }));
+    const child = spawnSync(process.execPath, ['--import', 'tsx', '--input-type=module', '-e', childScript], {
+      cwd: process.cwd(), encoding: 'utf8', timeout: 10_000,
+    });
+    assert.equal(child.status, 72);
+    assert.equal(existsSync(f.store.journalFile), true, 'the durable journal must survive the process exit');
+    assert.deepEqual(readJson(f.files.players), { p1: { gold: 10 } }, 'no transaction target may be written before journal publication completes');
+    assert.equal(existsSync(f.files.auction), false);
+    assert.equal(existsSync(f.files.clans), false);
+
+    const restarted = createSharedStateTransactionStore({ dataDir: f.dataDir, files: f.files });
+    assert.equal(restarted.recover(), true);
+    assert.deepEqual(readJson(f.files.players), { p1: { gold: 45 } });
+    assert.deepEqual(readJson(f.files.auction), [{ id: 'journal_first_lot' }]);
+    assert.deepEqual(readJson(f.files.clans), { c1: { vault: 55 } });
+    assert.equal(existsSync(restarted.journalFile), false);
+  } finally { f.cleanup(); }
+});
+
+test('guest account linking replays all auth snapshots after a crash at each WAL target boundary', () => {
+  for (const crashAt of ['accounts', 'sessions', 'guestCredentials']) {
+    const f = fixture();
+    try {
+      const moduleUrl = new URL('../src/sharedStateTransactions.ts', import.meta.url).href;
+      const childScript = `
+        import { createSharedStateTransactionStore } from ${JSON.stringify(moduleUrl)};
+        const store = createSharedStateTransactionStore({
+          dataDir: ${JSON.stringify(f.dataDir)},
+          files: ${JSON.stringify(f.files)},
+          testHooks: { afterTargetWrite(key) { if (key === ${JSON.stringify(crashAt)}) process.exit(74); } },
+        });
+        store.transact(() => ({ files: {
+          accounts: [{ username: 'Misty', usernameKey: 'misty', playerId: 'guest_player', salt: 'salt', passwordHash: 'hash', createdAt: 1 }],
+          sessions: [{ tokenHash: 'account-token-hash', playerId: 'guest_player', accountKey: 'misty', expiresAt: 9999999999999 }],
+          guestCredentials: [],
+        }, result: null }));
+        process.exit(0);
+      `;
+      writeFileSync(f.files.accounts, JSON.stringify([]));
+      writeFileSync(f.files.sessions, JSON.stringify([
+        { tokenHash: 'old-guest-token-hash', playerId: 'guest_player', accountKey: null, expiresAt: 9999999999999 },
+      ]));
+      writeFileSync(f.files.guestCredentials, JSON.stringify([
+        { playerId: 'guest_player', tokenHash: 'guest-proof-hash', createdAt: 1 },
+      ]));
+      const child = spawnSync(process.execPath, ['--import', 'tsx', '--input-type=module', '-e', childScript], {
+        cwd: process.cwd(), encoding: 'utf8', timeout: 10_000,
+      });
+      assert.equal(child.status, 74, `child must stop immediately after writing ${crashAt}`);
+      assert.equal(existsSync(f.store.journalFile), true, 'the shared journal must remain after process termination');
+      const restarted = createSharedStateTransactionStore({ dataDir: f.dataDir, files: f.files });
+      assert.equal(restarted.recover(), true);
+      assert.deepEqual(readJson(f.files.accounts), [
+        { username: 'Misty', usernameKey: 'misty', playerId: 'guest_player', salt: 'salt', passwordHash: 'hash', createdAt: 1 },
+      ]);
+      assert.deepEqual(readJson(f.files.sessions), [
+        { tokenHash: 'account-token-hash', playerId: 'guest_player', accountKey: 'misty', expiresAt: 9999999999999 },
+      ], 'restart must revoke the old guest sessions and publish the account session');
+      assert.deepEqual(readJson(f.files.guestCredentials), [], 'restart must remove the guest recovery proof');
+      assert.equal(existsSync(restarted.journalFile), false);
+    } finally { f.cleanup(); }
+  }
+});
+
 test('a process crash between target writes is replayed from the single shared journal', () => {
   const f = fixture();
   try {
@@ -124,6 +246,59 @@ test('a process crash between target writes is replayed from the single shared j
     assert.equal(existsSync(restarted.journalFile), false);
     assert.equal(restarted.recover(), false);
   } finally { f.cleanup(); }
+});
+
+test('a process crash after every shared WAL target boundary replays the complete transaction', () => {
+  const targets = [
+    'players', 'auction', 'auctionHistory', 'clans', 'wars', 'territories',
+    'mining', 'huntGroups', 'dungeonRuns', 'dungeonOutbox', 'accounts',
+    'sessions', 'guestCredentials',
+  ] as const;
+  const snapshot = {
+    players: { p1: { gold: 501 } },
+    auction: [{ id: 'wal_auction', price: 12 }],
+    auctionHistory: [{ id: 'wal_history', buyerId: 'p1' }],
+    clans: { c1: { vault: 42 } },
+    wars: [{ id: 'wal_war', status: 'finished' }],
+    territories: [{ id: 'wal_territory', owner: 'c1' }],
+    mining: { p1: { ore: 7 } },
+    huntGroups: [{ id: 'wal_group', members: ['p1', 'p2'] }],
+    dungeonRuns: { run_1: { status: 'active', roundIndex: 3 } },
+    dungeonOutbox: { event_1: { delivered: false } },
+    accounts: [{ usernameKey: 'p1', playerId: 'p1' }],
+    sessions: [{ tokenHash: 'wal_session', playerId: 'p1' }],
+    guestCredentials: [{ playerId: 'p1', tokenHash: 'wal_guest' }],
+  };
+
+  for (const crashAt of targets) {
+    const f = fixture();
+    try {
+      const moduleUrl = new URL('../src/sharedStateTransactions.ts', import.meta.url).href;
+      const childScript = `
+        import { createSharedStateTransactionStore } from ${JSON.stringify(moduleUrl)};
+        const store = createSharedStateTransactionStore({
+          dataDir: ${JSON.stringify(f.dataDir)},
+          files: ${JSON.stringify(f.files)},
+          testHooks: { afterTargetWrite(key) { if (key === ${JSON.stringify(crashAt)}) process.exit(76); } },
+        });
+        store.transact(() => ({ files: ${JSON.stringify(snapshot)}, result: null }));
+        process.exit(0);
+      `;
+      const child = spawnSync(process.execPath, ['--import', 'tsx', '--input-type=module', '-e', childScript], {
+        cwd: process.cwd(), encoding: 'utf8', timeout: 15_000,
+      });
+      assert.equal(child.status, 76, `child must crash after writing ${crashAt}: ${child.stderr}`);
+      assert.equal(existsSync(f.store.journalFile), true, `journal must remain after crash at ${crashAt}`);
+
+      const restarted = createSharedStateTransactionStore({ dataDir: f.dataDir, files: f.files });
+      assert.equal(restarted.recover(), true, `restart must replay crash at ${crashAt}`);
+      for (const key of targets) {
+        assert.deepEqual(readJson(f.files[key]), snapshot[key], `${key} must match the complete journal snapshot after crash at ${crashAt}`);
+      }
+      assert.equal(existsSync(restarted.journalFile), false, `journal must be removed after recovery from ${crashAt}`);
+      assert.equal(restarted.recover(), false, 'a second recovery must be a no-op');
+    } finally { f.cleanup(); }
+  }
 });
 
 test('startup migration recovery replays legacy journals before the newer shared journal', () => {
@@ -227,6 +402,44 @@ test('target write failure retains the journal and blocks a later transaction un
 
 
 
+test('a process crash after WAL removal but before directory sync leaves all targets committed', () => {
+  for (const crashAt of ['afterJournalRemoved', 'afterJournalDirectorySynced'] as const) {
+    const f = fixture();
+    try {
+      const moduleUrl = new URL('../src/sharedStateTransactions.ts', import.meta.url).href;
+      const childScript = `
+        import { createSharedStateTransactionStore } from ${JSON.stringify(moduleUrl)};
+        const store = createSharedStateTransactionStore({
+          dataDir: ${JSON.stringify(f.dataDir)},
+          files: ${JSON.stringify(f.files)},
+          testHooks: { ${crashAt}() { process.exit(77); } },
+        });
+        store.transact(() => ({ files: {
+          players: { p1: { gold: 777 } },
+          auction: [{ id: 'finalized_lot' }],
+          dungeonOutbox: { reward_1: { delivered: false } },
+          sessions: [{ tokenHash: 'finalized_session' }],
+        }, result: null }));
+        process.exit(0);
+      `;
+      const child = spawnSync(process.execPath, ['--import', 'tsx', '--input-type=module', '-e', childScript], {
+        cwd: process.cwd(), encoding: 'utf8', timeout: 15_000,
+      });
+      assert.equal(child.status, 77, `child must crash at ${crashAt}: ${child.stderr}`);
+      assert.equal(existsSync(f.store.journalFile), false, 'journal removal has already occurred');
+      assert.deepEqual(readJson(f.files.players), { p1: { gold: 777 } });
+      assert.deepEqual(readJson(f.files.auction), [{ id: 'finalized_lot' }]);
+      assert.deepEqual(readJson(f.files.dungeonOutbox), { reward_1: { delivered: false } });
+      assert.deepEqual(readJson(f.files.sessions), [{ tokenHash: 'finalized_session' }]);
+
+      const restarted = createSharedStateTransactionStore({ dataDir: f.dataDir, files: f.files });
+      assert.equal(restarted.recover(), false, 'restart must not replay a transaction whose journal was removed');
+      assert.deepEqual(readJson(f.files.players), { p1: { gold: 777 } });
+      assert.deepEqual(readJson(f.files.auction), [{ id: 'finalized_lot' }]);
+    } finally { f.cleanup(); }
+  }
+});
+
 test('the WAL file and directory are synced before the first transaction target is written', () => {
   const events: string[] = [];
   const f = fixture({
@@ -265,6 +478,80 @@ test('a failed journal directory sync blocks target writes and leaves recovery d
     const restarted = createSharedStateTransactionStore({ dataDir: f.dataDir, files: f.files });
     assert.equal(restarted.recover(), true);
     assert.deepEqual(readJson(f.files.players), { p1: { gold: 999 } });
+  } finally { f.cleanup(); }
+});
+
+test('final WAL directory-sync failure is reported instead of being mistaken for a successful commit', () => {
+  let directorySyncs = 0;
+  let dataDir = '';
+  const f = fixture({
+    afterSync(path: string) {
+      if (path !== dataDir) return;
+      directorySyncs++;
+      // Journal publication and target publication are the first two directory
+      // syncs; the third is the final journal-unlink durability barrier.
+      if (directorySyncs === 3) throw new Error('simulated final directory sync failure');
+    },
+  });
+  dataDir = f.dataDir;
+  try {
+    assert.throws(() => f.store.transact(() => ({
+      files: { auction: [{ id: 'final-sync-lot' }] },
+      result: 'committed',
+    })), /final journal-removal durability could not be confirmed: Error: simulated final directory sync failure/);
+    assert.deepEqual(readJson(f.files.auction), [{ id: 'final-sync-lot' }]);
+    assert.equal(existsSync(f.store.journalFile), false);
+    const restarted = createSharedStateTransactionStore({ dataDir: f.dataDir, files: f.files });
+    assert.equal(restarted.recover(), false, 'a removed journal cannot be replayed after an uncertain final directory sync');
+  } finally { f.cleanup(); }
+});
+
+test('Windows skips unsupported directory fsync but still fsyncs transaction files', () => {
+  const synced: string[] = [];
+  const f = fixture({ afterSync(path: string) { synced.push(path); } }, 'win32');
+  try {
+    f.store.transact(() => ({
+      files: { players: { p1: { gold: 42 } }, auction: [{ id: 'windows_lot' }] },
+      result: 'saved',
+    }));
+    assert.deepEqual(readJson(f.files.players), { p1: { gold: 42 } });
+    assert.deepEqual(readJson(f.files.auction), [{ id: 'windows_lot' }]);
+    assert.ok(synced.some(path => path.includes('.tmp')), 'temporary file contents must still be fsynced');
+    assert.ok(!synced.includes(f.dataDir), 'Windows directory handles must not be passed to fsync');
+    assert.equal(existsSync(f.store.journalFile), false);
+  } finally { f.cleanup(); }
+});
+
+test('repeated WAL recovery failures do not create duplicate backups of an already-applied player snapshot', () => {
+  const f = fixture();
+  try {
+    writeFileSync(f.files.players, JSON.stringify({ p1: { gold: 10 } }));
+    mkdirSync(f.files.clans);
+    assert.throws(() => f.store.transact(() => ({
+      files: {
+        players: { p1: { gold: 25 } },
+        clans: { c1: { vault: 40 } },
+      },
+      result: null,
+    })), /could not be recovered; journal retained/);
+
+    const backupsAfterFirstFailure = () => readdirSync(f.dataDir)
+      .filter(name => /^players\.json\..+\.bak$/.test(name));
+    assert.equal(backupsAfterFirstFailure().length, 1);
+    assert.deepEqual(readJson(f.files.players), { p1: { gold: 25 } });
+    const restarted = createSharedStateTransactionStore({ dataDir: f.dataDir, files: f.files });
+    for (let attempt = 0; attempt < 3; attempt++) {
+      assert.throws(() => restarted.recover());
+      assert.equal(backupsAfterFirstFailure().length, 1, 'replaying the same journal must not back up its already-applied player snapshot');
+    }
+
+    rmSync(f.files.clans, { recursive: true, force: true });
+    assert.equal(restarted.recover(), true);
+    assert.deepEqual(readJson(f.files.players), { p1: { gold: 25 } });
+    assert.deepEqual(readJson(f.files.clans), { c1: { vault: 40 } });
+    assert.equal(backupsAfterFirstFailure().length, 1);
+    assert.deepEqual(readJson(join(f.dataDir, backupsAfterFirstFailure()[0])), { p1: { gold: 10 } });
+    assert.equal(existsSync(restarted.journalFile), false);
   } finally { f.cleanup(); }
 });
 

@@ -120,7 +120,7 @@ test('solo Forgotten Lands boss dungeon reports remaining daily entries and enfo
 
     child = spawn(process.execPath, ['--import', 'tsx', 'src/index.ts'], {
       cwd: serverDir,
-      env: { ...process.env, MISTY_DATA_DIR: dataDir, MISTY_PORT: String(port) },
+      env: { ...process.env, MISTY_DATA_DIR: dataDir, MISTY_GAME_DATA_DIR: dataDir, MISTY_PORT: String(port) },
       stdio: 'ignore',
     });
     await waitForServer(port, child);

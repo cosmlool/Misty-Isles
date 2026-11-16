@@ -103,7 +103,7 @@ test('guest gameplay actions cannot consume rewards or alter character state bef
     const client = new Client(`ws://127.0.0.1:${port}`);
     room = await client.joinOrCreate('my_room', { playerId, sessionToken: token });
     const notices: string[] = [];
-    room.onMessage('notice', payload => notices.push(String(payload?.text || '')));
+    room.onMessage('notice', payload => { const message=String(payload?.text||''); if(message!=='Выбери расу, чтобы начать приключение.')notices.push(message); });
 
     const actions: Array<[string, Record<string, unknown>]> = [
       ['daily', {}],

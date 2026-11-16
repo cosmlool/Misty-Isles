@@ -5,7 +5,7 @@ import {
 } from './dungeonRunState.js';
 
 type DungeonRoundRuntime = {
-  transact<T>(prepare: (recovered: boolean) => {
+  transactWithRecovery<T>(prepare: (recovery: { recovered: boolean; playersRecovered: boolean }) => {
     files: { players: Record<string, Record<string, unknown>>; dungeonRuns: DungeonRunStore };
     result: T;
     skipWrite?: boolean;
@@ -37,8 +37,8 @@ export function commitDungeonRunRound(input: {
     throw new Error('Invalid dungeon round commit request.');
   }
 
-  return input.runtime.transact(recovered => {
-    if (recovered) {
+  return input.runtime.transactWithRecovery(recovery => {
+    if (recovery.recovered) {
       throw new Error('Shared state was recovered during dungeon round commit; reload player and dungeon run snapshots before retrying.');
     }
     const currentRuns = validateDungeonRunStore(input.runs);

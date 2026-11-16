@@ -5,6 +5,8 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { cancelCraftJob, claimCraftJob, refundCraftMaterials, startCraftJob } from '../src/craftingQueue.js';
 
+const VALID_OUTPUTS = new Set(['potion', 'unique_amulet', 'iron_sword']);
+
 test('refunds the exact materials stored on a craft job', () => {
   const inventory = ['herb_material', 'wood_material'];
   const result = refundCraftMaterials(inventory, { materials: { crystal_shard: 2, ash_ore: 1 } });
@@ -55,16 +57,16 @@ test('craft start refuses missing materials and a full queue without changing in
 
 test('claiming a completed job grants its output once and removes the job', () => {
   const queue = [{ id: 'job-1', output: 'potion', count: 2, finishAt: 100 }];
-  const result = claimCraftJob({ inventory: ['ore'], queue, jobId: 'job-1', now: 100 });
+  const result = claimCraftJob({ inventory: ['ore'], queue, jobId: 'job-1', now: 100, validOutputIds: VALID_OUTPUTS });
   assert.deepEqual(result.inventory, ['ore', 'potion', 'potion']);
   assert.equal(result.queue.length, 0);
   assert.equal(result.outputCount, 2);
-  assert.throws(() => claimCraftJob({ inventory: result.inventory, queue: result.queue, jobId: 'job-1', now: 101 }), /not found/);
+  assert.throws(() => claimCraftJob({ inventory: result.inventory, queue: result.queue, jobId: 'job-1', now: 101, validOutputIds: VALID_OUTPUTS }), /not found/);
 });
 
 test('claiming a blocked unique output refunds exact stored materials instead of losing them', () => {
   const queue = [{ id: 'job-1', output: 'unique_amulet', count: 1, finishAt: 100, materials: { ore: 2, gem: 1 } }];
-  const result = claimCraftJob({ inventory: ['wood'], queue, jobId: 'job-1', now: 100, uniqueConflict: true });
+  const result = claimCraftJob({ inventory: ['wood'], queue, jobId: 'job-1', now: 100, uniqueConflict: true, validOutputIds: VALID_OUTPUTS });
   assert.deepEqual(result.inventory, ['wood', 'ore', 'ore', 'gem']);
   assert.equal(result.queue.length, 0);
   assert.equal(result.refunded, true);
@@ -72,7 +74,7 @@ test('claiming a blocked unique output refunds exact stored materials instead of
 
 test('blocked unique output with unknown legacy materials remains queued for manual review', () => {
   const queue = [{ id: 'job-1', output: 'unique_amulet', count: 1, finishAt: 100 }];
-  assert.throws(() => claimCraftJob({ inventory: ['wood'], queue, jobId: 'job-1', now: 100, uniqueConflict: true }), /job retained/);
+  assert.throws(() => claimCraftJob({ inventory: ['wood'], queue, jobId: 'job-1', now: 100, uniqueConflict: true, validOutputIds: VALID_OUTPUTS }), /job retained/);
   assert.equal(queue.length, 1);
 });
 
@@ -90,7 +92,7 @@ test('an in-progress craft job and its reserved materials survive save and recon
     const restoredQueue = JSON.parse(reloaded.craftQueue);
     assert.equal(restoredQueue[0].id, 'job-reconnect');
     assert.deepEqual(restoredQueue[0].materials, { ore: 2, herb: 1 });
-    const claimed = claimCraftJob({ inventory: JSON.parse(reloaded.inventory), queue: restoredQueue, jobId: 'job-reconnect', now: 500 });
+    const claimed = claimCraftJob({ inventory: JSON.parse(reloaded.inventory), queue: restoredQueue, jobId: 'job-reconnect', now: 500, validOutputIds: VALID_OUTPUTS });
     assert.deepEqual(claimed.inventory, ['iron_sword']);
     assert.equal(claimed.queue.length, 0);
   } finally { rmSync(f, { recursive: true, force: true }); }
@@ -128,4 +130,16 @@ test('empty stored material snapshots fall back to the recipe instead of silentl
   const result = cancelCraftJob({ inventory: [], queue, jobId: 'job-empty-snapshot', now: 100, fallbackMaterials: { herb: 2 } });
   assert.deepEqual(result.inventory, ['herb', 'herb']);
   assert.deepEqual(result.queue, []);
+});
+
+
+test('unknown queued output is rejected without granting an item or deleting the job', () => {
+  const inventory = ['ore'];
+  const queue = [{ id: 'job-unknown-output', recipe: 'retired_recipe', output: 'removed_item_id', count: 1, finishAt: 100, materials: { ore: 2 } }];
+  assert.throws(() => claimCraftJob({
+    inventory, queue, jobId: 'job-unknown-output', now: 100, validOutputIds: VALID_OUTPUTS,
+  }), /not in the current item catalog/);
+  assert.deepEqual(inventory, ['ore']);
+  assert.equal(queue.length, 1);
+  assert.equal(queue[0].output, 'removed_item_id');
 });

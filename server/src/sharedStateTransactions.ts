@@ -21,6 +21,9 @@ export const SHARED_STATE_KEYS = [
   'huntGroups',
   'dungeonRuns',
   'dungeonOutbox',
+  'accounts',
+  'sessions',
+  'guestCredentials',
 ] as const;
 
 export type SharedStateKey = typeof SHARED_STATE_KEYS[number];
@@ -31,9 +34,12 @@ type Journal = { version: 1; files: SharedStateSnapshot };
 type Options = {
   dataDir: string;
   files: Partial<Record<SharedStateKey, string>>;
+  platform?: NodeJS.Platform;
   testHooks?: {
     afterJournalPersisted?: () => void;
     afterTargetWrite?: (key: SharedStateKey) => void;
+    afterJournalRemoved?: () => void;
+    afterJournalDirectorySynced?: () => void;
     afterSync?: (path: string) => void;
   };
 };
@@ -65,10 +71,18 @@ export function createSharedStateTransactionStore(options: Options) {
     throw new Error('At least one shared-state target file must be configured.');
   }
 
-  function syncPath(path: string) {
-    const descriptor = openSync(path, 'r');
+  function syncPath(path: string, isDirectory = false) {
+    const descriptor = openSync(path, isDirectory ? 'r' : 'r+');
     try { fsyncSync(descriptor); options.testHooks?.afterSync?.(path); }
     finally { closeSync(descriptor); }
+  }
+
+  function syncDirectory(path: string) {
+    // Node cannot open Windows directories with the access needed for fsync.
+    // Keep file-content fsync mandatory; directory-entry durability is provided
+    // where the platform supports syncing directory descriptors.
+    if ((options.platform ?? process.platform) === 'win32') return;
+    syncPath(path, true);
   }
 
   function atomicWrite(file: string, value: unknown) {
@@ -81,7 +95,7 @@ export function createSharedStateTransactionStore(options: Options) {
       syncPath(temp);
       renameSync(temp, file);
       // The journal rename must be durable before any transaction target is applied.
-      syncPath(dirname(file));
+      syncDirectory(dirname(file));
     } catch (error) {
       try { if (existsSync(temp)) unlinkSync(temp); } catch {}
       throw error;
@@ -111,8 +125,17 @@ export function createSharedStateTransactionStore(options: Options) {
     validateFiles(value.files);
   }
 
-  function backupPlayersBeforeWrite(target: string) {
+  function backupPlayersBeforeWrite(target: string, nextValue: unknown) {
     if (!existsSync(target)) return undefined;
+    // Recovery may replay a journal after players.json was already replaced but
+    // a later target failed. Do not back up that already-committed snapshot on
+    // every retry; the original pre-transaction save is already preserved.
+    try {
+      const current = JSON.parse(readFileSync(target, 'utf8'));
+      if (JSON.stringify(current) === JSON.stringify(nextValue)) return undefined;
+    } catch {
+      // Preserve unreadable legacy bytes before attempting to replace them.
+    }
     const timestamp = Math.max(Date.now(), lastPlayerBackupTimestamp + 1);
     lastPlayerBackupTimestamp = timestamp;
     const suffix = new Date(timestamp).toISOString().replace(/[:.]/g, '-') + '.' + process.pid + '.' + randomBytes(4).toString('hex');
@@ -122,7 +145,7 @@ export function createSharedStateTransactionStore(options: Options) {
       copyFileSync(target, backupTemp);
       syncPath(backupTemp);
       renameSync(backupTemp, backupFile);
-      syncPath(dataDir);
+      syncDirectory(dataDir);
       return backupFile;
     } catch (error) {
       try { if (existsSync(backupTemp)) unlinkSync(backupTemp); } catch {}
@@ -144,7 +167,7 @@ export function createSharedStateTransactionStore(options: Options) {
       if (!Object.prototype.hasOwnProperty.call(files, key)) continue;
       const target = configuredFiles.get(key);
       if (!target) throw new Error(`Shared-state target "${key}" is not configured.`);
-      if (key === 'players') backupPlayersBeforeWrite(target);
+      if (key === 'players') backupPlayersBeforeWrite(target, files[key]);
       atomicWrite(target, files[key]);
       if (key === 'players') prunePlayerBackups();
       options.testHooks?.afterTargetWrite?.(key);
@@ -162,8 +185,22 @@ export function createSharedStateTransactionStore(options: Options) {
     validateJournal(parsed);
     apply(parsed.files);
     unlinkSync(journalFile);
-    syncPath(dataDir);
+    options.testHooks?.afterJournalRemoved?.();
+    syncDirectory(dataDir);
+    options.testHooks?.afterJournalDirectorySynced?.();
     return true;
+  }
+
+  function hasPendingPlayers(): boolean {
+    if (!existsSync(journalFile)) return false;
+    let parsed: unknown;
+    try {
+      parsed = JSON.parse(readFileSync(journalFile, 'utf8'));
+    } catch (error) {
+      throw new Error(`Shared-state transaction journal is unreadable; refusing all writes: ${String(error)}`);
+    }
+    validateJournal(parsed);
+    return Object.prototype.hasOwnProperty.call(parsed.files, 'players');
   }
 
   function transact<T>(prepareAfterRecovery: () => { files: SharedStateSnapshot; result: T; skipWrite?: boolean }): T {
@@ -179,12 +216,24 @@ export function createSharedStateTransactionStore(options: Options) {
     const journal: Journal = { version: 1, files: prepared.files };
     atomicWrite(journalFile, journal);
 
+    let journalRemoved = false;
+    let finalDirectorySynced = false;
     try {
       options.testHooks?.afterJournalPersisted?.();
       apply(prepared.files);
       unlinkSync(journalFile);
-      syncPath(dataDir);
+      journalRemoved = true;
+      options.testHooks?.afterJournalRemoved?.();
+      syncDirectory(dataDir);
+      finalDirectorySynced = true;
+      options.testHooks?.afterJournalDirectorySynced?.();
     } catch (error) {
+      // Once the journal has been unlinked, a failed final directory sync
+      // leaves its deletion durability uncertain. Recovery cannot replay a
+      // journal that is no longer visible, so never report this as success.
+      if (journalRemoved && !finalDirectorySynced) {
+        throw new Error(`Shared-state transaction targets were applied, but final journal-removal durability could not be confirmed: ${String(error)}`);
+      }
       // A successful replay means the journaled transaction committed despite
       // the interrupted first attempt. If replay fails, keep the journal and
       // fail closed; the next writer will retry recovery before preparing.
@@ -197,5 +246,5 @@ export function createSharedStateTransactionStore(options: Options) {
     return prepared.result;
   }
 
-  return { transact, recover, journalFile };
+  return { transact, recover, hasPendingPlayers, journalFile };
 }

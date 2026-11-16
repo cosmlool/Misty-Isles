@@ -2,6 +2,8 @@ const PVP_BOT_IDS = new Set(['bot_ember', 'bot_bastion', 'bot_gale', 'bot_relic'
 
 export const PVP_ATTACK_COOLDOWN_MS = 15 * 60 * 1000;
 export const PVP_IMMUNITY_MS = 60 * 60 * 1000;
+import { creditGold, MAX_GOLD_BALANCE } from './currencyOperations.js';
+
 export const PVP_GOLD_STEAL_RATE = 0.20;
 export const PVP_OPPONENT_COUNT = 4;
 
@@ -83,6 +85,8 @@ export type PvpOutcomeResult = {
   attackerGold: number;
   targetGold: number;
   stolenGold: number;
+  receivedGold: number;
+  burnedGold: number;
   immunityRecipient: 'attacker' | 'target';
   immunityUntil: number;
 };
@@ -93,13 +97,26 @@ export function resolvePvpOutcome(
   attackerWon: boolean,
   now: number,
 ): PvpOutcomeResult {
-  const attackerBalance = Math.max(0, Number(attackerGold) || 0);
-  const targetBalance = Math.max(0, Number(targetGold) || 0);
-  const stolenGold = calculatePvpGoldTransfer(attackerWon ? targetBalance : attackerBalance);
+  if (!Number.isFinite(attackerGold) || attackerGold < 0
+    || (attackerGold <= MAX_GOLD_BALANCE && !Number.isSafeInteger(attackerGold))
+    || !Number.isFinite(targetGold) || targetGold < 0
+    || (targetGold <= MAX_GOLD_BALANCE && !Number.isSafeInteger(targetGold))) {
+    throw new Error('PvP gold balances must be nonnegative safe integers.');
+  }
+  const attackerCap = creditGold(attackerGold, 0);
+  const targetCap = creditGold(targetGold, 0);
+  const cappedAttackerGold = attackerCap.balance;
+  const cappedTargetGold = targetCap.balance;
+  const stolenGold = calculatePvpGoldTransfer(attackerWon ? cappedTargetGold : cappedAttackerGold);
+  const recipientCredit = creditGold(attackerWon ? cappedAttackerGold : cappedTargetGold, stolenGold);
+  const nextAttackerGold = attackerWon ? recipientCredit.balance : cappedAttackerGold - stolenGold;
+  const nextTargetGold = attackerWon ? cappedTargetGold - stolenGold : recipientCredit.balance;
   return {
-    attackerGold: attackerWon ? attackerBalance + stolenGold : attackerBalance - stolenGold,
-    targetGold: attackerWon ? targetBalance - stolenGold : targetBalance + stolenGold,
+    attackerGold: nextAttackerGold,
+    targetGold: nextTargetGold,
     stolenGold,
+    receivedGold: recipientCredit.credited,
+    burnedGold: attackerCap.burned + targetCap.burned + recipientCredit.burned,
     immunityRecipient: attackerWon ? 'target' : 'attacker',
     immunityUntil: now + PVP_IMMUNITY_MS,
   };

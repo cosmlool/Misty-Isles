@@ -130,7 +130,10 @@ export function validateDungeonRunStore(value: unknown): DungeonRunStore {
       if (prepared.runId !== raw.runId || prepared.requestId !== raw.requestId ||
         prepared.dungeonId !== raw.dungeonId || prepared.bossId !== raw.encounter.bossId ||
         JSON.stringify(prepared.participantIds) !== JSON.stringify(raw.participantIds) ||
-        prepared.preparedAt < raw.startedAt) {
+        prepared.preparedAt < raw.startedAt ||
+        raw.participantIds.some((id: string) =>
+          prepared.participants[id].hpBefore !== raw.participants[id].health ||
+          (prepared.playerSnapshots[id].id !== undefined && prepared.playerSnapshots[id].id !== id))) {
         throw new Error(`dungeon_runs.json contains a prepared encounter that does not match run ${key}.`);
       }
       raw.preparedEncounter = prepared;
@@ -262,22 +265,33 @@ export function advanceDungeonRunRound(
   update: { now: number; bossHealth: number; participantHealth: Record<string, number> },
 ): DungeonRunRecord {
   if (current.status !== 'active') throw new Error('Cannot advance a terminal dungeon run.');
-  if (!Number.isFinite(update.now) || !Number.isFinite(update.bossHealth) || update.bossHealth < 0) {
+  if (!Number.isFinite(update.now) || !Number.isFinite(update.bossHealth) ||
+      update.bossHealth < 0 || update.bossHealth > current.encounter.bossMaxHealth) {
     throw new Error('Invalid dungeon round snapshot.');
+  }
+  if (current.roundPlan) {
+    throw new Error('A planned dungeon round must advance through the deterministic round resolver.');
+  }
+  if (!isRecord(update.participantHealth) ||
+      Object.keys(update.participantHealth).length !== current.participantIds.length) {
+    throw new Error('Dungeon round snapshot must contain exactly one health value per participant.');
   }
   const participants = { ...current.participants };
   for (const playerId of current.participantIds) {
     const health = update.participantHealth[playerId];
-    if (!Number.isFinite(health) || health < 0) throw new Error(`Missing or invalid health snapshot for ${playerId}.`);
+    if (!Number.isFinite(health) || health <= 0 || health > participants[playerId].maxHealth) {
+      throw new Error(`Missing or invalid health snapshot for ${playerId}.`);
+    }
     participants[playerId] = { ...participants[playerId], health };
   }
-  return {
+  const next: DungeonRunRecord = {
     ...current,
     updatedAt: update.now,
     roundIndex: current.roundIndex + 1,
     participants,
     encounter: { ...current.encounter, bossHealth: update.bossHealth },
   };
+  return validateDungeonRunStore({ [next.runId]: next })[next.runId];
 }
 
 export function finishDungeonRun(
@@ -290,6 +304,10 @@ export function finishDungeonRun(
     throw new Error('Dungeon run has already reached a different terminal result.');
   }
   if (!Number.isFinite(now)) throw new Error('Invalid dungeon terminal timestamp.');
+  if ((outcome === 'win' || outcome === 'loss') && current.roundPlan &&
+      current.roundPlan.nextRoundIndex !== current.roundPlan.totalRounds) {
+    throw new Error('Cannot finalize a dungeon run while planned combat rounds remain unresolved.');
+  }
   return {
     ...current,
     status: outcome === 'win' || outcome === 'loss' ? 'completed' : 'aborted',

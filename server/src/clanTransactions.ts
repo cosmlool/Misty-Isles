@@ -27,10 +27,15 @@ export function createClanTransactionStore(options: ClanTransactionOptions) {
   const journalFile = join(options.dataDir, 'clan_transaction.json');
   mkdirSync(options.dataDir, { recursive: true });
 
-  function syncPath(path: string) {
-    const descriptor = openSync(path, 'r');
+  function syncPath(path: string, isDirectory = false) {
+    const descriptor = openSync(path, isDirectory ? 'r' : 'r+');
     try { fsyncSync(descriptor); options.testHooks?.afterSync?.(path); }
     finally { closeSync(descriptor); }
+  }
+
+  function syncDirectory(path: string) {
+    if (process.platform === 'win32') return;
+    syncPath(path, true);
   }
 
   function atomicWrite(file: string, value: unknown) {
@@ -39,7 +44,7 @@ export function createClanTransactionStore(options: ClanTransactionOptions) {
       writeFileSync(temp, JSON.stringify(value, null, 2), { encoding: 'utf8', flag: 'wx' });
       syncPath(temp);
       renameSync(temp, file);
-      syncPath(dirname(file));
+      syncDirectory(dirname(file));
     } catch (error) {
       try { if (existsSync(temp)) unlinkSync(temp); } catch {}
       throw error;
@@ -90,7 +95,7 @@ export function createClanTransactionStore(options: ClanTransactionOptions) {
     validateJournal(parsed);
     apply(parsed.snapshot);
     unlinkSync(journalFile);
-    syncPath(options.dataDir);
+    syncDirectory(options.dataDir);
     return true;
   }
 
@@ -101,7 +106,7 @@ export function createClanTransactionStore(options: ClanTransactionOptions) {
     try {
       apply(snapshot);
       unlinkSync(journalFile);
-      syncPath(options.dataDir);
+      syncDirectory(options.dataDir);
     } catch (error) {
       try {
         recover();
@@ -114,4 +119,34 @@ export function createClanTransactionStore(options: ClanTransactionOptions) {
   function hasPending(): boolean { return existsSync(journalFile); }
 
   return { commit, recover, hasPending, journalFile };
+}
+
+
+/** Validate uncapped clan progression counters before applying a credit. */
+export function prepareClanProgressCredit(balance: number, amount: number, label = 'progress'): number {
+  if (!Number.isSafeInteger(balance) || balance < 0
+    || !Number.isSafeInteger(amount) || amount < 0
+    || !Number.isSafeInteger(balance + amount)) {
+    throw new Error(`Clan ${label} must remain a nonnegative safe integer.`);
+  }
+  return balance + amount;
+}
+
+/** Clan vaults are uncapped, but must remain exact nonnegative safe integers. */
+export function prepareClanVaultCredit(balance: number, amount: number): number {
+  if (!Number.isSafeInteger(balance) || balance < 0
+    || !Number.isSafeInteger(amount) || amount < 0
+    || !Number.isSafeInteger(balance + amount)) {
+    throw new Error('Clan vault credit must preserve a nonnegative safe-integer balance.');
+  }
+  return balance + amount;
+}
+
+/** Validate and prepare a clan-vault debit before committing related state. */
+export function prepareClanVaultDebit(balance: number, amount: number): number {
+  if (!Number.isSafeInteger(balance) || balance < 0
+    || !Number.isSafeInteger(amount) || amount < 0 || amount > balance) {
+    throw new Error('Clan vault debit exceeds a valid available balance.');
+  }
+  return balance - amount;
 }

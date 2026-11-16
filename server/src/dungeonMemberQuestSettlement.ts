@@ -8,6 +8,7 @@ export function prepareDungeonMemberQuestSettlement(input: {
   requestId: string;
   playerId: string;
   text: string;
+  binding: { dungeonId: string; groupId: string; leaderId: string; participantIds: string[] };
 }): {
   quests: DungeonRequestQuestState;
   history: unknown[];
@@ -41,6 +42,7 @@ export function prepareDungeonMemberQuestSettlement(input: {
     input.playerId,
     input.report,
     input.text,
+    input.binding,
   );
 
   return {

@@ -35,8 +35,8 @@ function fixture(win = true) {
     },
   });
   const attached = commitPreparedDungeonEncounter({
-    runtime: { transact<T>(prepare: (recovered: boolean) => { files: { players: Record<string, Record<string, unknown>>; dungeonRuns: DungeonRunStore }; result: T; skipWrite?: boolean }): T {
-      return prepare(false).result;
+    runtime: { transactWithRecovery<T>(prepare: (recovery: { recovered: boolean; playersRecovered: boolean }) => { files: { players: Record<string, Record<string, unknown>>; dungeonRuns: DungeonRunStore }; result: T; skipWrite?: boolean }): T {
+      return prepare({ recovered: false, playersRecovered: false }).result;
     }},
     runId: base.runId,
     runs: { [base.runId]: base },
@@ -90,11 +90,11 @@ test('finalization refuses runs without a committed encounter and rejects unreso
 test('WAL finalization commits frozen snapshots and terminal marker exactly once', () => {
   let saved: { players?: Record<string, Record<string, unknown>>; dungeonRuns?: DungeonRunStore; dungeonOutbox?: unknown } | undefined;
   let writes = 0;
-  const runtime = { transact<T>(prepare: (recovered: boolean) => {
+  const runtime = { transactWithRecovery<T>(prepare: (recovery: { recovered: boolean; playersRecovered: boolean }) => {
     files: { players?: Record<string, Record<string, unknown>>; dungeonRuns?: DungeonRunStore; dungeonOutbox?: unknown };
     result: T; skipWrite?: boolean;
   }): T {
-    const plan = prepare(false);
+    const plan = prepare({ recovered: false, playersRecovered: false });
     if (!plan.skipWrite) { saved = plan.files; writes++; }
     return plan.result;
   }};
@@ -112,10 +112,10 @@ test('WAL finalization commits frozen snapshots and terminal marker exactly once
 
 test('WAL recovery blocks finalization until the caller reloads durable snapshots', () => {
   const { runs } = fixture(true);
-  const runtime = { transact<T>(prepare: (recovered: boolean) => {
+  const runtime = { transactWithRecovery<T>(prepare: (recovery: { recovered: boolean; playersRecovered: boolean }) => {
     files: { players?: Record<string, Record<string, unknown>>; dungeonRuns?: DungeonRunStore; dungeonOutbox?: unknown };
     result: T; skipWrite?: boolean;
-  }): T { return prepare(true).result; }};
+  }): T { return prepare({ recovered: true, playersRecovered: false }).result; }};
   assert.throws(() => commitCommittedDungeonEncounterFinalization({
     runtime, runId: 'run_frozen', runs, now: 200,
   }), /recovered during committed encounter finalization/);

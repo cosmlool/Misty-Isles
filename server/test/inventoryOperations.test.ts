@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { filterAvailableUniqueItems, isLastEquippedCopy, ownsItemCopy, removeInventoryCopy } from '../src/inventoryOperations.js';
+import { filterAvailableUniqueItems, isLastEquippedCopy, ownsItemCopy, removeInventoryCopy, validateInventoryStackAction } from '../src/inventoryOperations.js';
 
 test('removing one duplicate keeps the remaining equipped copy equipped', () => {
   const inventory = ['iron_sword', 'iron_sword', 'herb_material'];
@@ -47,4 +47,84 @@ test('random reward pools exclude unique items already owned or equipped', () =>
   const unique = new Set(['amulet_power', 'amulet_guard']);
   const available = filterAvailableUniqueItems(pool, unique, ['amulet_power'], { amulet: 'amulet_guard' });
   assert.deepEqual(available, ['tempered_sword', 'mystery_chest']);
+});
+
+
+test('inventory stack action requires the exact item, index and displayed stack count', () => {
+  const inventory = ['mystery_chest', 'mystery_chest', 'health_potion'];
+  assert.equal(validateInventoryStackAction(inventory, 0, 'mystery_chest', 2), true);
+  assert.equal(validateInventoryStackAction(inventory, 0, undefined, 2), false);
+  assert.equal(validateInventoryStackAction(inventory, 0, 'mystery_chest', undefined), false);
+  assert.equal(validateInventoryStackAction(inventory, 0, 'health_potion', 2), false);
+  assert.equal(validateInventoryStackAction(inventory, 0, 'mystery_chest', 1), false);
+  assert.equal(validateInventoryStackAction(inventory, 3, 'mystery_chest', 2), false);
+  assert.deepEqual(inventory, ['mystery_chest', 'mystery_chest', 'health_potion']);
+});
+
+test('replaying a consumed inventory index cannot consume an adjacent duplicate', () => {
+  const inventory = ['mystery_chest', 'mystery_chest'];
+  assert.equal(validateInventoryStackAction(inventory, 0, 'mystery_chest', 2), true);
+  inventory.splice(0, 1);
+  // The second request carries the original stack count and is rejected.
+  assert.equal(validateInventoryStackAction(inventory, 0, 'mystery_chest', 2), false);
+  assert.deepEqual(inventory, ['mystery_chest']);
+});
+
+test('inventory stack action rejects unsafe or fractional snapshot counts', () => {
+  const inventory = ['mystery_chest'];
+  assert.equal(validateInventoryStackAction(inventory, 0, 'mystery_chest', 1.5), false);
+  assert.equal(validateInventoryStackAction(inventory, 0, 'mystery_chest', Number.MAX_SAFE_INTEGER + 1), false);
+  assert.equal(validateInventoryStackAction(inventory, -1, 'mystery_chest', 1), false);
+});
+
+
+import { resolveEquipmentSlot } from '../src/equipmentIntegrity.js';
+
+test('equipment catalog entries resolve only to compatible canonical slots', () => {
+  assert.equal(resolveEquipmentSlot({ kind: 'weapon', slot: 'weapon' }), 'weapon');
+  assert.equal(resolveEquipmentSlot({ kind: 'weapon' }), 'weapon');
+  assert.equal(resolveEquipmentSlot({ kind: 'armor', slot: 'helmet' }), 'helmet');
+  assert.equal(resolveEquipmentSlot({ kind: 'armor', slot: 'armor' }), 'armor');
+  assert.equal(resolveEquipmentSlot({ kind: 'armor' }), 'armor');
+  assert.equal(resolveEquipmentSlot({ kind: 'amulet', slot: 'amulet' }), 'amulet');
+  assert.equal(resolveEquipmentSlot({ kind: 'armor', slot: 'weapon' }), null);
+  assert.equal(resolveEquipmentSlot({ kind: 'armor', slot: 'amulet' }), null);
+  assert.equal(resolveEquipmentSlot({ kind: 'weapon', slot: 'helmet' }), null);
+  assert.equal(resolveEquipmentSlot({ kind: 'amulet', slot: 'armor' }), null);
+  assert.equal(resolveEquipmentSlot({ kind: 'potion', slot: 'weapon' }), null);
+  assert.equal(resolveEquipmentSlot({ kind: 'armor', slot: '__proto__' }), null);
+  assert.equal(resolveEquipmentSlot({ kind: 'armor', slot: 'constructor' }), null);
+});
+
+test('equipment slot validation does not mutate a legacy equipped snapshot', () => {
+  const legacyEquipment = {
+    weapon: 'retired_legacy_blade',
+    armor: 'old_armor_id',
+    helmet: '',
+    gloves: '',
+    boots: '',
+    cloak: '',
+    amulet: '',
+    historicalSlot: 'legacy_value',
+  };
+  const before = structuredClone(legacyEquipment);
+  assert.equal(resolveEquipmentSlot({ kind: 'armor', slot: '__proto__' }), null);
+  assert.deepEqual(legacyEquipment, before);
+});
+
+
+import { canEquipProfessionItem } from '../src/equipmentIntegrity.js';
+
+test('profession-restricted equipment respects race profession availability', () => {
+  assert.equal(canEquipProfessionItem('Кот', 'Боевой маг', '', 'Боевой маг'), true);
+  assert.equal(canEquipProfessionItem('Кот', 'Ассасин', '', 'Ассасин'), true);
+  assert.equal(canEquipProfessionItem('Собака', 'Воин', '', 'Рыцарь'), true);
+  assert.equal(canEquipProfessionItem('Птица', 'Ассасин птицы', '', 'Ассасин птицы'), true);
+  assert.equal(canEquipProfessionItem('Грызун', 'Добытчик', '', 'Добытчик'), true);
+  assert.equal(canEquipProfessionItem('Птица', '', 'Ассасин птицы', 'Ассасин птицы'), true);
+  assert.equal(canEquipProfessionItem('Собака', 'Боевой маг', '', 'Боевой маг'), false);
+  assert.equal(canEquipProfessionItem('Кот', 'Ассасин', '', 'Ассасин птицы'), false);
+  assert.equal(canEquipProfessionItem('Грызун', 'Добытчик', '', 'Рыцарь'), false);
+  assert.equal(canEquipProfessionItem('Кот', '', '', 'Неизвестная профессия'), false);
+  assert.equal(canEquipProfessionItem('Птица', '', '', undefined), true);
 });

@@ -89,6 +89,7 @@ test('expedition reports capture pre/post health and disconnect cancels stale gr
   const leaderId = 'runtime_expedition_leader_01';
   const memberId = 'runtime_expedition_member_01';
   const orphanId = 'runtime_expedition_orphan_01';
+  const legacySoloId = 'runtime_expedition_legacy_solo_01';
   const port = await unusedPort();
   let child: ChildProcess | undefined;
   const rooms: Room[] = [];
@@ -119,6 +120,9 @@ test('expedition reports capture pre/post health and disconnect cancels stale gr
       [orphanId]: makePlayer(orphanId, 'Orphaned Explorer', leaderId, {
         expedition: { branchId: 'forgotten_lands', currentZoneId: 'el1', opened: 1, cleared: [], seen: {}, state: 'searching', startedAt: Date.now() - 1_000, endsAt: Date.now() + 900_000, groupId: 'missing_group_after_restart' },
       }),
+      [legacySoloId]: makePlayer(legacySoloId, 'Legacy Solo Explorer', '', {
+        expedition: { branchId: 'forgotten_lands', currentZoneId: 'el1', opened: 1, cleared: [], seen: {}, state: 'searching', startedAt: Date.now() - 1_000, endsAt: Date.now() + 900_000 },
+      }),
     }, null, 2));
 
     seedGuestCredentials(dataDir);
@@ -126,7 +130,7 @@ test('expedition reports capture pre/post health and disconnect cancels stale gr
 
     child = spawn(process.execPath, ['--import', 'tsx', 'src/index.ts'], {
       cwd: serverDir,
-      env: { ...process.env, MISTY_DATA_DIR: dataDir, MISTY_PORT: String(port) },
+      env: { ...process.env, MISTY_DATA_DIR: dataDir, MISTY_GAME_DATA_DIR: dataDir, MISTY_PORT: String(port) },
       stdio: ['ignore', 'pipe', 'pipe'],
     });
     const serverOutput: string[] = [];
@@ -134,7 +138,7 @@ test('expedition reports capture pre/post health and disconnect cancels stale gr
     child.stderr?.on('data', chunk => serverOutput.push(String(chunk)));
     await waitForServer(port, child);
     const client = new Client(`ws://127.0.0.1:${port}`);
-    const ids = [soloId, leaderId, memberId, orphanId];
+    const ids = [soloId, leaderId, memberId, orphanId, legacySoloId];
     const connected: Record<string, Room> = {};
     for (const id of ids) {
       const token = await guestToken(port, id);
@@ -159,6 +163,13 @@ test('expedition reports capture pre/post health and disconnect cancels stale gr
     const persistedOrphan = JSON.parse(readPlayers(join(dataDir, 'players.json'))[orphanId].quests).expedition;
     assert.equal(persistedOrphan.state, 'idle');
     assert.equal(persistedOrphan.groupId, '');
+
+    const legacySoloStates: any[] = [];
+    connected[legacySoloId].onMessage('expeditionState', payload => legacySoloStates.push(payload.state));
+    connected[legacySoloId].send('expeditionState');
+    const restoredLegacySolo = await waitFor(() => legacySoloStates[0], 'legacy solo expedition state');
+    assert.equal(restoredLegacySolo.state, 'searching', 'a solo search without a legacy groupId must survive reconnect');
+    assert.ok(Number(restoredLegacySolo.endsAt) > Date.now(), 'legacy solo search must retain its original completion time');
 
     const dungeonLists: any[] = [];
     connected[soloId].onMessage('dungeonList', payload => dungeonLists.push(payload));
@@ -221,6 +232,43 @@ test('expedition reports capture pre/post health and disconnect cancels stale gr
     connected[soloId].send('quest', { id: 'daily_hunt' });
     await waitFor(() => soloNotices.find(message => message.includes('Награда за это задание уже получена.')), 'duplicate daily hunt claim');
     assert.equal(readPlayers(join(dataDir, 'players.json'))[soloId].gold, goldBeforeDailyHunt + 300, 'daily hunt reward must not be duplicated');
+
+    const previousSearchStartedAt = Number(JSON.parse(
+      readPlayers(join(dataDir, 'players.json'))[soloId].quests,
+    ).expedition?.startedAt || 0);
+    connected[soloId].send('expeditionSearchStart');
+    const soloSearchBeforeReload = await waitFor(() => {
+      const state = JSON.parse(readPlayers(join(dataDir, 'players.json'))[soloId].quests).expedition;
+      return state?.state === 'searching' && Number(state.startedAt) > previousSearchStartedAt ? state : undefined;
+    }, 'new solo search persisted before page reload');
+    await waitFor(() => soloNotices.some(message => message.includes('Поиск монстра начался.')),
+      'solo search before page reload notice');
+    assert.equal(soloSearchBeforeReload.state, 'searching');
+    const soloSearchEndsAt = Number(soloSearchBeforeReload.endsAt);
+    await connected[soloId].leave();
+    const soloSearchAfterDisconnect = await waitFor(() => {
+      const state = JSON.parse(readPlayers(join(dataDir, 'players.json'))[soloId].quests).expedition;
+      return state?.state === 'searching' && Number(state.endsAt) === soloSearchEndsAt ? state : undefined;
+    }, 'solo expedition search persistence after disconnect');
+    assert.equal(soloSearchAfterDisconnect.endsAt, soloSearchEndsAt,
+      'disconnecting a solo client must not reset the active search timer');
+
+    const soloReconnectToken = await guestToken(port, soloId);
+    connected[soloId] = await client.joinOrCreate('my_room', { playerId: soloId, sessionToken: soloReconnectToken });
+    rooms.push(connected[soloId]);
+    const restoredSoloStates: any[] = [];
+    connected[soloId].onMessage('expeditionState', payload => restoredSoloStates.push(payload.state));
+    connected[soloId].send('expeditionState');
+    const restoredSoloSearch = await waitFor(() => restoredSoloStates[0], 'solo expedition state after page reload');
+    assert.equal(restoredSoloSearch.state, 'searching',
+      'reconnecting after a page reload must restore the active solo search');
+    assert.equal(restoredSoloSearch.endsAt, soloSearchEndsAt,
+      'reconnecting must preserve the original search completion timestamp');
+
+    const resumedSearchResults: any[] = [];
+    connected[soloId].onMessage('combatResult', payload => resumedSearchResults.push(payload));
+    connected[soloId].send('expeditionSearchClaim');
+    await waitFor(() => resumedSearchResults[0], 'restored solo expedition search completion');
 
     const invitations: any[] = [];
     connected[memberId].onMessage('huntGroupInvite', payload => invitations.push(payload));

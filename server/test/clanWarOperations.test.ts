@@ -117,3 +117,74 @@ test('disbanding a clan cancels its active wars and releases its territories', (
   assert.deepEqual(result.territories[0], { id: 'isle-a', owner: '', ownerName: '', capturedAt: 0, defense: 0 });
   assert.equal(result.territories[1].owner, 'clan-b');
 });
+
+
+test('clan war settlement rejects vault and progression counter overflow without mutating source state', () => {
+  const wars = [activeWar({ aDamage: 200, bDamage: 100 })];
+  const clans = {
+    'clan-a': { level: 1, vault: Number.MAX_SAFE_INTEGER, seasonPoints: 0, questProgress: { war: 0 } },
+    'clan-b': { level: 1, vault: 0, seasonPoints: 0, questProgress: { war: 0 } },
+  };
+  assert.throws(() => settleExpiredClanWars(wars, clans, 10_000), /safe-integer|safe integer/i);
+  assert.equal(wars[0].status, 'active');
+  assert.equal(clans['clan-a'].vault, Number.MAX_SAFE_INTEGER);
+  assert.equal(clans['clan-a'].seasonPoints, 0);
+});
+
+test('clan war damage accumulation rejects unsafe legacy counters and overflow', () => {
+  assert.throws(() => recordClanWarDamage(
+    activeWar({ aDamage: Number.MAX_SAFE_INTEGER }),
+    'clan-a', 'player-a', 1, 1_000,
+  ), /safe integer/i);
+  assert.throws(() => recordClanWarDamage(
+    activeWar({ aDamage: 1.5 }),
+    'clan-a', 'player-a', 1, 1_000,
+  ), /safe integer/i);
+});
+
+
+test('war settlement fails closed on malformed persisted damage counters', () => {
+  for (const value of [-1, 1.5, Number.NaN, Number.POSITIVE_INFINITY, Number.MAX_SAFE_INTEGER + 1]) {
+    assert.throws(
+      () => settleExpiredClanWars([activeWar({ aDamage: value as number })], {}, 10_000),
+      /invalid damage counters/i,
+    );
+  }
+  const malformed = [activeWar({ endsAt: Number.NaN }), activeWar({ endsAt: -1 })];
+  for (const war of malformed) {
+    assert.throws(() => settleExpiredClanWars([war], {}, 10_000), /invalid end timestamp/i);
+  }
+});
+
+test('invalid settlement data leaves the original war and clan records untouched', () => {
+  const war = activeWar({ aDamage: Number.MAX_SAFE_INTEGER + 1, bDamage: 0 });
+  const clan = { level: 1, vault: 100, seasonPoints: 0, questProgress: { war: 0 } };
+  assert.throws(() => settleExpiredClanWars([war], { 'clan-a': clan }, 10_000));
+  assert.equal(war.status, 'active');
+  assert.equal(war.winnerId, undefined);
+  assert.equal(clan.vault, 100);
+  assert.equal(clan.seasonPoints, 0);
+  assert.equal(clan.questProgress.war, 0);
+});
+
+
+test('clan war cooldown fails closed for malformed persisted timestamps', () => {
+  for (const value of [-1, 1.5, Number.NaN, Number.POSITIVE_INFINITY, Number.MAX_SAFE_INTEGER + 1, '5000' as unknown as number]) {
+    assert.throws(
+      () => clanWarCooldownRemaining(activeWar({ lastAttackAtByPlayer: { playerA: value } }), 'playerA', 6_000),
+      /timestamp is invalid/i,
+    );
+  }
+  assert.throws(() => clanWarCooldownRemaining(activeWar(), 'playerA', -1), /clock and duration/i);
+  assert.throws(() => clanWarCooldownRemaining(activeWar(), 'playerA', 6_000, 1.5), /clock and duration/i);
+});
+
+test('malformed cooldown timestamp cannot be bypassed by a new war attack', () => {
+  const war = activeWar({ lastAttackAtByPlayer: { playerA: 5_000.5 } });
+  assert.throws(
+    () => recordClanWarDamage(war, 'clan-a', 'playerA', 10, 6_000),
+    /timestamp is invalid/i,
+  );
+  assert.equal(war.aDamage, 0);
+  assert.equal(war.lastAttackAtByPlayer?.playerA, 5_000.5);
+});

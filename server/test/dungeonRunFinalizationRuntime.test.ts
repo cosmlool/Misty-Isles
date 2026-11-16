@@ -246,3 +246,118 @@ test('finalization fails closed when shared-state recovery occurred before prepa
     rmSync(dataDir, { recursive: true, force: true });
   }
 });
+
+
+test('finalization recovers after every shared-WAL write boundary', () => {
+  const boundaries = [
+    { name: 'journal', status: 91 },
+    { name: 'players', status: 92 },
+    { name: 'dungeonRuns', status: 92 },
+    { name: 'dungeonOutbox', status: 92 },
+  ] as const;
+  for (const boundary of boundaries) {
+    const dataDir = mkdtempSync(join(tmpdir(), 'misty-dungeon-finalize-matrix-'));
+    const files = {
+      players: join(dataDir, 'players.json'),
+      dungeonRuns: join(dataDir, 'dungeon_runs.json'),
+      dungeonOutbox: join(dataDir, 'dungeon_outbox.json'),
+    };
+    try {
+      const transactionModule = new URL('../src/sharedStateTransactions.ts', import.meta.url).href;
+      const runtimeModule = new URL('../src/sharedStateRuntime.ts', import.meta.url).href;
+      const stateModule = new URL('../src/dungeonRunState.ts', import.meta.url).href;
+      const finalizationModule = new URL('../src/dungeonRunFinalizationRuntime.ts', import.meta.url).href;
+      const childScript = `
+        import { createSharedStateTransactionStore } from ${JSON.stringify(transactionModule)};
+        import { createSharedStateRuntime } from ${JSON.stringify(runtimeModule)};
+        import { createDungeonRunRecord, createDungeonRoundPlan } from ${JSON.stringify(stateModule)};
+        import { commitDungeonRunFinalization } from ${JSON.stringify(finalizationModule)};
+        const dataDir = ${JSON.stringify(dataDir)};
+        const files = ${JSON.stringify(files)};
+        const base = createDungeonRunRecord({
+          runId: 'run_finalize_matrix', requestId: 'request_finalize_matrix', dungeonId: 'dungeon_20',
+          groupId: 'group_1', leaderId: 'p1',
+          participants: [
+            { playerId: 'p1', health: 80, maxHealth: 100 },
+            { playerId: 'p2', health: 60, maxHealth: 100 },
+          ],
+          bossId: 'boss_20', bossHealth: 500, seed: 'seed_finalize_matrix', now: 100,
+        });
+        const run = {
+          ...base, roundIndex: 2, updatedAt: 200,
+          roundPlan: { ...createDungeonRoundPlan({
+            totalRounds: 2, totalBossDamage: 500,
+            totalIncomingDamageByParticipant: { p1: 20, p2: 30 },
+          }), nextRoundIndex: 2 },
+        };
+        const players = {
+          p1: { id: 'p1', health: 80, gold: 600, inventory: '[\"dungeon_resource\"]', quests: '{}' },
+          p2: { id: 'p2', health: 60, gold: 450, inventory: '[]', quests: '{}' },
+        };
+        const event = {
+          eventId: 'dungeon:run_finalize_matrix:p1:combatResult',
+          runId: run.runId, playerId: 'p1', messageType: 'combatResult',
+          payload: { requestId: run.requestId, text: 'Dungeon complete', report: { result: 'win' } },
+        };
+        const boundary = ${JSON.stringify(boundary.name)};
+        const store = createSharedStateTransactionStore({
+          dataDir, files,
+          testHooks: {
+            afterJournalPersisted() { if (boundary === 'journal') process.exit(91); },
+            afterTargetWrite(key) { if (boundary === key) process.exit(92); },
+          },
+        });
+        const runtime = createSharedStateRuntime({
+          shared: store, auction: { recover: () => false }, clans: { recover: () => false },
+        });
+        commitDungeonRunFinalization({
+          runtime, runId: run.runId, expectedRoundIndex: 2, expectedUpdatedAt: 200,
+          outcome: 'win', players, runs: { [run.runId]: run }, now: 300, events: [event],
+        });
+        process.exit(0);
+      `;
+      const child = spawnSync(process.execPath, ['--import', 'tsx', '--input-type=module', '-e', childScript], {
+        cwd: process.cwd(), encoding: 'utf8', timeout: 10_000,
+      });
+      assert.equal(child.status, boundary.status, child.stderr || child.stdout);
+      assert.equal(existsSync(join(dataDir, 'shared_state_transaction.json')), true, boundary.name);
+      const restarted = createSharedStateTransactionStore({ dataDir, files });
+      assert.equal(restarted.recover(), true, boundary.name);
+      const recoveredRun = readJson(files.dungeonRuns).run_finalize_matrix;
+      assert.equal(recoveredRun.status, 'completed', boundary.name);
+      assert.equal(recoveredRun.terminalResult.outcome, 'win', boundary.name);
+      assert.equal(readJson(files.players).p1.gold, 600, boundary.name);
+      assert.deepEqual(JSON.parse(readJson(files.players).p1.inventory), ['dungeon_resource'], boundary.name);
+      assert.equal(readJson(files.players).p2.gold, 450, boundary.name);
+      const eventId = 'dungeon:run_finalize_matrix:p1:combatResult';
+      assert.equal(readJson(files.dungeonOutbox)[eventId].status, 'pending', boundary.name);
+      assert.equal(readJson(files.dungeonOutbox)[eventId].payload.report.result, 'win', boundary.name);
+      assert.equal(existsSync(join(dataDir, 'shared_state_transaction.json')), false, boundary.name);
+    } finally {
+      rmSync(dataDir, { recursive: true, force: true });
+    }
+  }
+});
+
+
+test('outbox acknowledgement rejects malformed event records instead of persisting them', () => {
+  const dataDir = mkdtempSync(join(tmpdir(), 'misty-dungeon-outbox-ack-invalid-'));
+  const files = { players: join(dataDir, 'players.json'), dungeonRuns: join(dataDir, 'dungeon_runs.json'), dungeonOutbox: join(dataDir, 'dungeon_outbox.json') };
+  try {
+    const runtime = runtimeFor(createSharedStateTransactionStore({ dataDir, files }));
+    const malformed = {
+      'dungeon:run_1:p1:combatResult': {
+        eventId: 'dungeon:run_1:p1:combatResult', runId: 'run_1', playerId: 'p1',
+        messageType: 'combatResult', payload: { requestId: 'req_1' }, status: 'pending', createdAt: 1,
+      },
+      'dungeon:run_1:p2:combatResult': {
+        eventId: 'dungeon:run_1:p2:combatResult', runId: 'run_1', playerId: 'p2',
+        messageType: 'combatResult', payload: { requestId: 'req_1' }, status: 'delivered', createdAt: 1,
+      },
+    } as any;
+    assert.throws(() => markDungeonResultEventDelivered({ runtime, outbox: malformed, eventId: 'dungeon:run_1:p1:combatResult', now: 2 }), /delivery timestamp/);
+    assert.equal(existsSync(files.dungeonOutbox), false);
+  } finally {
+    rmSync(dataDir, { recursive: true, force: true });
+  }
+});

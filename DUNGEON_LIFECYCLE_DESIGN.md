@@ -160,7 +160,7 @@ Important limitation: the current boss dungeon handler is still synchronous and 
 - The shared WAL now supports `dungeon_outbox.json`; terminal run state, post-reward player snapshots, and queued result messages can be committed in the same transaction.
 - Result events have deterministic IDs bound to the run and recipient. Repeated finalization cannot enqueue a second copy or replace an existing event payload.
 - Delivery acknowledgement is persisted separately after transport send. The new reconnect dispatcher filters by recipient, sends only pending events, and acknowledges only after `client.send` returns. A fresh outbox snapshot is loaded before each acknowledgement to avoid overwriting newer event state.
-- Delivery is at-least-once: a crash between socket send and acknowledgement can replay an event. Client deduplication by `eventId` is still outstanding.
+- Delivery is at-least-once: a crash between socket send and acknowledgement can replay an event. Client deduplication by `eventId` is implemented in `client/src/dungeonResultDedup.ts` and runs before UI side effects; it remembers up to 500 event IDs per player in browser storage, with an additional session-level set.
 - The dispatcher is wired to player join/reconnect. The live synchronous `runExpeditionDungeon()` handler now writes each participant's `combatResult` event to the outbox in the same shared-WAL transaction as the updated player snapshots, then dispatches pending events and acknowledges them after send. The newer durable dungeon-run round/finalization helpers remain a separate foundation not yet used by the live combat calculation. At-least-once replay still requires client-side deduplication by `eventId`. No reward formula or balance change is included.
 
 
@@ -236,3 +236,80 @@ The durable start transaction must consume the daily attempts exactly once toget
 ### Safe boundary for the current stage
 
 This stage is an implementation audit and sequencing correction only. It changes no combat formula, drop chance, loot distribution rule, reward amount, attempt limit, or live dungeon behavior. The next code change should first add and test the immutable preparation/settlement model against the existing synchronous handler's outputs; only after parity is demonstrated should the handler be switched to durable entry/round/finalization transactions.
+
+## Additional live-handler audit — request identity and recovery UI — 2026-11-15
+
+- The legacy `runExpeditionDungeon()` request cache stores only `{ id, report, text }` in each player's `dungeonRequestHistory` (last five entries) and `dungeonLastRequest`. It does not bind the request ID to `dungeonId`, `groupId`, `leaderId`, or the ordered participant roster.
+- The live handler treats a request as cached when any participant has the same request ID. In that case it returns early and re-sends the cached result only to participants whose own cache matches; it does not verify that the current dungeon/group identity matches the original request. This does not by itself prove duplicate rewards, but it can suppress a legitimate new group request and leave members with different UI outcomes if a client reuses an ID across identities.
+- `resolveDungeonRequestRecovery()` provides the stronger durable identity check for `dungeon_runs` (dungeon, group, leader, and ordered roster), but `server/src/index.ts` does not import or call it. The current legacy cache is therefore separate from that safer resolver. The five-entry history limit also means it is not an indefinite server-side idempotency ledger.
+- The official client persists one pending `{ id, requestId }` per player and re-sends it after a retry; it prevents switching to another dungeon while that pending request exists. This reduces accidental ID reuse in the official UI, but is not a server-side identity guarantee for multiple devices or custom clients.
+- The client renders a saved-run card and disables new dungeon-entry buttons when `dungeonRunRecovery` is non-null. There is currently no player-facing resume/advance/abort action in that screen. Since production does not create active durable run records yet, this is a dormant recovery UI; once durable entry is wired, the resume controls must be delivered in the same integration milestone so a recovered player is not stranded.
+- Do not patch the legacy cache independently as a partial workaround while the durable run identity flow is being designed. The immutable prepared-run identity should become the single authoritative idempotency record during the planned handler migration; add cross-player mismatch, ID-reuse, and >5-subsequent-entry retry tests at that point.
+
+## Resurrection snapshot consistency and death semantics — 2026-11-15
+
+- Review of `prepareDungeonRevival()` found that it updated the durable run participant HP and consumed the rescuer's scroll, but left the target's `players.json` health unchanged. A reconnect between revival and the next round could therefore load stale/zero Player HP while the run record said the participant was revived.
+- Fixed the pure preparation helper to require both rescuer and target player snapshots and to write `target.health = reviveHealth` in the same returned player snapshot as the rescuer inventory change. Regression tests now assert target HP synchronization, input immutability, JSON round-trip, and missing-target rejection. Commits: `303d139411b40328190e27569d0b839925bb7074`, `7f7d89c0d35203e6e94ec3efd6a267368967f02d`.
+- This helper remains a preparation layer and is not yet called by the live dungeon handler; the fix prevents a future integration defect but does not make revival playable today.
+- Death semantics still need a deliberate integration decision: the legacy `prepareDungeonMemberHealthOutcome()` and durable `resolveNextDungeonRunRound()` both clamp a participant's HP to at least 1, while the lifecycle design includes a spectator state and explicit death transition. The current aggregate victory condition also requires every participant to survive incoming damage. Do not silently change this behavior during refactoring; define exactly when a participant becomes a spectator and how that interacts with group victory, leader death, and resurrection before switching the live handler.
+
+
+## Dungeon content configurability audit — 2026-11-16
+
+The production dungeon content contract was traced from server/data/forgotten_lands.json into DUNGEONS and the live runExpeditionDungeon() handler.
+
+Confirmed:
+- The data file currently defines four dungeons. Each record has min, power, xp, gold, resource, bossId, and rooms.
+- rooms contains three human-readable room labels per dungeon (two descriptive stages and a final boss label). It is not an encounter roster: no monster IDs, per-room spawn counts, wave definitions, or room combat settings are present.
+- The live handler resolves exactly one monster by dungeon.bossId and passes that boss plus dungeon.power to calculateDungeonCombatPlan(). It does not iterate rooms, spawn intermediate monsters, or run multiple combat encounters.
+- The existing rooms values therefore describe dungeon flavor/progression but do not control the number of enemies fought. Changing the number of strings in rooms alone will not change combat.
+- The existing fields min, power, xp, gold, resource, and bossId are live inputs to entry checks, combat calculation, rewards/drop selection, and boss resolution respectively. Changes to these values can affect live gameplay immediately and require parity/balance tests.
+- The current data contract has no dedicated monsterCount, waves, encounters, spawns, or per-room reward configuration. A requested multi-mob dungeon cannot be implemented as a data-only edit to the current schema.
+
+Prepared but not live:
+- The immutable prepared-encounter model can freeze the legacy aggregate combat result, selected drop IDs/recipients, per-participant settlement and player snapshots.
+- The durable start/round/finalization helpers provide tested WAL boundaries, but the production handler still does not call them. The live handler remains one synchronous boss encounter. The durable outbox is integrated for result delivery, which is separate from resumable run progression.
+- The prepared encounter and durable run foundations do not yet implement configurable waves or multiple sequential enemies.
+
+Safe next implementation sequence:
+1. Define a versioned dungeon content schema with explicit ordered encounters/waves and explicit enemy references/counts; keep legacy rooms presentation-only or migrate it with a deliberate compatibility rule.
+2. Validate every referenced monster and every count/round/reward field at startup; reject invalid content rather than silently skipping enemies.
+3. Add pure encounter expansion tests for exact enemy count, ordering, duplicates, missing IDs, and boundary counts.
+4. Build a legacy single-boss adapter that maps each existing dungeon to exactly its current boss encounter and current rewards. Golden tests must prove current four dungeons remain behaviorally identical.
+5. Only then add multi-enemy/wave execution and connect the prepared immutable settlement plus durable run lifecycle. Freeze all random outcomes and settlement before WAL commit; never reroll on retries/restarts.
+6. Add full live runtime tests for multiple enemies/waves, party distribution, victory/loss, attempt charging, quest/history/report/outbox delivery, crash recovery and idempotency.
+
+No gameplay code, dungeon data, combat formula, RNG, rewards, economy, save format, or client behavior changed in this audit. Do not treat rooms as a working wave system.
+
+
+## Versioned encounter configuration foundation — 2026-11-16
+
+Added server/data/dungeon_encounters.json with schemaVersion 1 and an explicit ordered encounter/wave/spawn structure. All four current dungeons are represented as one encounter, one boss wave, and exactly one spawn of their existing bossId. The config is intentionally not consumed by the production dungeon handler yet.
+
+Added server/src/dungeonEncounterConfig.ts:
+- Strict schema-version, ID, known-dungeon, known-monster and full dungeon-coverage validation.
+- Rejects duplicate dungeon/encounter/wave IDs, empty encounters/waves/spawns, duplicate monster entries within one wave, non-safe/non-positive/oversized spawn counts, more than 20 waves per encounter, and more than 100 expanded monsters per dungeon.
+- Expands counts into a deterministic ordered monster ID list without RNG or side effects.
+
+Added tests for legacy four-dungeon boss parity, ordered wave expansion, invalid versions/references/counts, duplicate/empty/oversized input, and the actual checked-in JSON against forgotten_lands.json. The new test is registered in the server test script.
+
+This is a configuration/schema foundation only. It does not create rooms or multiple fights in production, alter combat, RNG, rewards, saves, client protocol, or balance. Production integration remains a later stage after lifecycle and settlement parity are designed and tested.
+
+
+## Legacy boss adapter boundary — 2026-11-16
+
+Added resolveLegacyDungeonBossId() to the pure encounter config module. It projects a validated expanded definition into the old single-boss contract only when it contains exactly one encounter, one wave and one monster spawn. Multi-encounter, multi-wave or multi-monster content fails closed instead of being silently truncated. Regression tests assert the four configured dungeon boss IDs and all rejected shapes.
+
+The adapter is intentionally not wired into runExpeditionDungeon yet. The production handler continues reading the existing dungeon.bossId directly, preserving current combat calculations and execution order while this boundary is characterized. The Quality Gate for the previous config commit exposed one incorrect test fixture: a count of 101 violated the per-spawn cap before reaching the total-dungeon cap. The fixture now uses six legal 20-monster waves to exercise the aggregate cap correctly.
+
+
+### CI follow-up — 2026-11-16
+Quality Gate 43931230374 exposed a literal escaped newline accidentally inserted into the aggregate-limit test while preparing the adapter regression. Corrected the test source to use an actual line break. The subsequent commit is awaiting its own Quality Gate; no production combat code was changed.
+
+
+### CI correction — 2026-11-16 (follow-up)
+The subsequent Quality Gate 43936898345 showed that the earlier newline correction had not actually removed the literal `\\n` from the checked-in test source. Replaced the literal two-character escape with a real source line break in commit dca7f4e3b8b3bf57237835cdc4e777225c813c77. The new run 43946425041 has data/docs and client jobs passing; server and Playwright jobs were still in progress at the latest check. No production runtime behavior changed.
+
+
+Append the wave runtime integration contract and current implementation boundaries. See `DUNGEON_WAVE_RUNTIME_CONTRACT.md` for required state, invariants, unresolved gameplay decisions, and staged wiring sequence. Verified that the current config/legacy adapter are pure schema boundaries; production still executes one synchronous `bossId` encounter and the durable run types still store one boss and one aggregate result. No live combat behavior changed.
+

@@ -47,3 +47,49 @@ test('room leave does not overwrite persistence recovery with a stale quest snap
   assert.match(leave, /persistPlayers\(affectedPlayers\.length\?affectedPlayers:\[this\.state\.player\]\)/);
   assert.doesNotMatch(leave, /previousQuests|catch\(error\)[\s\S]*?player\.quests=previous/);
 });
+
+test('local save directory does not redirect bundled static game data', () => {
+  assert.match(source, /const configuredGameDataDir = process\.env\.MISTY_GAME_DATA_DIR/);
+  assert.match(source, /MISTY_GAME_DATA_DIR must be an absolute path/);
+  assert.match(source, /const GAME_DATA_DIR = resolve\(configuredGameDataDir \|\| join\(process\.cwd\(\), 'data'\)\)/);
+  for (const filename of ['forgotten_lands.json', 'city_npcs.json', 'equipment_catalog.json']) {
+    assert.ok(source.includes(`join(GAME_DATA_DIR,'${filename}')`), filename + ' must load from bundled or explicitly selected game data');
+    assert.equal(source.includes(`join(DATA_DIR,'${filename}')`), false, filename + ' must not implicitly load from the isolated save directory');
+  }
+  assert.match(source, /const SAVE_FILE = join\(DATA_DIR, 'players\.json'\)/);
+});
+
+test('group persistence does not roll runtime membership back while its durable WAL is pending', () => {
+  const start = source.indexOf('function persistHuntGroups(');
+  const end = source.indexOf('const EXPEDITION_DATA', start);
+  assert.ok(start >= 0 && end > start, 'group persistence helper must be present');
+  const helper = source.slice(start, end);
+  assert.match(helper, /sharedStateRuntime\.transactWithRecovery\(\(recovery\)=>\{[\s\S]*?if\(recovery\.recovered\)/);
+  assert.match(helper, /if\(!existsSync\(sharedStateTransactions\.journalFile\)\)\{[\s\S]*?restoreHuntGroupsFromDisk\(\);[\s\S]*?reconcileOnlinePlayersAfterPersistenceFailure\(\);/);
+  assert.match(helper, /durable WAL remains[\s\S]*?Keep the intended in-memory roster/);
+});
+test('pre-journal player persistence failures restore existing online players from durable disk state', () => {
+  const start = source.indexOf('function reconcileOnlinePlayersAfterPersistenceFailure()');
+  const end = source.indexOf('function loadPlayersForAuction()', start);
+  assert.ok(start >= 0 && end > start, 'persistence failure reconciliation helper must be present');
+  const helper = source.slice(start, end);
+  assert.match(helper, /if\(sharedStateRuntime\.recoverPendingPlayerState\(\)\)[\s\S]*?syncOnlinePlayersAfterRecovery\(\)[\s\S]*?return/);
+  assert.match(helper, /if\(!existsSync\(sharedStateTransactions\.journalFile\)\)syncOnlinePlayersAfterRecovery\(\)/);
+  assert.match(helper, /No journal means publication never happened/);
+});
+test('PvP opponent refresh reconciles live player state when its transaction fails', () => {
+  const start = source.indexOf("this.onAuthenticatedMessage('pvpList'");
+  const end = source.indexOf("this.onAuthenticatedMessage('pvpChallenge'", start);
+  assert.ok(start >= 0 && end > start, 'PvP list handler must be present');
+  const handler = source.slice(start, end);
+  assert.match(handler, /try\{[\s\S]*sharedStateRuntime\.transact/);
+  assert.match(handler, /catch\(error\)\{[\s\S]*reconcileOnlinePlayersAfterPersistenceFailure\(\);[\s\S]*throw error/);
+});
+test('hunt-group leave delegates rollback to WAL-aware persistence reconciliation', () => {
+  const start = source.indexOf("this.onAuthenticatedMessage('huntGroupLeave'");
+  const end = source.indexOf("this.onAuthenticatedMessage('expeditionState'", start);
+  assert.ok(start >= 0 && end > start, 'hunt-group leave handler must be present');
+  const handler = source.slice(start, end);
+  assert.match(handler, /persistHuntGroups\(affectedPlayers,playerQuestOverrides\)/);
+  assert.doesNotMatch(handler, /previousQuests|member\.quests=quests/);
+});

@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import test from 'node:test';
 import { dispatchPendingDungeonResultEvents, enqueueDungeonResultEvents } from '../src/dungeonResultOutboxDelivery.js';
 
-function event(eventId:string,playerId:string,status:'pending'|'delivered'='pending',createdAt=1){return {eventId,playerId,messageType:'combatResult',payload:{requestId:eventId,text:'done'},status,createdAt};}
+function event(eventId:string,playerId:string,status:'pending'|'delivered'='pending',createdAt=1){return {eventId,runId:'run_1',playerId,messageType:'combatResult',payload:{requestId:eventId,text:'done'},status,createdAt,...(status==='delivered'?{deliveredAt:createdAt+1}:{})};}
 
 test("dispatches only this player's pending events in stable order and acknowledges after send",()=>{
   const outbox={e2:event('e2','p1','pending',2),e1:event('e1','p1','pending',1),other:event('other','p2'),done:event('done','p1','delivered')};
@@ -24,11 +24,19 @@ test('does not acknowledge when persistence acknowledgement fails',()=>{
   assert.deepEqual(calls,['send','ack']);
 });
 
-test('ignores malformed event IDs and events belonging to another recipient',()=>{
+test('fails closed on an outbox key that does not match its event ID',()=>{
   const calls:string[]=[];
   const outbox:any={wrong:event('different','p1'),other:event('other','p2')};
-  const count=dispatchPendingDungeonResultEvents({playerId:'p1',outbox,send:()=>calls.push('send'),acknowledge:()=>calls.push('ack')});
-  assert.equal(count,0);
+  assert.throws(()=>dispatchPendingDungeonResultEvents({playerId:'p1',outbox,send:()=>calls.push('send'),acknowledge:()=>calls.push('ack')}),/malformed/);
+  assert.deepEqual(calls,[]);
+});
+
+test('fails closed on invalid status and missing delivery timestamp',()=>{
+  const calls:string[]=[];
+  const invalidStatus:any={e1:{...event('e1','p1'),status:'sent'}};
+  assert.throws(()=>dispatchPendingDungeonResultEvents({playerId:'p1',outbox:invalidStatus,send:()=>calls.push('send'),acknowledge:()=>calls.push('ack')}),/malformed/);
+  const missingTimestamp:any={e1:{...event('e1','p1','delivered'),deliveredAt:undefined}};
+  assert.throws(()=>dispatchPendingDungeonResultEvents({playerId:'p1',outbox:missingTimestamp,send:()=>calls.push('send'),acknowledge:()=>calls.push('ack')}),/timestamp/);
   assert.deepEqual(calls,[]);
 });
 

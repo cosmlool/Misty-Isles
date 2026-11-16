@@ -31,6 +31,7 @@ test('prepares activity, combat history, request replay and outbox event in one 
     requestId: 'request_123',
     playerId: 'player-1',
     text: 'done',
+    binding: { dungeonId: 'd1', groupId: 'g1', leaderId: 'player-1', participantIds: ['player-1'] },
   });
 
   assert.equal(result.quests.activityDay, '2026-11-13');
@@ -40,7 +41,7 @@ test('prepares activity, combat history, request replay and outbox event in one 
   assert.deepEqual(result.quests.activityLog, [{ at: Date.parse('2026-11-13T12:00:00.000Z'), ...activity }, { type: 'hunt' }]);
   assert.deepEqual(result.history, [report, { result: 'prior' }]);
   assert.deepEqual(result.quests.dungeonRequestHistory, [
-    { id: 'prior' }, { id: 'request_123', report, text: 'done' },
+    { id: 'prior' }, { id: 'request_123', report, text: 'done', binding: { dungeonId: 'd1', groupId: 'g1', leaderId: 'player-1', participantIds: ['player-1'] } },
   ]);
   assert.equal(result.quests.retained, true);
   assert.equal(result.event.playerId, 'player-1');
@@ -66,6 +67,7 @@ test('preserves same-day counters and trims activity and combat histories to leg
     requestId: 'request_456',
     playerId: 'player-2',
     text: 'done',
+    binding: { dungeonId: 'd1', groupId: '', leaderId: 'player-2', participantIds: ['player-2'] },
   });
   assert.deepEqual(result.quests.activityToday, {
     hunts: 2, wins: 1, losses: 1, gold: 57, xp: 109, dungeons: 4, crafts: 4,
@@ -85,6 +87,7 @@ test('uses empty logs when persisted history values are not arrays', () => {
     requestId: 'request_789',
     playerId: 'player-3',
     text: 'done',
+    binding: { dungeonId: 'd1', groupId: '', leaderId: 'player-3', participantIds: ['player-3'] },
   });
   assert.deepEqual(result.quests.activityLog, [{ at: Date.parse('2026-11-13T13:00:00.000Z'), ...activity }]);
   assert.deepEqual(result.history, [report]);

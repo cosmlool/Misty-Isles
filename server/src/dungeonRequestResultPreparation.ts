@@ -19,12 +19,13 @@ export function prepareDungeonRequestResult(
   playerId: string,
   report: Record<string, unknown>,
   text: string,
+  binding: { dungeonId: string; groupId: string; leaderId: string; participantIds: string[] },
 ): { quests: DungeonRequestQuestState; event: DungeonRequestResultEvent } {
   const eventId = `dungeon:legacy_${requestId}:${playerId}:combatResult`;
   const requestHistory = Array.isArray(quests.dungeonRequestHistory)
     ? quests.dungeonRequestHistory as Array<Record<string, unknown>>
     : [];
-  const entry = { id: requestId, report, text };
+  const entry = { id: requestId, report, text, binding: { ...binding, participantIds: [...binding.participantIds] } };
 
   return {
     quests: {

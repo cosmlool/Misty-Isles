@@ -40,6 +40,15 @@ export function prepareDungeonEncounterCommit(input: {
       prepared.preparedAt < current.startedAt) {
     throw new Error('Prepared encounter identity does not match the durable dungeon run.');
   }
+  for (const playerId of current.participantIds) {
+    const durableParticipant = current.participants[playerId];
+    const preparedParticipant = prepared.participants[playerId];
+    const playerSnapshot = prepared.playerSnapshots[playerId];
+    if (!durableParticipant || preparedParticipant.hpBefore !== durableParticipant.health ||
+        (playerSnapshot.id !== undefined && playerSnapshot.id !== playerId)) {
+      throw new Error(`Prepared encounter participant snapshot is stale or belongs to another player: ${playerId}.`);
+    }
+  }
   if (current.preparedEncounter) {
     const existing = validatePreparedDungeonEncounter(current.preparedEncounter);
     if (!samePreparedEncounter(existing, prepared)) {
@@ -57,7 +66,7 @@ export function prepareDungeonEncounterCommit(input: {
 }
 
 type DungeonEncounterCommitRuntime = {
-  transact<T>(prepare: (recovered: boolean) => {
+  transactWithRecovery<T>(prepare: (recovery: { recovered: boolean; playersRecovered: boolean }) => {
     files: { players: Record<string, Record<string, unknown>>; dungeonRuns: DungeonRunStore };
     result: T;
     skipWrite?: boolean;
@@ -72,8 +81,8 @@ export function commitPreparedDungeonEncounter(input: {
   players: Record<string, Record<string, unknown>>;
   encounter: PreparedDungeonEncounter;
 }): PreparedDungeonEncounterCommit {
-  return input.runtime.transact(recovered => {
-    if (recovered) {
+  return input.runtime.transactWithRecovery(recovery => {
+    if (recovery.recovered) {
       throw new Error('Shared state was recovered during encounter preparation; reload player and run snapshots before retrying.');
     }
     const prepared = prepareDungeonEncounterCommit(input);

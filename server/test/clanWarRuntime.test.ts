@@ -89,6 +89,7 @@ test('clan war attacks enforce per-player cooldown and accumulate real damage', 
   const today = yesterday + 1;
   const port = await unusedPort();
   let child: ChildProcess | undefined;
+  let serverStderr = '';
   let roomA: Room | undefined;
   let roomB: Room | undefined;
   let roomC: Room | undefined;
@@ -119,7 +120,7 @@ test('clan war attacks enforce per-player cooldown and accumulate real damage', 
       createdAt: Date.now(), endsAt: Date.now() + 60_000,
     }], null, 2));
     writeFileSync(join(dataDir, 'clan_territories.json'), JSON.stringify([
-      { id: 'territory-runtime', owner: 'clan-a', ownerName: 'Клан А', capturedAt: 1, defense: 10 },
+      { id: 'crossroads', owner: 'clan-a', ownerName: 'Клан А', capturedAt: 1, defense: 10 },
     ], null, 2));
 
     seedGuestCredentials(dataDir);
@@ -128,8 +129,9 @@ test('clan war attacks enforce per-player cooldown and accumulate real damage', 
     child = spawn(process.execPath, ['--import', 'tsx', 'src/index.ts'], {
       cwd: serverDir,
       env: { ...process.env, MISTY_DATA_DIR: dataDir, MISTY_PORT: String(port) },
-      stdio: 'ignore',
+      stdio: ['ignore', 'ignore', 'pipe'],
     });
+    child.stderr?.on('data', chunk => { serverStderr += String(chunk); });
     await waitForServer(port, child);
     const client = new Client(`ws://127.0.0.1:${port}`);
     const [tokenA, tokenB, tokenC] = await Promise.all([guestToken(port, playerA), guestToken(port, playerB), guestToken(port, playerC)]);
@@ -164,16 +166,33 @@ test('clan war attacks enforce per-player cooldown and accumulate real damage', 
       ['clanDonate', { amount: 100 }],
       ['clanRaid', {}],
       ['clanSeasonReward', {}],
-      ['clanTerritoryCapture', { id: 'territory-runtime' }],
+      ['clanTerritoryCapture', { id: 'crossroads' }],
       ['clanQuestClaim', { id: 'donate' }],
       ['clanUpgrade', { upgrade: 'barracks' }],
       ['clanWarChallenge', { clanId: 'clan-b' }],
       ['clanWarAttack', { id: 'war-runtime' }],
     ];
+    const nonmemberRejectionByAction: Record<string, string> = {
+      clanDonate: 'Сначала вступи в клан.',
+      clanRaid: 'Для кланового похода нужен клан.',
+      clanSeasonReward: 'Сначала вступи в клан.',
+      clanTerritoryCapture: 'Сначала вступи в клан.',
+      clanQuestClaim: 'Сначала вступи в клан.',
+      clanUpgrade: 'Сначала вступи в клан.',
+      clanWarChallenge: 'Сначала вступи в клан.',
+      clanWarAttack: 'Сначала вступи в клан.',
+    };
     for (const [action, payload] of unauthorizedClanActions) {
       const before = noticesC.length;
       roomC.send(action, payload);
-      await waitFor(() => noticesC.slice(before).find(text => text === 'Персонаж не состоит в этом клане.'), `nonmember rejection for ${action}`);
+      try {
+        await waitFor(
+          () => noticesC.slice(before).find(text => text === nonmemberRejectionByAction[action]),
+          `roster-based nonmember rejection for ${action}`,
+        );
+      } catch (error) {
+        throw new Error(`${error instanceof Error ? error.message : String(error)}\\nIsolated server stderr:\\n${serverStderr.slice(-6000)}`);
+      }
     }
     const nonmemberPlayers = readJson(join(dataDir, 'players.json'));
     const nonmemberClans = readJson(join(dataDir, 'clans.json'));

@@ -19,11 +19,13 @@ test('only the currently registered client and player instance own a live sessio
   ), false);
 });
 
-test('an old room cannot overwrite a newer online player snapshot', () => {
+test('a room may save only while it still owns the registered player instance', () => {
   const oldRoomPlayer = { gold: 100 };
   const newRoomPlayer = { gold: 250 };
 
   assert.equal(canSaveRoomPlayerSnapshot(newRoomPlayer, oldRoomPlayer), false);
   assert.equal(canSaveRoomPlayerSnapshot(newRoomPlayer, newRoomPlayer), true);
-  assert.equal(canSaveRoomPlayerSnapshot(undefined, oldRoomPlayer), true);
+  // onLeave commits before unregistering the player; a later onDispose must
+  // not write its stale room snapshot after ownership has been removed.
+  assert.equal(canSaveRoomPlayerSnapshot(undefined, oldRoomPlayer), false);
 });

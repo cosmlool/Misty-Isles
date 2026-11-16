@@ -115,7 +115,7 @@ test('story, faction, daily challenge and achievement rewards cannot be claimed 
     room = await client.joinOrCreate('my_room', { playerId, sessionToken: token });
 
     const notices: string[] = [];
-    room.onMessage('notice', payload => notices.push(String(payload?.text || '')));
+    room.onMessage('notice', payload => { const message=String(payload?.text||''); if(!message.startsWith('С возвращением, ')&&message!=='Выбери расу, чтобы начать приключение.')notices.push(message); });
     const sendAndWait = async (type: string, data: Record<string, unknown>, label: string) => {
       const before = notices.length;
       room!.send(type, data);
@@ -222,7 +222,7 @@ test('a completed current-week challenge pays once and records the ISO-week clai
     const token = await guestToken(port, playerId);
     room = await client.joinOrCreate('my_room', { playerId, sessionToken: token });
     const notices: string[] = [];
-    room.onMessage('notice', payload => notices.push(String(payload?.text || '')));
+    room.onMessage('notice', payload => { const message = String(payload?.text || ''); if (!message.startsWith('С возвращением, ') && message !== 'Выбери расу, чтобы начать приключение.') notices.push(message); });
     const claim = async (label: string) => {
       const before = notices.length;
       room!.send('quest', { id: 'weekly_challenge' });
@@ -241,6 +241,56 @@ test('a completed current-week challenge pays once and records the ISO-week clai
     assert.equal(readPlayer(savePath, playerId).gold, 1_700);
   } finally {
     if (room) await room.leave().catch(() => undefined);
+    if (child) await stopServer(child);
+    rmSync(dataDir, { recursive: true, force: true });
+  }
+});
+
+
+test('live daily and gem-exchange credits burn currency above the hard balance caps', { timeout: 45_000 }, async () => {
+  const dataDir = mkdtempSync(join(tmpdir(), 'misty-currency-cap-'));
+  const playerId = 'runtime_currency_cap_01';
+  const port = await unusedPort();
+  let child: ChildProcess | undefined;
+  let room: Room | undefined;
+  const savePath = join(dataDir, 'players.json');
+  try {
+    for (const file of staticDataFiles) copyFileSync(join(serverDir, 'data', file), join(dataDir, file));
+    writeFileSync(savePath, JSON.stringify({
+      [playerId]: {
+        id: playerId, name: 'Currency Cap Tester', race: 'Кот', profession: '', level: 1,
+        gold: 9_999_999_990, goldEarned: 0, goldSpent: 0,
+        crystals: 49_995, gems: 1, inventory: '[]', equipment: '{}', quests: '{}', daily: '{}',
+      },
+    }, null, 2));
+    seedGuestCredentials(dataDir);
+    child = spawn(process.execPath, ['--import', 'tsx', 'src/index.ts'], {
+      cwd: serverDir,
+      env: { ...process.env, MISTY_DATA_DIR: dataDir, MISTY_PORT: String(port) },
+      stdio: 'ignore',
+    });
+    await waitForServer(port, child);
+    const client = new Client(`ws://127.0.0.1:${port}`);
+    room = await client.joinOrCreate('my_room', { playerId, sessionToken: await guestToken(port, playerId) });
+    const notices: string[] = [];
+    room.onMessage('notice', payload => notices.push(String(payload?.text || '')));
+    const sendAndWait = async (type: string, data: Record<string, unknown>, label: string) => {
+      const before = notices.length;
+      room!.send(type, data);
+      return waitFor(() => notices.length > before ? notices[before] : undefined, label);
+    };
+
+    await sendAndWait('daily', {}, 'daily reward under gold cap');
+    let saved = readPlayer(savePath, playerId);
+    assert.equal(saved.gold, 9_999_999_999);
+    assert.equal(saved.goldEarned, 87, 'lifetime earned counter continues to record gross generated rewards');
+
+    await sendAndWait('exchangeGem', { amount: 1 }, 'gem exchange under crystal cap');
+    saved = readPlayer(savePath, playerId);
+    assert.equal(saved.crystals, 50_000);
+    assert.equal(saved.gems, 0, 'the full gem cost is consumed even when excess crystals burn');
+  } finally {
+    await leaveRoomSafely(room);
     if (child) await stopServer(child);
     rmSync(dataDir, { recursive: true, force: true });
   }

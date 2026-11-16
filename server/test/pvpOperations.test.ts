@@ -80,6 +80,8 @@ test('both PvP outcomes transfer gold to the winner and protect the loser', () =
     attackerGold: 450,
     targetGold: 800,
     stolenGold: 200,
+    receivedGold: 200,
+    burnedGold: 0,
     immunityRecipient: 'target',
     immunityUntil: 10_000 + PVP_IMMUNITY_MS,
   });
@@ -89,7 +91,63 @@ test('both PvP outcomes transfer gold to the winner and protect the loser', () =
     attackerGold: 800,
     targetGold: 450,
     stolenGold: 200,
+    receivedGold: 200,
+    burnedGold: 0,
     immunityRecipient: 'attacker',
     immunityUntil: 20_000 + PVP_IMMUNITY_MS,
   });
+});
+
+test('PvP rejects malformed, fractional, negative and unsafe persisted gold balances', () => {
+  for (const [attackerGold, targetGold] of [
+    [-1, 100], [100, -1], [1.5, 100], [100, 2.5],
+    [Number.NaN, 100], [100, Number.POSITIVE_INFINITY],
+  ]) {
+    assert.throws(() => resolvePvpOutcome(attackerGold, targetGold, true, 1_000),
+      /nonnegative safe integers/);
+  }
+});
+
+test('PvP burns the portion of a transfer that would exceed the winner gold cap', () => {
+  const attackerWin = resolvePvpOutcome(9_999_999_900, 1_000, true, 1_000);
+  assert.equal(attackerWin.attackerGold, 9_999_999_999);
+  assert.equal(attackerWin.targetGold, 800);
+  assert.equal(attackerWin.stolenGold, 200);
+  assert.equal(attackerWin.receivedGold, 99);
+  assert.equal(attackerWin.burnedGold, 101);
+
+  const targetWin = resolvePvpOutcome(1_000, 9_999_999_900, false, 1_000);
+  assert.equal(targetWin.targetGold, 9_999_999_999);
+  assert.equal(targetWin.attackerGold, 800);
+  assert.equal(targetWin.receivedGold, 99);
+  assert.equal(targetWin.burnedGold, 101);
+});
+
+test('PvP clamps legacy balances above the cap before transferring gold', () => {
+  const result = resolvePvpOutcome(10_000_000_000, 100, false, 1_000);
+  assert.equal(result.attackerGold, 8_000_000_000);
+  assert.equal(result.targetGold, 2_000_000_099);
+  assert.equal(result.stolenGold, 1_999_999_999);
+  assert.equal(result.receivedGold, 1_999_999_999);
+  assert.equal(result.burnedGold, 1);
+});
+
+test('valid PvP transfer conserves the exact total gold balance', () => {
+  for (const [attacker, target, won] of [[250, 1_000, true], [1_000, 250, false]] as const) {
+    const result = resolvePvpOutcome(attacker, target, won, 5_000);
+    assert.equal(result.attackerGold + result.targetGold, attacker + target);
+    assert.equal(result.stolenGold, Math.floor((won ? target : attacker) * PVP_GOLD_STEAL_RATE));
+    assert.equal(result.receivedGold, result.stolenGold);
+    assert.equal(result.burnedGold, 0);
+  }
+});
+
+
+test('finite unsafe legacy PvP balances above the cap are clamped instead of blocking combat', () => {
+  const result = resolvePvpOutcome(Number.MAX_SAFE_INTEGER + 1, 100, false, 1_000);
+  assert.equal(result.attackerGold, 8_000_000_000);
+  assert.equal(result.targetGold, 2_000_000_099);
+  assert.equal(result.stolenGold, 1_999_999_999);
+  assert.equal(result.receivedGold, 1_999_999_999);
+  assert.equal(result.burnedGold, Number.MAX_SAFE_INTEGER + 1 - 9_999_999_999);
 });

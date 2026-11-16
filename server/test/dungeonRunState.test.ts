@@ -53,6 +53,42 @@ test('terminal result is durable and duplicate same-result completion is idempot
   assert.throws(() => finishDungeonRun(completed, 'loss', 4000), /different terminal result/);
 });
 
+test('manual round snapshots reject invalid HP and cannot bypass a deterministic round plan', () => {
+  const base = run();
+  assert.throws(() => advanceDungeonRunRound(base, {
+    now: 2000, bossHealth: 400, participantHealth: { p1: 0, p2: 60 },
+  }), /invalid health snapshot/);
+  assert.throws(() => advanceDungeonRunRound(base, {
+    now: 2000, bossHealth: 501, participantHealth: { p1: 80, p2: 60 },
+  }), /Invalid dungeon round snapshot/);
+  assert.throws(() => advanceDungeonRunRound(base, {
+    now: 2000, bossHealth: 400, participantHealth: { p1: 80, p2: 60, rogue: 10 },
+  }), /exactly one health value/);
+  const planned = {
+    ...base,
+    roundPlan: createDungeonRoundPlan({
+      totalRounds: 2, totalBossDamage: 100,
+      totalIncomingDamageByParticipant: { p1: 10, p2: 10 },
+    }),
+  };
+  assert.throws(() => advanceDungeonRunRound(planned, {
+    now: 2000, bossHealth: 450, participantHealth: { p1: 90, p2: 80 },
+  }), /deterministic round resolver/);
+});
+
+test('direct terminal transition cannot bypass unresolved planned combat rounds', () => {
+  const base = run();
+  const planned = {
+    ...base,
+    roundPlan: createDungeonRoundPlan({
+      totalRounds: 2, totalBossDamage: 100,
+      totalIncomingDamageByParticipant: { p1: 10, p2: 10 },
+    }),
+  };
+  assert.throws(() => finishDungeonRun(planned, 'win', 2000), /planned combat rounds remain unresolved/);
+  assert.throws(() => finishDungeonRun(planned, 'loss', 2000), /planned combat rounds remain unresolved/);
+});
+
 test('invalid roster, leader and terminal snapshots fail closed on startup recovery', () => {
   const state = run();
   assert.throws(() => validateDungeonRunStore({
@@ -208,4 +244,23 @@ test('round plan validation rejects incomplete or non-finite participant schedul
     totalBossDamage: 10,
     totalIncomingDamageByParticipant: { p1: 1, p2: Number.NaN },
   }), /Invalid deterministic dungeon round plan/);
+});
+
+
+test('startup recovery rejects prepared encounter snapshots detached from durable participant HP', () => {
+  const state = run();
+  const prepared = {
+    version: 1, runId: state.runId, requestId: state.requestId, dungeonId: state.dungeonId,
+    bossId: state.encounter.bossId, preparedAt: 1100, participantIds: ['p1', 'p2'],
+    combat: { rounds: 1, incoming: [1, 1], win: true, damageByParticipant: [10, 10] },
+    drops: [],
+    participants: {
+      p1: { playerId: 'p1', hpBefore: 99, hpAfter: 98, incomingDamage: 1, outgoingDamage: 10, xp: 1, gold: 1, lootIds: [], report: {}, resultText: 'Win' },
+      p2: { playerId: 'p2', hpBefore: 90, hpAfter: 89, incomingDamage: 1, outgoingDamage: 10, xp: 1, gold: 1, lootIds: [], report: {}, resultText: 'Win' },
+    },
+    playerSnapshots: { p1: { id: 'p1', health: 98 }, p2: { id: 'p2', health: 89 } },
+  };
+  assert.throws(() => validateDungeonRunStore({
+    [state.runId]: { ...state, preparedEncounter: prepared },
+  }), /prepared encounter that does not match run/);
 });

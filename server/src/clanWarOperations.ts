@@ -1,4 +1,15 @@
+import { prepareClanVaultCredit } from './clanTransactions.js';
+
 export const CLAN_WAR_ATTACK_COOLDOWN_MS = 1_000;
+
+function prepareWarCounterCredit(balance: number, amount: number, label: string): number {
+  if (!Number.isSafeInteger(balance) || balance < 0
+    || !Number.isSafeInteger(amount) || amount < 0
+    || !Number.isSafeInteger(balance + amount)) {
+    throw new Error(`Clan war ${label} must remain a nonnegative safe integer.`);
+  }
+  return balance + amount;
+}
 
 export type ClanWarRecord = {
   id: string;
@@ -27,9 +38,16 @@ export function clanWarCooldownRemaining(
   now: number,
   cooldownMs = CLAN_WAR_ATTACK_COOLDOWN_MS,
 ): number {
-  const lastAttackAt = Number(war.lastAttackAtByPlayer?.[playerId] || 0);
-  if (!Number.isFinite(lastAttackAt) || lastAttackAt <= 0) return 0;
-  return Math.max(0, cooldownMs - (now - lastAttackAt));
+  if (!Number.isSafeInteger(now) || now < 0
+    || !Number.isSafeInteger(cooldownMs) || cooldownMs < 0) {
+    throw new Error('Clan war cooldown clock and duration must be nonnegative safe integers.');
+  }
+  const rawLastAttackAt = war.lastAttackAtByPlayer?.[playerId];
+  if (rawLastAttackAt === undefined) return 0;
+  if (!Number.isSafeInteger(rawLastAttackAt) || rawLastAttackAt <= 0) {
+    throw new Error('Clan war player cooldown timestamp is invalid.');
+  }
+  return Math.max(0, cooldownMs - (now - rawLastAttackAt));
 }
 
 export function calculateClanWarDamage(
@@ -53,18 +71,20 @@ export function recordClanWarDamage(
   if (war.status !== 'active' || ![war.a, war.b].includes(clanId)) {
     throw new Error('Clan is not participating in an active war.');
   }
-  if (!playerId || !Number.isSafeInteger(damage) || damage < 1 || !Number.isFinite(now)) {
+  if (!playerId || !Number.isSafeInteger(damage) || damage < 1 || !Number.isSafeInteger(now) || now < 0) {
     throw new Error('Clan war attack is invalid.');
   }
   if (clanWarCooldownRemaining(war, playerId, now) > 0) {
     throw new Error('Clan war attack is on cooldown.');
   }
+  const currentDamage = clanId === war.a ? Number(war.aDamage ?? 0) : Number(war.bDamage ?? 0);
+  const nextDamage = prepareWarCounterCredit(currentDamage, damage, 'damage');
   const lastAttackAtByPlayer = { ...(war.lastAttackAtByPlayer || {}) };
   lastAttackAtByPlayer[playerId] = now;
   return {
     ...war,
-    aDamage: Math.max(0, Number(war.aDamage) || 0) + (war.a === clanId ? damage : 0),
-    bDamage: Math.max(0, Number(war.bDamage) || 0) + (war.b === clanId ? damage : 0),
+    aDamage: war.a === clanId ? nextDamage : Number(war.aDamage ?? 0),
+    bDamage: war.b === clanId ? nextDamage : Number(war.bDamage ?? 0),
     lastAttackAtByPlayer,
   };
 }
@@ -83,22 +103,34 @@ export function settleExpiredClanWars(
   );
   let changed = false;
 
+  if (!Number.isSafeInteger(now) || now < 0) {
+    throw new Error('Clan war settlement time must be a nonnegative safe integer.');
+  }
+
   for (const war of nextWars) {
-    if (war.status !== 'active' || now < Number(war.endsAt || 0)) continue;
+    if (war.status !== 'active') continue;
+    if (!Number.isSafeInteger(war.endsAt) || war.endsAt < 0) {
+      throw new Error('Active clan war has an invalid end timestamp.');
+    }
+    const aDamage = Number(war.aDamage ?? 0);
+    const bDamage = Number(war.bDamage ?? 0);
+    if (!Number.isSafeInteger(aDamage) || aDamage < 0
+      || !Number.isSafeInteger(bDamage) || bDamage < 0) {
+      throw new Error('Active clan war has invalid damage counters.');
+    }
+    if (now < war.endsAt) continue;
     war.status = 'finished';
     war.finishedAt = now;
-    const aDamage = Math.max(0, Number(war.aDamage) || 0);
-    const bDamage = Math.max(0, Number(war.bDamage) || 0);
     const winnerId = aDamage === bDamage ? '' : aDamage > bDamage ? war.a : war.b;
     war.winnerId = winnerId;
     if (winnerId) {
       const winner = nextClans[winnerId];
       if (winner) {
         const reward = 100 + Math.max(1, Number(winner.level) || 1) * 50;
-        winner.vault = Math.max(0, Number(winner.vault) || 0) + reward;
-        winner.seasonPoints = Math.max(0, Number(winner.seasonPoints) || 0) + 20;
+        winner.vault = prepareClanVaultCredit(Number(winner.vault ?? 0), reward);
+        winner.seasonPoints = prepareWarCounterCredit(Number(winner.seasonPoints ?? 0), 20, 'season points');
         winner.questProgress = winner.questProgress || {};
-        winner.questProgress.war = Math.max(0, Number(winner.questProgress.war) || 0) + 1;
+        winner.questProgress.war = prepareWarCounterCredit(Number(winner.questProgress.war ?? 0), 1, 'war quest progress');
         war.reward = reward;
       }
     } else {

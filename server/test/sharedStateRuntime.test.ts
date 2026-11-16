@@ -6,9 +6,11 @@ import type { SharedStateSnapshot } from '../src/sharedStateTransactions.js';
 function fixture() {
   const events: string[] = [];
   let sharedPending = false;
+  let sharedPlayersPending = false;
   let auctionPending = false;
   let clansPending = false;
   const shared = {
+    hasPendingPlayers() { return sharedPending && sharedPlayersPending; },
     recover() {
       events.push('shared.recover');
       const recovered = sharedPending;
@@ -36,8 +38,9 @@ function fixture() {
   };
   return {
     events, shared, auction, clans,
-    setPending(values: { shared?: boolean; auction?: boolean; clans?: boolean }) {
-      sharedPending = Boolean(values.shared); auctionPending = Boolean(values.auction); clansPending = Boolean(values.clans);
+    setPending(values: { shared?: boolean; sharedPlayers?: boolean; auction?: boolean; clans?: boolean }) {
+      sharedPending = Boolean(values.shared);
+      sharedPlayersPending = values.sharedPlayers ?? Boolean(values.shared); auctionPending = Boolean(values.auction); clansPending = Boolean(values.clans);
     },
     runtime: createSharedStateRuntime({ shared, auction, clans }),
   };
@@ -133,4 +136,26 @@ test('simultaneous legacy auction and clan journals fail closed before either re
     /both pending; recovery order is ambiguous/
   );
   assert.deepEqual(f.events, []);
+});
+
+test('recovery-aware transactions distinguish outbox-only replay from player snapshot replay', () => {
+  const f = fixture();
+  f.setPending({ shared: true, sharedPlayers: false });
+  let observed: { recovered: boolean; playersRecovered: boolean } | undefined;
+  f.runtime.transactWithRecovery(recovery => {
+    observed = recovery;
+    return { files: { dungeonOutbox: {} }, result: 'recovered' };
+  });
+  assert.deepEqual(observed, { recovered: true, playersRecovered: false });
+});
+
+test('legacy transact keeps its player-snapshot-only callback contract', () => {
+  const f = fixture();
+  f.setPending({ shared: true, sharedPlayers: false });
+  let playersRecovered: boolean | undefined;
+  f.runtime.transact(recovered => {
+    playersRecovered = recovered;
+    return { files: { sessions: [] }, result: undefined };
+  });
+  assert.equal(playersRecovered, false);
 });

@@ -52,9 +52,11 @@ export function startCraftJob(input: {
 export function claimCraftJob(input: {
   inventory: string[]; queue: CraftJob[]; jobId: string; now: number;
   outputCount?: number; uniqueConflict?: boolean; fallbackMaterials?: CraftMaterialMap;
+  validOutputIds: ReadonlySet<string>;
 }): { inventory: string[]; queue: CraftJob[]; outputCount: number; refunded: boolean } {
   const job = input.queue.find(entry => entry.id === input.jobId);
   if (!job) throw new Error('Craft job not found.');
+  if (!input.validOutputIds.has(job.output)) throw new Error('Craft output is not in the current item catalog; job retained for review.');
   if (!Number.isFinite(job.finishAt) || input.now < job.finishAt) throw new Error('Craft job is not finished.');
   if (input.uniqueConflict) {
     const refund = refundCraftMaterials(input.inventory, job, input.fallbackMaterials);
