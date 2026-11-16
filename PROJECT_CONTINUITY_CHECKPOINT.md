@@ -1168,3 +1168,12 @@ PR #15 остаётся Draft/open и не объединён. Слияние б
 - Corrected the over-escaped backup filename regex in the existing WAL backup-retry regression test.
 - Commits in this stage: `a0300f038aad02cd604c4dcf5d9fd7c43b6aeb62` (WAL durability error), `fd331633dfed9ee192505dc64cd78a556f59fb28` (WAL regression + regex correction), `7fdffb5ecf251d8aed38250d72a97e698a715405` (migration helpers), `be6ff51877c47d42457a91cb682512368d9a1091` (migration tests), `fd6c5ed94ed763aed56a17a1069825426392640b` (join wiring), `f50dc4ef1337fa8dd8d71fead02b4a350eb06b0a` (test script).
 - Local tests not run. Fresh Quality Gate required on the new exact HEAD. No main changes, no PR merge, and no changes to live save files.
+
+
+## Legacy inventory and progression reference preservation — 2026-11-16
+- Audited player hydration, schema fields, profession normalization, inventory/equipment operations, and craft claim behavior. Generic save hydration preserves serialized inventory, equipment, craft queue, achievements, and profession labels; it does not filter unknown item/recipe IDs against the current catalog.
+- Unknown/retired inventory IDs and queued craft outputs therefore remain in the save. Current handlers may not expose normal actions for an unknown item; craft claim explicitly rejects unknown outputs and retains the job for manual review. This is preferable to silent deletion. No automatic item aliasing/deletion policy was added.
+- Added a regression in `server/test/playerSaves.test.ts` proving unknown inventory IDs, queued outputs, achievement keys, and historical profession labels survive hydration unchanged.
+- Only the documented legacy profession alias `Воин` maps to `Рыцарь`; other historical labels are preserved rather than coerced based on race. Broad race/profession repair requires sanitized deployed-save examples and explicit compatibility rules.
+- Quality Gate `43783068961` failed on prior exact HEAD `5e1acb310b1860f36a29ca448a8664549058013c`: 464/465 server tests passed. Sole failure: intermittent clan-war runtime test timeout waiting for nonmember rejection of `clanDonate`. The latest WAL and migration regressions passed in that run; client build, Playwright smoke, and data/docs jobs passed. No behavior was changed to hide the intermittent failure.
+- New regression commit: `a63e67718c88cfb70832d4a3705f3ac6bc6ac549`. Local tests not run; fresh CI required for the current HEAD. PR #18 remains Draft/open/unmerged; no main changes.
