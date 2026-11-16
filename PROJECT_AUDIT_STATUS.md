@@ -2966,3 +2966,7 @@ PEN-009 стоит 100 кристаллов и при максимальном �
 - Added regression tests for exact existing boss IDs across all four dungeons and for rejecting multi-encounter, multi-wave and multi-monster structures.
 - Corrected aggregate-limit test fixture after Quality Gate 43923382306 failed one new test: the prior count=101 hit the stricter per-spawn maximum first; the revised test uses six legal waves of 20 to test the aggregate 100 limit. Other three CI jobs passed.
 - Production handler is not yet wired to the adapter and remains unchanged.
+
+
+### CI follow-up — 2026-11-16
+Quality Gate 43931230374 failed because the new dungeon test file contained a literal `\n` token (syntax error), not because of production code. Corrected the source newline in commit 95b8b817fe06be814aa4f3c8de25403e828146b6; latest commit CI must be checked before treating this stage as green.
