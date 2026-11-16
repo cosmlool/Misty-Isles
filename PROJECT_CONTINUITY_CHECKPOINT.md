@@ -1097,3 +1097,14 @@ PR #15 остаётся Draft/open и не объединён. Слияние б
 - Changes: `9e65d797b65bd8146a971446ae39d30afa821790` (validator), `443786591a1d9a082c5c7ad234dc9a951bc1b34a` (tests), `e8f55c5a83e87eb4cd6c6d1e99275a1579e95a49` (loader), `0649afb944ee51bd1af8bcf0a42f93a6a2c47026` (import wiring).
 - Local tests were not run. Full Quality Gate is required on the final checkpoint/PR HEAD.
 - PR #18 remains Draft/open/unmerged. No `main` changes or save migration.
+
+
+## Player-to-clan roster consistency — 2026-11-16
+
+- Rechecked PR #18 at HEAD `3bdb53254393c5f41eb1938c201a0c495baf1ed0`; PR remains Draft/open/unmerged. CI runs `43778593185` (pending) and `43778589172` (in progress) were still unresolved at the start of this stage.
+- Found that clan creation/join checked only the saved `player.clan` field. If it was empty while the player ID remained in an existing clan roster, the same player could create/join another clan and produce a cross-file membership contradiction.
+- Added `findPlayerClanMembership` and guarded both clan creation and joining against existing roster membership, independently of `player.clan`. Existing saves are not rewritten or auto-repaired; conflicting records fail closed for new membership actions.
+- Added regression coverage for finding roster membership by player ID, including no-match and empty-ID cases.
+- Existing clan leave/disband behavior, rewards, progression, and save schema are unchanged. No bulk migration, no main changes, no PR merge.
+- Commits: `eb8ec385b8b0615ade90f5aadf9d40851f0ac2e1` (lookup), `8acfdc593f32ee3b1d4c9988d11f649480d99878` (tests), `b7b01c1e3a260c58a409cc55b651992fb8a85332` (handler guards).
+- Local tests were not run. Quality Gate must be checked on the final PR HEAD.
