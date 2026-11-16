@@ -1481,3 +1481,12 @@ PR #15 остаётся Draft/open и не объединён. Слияние б
 - The latest Quality Gate exposed one test-only timeout in `groupDungeonRuntime.test.ts`: the cross-dungeon replay fixture used `fl_dungeon_06` (minimum level 12), but the seeded leader remained level 5, so the public handler rejected the request at its level gate before reaching the replay-identity guard.
 - Raised only the strong win-party fixture to level 12; the weak loss-party fixture remains level 5. This keeps the replay test exercising the intended identity conflict without changing production code or game balance.
 - Fix commit: `9aaf4e5c25056e02b407656d6d962ed7b1e610e8`. Awaiting the exact-HEAD Quality Gate.
+
+
+## Main checkpoint integration (2026-11-17)
+- PR #15 was merged into `main`; verified main commit at checkpoint: `81fa43583a7dec649a2525fe4bda14300d7fba7a`.
+- PR #18 now targets `main`, head `d36f6024000ab3c2286d8eecbde5e23936d86685`, and is mergeable without conflicts.
+- The latest Quality Gate attempt for PR #18 completed successfully across all four jobs: server TypeScript build, client TypeScript/Vite build, data/docs/project structure, and Playwright browser smoke tests.
+- GitHub rejected the merge because two historical required-check entries for this same commit are cancelled. A retry of the old workflow was rejected by GitHub (workflow run cannot be retried); no protection rule was bypassed.
+- Next: create a fresh documentation checkpoint commit on the PR branch to obtain a clean required-check set, wait for every check to succeed, then merge PR #18 into `main`. After verifying the final main SHA, continue the missing/corrupt group participant-save recovery audit.
+- Working policy confirmed by the user: after this checkpoint is integrated, perform future project work directly on `main`, keep a durable change journal/checkpoints, and test critical paths. Do not routinely create intermediate branches or PR transfers.
