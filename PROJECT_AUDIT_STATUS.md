@@ -3018,3 +3018,16 @@ Quality Gate 43931230374 failed because the new dungeon test file contained a li
 - Added regression tests for stale HP, wrong embedded player identity, and recovery of a prepared snapshot detached from durable participant state.
 - No combat formulas, RNG, drops, reward amounts, round splitting, death/revival rules, live multi-wave wiring, or client protocol changed. Code commits: 4a818b8, 331d454, 97453bb, 7e690cb. New Quality Gate must pass on final HEAD.
 - PR #18 remains Draft/open/unmerged; main untouched.
+
+
+## Dungeon terminal settlement atomicity audit (2026-11-17)
+
+- Verified PR #18 Quality Gate run 43960204529 on HEAD 5102293f7e4bc3755ad87551620910bb18d53943: all four jobs succeeded (Playwright browser smoke tests, data/docs/project structure, server TypeScript build, client TypeScript/Vite build).
+- Traced the live legacy `Room.runExpeditionDungeon()` path through `prepareDungeonMemberQuestSettlement()`, `persistDungeonResultPlayers()`, shared-state WAL, outbox enqueue, reconnect dispatch and acknowledgement.
+- In the current live path, each participant's player snapshot contains HP, consumed daily attempt, battle/victory counters, XP/gold, inventory/drop allocation, activity counters/log, combat history and the request replay cache. All participating player snapshots and the result outbox are written in one shared WAL transaction. Thus these player-side settlement fields and event enqueue are atomic with each other; the outbox is not a separate post-commit write.
+- On a pre-journal failure, live player objects are restored from rollback snapshots. If a journal remains after partial application, online players are reconciled from disk and startup/next transaction replays the complete journal. Event delivery is intentionally at-least-once: send occurs before durable acknowledgement, and the client deduplicates by eventId.
+- Important boundary: live `runExpeditionDungeon()` does not create or finalize a durable `DungeonRunRecord`. Its request event uses synthetic `legacy_<requestId>` as runId; terminal durable run status/claim marker is therefore not committed alongside live player settlement. The durable `commitCommittedDungeonEncounterFinalization()` path can atomically write players + terminal run + outbox, but it is not wired into the live handler.
+- Legacy replay cache remains request-ID based and does not bind the request ID to dungeon/group/leader/ordered roster. This is a known limitation; do not claim durable run-level replay protection in production.
+- No gameplay code changed in this audit: enabling the durable path safely still requires complete preparation/recovery integration and resolution of the already documented death/round/multi-wave semantics. Do not partially switch the live handler.
+- No balance, combat formula, RNG order, reward allocation, quest semantics, client protocol, or real player data changed.
+- PR #18 remains Draft/open/unmerged; main untouched.
