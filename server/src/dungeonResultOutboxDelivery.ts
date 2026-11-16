@@ -66,10 +66,8 @@ export function enqueueDungeonResultEvents(input: {
   events: Array<{eventId:string;runId:string;playerId:string;messageType:string;payload:Record<string,unknown>}>;
   now: number;
 }): DungeonResultDeliveryOutbox {
-  if (!Number.isFinite(input.now) || !input.outbox || typeof input.outbox !== 'object' || Array.isArray(input.outbox)) {
-    throw new Error('Invalid dungeon result enqueue request.');
-  }
-  const next = { ...input.outbox };
+  if (!Number.isFinite(input.now)) throw new Error('Invalid dungeon result enqueue request.');
+  const next = { ...validateDungeonResultDeliveryOutbox(input.outbox) };
   const seen = new Set<string>();
   for (const event of input.events) {
     if (!event || !event.eventId || !event.runId || !event.playerId || !event.messageType ||
