@@ -2820,3 +2820,5 @@ PEN-009 стоит 100 кристаллов и при максимальном �
 - Updated `server/test/clanWarRuntime.test.ts` to accept either existing nonmember rejection message while continuing to require a fresh notice for every unauthorized action. Existing post-loop assertions still verify no gold/crystal spend, no vault/season/raid/territory/reward mutation, and no war record change. No production logic changed.
 - Test-only commit: `4fd4b96fd1807a8b80a101adda85a1d726dd5352`. No local test execution was available in this connector session. Await the new exact-HEAD Quality Gate before declaring the fix validated.
 - Stop point: monitor CI for this commit. If green, continue the next combat-channel audit; if failing, inspect the new failing test/log rather than assuming the old clan timeout persists.
+
+- Precision follow-up: tightened the regression to assert the single canonical response `Сначала вступи в клан.` for this fixture, rather than accepting either message. This locks the roster-authoritative contract instead of broadening the assertion. Commit `88e5b3ee367c8da9176ec73790c5e6a5a7997cad`.
