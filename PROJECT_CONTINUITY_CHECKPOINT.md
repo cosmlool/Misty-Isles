@@ -1259,3 +1259,12 @@ PR #15 остаётся Draft/open и не объединён. Слияние б
 - Audit log updated in `40457f6d43ec38ef4e6c7dc29c414a82da4a2dfc`.
 - Next: verify Quality Gate on the exact final documentation HEAD. If green, continue the equipment/combat live integration audit; do not wire typed effects or alter balance without design approval.
 - PR #18 remains Draft/open/unmerged; `main` untouched.
+
+
+## Clan runtime test fixed and full Quality Gate passed — 2026-11-16
+- Rechecked previous failing Quality Gate `43798297230`: server test failure was at `clanRaid`, not `clanDonate`; isolated-server stderr was empty. The test incorrectly expected the same response from every unauthorized clan action although the production raid handler has its own established message.
+- Fixed the assertion with action-specific expected messages in `server/test/clanWarRuntime.test.ts` (commit `a77f5e62321c3f19aae808bf9c02d9e9c49b008b`). No production gameplay code changed.
+- Verified latest HEAD `41c86c954cced41a1c358d16fee403e95fcf6b73`: Quality Gate run `43832528775` completed all four jobs successfully: server test suite + TypeScript build, client TypeScript/Vite build, Playwright browser smoke tests, and data/docs/project structure. A second run `43832537305` also completed all four jobs successfully on the same HEAD.
+- Equipment/combat integration recheck: production `index.ts` imports and calls `calculatePlayerMonsterCombatStats()`, but does not import/call `buildPlayerCombatantForMonsterBattle()` or `resolveMonsterBattle()`. The synchronous live dungeon path `runExpeditionDungeon()` still builds a legacy `calculateDungeonCombatPlan()` from selected resolved totals/channels. This confirms the newer typed battle engine remains unit-tested but is not the live combat engine.
+- Do not wire it automatically: damage type, critical chance/multiplier, accuracy scale, initiative, healing-action selection, status effects, HP/death semantics, RNG sequence and reward/report behavior need a canonical compatibility mapping and regression matrix first. No combat coefficients, game balance, items, or PvP formula changed.
+- PR #18 remains Draft/open/unmerged; `main` untouched.
