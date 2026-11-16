@@ -301,3 +301,7 @@ This is a configuration/schema foundation only. It does not create rooms or mult
 Added resolveLegacyDungeonBossId() to the pure encounter config module. It projects a validated expanded definition into the old single-boss contract only when it contains exactly one encounter, one wave and one monster spawn. Multi-encounter, multi-wave or multi-monster content fails closed instead of being silently truncated. Regression tests assert the four configured dungeon boss IDs and all rejected shapes.
 
 The adapter is intentionally not wired into runExpeditionDungeon yet. The production handler continues reading the existing dungeon.bossId directly, preserving current combat calculations and execution order while this boundary is characterized. The Quality Gate for the previous config commit exposed one incorrect test fixture: a count of 101 violated the per-spawn cap before reaching the total-dungeon cap. The fixture now uses six legal 20-monster waves to exercise the aggregate cap correctly.
+
+
+### CI follow-up — 2026-11-16
+Quality Gate 43931230374 exposed a literal escaped newline accidentally inserted into the aggregate-limit test while preparing the adapter regression. Corrected the test source to use an actual line break. The subsequent commit is awaiting its own Quality Gate; no production combat code was changed.
