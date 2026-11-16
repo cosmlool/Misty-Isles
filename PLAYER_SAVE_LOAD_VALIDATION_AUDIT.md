@@ -222,3 +222,13 @@ No catalog IDs, recipes, drops, prices, stats, saves, or production code were ch
 - The guard applies only when equipping a new item. Existing saved equipment is not normalized, filtered, unequipped, or rewritten; unknown/retired equipped IDs remain intact for compatibility. Their combat effects still depend on whether the current runtime catalog can resolve their definitions.
 - Added unit regression coverage for canonical kinds/slots, missing legacy armor slot fallback, mismatched slots, unknown slots, prototype-sensitive names, and non-mutation of a legacy equipment snapshot.
 - No item IDs, stats, prices, race/profession restrictions, balance, or existing player saves were changed. Local tests were not run; fresh CI is required on the new HEAD.
+
+
+## Race/profession equipment access — 2026-11-16
+
+- Audited the 387-entry equipment catalog against the four race profession lists. All 41 explicitly race-bound entries are Bird Assassin equipment and correctly pair `Птица` with `Ассасин птицы`; 287 profession-restricted entries are race-neutral in catalog metadata and rely on the player's race/profession gate. No current race/profession catalog mismatch was found.
+- Found a validation gap: shop visibility, purchase, and equip checks compared only the player's stored/active profession with an item's required profession. A malformed or historically incompatible save could therefore pass a class match that is not available to that player's race (for example, a dog save with `Боевой маг`).
+- Added `canEquipProfessionItem()` using the canonical `PROFESSIONS` mapping and `normalizeProfession()` (including legacy `Воин` → `Рыцарь`). Applied consistently to shop projection, purchase, and equip operations. Active subclass remains supported only when the required profession is valid for the character's race.
+- Added regression coverage for all four races, both bird assassin class naming and legacy warrior alias, valid active subclass, cross-race profession mismatch, unknown profession and unrestricted items.
+- Existing equipped items and saved equipment JSON are not normalized, removed, or revalidated during login/combat. No retroactive gear stripping, stat changes, item/catalog/balance changes, or save migration.
+- Local tests were not run. CI is required on the new HEAD.
