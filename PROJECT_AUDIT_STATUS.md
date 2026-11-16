@@ -2907,3 +2907,12 @@ PEN-009 стоит 100 кристаллов и при максимальном �
 - Recorded explicit mode/channel boundaries, stacking and cap questions, HP double-application risk, the unused applyFivePieceSetBonus gate, and the unresolved leech/hunter descriptions. The document does not activate effects or decide balance.
 - Reconfirmed current PR #18 Quality Gate run 43838788643: all four jobs (server TypeScript, client build, data/docs/structure, Playwright smoke) have completed successfully. The workflow summary had still shown in_progress at the first poll; job-level results are all success. Verify final workflow conclusion on the new documentation HEAD.
 - No production code, catalog, combat coefficients, RNG, rewards, saves, PvP behavior or economy changed. PR #18 remains Draft/open/unmerged; main untouched.
+
+
+## PvE parity coverage deep-dive — 2026-11-16
+- Rechecked exact HEAD `1e01ccae6ab854c2793e2c0269d5037f2248c6b2`: Quality Gate run `43880401067` completed successfully, all 4/4 jobs green.
+- Audited existing monster, dungeon math/health/drop/report/quest/replay tests against production handler code. Dungeon pure math has deterministic solo/party coverage and DUN-TRIO-01; drop helper has injected RNG/order tests; report and prepared settlement helpers have focused assertions. Expedition runtime safety tests cover group/disconnect behavior, not complete combat/reward parity.
+- Confirmed the live expedition claim still owns inline combat arithmetic and external random decisions: monster selection, per-drop rolls in source order, then per-drop recipient selection. Victory is limited to <=8 rounds and every participant must have HP strictly greater than incoming damage. No complete expedition golden settlement fixture currently locks HP, counters, rewards, loot allocation, quest progress, reports, events and persistence together.
+- Expanded `LEGACY_PVE_COMBAT_PARITY_FIXTURES.md` with exact test ownership, expedition deterministic/RNG boundaries, prioritized gaps and safe extraction constraints (commit `146e3cba0a242131752296500b44425df32f2bec`).
+- No production code or test behavior changed. No combat formulas, random calls, reward/quest semantics, catalog, save or economy behavior changed. Next implementation candidate: extract only expedition arithmetic into a pure helper and compare golden outputs before replacing the inline calculation; RNG and settlement remain in the handler.
+- PR #18 remains Draft/open/unmerged; `main` untouched. New documentation HEAD requires a fresh Quality Gate.
