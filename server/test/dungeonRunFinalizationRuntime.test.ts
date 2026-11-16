@@ -338,3 +338,26 @@ test('finalization recovers after every shared-WAL write boundary', () => {
     }
   }
 });
+
+
+test('outbox acknowledgement rejects malformed event records instead of persisting them', () => {
+  const dataDir = mkdtempSync(join(tmpdir(), 'misty-dungeon-outbox-ack-invalid-'));
+  const files = { players: join(dataDir, 'players.json'), dungeonRuns: join(dataDir, 'dungeon_runs.json'), dungeonOutbox: join(dataDir, 'dungeon_outbox.json') };
+  try {
+    const runtime = runtimeFor(createSharedStateTransactionStore({ dataDir, files }));
+    const malformed = {
+      'dungeon:run_1:p1:combatResult': {
+        eventId: 'dungeon:run_1:p1:combatResult', runId: 'run_1', playerId: 'p1',
+        messageType: 'combatResult', payload: { requestId: 'req_1' }, status: 'pending', createdAt: 1,
+      },
+      'dungeon:run_1:p2:combatResult': {
+        eventId: 'dungeon:run_1:p2:combatResult', runId: 'run_1', playerId: 'p2',
+        messageType: 'combatResult', payload: { requestId: 'req_1' }, status: 'delivered', createdAt: 1,
+      },
+    } as any;
+    assert.throws(() => markDungeonResultEventDelivered({ runtime, outbox: malformed, eventId: 'dungeon:run_1:p1:combatResult', now: 2 }), /delivery timestamp/);
+    assert.equal(existsSync(files.dungeonOutbox), false);
+  } finally {
+    rmSync(dataDir, { recursive: true, force: true });
+  }
+});
