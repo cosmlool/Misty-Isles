@@ -100,3 +100,9 @@ export function findPlayerClanMembership(clans: ClanStore, playerId: string): st
   }
   return null;
 }
+
+
+/** Resolve the roster as authoritative when a legacy player.clan field is stale. */
+export function resolvePlayerClanForLeave(clans: ClanStore, savedClanId: string, playerId: string): string {
+  return findPlayerClanMembership(clans, playerId) ?? savedClanId;
+}
