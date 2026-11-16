@@ -212,3 +212,13 @@ No catalog IDs, recipes, drops, prices, stats, saves, or production code were ch
 - Profession normalization remains intentionally narrow: the known legacy label `Воин` maps to `Рыцарь`; other labels are preserved rather than force-mapped to a race's current profession list. Race/profession mismatches in historical saves require a representative deployed-save corpus and explicit compatibility rules before repair.
 - CI run `43783068961` on HEAD `5e1acb310b1860f36a29ca448a8664549058013c` failed the server suite (464/465). The only failure was the intermittent `clanWarRuntime.test.ts` timeout: `nonmember rejection for clanDonate timed out`; the new migration/WAL regression tests themselves passed. Client build, browser smoke and data/docs jobs passed. No gameplay rule was changed to mask the flaky test.
 - Local tests not run. The new save-preservation regression is registered in the existing `playerSaves.test.ts` test file. Fresh Quality Gate required on the updated HEAD.
+
+
+## Equipment slot integrity and legacy preservation — 2026-11-16
+
+- Confirmed the 387-entry live equipment catalog currently uses only canonical assignments: 56 weapons, 64 pieces for each of five armor slots, and 11 amulets. No current catalog entry is malformed.
+- Found a defensive integrity gap in the server equip handler: it trusted `item.slot` and wrote that value directly as a key in the player's equipment object. A malformed future catalog entry could create an unsupported slot or place an armor/weapon/amulet in an incompatible slot.
+- Added `resolveEquipmentSlot()` with a strict allowlist and kind-to-slot compatibility. The live `equipItem` handler now rejects invalid catalog slot assignments before changing equipment or health. Existing valid catalog assignments and legacy armor-without-slot fallback remain supported.
+- The guard applies only when equipping a new item. Existing saved equipment is not normalized, filtered, unequipped, or rewritten; unknown/retired equipped IDs remain intact for compatibility. Their combat effects still depend on whether the current runtime catalog can resolve their definitions.
+- Added unit regression coverage for canonical kinds/slots, missing legacy armor slot fallback, mismatched slots, unknown slots, prototype-sensitive names, and non-mutation of a legacy equipment snapshot.
+- No item IDs, stats, prices, race/profession restrictions, balance, or existing player saves were changed. Local tests were not run; fresh CI is required on the new HEAD.
