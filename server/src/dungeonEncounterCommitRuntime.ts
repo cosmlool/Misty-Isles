@@ -40,6 +40,15 @@ export function prepareDungeonEncounterCommit(input: {
       prepared.preparedAt < current.startedAt) {
     throw new Error('Prepared encounter identity does not match the durable dungeon run.');
   }
+  for (const playerId of current.participantIds) {
+    const durableParticipant = current.participants[playerId];
+    const preparedParticipant = prepared.participants[playerId];
+    const playerSnapshot = prepared.playerSnapshots[playerId];
+    if (!durableParticipant || preparedParticipant.hpBefore !== durableParticipant.health ||
+        (playerSnapshot.id !== undefined && playerSnapshot.id !== playerId)) {
+      throw new Error(`Prepared encounter participant snapshot is stale or belongs to another player: ${playerId}.`);
+    }
+  }
   if (current.preparedEncounter) {
     const existing = validatePreparedDungeonEncounter(current.preparedEncounter);
     if (!samePreparedEncounter(existing, prepared)) {
