@@ -30,3 +30,46 @@ test('every participant must survive and rounds greater than eight lose',()=>{
  assert.equal(calculateExpeditionCombatPlan(input).win,false);
  const slow=calculateExpeditionCombatPlan({...input,monsterHp:9000,participants:input.participants.map(p=>({...p,health:1000}))});assert.ok(slow.rounds>8);assert.equal(slow.win,false);
 });
+
+
+test('matches the legacy inline formula across a deterministic modifier matrix', () => {
+  const legacy = (input: Parameters<typeof calculateExpeditionCombatPlan>[0]) => {
+    const groupHp = input.monsterHp * (1 + .55 * (input.partySize - 1));
+    const effectiveMonsterDefense = Math.max(0, Number(input.monsterDefense || 0)) * input.monsterDefenseMultiplier;
+    const totalDps = input.participants.reduce((sum, x) =>
+      sum + x.attack * 7 * (100 / (100 + effectiveMonsterDefense)) *
+        x.resistanceMultiplier * x.weaknessMultiplier * x.hitMultiplier, 0);
+    const rounds = Math.max(1, Math.ceil(groupHp / Math.max(1, totalDps)));
+    const monsterAttack = input.monsterAttack * input.monsterAttackMultiplier;
+    const incoming = input.participants.map(x => Math.max(1, Math.floor(
+      (monsterAttack * .20 - x.defense * .12) * rounds *
+      x.incomingProfessionMultiplier * (1 - input.groupGuard) * x.incomingHitMultiplier
+    )));
+    const win = rounds <= 8 && input.participants.every((x, i) => x.health > incoming[i]);
+    return { groupHp, effectiveMonsterDefense, monsterAttack, totalDps, rounds, incoming, win };
+  };
+  for (let scenario = 0; scenario < 36; scenario++) {
+    const partySize = 1 + (scenario % 3);
+    const participants = Array.from({ length: partySize }, (_, index) => member({
+      attack: (scenario * 13 + index * 17) % 91,
+      defense: (scenario * 7 + index * 11) % 46,
+      health: (scenario * 19 + index * 23) % 240,
+      resistanceMultiplier: [.65, .8, 1, 1.15][(scenario + index) % 4],
+      weaknessMultiplier: [.75, 1, 1.2][(scenario * 2 + index) % 3],
+      hitMultiplier: [.7, .9, 1][(scenario + index * 2) % 3],
+      incomingProfessionMultiplier: [.8, 1, 1.25][(scenario + index) % 3],
+      incomingHitMultiplier: [.75, .95, 1][(scenario * 3 + index) % 3],
+    }));
+    const input = {
+      monsterHp: 1 + ((scenario * 127) % 1800),
+      partySize,
+      monsterDefense: (scenario * 5) % 70,
+      monsterDefenseMultiplier: [.8, 1, 1.1, 1.3][scenario % 4],
+      monsterAttack: (scenario * 29) % 170,
+      monsterAttackMultiplier: [.75, 1, 1.2][scenario % 3],
+      groupGuard: scenario % 2 ? .08 : 0,
+      participants,
+    };
+    assert.deepEqual(calculateExpeditionCombatPlan(input), legacy(input), `scenario ${scenario}`);
+  }
+});
