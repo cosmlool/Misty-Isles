@@ -10,7 +10,7 @@ test('replaces matching request, preserves other entries and caps history at fiv
     ],
   };
   const report = { result: 'win' };
-  const result = prepareDungeonRequestResult(quests, 'retry', 'player-1', report, 'done');
+  const result = prepareDungeonRequestResult(quests, 'retry', 'player-1', report, 'done', { dungeonId: 'd1', groupId: 'g1', leaderId: 'player-1', participantIds: ['player-1'] });
   assert.deepEqual(result.quests.dungeonRequestHistory, [
     { id: 'old-1' }, { id: 'old-2' }, { id: 'old-3' }, { id: 'old-4' },
     { id: 'retry', report, text: 'done' },
@@ -22,7 +22,7 @@ test('replaces matching request, preserves other entries and caps history at fiv
 
 test('builds the legacy stable event identity and payload', () => {
   const report = { result: 'loss' };
-  const result = prepareDungeonRequestResult({}, 'request_123', 'player-2', report, 'failed');
+  const result = prepareDungeonRequestResult({}, 'request_123', 'player-2', report, 'failed', { dungeonId: 'd1', groupId: '', leaderId: 'player-2', participantIds: ['player-2'] });
   assert.deepEqual(result.event, {
     eventId: 'dungeon:legacy_request_123:player-2:combatResult',
     runId: 'legacy_request_123',
@@ -38,7 +38,7 @@ test('builds the legacy stable event identity and payload', () => {
 });
 
 test('uses an empty history when the stored value is not an array', () => {
-  const result = prepareDungeonRequestResult({ dungeonRequestHistory: 'invalid' }, 'request_456', 'p', {}, 'ok');
+  const result = prepareDungeonRequestResult({ dungeonRequestHistory: 'invalid' }, 'request_456', 'p', {}, 'ok', { dungeonId: 'd1', groupId: '', leaderId: 'p', participantIds: ['p'] });
   assert.deepEqual(result.quests.dungeonRequestHistory, [
     { id: 'request_456', report: {}, text: 'ok' },
   ]);
@@ -47,7 +47,7 @@ test('uses an empty history when the stored value is not an array', () => {
 test('does not mutate the source quest object or its history array', () => {
   const history = [{ id: 'prior' }];
   const quests = { dungeonRequestHistory: history, other: 7 };
-  const result = prepareDungeonRequestResult(quests, 'request_789', 'p', {}, 'ok');
+  const result = prepareDungeonRequestResult(quests, 'request_789', 'p', {}, 'ok', { dungeonId: 'd1', groupId: '', leaderId: 'p', participantIds: ['p'] });
   assert.equal(quests.dungeonRequestHistory, history);
   assert.equal(history.length, 1);
   assert.equal(result.quests === quests, false);
