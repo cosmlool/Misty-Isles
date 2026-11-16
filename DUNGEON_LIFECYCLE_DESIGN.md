@@ -305,3 +305,7 @@ The adapter is intentionally not wired into runExpeditionDungeon yet. The produc
 
 ### CI follow-up — 2026-11-16
 Quality Gate 43931230374 exposed a literal escaped newline accidentally inserted into the aggregate-limit test while preparing the adapter regression. Corrected the test source to use an actual line break. The subsequent commit is awaiting its own Quality Gate; no production combat code was changed.
+
+
+### CI correction — 2026-11-16 (follow-up)
+The subsequent Quality Gate 43936898345 showed that the earlier newline correction had not actually removed the literal `\\n` from the checked-in test source. Replaced the literal two-character escape with a real source line break in commit dca7f4e3b8b3bf57237835cdc4e777225c813c77. The new run 43946425041 has data/docs and client jobs passing; server and Playwright jobs were still in progress at the latest check. No production runtime behavior changed.
