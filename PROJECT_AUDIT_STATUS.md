@@ -2822,3 +2822,11 @@ PEN-009 стоит 100 кристаллов и при максимальном �
 - Stop point: monitor CI for this commit. If green, continue the next combat-channel audit; if failing, inspect the new failing test/log rather than assuming the old clan timeout persists.
 
 - Precision follow-up: tightened the regression to assert the single canonical response `Сначала вступи в клан.` for this fixture, rather than accepting either message. This locks the roster-authoritative contract instead of broadening the assertion. Commit `88e5b3ee367c8da9176ec73790c5e6a5a7997cad`.
+
+
+## CI timeout re-investigation — 2026-11-16 (correction)
+- Rechecked PR #18 exact HEAD `e3dec2679a7cd8c149a182e3adfa796ccb2f974b` and completed Quality Gate `43797490206`: client build, Playwright smoke, and data/docs/structure passed; server suite failed 468/469.
+- The failing case is still `clanWarRuntime.test.ts` at the nonmember `clanDonate` notice wait (10.45s). Importantly, the test source at this HEAD already accepts both `Сначала вступи в клан.` and `Персонаж не состоит в этом клане.`; therefore the previous journal entry attributing the remaining timeout solely to the stale expected text was incorrect. Do not treat that as a resolved root cause or claim a validated test fix.
+- Runtime source trace: `onAuthenticatedMessage` verifies session/room ownership, runs recovery, then invokes the handler. `clanDonate` calls `transactClanMutation`, resolves membership from the clan roster (not the legacy `player.clan` pointer), and should emit a notice when no roster membership exists. The transaction wrapper can throw and the handler currently has no local catch, which would suppress the expected notice; the precise thrown error/path is not yet established from available CI output.
+- No production or test change made in this re-investigation. Preserve roster-authoritative membership. Next: inspect shared `commitClan`/WAL transaction path and test fixture state around the first unauthorized request; add narrowly scoped error evidence or fix only after reproducing the exact cause. Do not widen the test to accept arbitrary messages.
+- Other combat-channel audit remains as recorded above; no balance changes authorized or made.
