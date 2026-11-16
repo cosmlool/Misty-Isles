@@ -1020,8 +1020,9 @@ class GameRoom extends Room<RoomState> {
       if(!this.requireCharacter(c))return;
       const id=String(d?.upgrade||'');
       const result=transactClanMutation(this.playerId,({p,clans})=>{
-        if(!p?.clan)return {error:'Сначала вступи в клан.'};
-        const clan=clans[p.clan];if(!clan)return {error:'Клан не найден.'};
+        const membershipClanId=findPlayerClanMembership(clans,this.playerId);
+        if(!membershipClanId)return {error:'Сначала вступи в клан.'};
+        const clan=clans[membershipClanId];if(!clan)return {error:'Клан не найден.'};
         if(!isClanMember(clan,this.playerId))return {error:'Персонаж не состоит в этом клане.'};
         if(clan.leader!==this.playerId)return {error:'Улучшения может оплачивать только лидер клана.'};
         const specs:any={barracks:{name:'Военная школа',base:2500,step:2},treasury:{name:'Клановая казна',base:2000,step:3},banner:{name:'Знамя первопроходцев',base:3000,step:5}};
@@ -1043,8 +1044,9 @@ class GameRoom extends Room<RoomState> {
       if(!this.requireCharacter(c))return;
       const territoryId=String(d?.id||''),now=Date.now();
       const result=transactClanMutation(this.playerId,({p,clans,territories})=>{
-        if(!p?.clan)return {error:'Сначала вступи в клан.'};
-        const clan=clans[p.clan];if(!clan)return {error:'Клан не найден.'};
+        const membershipClanId=findPlayerClanMembership(clans,this.playerId);
+        if(!membershipClanId)return {error:'Сначала вступи в клан.'};
+        const clan=clans[membershipClanId];if(!clan)return {error:'Клан не найден.'};
         if(!isClanMember(clan,this.playerId))return {error:'Персонаж не состоит в этом клане.'};
         const t=territories.find((x:any)=>x.id===territoryId);
         if(!t)return {error:'Территория не найдена.'};
@@ -1076,8 +1078,9 @@ class GameRoom extends Room<RoomState> {
       if(!this.requireCharacter(c))return;
       const questId=String(d?.id||'');
       const result=transactClanMutation(this.playerId,({p,clans})=>{
-        if(!p?.clan)return {error:'Сначала вступи в клан.'};
-        const clan=clans[p.clan];if(!clan)return {error:'Клан не найден.'};
+        const membershipClanId=findPlayerClanMembership(clans,this.playerId);
+        if(!membershipClanId)return {error:'Сначала вступи в клан.'};
+        const clan=clans[membershipClanId];if(!clan)return {error:'Клан не найден.'};
         if(!isClanMember(clan,this.playerId))return {error:'Персонаж не состоит в этом клане.'};
         const quests=ensureClanQuests(clan),q=quests.find((x:any)=>x.id===questId);
         if(!q)return {error:'Задание не найдено.'};
@@ -1096,8 +1099,9 @@ class GameRoom extends Room<RoomState> {
     this.onAuthenticatedMessage('clanSeasonReward',(c)=>{
       if(!this.requireCharacter(c))return;
       const result=transactClanMutation(this.playerId,({p,clans,territories})=>{
-        if(!p?.clan)return {error:'Сначала вступи в клан.'};
-        const clan=clans[p.clan];if(!clan)return {error:'Клан не найден.'};
+        const membershipClanId=findPlayerClanMembership(clans,this.playerId);
+        if(!membershipClanId)return {error:'Сначала вступи в клан.'};
+        const clan=clans[membershipClanId];if(!clan)return {error:'Клан не найден.'};
         if(!isClanMember(clan,this.playerId))return {error:'Персонаж не состоит в этом клане.'};
         const week=Math.floor(Date.now()/(7*24*60*60*1000));
         if(clan.lastSeasonRewardWeek===week)return {error:'Недельная награда уже получена.'};
@@ -1163,8 +1167,9 @@ class GameRoom extends Room<RoomState> {
     this.onAuthenticatedMessage('clanWarAttack',(c,d:any)=>{
       if(!this.requireCharacter(c))return;
       const result=transactClanMutation(this.playerId,({p,clans,wars})=>{
-        if(!p?.clan)return {error:'Сначала вступи в клан.'};
-        const clan=clans[p.clan];
+        const membershipClanId=findPlayerClanMembership(clans,this.playerId);
+        if(!membershipClanId)return {error:'Сначала вступи в клан.'};
+        const clan=clans[membershipClanId];
         if(!clan||!Array.isArray(clan.members)||!clan.members.some((member:any)=>member?.id===this.playerId)){
           return {error:'Персонаж не состоит в этом клане.'};
         }
