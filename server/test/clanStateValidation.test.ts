@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { findPlayerClanMembership, validateClanStore, validateClanWarStore, validateTerritoryStore } from '../src/clanStateValidation.js';
+import { findPlayerClanMembership, resolvePlayerClanForLeave, validateClanStore, validateClanWarStore, validateTerritoryStore } from '../src/clanStateValidation.js';
 
 const clans = {
   clan_a: { id: 'clan_a', name: 'Туманный дозор', leader: 'p1', level: 1, xp: 0, vault: 0, seasonPoints: 0,
@@ -78,4 +78,16 @@ test('player clan membership lookup detects roster membership independently of s
   assert.equal(findPlayerClanMembership(twoClans, 'p2'), 'clan_b');
   assert.equal(findPlayerClanMembership(twoClans, 'missing-player'), null);
   assert.equal(findPlayerClanMembership(twoClans, ''), null);
+});
+
+
+test('leave resolution prefers the actual roster over a stale player clan field', () => {
+  const clans = {
+    clan_a: { id: 'clan_a', members: [{ id: 'someone-else' }] },
+    clan_b: { id: 'clan_b', members: [{ id: 'p1' }] },
+  };
+  assert.equal(resolvePlayerClanForLeave(clans, '', 'p1'), 'clan_b');
+  assert.equal(resolvePlayerClanForLeave(clans, 'clan_a', 'p1'), 'clan_b');
+  assert.equal(resolvePlayerClanForLeave(clans, 'clan_a', 'not-listed'), 'clan_a');
+  assert.equal(resolvePlayerClanForLeave(clans, '', 'not-listed'), '');
 });
