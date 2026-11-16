@@ -68,3 +68,17 @@ The single-boss durable state layer has now received additional fail-closed guar
 - Regression tests cover these bypass attempts.
 
 These are state-integrity protections only. They do not decide whether a boss defeated before the end of a prepared plan should immediately end combat, nor do they change the existing HP-floor/death semantics. Those remain explicit design decisions before multi-wave wiring.
+
+
+## Follow-up audit: result outbox validation and delivery guarantees — 2026-11-16
+
+The result outbox now validates every stored event before enqueue, dispatch, and acknowledgement. Validation requires:
+- the map key to equal the event's stable eventId;
+- non-empty run, player and message identifiers;
+- an object payload and a known pending/delivered status;
+- a finite non-negative creation timestamp;
+- a finite delivery timestamp for events marked delivered.
+
+Malformed records fail closed rather than being silently skipped and left pending indefinitely. Regression tests cover mismatched keys, unsupported status and missing delivery timestamps.
+
+Delivery remains **at-least-once**, not exactly-once: the server sends first and persists acknowledgement second. A crash between those actions can cause replay. The client uses the stable event ID to suppress duplicate UI application. This behavior is intentional and unchanged by the validation hardening.
