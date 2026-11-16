@@ -107,3 +107,13 @@ The live legacy dungeon path was traced separately from the dormant durable-run 
 This does **not** mean durable dungeon-run finalization is live. The production handler does not create/finalize a `DungeonRunRecord`; it uses `legacy_<requestId>` as a synthetic outbox runId. The helper that atomically commits frozen player snapshots + terminal run marker + outbox remains unwired. The legacy request cache also does not bind request IDs to dungeon/group/leader/ordered roster.
 
 Do not bridge this gap by calling only the finalization helper or by partially switching the handler. The live path must first be converted to a single immutable preparation/recovery flow, with the existing combat/RNG/reward order preserved and unresolved death/round/multi-wave semantics explicitly decided.
+
+
+## Legacy request identity hardening — 2026-11-17
+
+Legacy synchronous dungeon requests now persist a binding alongside each saved request result:
+`dungeonId`, `groupId`, `leaderId`, and the exact ordered `participantIds`.
+
+A replay is accepted only if every current participant has a matching saved entry and every binding field matches. Partial group cache, cross-dungeon/group/leader/roster reuse, malformed participant order, and pre-binding historical entries fail closed. The `dungeonLastRequest` compatibility fallback remains included in lookup but is not trusted without a binding. Both win and loss settlements persist the same frozen binding.
+
+This closes cross-context replay while the request remains in the per-player cache. The legacy history is still capped at five entries per player; there is no permanent global request-ID registry, so this is not equivalent to durable run-level idempotency. Durable lifecycle integration remains a separate prerequisite. No gameplay formulas, RNG, rewards, attempt accounting, client protocol or multi-wave runtime changed.
