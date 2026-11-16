@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import { readFileSync } from 'node:fs';
-import { expandDungeonEncounterConfig } from '../src/dungeonEncounterConfig.js';
+import { expandDungeonEncounterConfig, resolveLegacyDungeonBossId } from '../src/dungeonEncounterConfig.js';
 
 const dungeonIds = new Set(['fl_dungeon_03', 'fl_dungeon_06', 'fl_dungeon_09', 'fl_dungeon_10']);
 const monsterIds = new Set(['FL-03-10', 'FL-06-10', 'FL-09-10', 'FL-10-10']);
@@ -79,4 +79,24 @@ test('checked-in encounter configuration exactly preserves the live dungeon boss
     assert.ok(entry, `missing encounter config for ${dungeon.id}`);
     assert.deepEqual(entry.encounters.flatMap(encounter => encounter.waves.flatMap(wave => wave.monsterIds)), [dungeon.bossId]);
   }
+});
+
+test('legacy adapter returns the original boss and refuses multi-encounter content', () => {
+  const expanded = expandDungeonEncounterConfig(legacyConfig, dungeonIds, monsterIds);
+  assert.deepEqual(expanded.map(resolveLegacyDungeonBossId), ['FL-03-10', 'FL-06-10', 'FL-09-10', 'FL-10-10']);
+  assert.throws(() => resolveLegacyDungeonBossId({
+    dungeonId: 'fl_dungeon_03',
+    encounters: [
+      { id: 'a', waves: [{ id: 'a1', monsterIds: ['FL-03-10'] }] },
+      { id: 'b', waves: [{ id: 'b1', monsterIds: ['FL-03-10'] }] },
+    ],
+  }), /exactly one encounter/);
+  assert.throws(() => resolveLegacyDungeonBossId({
+    dungeonId: 'fl_dungeon_03',
+    encounters: [{ id: 'a', waves: [{ id: 'a1', monsterIds: ['FL-03-10', 'FL-03-10'] }] }],
+  }), /exactly one boss spawn/);
+  assert.throws(() => resolveLegacyDungeonBossId({
+    dungeonId: 'fl_dungeon_03',
+    encounters: [{ id: 'a', waves: [{ id: 'a1', monsterIds: ['FL-03-10'] }, { id: 'a2', monsterIds: ['FL-03-10'] }] }],
+  }), /exactly one boss spawn/);
 });
