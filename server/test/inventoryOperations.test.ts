@@ -76,3 +76,38 @@ test('inventory stack action rejects unsafe or fractional snapshot counts', () =
   assert.equal(validateInventoryStackAction(inventory, 0, 'mystery_chest', Number.MAX_SAFE_INTEGER + 1), false);
   assert.equal(validateInventoryStackAction(inventory, -1, 'mystery_chest', 1), false);
 });
+
+
+import { resolveEquipmentSlot } from '../src/equipmentIntegrity.js';
+
+test('equipment catalog entries resolve only to compatible canonical slots', () => {
+  assert.equal(resolveEquipmentSlot({ kind: 'weapon', slot: 'weapon' }), 'weapon');
+  assert.equal(resolveEquipmentSlot({ kind: 'weapon' }), 'weapon');
+  assert.equal(resolveEquipmentSlot({ kind: 'armor', slot: 'helmet' }), 'helmet');
+  assert.equal(resolveEquipmentSlot({ kind: 'armor', slot: 'armor' }), 'armor');
+  assert.equal(resolveEquipmentSlot({ kind: 'armor' }), 'armor');
+  assert.equal(resolveEquipmentSlot({ kind: 'amulet', slot: 'amulet' }), 'amulet');
+  assert.equal(resolveEquipmentSlot({ kind: 'armor', slot: 'weapon' }), null);
+  assert.equal(resolveEquipmentSlot({ kind: 'armor', slot: 'amulet' }), null);
+  assert.equal(resolveEquipmentSlot({ kind: 'weapon', slot: 'helmet' }), null);
+  assert.equal(resolveEquipmentSlot({ kind: 'amulet', slot: 'armor' }), null);
+  assert.equal(resolveEquipmentSlot({ kind: 'potion', slot: 'weapon' }), null);
+  assert.equal(resolveEquipmentSlot({ kind: 'armor', slot: '__proto__' }), null);
+  assert.equal(resolveEquipmentSlot({ kind: 'armor', slot: 'constructor' }), null);
+});
+
+test('equipment slot validation does not mutate a legacy equipped snapshot', () => {
+  const legacyEquipment = {
+    weapon: 'retired_legacy_blade',
+    armor: 'old_armor_id',
+    helmet: '',
+    gloves: '',
+    boots: '',
+    cloak: '',
+    amulet: '',
+    historicalSlot: 'legacy_value',
+  };
+  const before = structuredClone(legacyEquipment);
+  assert.equal(resolveEquipmentSlot({ kind: 'armor', slot: '__proto__' }), null);
+  assert.deepEqual(legacyEquipment, before);
+});
