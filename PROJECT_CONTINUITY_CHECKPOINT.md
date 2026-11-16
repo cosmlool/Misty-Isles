@@ -1316,3 +1316,12 @@ PR #15 остаётся Draft/open и не объединён. Слияние б
 - The new contract deliberately separates observed behavior, candidate rules, unresolved design decisions and a safe migration sequence. No combat implementation was activated because damage types, crit baselines, accuracy scale, stacking/caps, healing selection, five-piece semantics and reward parity remain undefined.
 - Last verified code HEAD before this docs update: 8bd8ac0c277c22c7dca2fb85036336f531d6f1e9. Contract creation commit: b0b262e22f45bd60761f61c6394081be33ada705. Latest documentation commits and exact HEAD are recorded by GitHub after the append operations; check CI on that exact HEAD.
 - Next: review the new contract for source-level precision and add a deterministic test/fixture inventory for legacy hunt/dungeon parity without changing live combat. PR #18 stays Draft/open/unmerged; do not touch main.
+
+
+## Continuity checkpoint — PvE parity coverage deep-dive — 2026-11-16
+- Latest task: inspect existing test ownership against live expedition/dungeon paths and extend `LEGACY_PVE_COMBAT_PARITY_FIXTURES.md`.
+- Exact previous HEAD `1e01ccae6ab854c2793e2c0269d5037f2248c6b2` passed Quality Gate `43880401067` 4/4. Documentation update commit: `146e3cba0a242131752296500b44425df32f2bec`; append-only audit/checkpoint commits follow this commit.
+- Current test coverage: `monsterCombat.test.ts` characterizes helper/passive/typed-engine behavior; `dungeonCombatMath.test.ts` covers pure dungeon math including DUN-TRIO-01; separate tests cover dungeon HP order, injected drop RNG/allocation, reports, quest/request snapshots and prepared settlement. `expeditionSafetyRuntime.test.ts` is a group/reconnect safety test, not a combat/reward golden fixture.
+- Confirmed live hunt still has inline deterministic math plus random monster selection, ordered drop rolls and ordered recipient selection. A complete golden settlement fixture is absent. Existing dungeon trio fixture covers math only, not live settlement.
+- Next safe code stage: extract only the expedition arithmetic (no RNG, rewards, quest mutation, reports or persistence), add solo/duo/trio and strict boundary golden fixtures, then compare against old inline outputs. Preserve random draw count/order and all settlement side effects. Do not wire typed engine or change PvP.
+- No gameplay implementation performed in this stage. PR #18 remains Draft/open/unmerged; `main` untouched. Await CI for the updated docs HEAD.
