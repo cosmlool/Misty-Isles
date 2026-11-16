@@ -43,7 +43,7 @@ import { resetWeeklyHuntProgress, utcIsoWeekKey } from './calendarOperations.js'
 import { checkExpeditionTravelConsistency, checkExpeditionTravelReadiness, checkExpeditionTravelStartReadiness, canInviteToHuntGroup, countHuntGroupInvites, expireHuntGroupInvites, invalidateHuntGroupInvites, isHuntGroupLevelRangeValid } from './expeditionOperations.js';
 import { parseAdminPlayerIds } from './adminAuthorization.js';
 import { isCharacterGender } from './characterIdentity.js';
-import { findPlayerClanMembership, validateClanStore, validateClanWarStore, validateTerritoryStore } from './clanStateValidation.js';
+import { findPlayerClanMembership, resolvePlayerClanForLeave, validateClanStore, validateClanWarStore, validateTerritoryStore } from './clanStateValidation.js';
 import { parseMonsterWeakness, resolveLegacyMonsterAttackMultiplier, resolveLegacyMonsterDefenseMultiplier, resolveLegacyMonsterProfessionDamageMultiplier, resolveLegacyMonsterHitMultiplier, resolveLegacyMonsterResistance, resolveLegacyPlayerHitMultiplier, resolveLegacyHealingMultiplier, resolveLegacyMonsterWeaknessMultiplier, resolveMonsterPassive } from './monsterCombat.js';
 import { prepareXpProgression } from './xpProgression.js';
 import { isPasswordLengthWithinLimit } from './authPasswordPolicy.js';
@@ -905,8 +905,9 @@ class GameRoom extends Room<RoomState> {
     this.onAuthenticatedMessage('clanLeave',(c)=>{
       if(!this.requireCharacter(c))return;
       const result=transactClanMutation(this.playerId,({p,clans,wars,territories})=>{
-        if(!p.clan)return {error:'Ты не состоишь в клане.'};
-        const clan=clans[p.clan];
+        const membershipClanId=resolvePlayerClanForLeave(clans,String(p.clan||''),this.playerId);
+        if(!membershipClanId)return {error:'Ты не состоишь в клане.'};
+        const clan=clans[membershipClanId];
         if(!clan){p.clan='';return {kind:'orphan'};}
         if(clan.leader===this.playerId&&Array.isArray(clan.members)&&clan.members.length>1){
           return {error:'Перед выходом передай лидерство или попроси участников выйти.'};
