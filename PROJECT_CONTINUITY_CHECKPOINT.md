@@ -1400,3 +1400,13 @@ PR #15 остаётся Draft/open и не объединён. Слияние б
 - No live dungeon code or gameplay behavior changed. Next: review/approve the unresolved semantics before implementing a versioned multi-wave durable run schema; do not wire live combat or activate new waves prematurely.
 - PR #18 remains Draft/open/unmerged; `main` untouched.
 
+
+
+## Latest continuation checkpoint — durable dungeon transition hardening — 2026-11-16
+- Rechecked Quality Gate `43947496809` on `9ee90c33f44009ca5010d7e4451385317f51ebaf`: all four jobs passed.
+- Audited durable run validation, round transitions and terminal finalization. Tightened the exported manual round transition to reject invalid HP snapshots, extra/missing participant entries, boss HP above max, and attempts to bypass a deterministic round plan.
+- Added a direct terminal-state guard so win/loss cannot finish while planned rounds remain unresolved; this mirrors the WAL finalization guard.
+- Added regression tests in `server/test/dungeonRunState.test.ts`.
+- Commits: `d43485ad94da5af115bc44e2a741edc50f8d7583` (runtime hardening), `b0944cf6b0c43bdb7055635e4720d30f67d547a1` (tests).
+- Next: verify Quality Gate for the latest HEAD; then inspect outbox validation/acknowledgement and the boundary between prepared aggregate combat and durable run state. Do not activate multi-wave combat or change unresolved gameplay semantics.
+- PR #18 remains Draft/open/unmerged; `main` untouched.
