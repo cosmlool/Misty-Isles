@@ -1370,3 +1370,11 @@ PR #15 остаётся Draft/open и не объединён. Слияние б
 - Previous HEAD 6c0eee2013d728e90d7fd1b14ae959a047dcf0d6 passed Quality Gate 43911118722 4/4. Check CI on the latest HEAD before advancing.
 - Next: inspect CI; if green, audit schema evolution/content authoring and add a validated legacy adapter boundary. Do not wire multi-enemy runtime until per-wave combat, loot/reward semantics, participant health, attempts, persistence and idempotency are specified and characterized.
 - PR #18 remains Draft/open/unmerged; main untouched.
+
+
+## Continuation checkpoint — guarded legacy dungeon adapter — 2026-11-16
+- Added resolveLegacyDungeonBossId() as a fail-closed projection from expanded schema to legacy single-boss contract. Requires exactly one encounter, one wave and one spawn; refuses all multi-wave/multi-mob structures.
+- Tests assert the four original boss IDs and rejection of multi-encounter, multi-wave and multi-monster definitions.
+- Corrected total monster cap test fixture: six waves × 20 mobs now exercises the aggregate cap while respecting the individual spawn cap.
+- Previous CI run 43923382306: 3 jobs passed, server test job failed on the faulty aggregate-limit fixture. Re-run CI on latest HEAD before advancing.
+- Production dungeon handler remains unchanged; no new combat behavior. PR #18 Draft/open/unmerged, main untouched.
