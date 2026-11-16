@@ -139,6 +139,32 @@ test('group boss dungeon persists win rewards and loss costs for every participa
       await waitFor(() => groupStates[leader].find(payload => payload.group?.members?.length === 2), `group ${leader} acceptance`);
     }
 
+    // A disconnected member keeps their roster slot, but the leader must not
+    // be able to start a dungeon and consume attempts for only the online party.
+    const offlineMemberNotices: string[] = [];
+    connected[ids[0]].onMessage('notice', payload => offlineMemberNotices.push(String(payload?.text || '')));
+    await connected[ids[1]].leave();
+    await waitFor(
+      () => groupStates[ids[0]].find(payload => payload.group?.members?.length === 2 &&
+        payload.group.members.find((member: any) => member.id === publicCode(ids[1]))?.online === false),
+      'group roster retains the disconnected dungeon member',
+    );
+    connected[ids[0]].send('dungeonRun', { id: 'fl_dungeon_03', requestId: 'offline_dungeon_001' });
+    await waitFor(
+      () => offlineMemberNotices.find(message => message.includes('Все участники группы должны быть в сети')),
+      'block dungeon start while a roster member is offline',
+    );
+    const beforeReconnect = readPlayers(join(dataDir, 'players.json'));
+    assert.equal(beforeReconnect[ids[0]].gold, 500);
+    assert.equal(beforeReconnect[ids[1]].gold, 500);
+    assert.equal(JSON.parse(beforeReconnect[ids[0]].quests).dungeonRuns, 2);
+    assert.equal(JSON.parse(beforeReconnect[ids[1]].quests).dungeonRuns, 2);
+
+    connected[ids[1]] = await client.joinOrCreate('my_room', {
+      playerId: ids[1], sessionToken: await guestToken(port, ids[1]),
+    });
+    rooms.push(connected[ids[1]]);
+
     const results: Record<string, any[]> = Object.fromEntries(ids.map(id => [id, []]));
     const histories: Record<string, any[]> = Object.fromEntries(ids.map(id => [id, []]));
     for (const id of ids) {
@@ -178,7 +204,7 @@ test('group boss dungeon persists win rewards and loss costs for every participa
     await waitFor(() => results[ids[1]].length === 2, 'replay of the saved group result to the second participant');
     const replayConflictNotices: string[] = [];
     connected[ids[0]].onMessage('notice', payload => replayConflictNotices.push(String(payload?.text || '')));
-    connected[ids[0]].send('dungeonRun', { id: 'fl_dungeon_02', requestId: 'group_dungeon_win_001' });
+    connected[ids[0]].send('dungeonRun', { id: 'fl_dungeon_06', requestId: 'group_dungeon_win_001' });
     await waitFor(
       () => replayConflictNotices.find(message => message.includes('Повтор запроса не подтверждён')),
       'rejecting reuse of a request ID for another dungeon',
