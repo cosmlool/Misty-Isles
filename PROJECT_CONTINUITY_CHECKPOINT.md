@@ -1231,3 +1231,11 @@ PR #15 остаётся Draft/open и не объединён. Слияние б
 
 - Precision follow-up: tightened the regression to assert the single canonical response `Сначала вступи в клан.` for this fixture, rather than accepting either message. This locks the roster-authoritative contract instead of broadening the assertion. Commit `88e5b3ee367c8da9176ec73790c5e6a5a7997cad`.
 - Current continuation: run/inspect CI for the exact latest documentation HEAD, then proceed with the equipment combat runtime-channel audit.
+
+
+## Current work log / continuation point — 2026-11-16 (CI re-investigation)
+- Starting/verified PR #18 HEAD: `e3dec2679a7cd8c149a182e3adfa796ccb2f974b`; PR remains Draft/open/unmerged; base `stage29/clean-validation-recovery`, branch `staging/local-isolated-launcher`; `main` untouched.
+- Quality Gate `43797490206` completed: 3 jobs passed (client build, Playwright, data/docs); server failed 468/469 at `clanWarRuntime.test.ts` waiting 10.45s for the nonmember `clanDonate` notice.
+- Correction to the previous checkpoint: the test at this HEAD already accepts both known nonmember rejection texts. Thus stale message wording alone does not explain the failure; previous claim that the test-only fix resolved the issue was premature/incorrect. Do not repeat that conclusion.
+- Source confirms roster-authoritative lookup is correct and should remain. `clanDonate` routes through `transactClanMutation`; an exception in shared transaction preparation/recovery could escape before the handler sends its notice. Exact exception has not yet been captured.
+- No code changes in this stage. Next: inspect `sharedStateRuntime.commitClan`, underlying WAL commit and test fixture/server stderr; establish why this specific request does not produce a notice. Then fix only the proven cause and run CI on exact new HEAD.
