@@ -31,6 +31,9 @@ test('prepares activity, combat history, request replay and outbox event in one 
     requestId: 'request_123',
     playerId: 'player-1',
     text: 'done',
+    binding: { dungeonId: 'd1', groupId: '', leaderId: 'player-3', participantIds: ['player-3'] },
+    binding: { dungeonId: 'd1', groupId: '', leaderId: 'player-2', participantIds: ['player-2'] },
+    binding: { dungeonId: 'd1', groupId: 'g1', leaderId: 'player-1', participantIds: ['player-1'] },
   });
 
   assert.equal(result.quests.activityDay, '2026-11-13');
@@ -40,7 +43,7 @@ test('prepares activity, combat history, request replay and outbox event in one 
   assert.deepEqual(result.quests.activityLog, [{ at: Date.parse('2026-11-13T12:00:00.000Z'), ...activity }, { type: 'hunt' }]);
   assert.deepEqual(result.history, [report, { result: 'prior' }]);
   assert.deepEqual(result.quests.dungeonRequestHistory, [
-    { id: 'prior' }, { id: 'request_123', report, text: 'done' },
+    { id: 'prior' }, { id: 'request_123', report, text: 'done', binding: { dungeonId: 'd1', groupId: 'g1', leaderId: 'player-1', participantIds: ['player-1'] } },
   ]);
   assert.equal(result.quests.retained, true);
   assert.equal(result.event.playerId, 'player-1');
