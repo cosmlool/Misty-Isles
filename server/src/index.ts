@@ -13,6 +13,7 @@ import { calculateCombatSpeed } from './monsterBattle.js';
 import { calculatePlayerMonsterCombatStats, parseMonsterCombatEffectClauses, resolveEquipmentSetCombatEffects, resolveEquipmentSetTierDescriptions, resolveGoldEquipmentStatProfile, resolveMonsterCombatProperty, resolvePlayerMonsterLifestealRate, resolveMonsterPendantCombatEffect } from './monsterCombatStats.js';
 import { acquireDataDirectoryLock } from './dataDirectoryLock.js';
 import { applyPlayerSave, createPlayerSaveStore } from './playerSaves.js';
+import { migrateLegacyCityReputation, migrateLegacyVisitedCities } from './playerSaveMigrations.js';
 import { startPlayerAutosave } from './playerAutosave.js';
 import { canSaveRoomPlayerSnapshot, isCurrentRoomSession } from './playerSessionOwnership.js';
 import { readJsonFile as readPersistentJson } from './jsonPersistence.js';
@@ -185,7 +186,7 @@ const RACES = ['Кот','Собака','Птица','Грызун'];
 const CITIES: Record<string,string> = {'Кот':'Сумеречный приют','Собака':'Крепость стаи','Птица':'Высокое гнездо','Грызун':'Подземный рынок'};
 const LEGACY_CITY_NAMES:Record<string,string>={'Вольный перекрёсток':'Каменный порт','Гавань семи ветров':'Изумрудная долина','Серебряный бастион':'Золотые дюны','Кристальный двор':'Серебряные руины','Пепельная цитадель':'Северная корона'};
 function normalizePlayerProfessionData(p:any){p.profession=normalizeProfession(p.profession);}
-function normalizePlayerCityData(p:any){const old=String(p.city||'');if(LEGACY_CITY_NAMES[old])p.city=LEGACY_CITY_NAMES[old];const rep=readObject(p.cityReputation);for(const [before,after] of Object.entries(LEGACY_CITY_NAMES)){if(rep[before]!==undefined){rep[after]=Math.max(Number(rep[after]||0),Number(rep[before]||0));delete rep[before];}}p.cityReputation=JSON.stringify(rep);const col=readObject(p.collections);for(const [before,after] of Object.entries(LEGACY_CITY_NAMES)){if(col[`visited_${before}`]){col[`visited_${after}`]=true;delete col[`visited_${before}`];}}p.collections=JSON.stringify(col);}
+function normalizePlayerCityData(p:any){const old=String(p.city||'');if(LEGACY_CITY_NAMES[old])p.city=LEGACY_CITY_NAMES[old];p.cityReputation=JSON.stringify(migrateLegacyCityReputation(readObject(p.cityReputation),LEGACY_CITY_NAMES));p.collections=JSON.stringify(migrateLegacyVisitedCities(readObject(p.collections),LEGACY_CITY_NAMES));}
 const RACE_CITY_INFO: Record<string,{tagline:string;description:string;districts:string[];signatureZone:string;signatureZoneName:string}> = {
  'Кот':{tagline:'Лунные башни и древние тайны',description:'Магические архивы, лунные рынки и тихие переулки ассасинов.',districts:['Лунная площадь','Старый архив','Башня серебряных усов'],signatureZone:'cat_moonpath',signatureZoneName:'Лунная тропа'},
  'Собака':{tagline:'Крепость, выкованная верностью',description:'Кузницы, тренировочные дворы и бастионы защитников дорог.',districts:['Кузни красного железа','Дозорный бастион','Зал громового знамени'],signatureZone:'dog_border',signatureZoneName:'Дозорные поля'},
