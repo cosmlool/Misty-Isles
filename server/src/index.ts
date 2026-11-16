@@ -946,12 +946,12 @@ class GameRoom extends Room<RoomState> {
       if(!this.requireCharacter(c))return;
       const amount=Math.floor(Number(d?.amount)||0);
       const result=transactClanMutation(this.playerId,({p,clans})=>{
-        if(!p.clan)return {error:'Сначала вступи в клан.'};
+        const membershipClanId=findPlayerClanMembership(clans,this.playerId);
+        if(!membershipClanId)return {error:'Сначала вступи в клан.'};
         if(amount<100||amount>1000000)return {error:'Вклад должен быть от 100 до 1 000 000 золота.'};
         if(p.gold<amount)return {error:'Не хватает золота для взноса.'};
-        const clan=clans[p.clan];
+        const clan=clans[membershipClanId];
         if(!clan)return {error:'Клан не найден.'};
-        if(!isClanMember(clan,this.playerId))return {error:'Персонаж не состоит в этом клане.'};
         p.gold-=amount;p.goldSpent+=amount;clan.vault=prepareClanVaultCredit(clan.vault??0,amount);clan.xp=prepareClanProgressCredit(clan.xp??0,Math.floor(amount/100),'experience');
         ensureClanQuests(clan);clan.questProgress=clan.questProgress||{};
         clan.questProgress.donate=prepareClanProgressCredit(clan.questProgress.donate??0,amount,'donation quest progress');
@@ -968,9 +968,9 @@ class GameRoom extends Room<RoomState> {
       if(!this.requireCharacter(c))return;
       const now=Date.now();
       const result=transactClanMutation(this.playerId,({p,clans,territories})=>{
-        if(!p.clan)return {error:'Для кланового похода нужен клан.'};
-        const clan=clans[p.clan];if(!clan)return {error:'Клан не найден.'};
-        if(!isClanMember(clan,this.playerId))return {error:'Персонаж не состоит в этом клане.'};
+        const membershipClanId=findPlayerClanMembership(clans,this.playerId);
+        if(!membershipClanId)return {error:'Для кланового похода нужен клан.'};
+        const clan=clans[membershipClanId];if(!clan)return {error:'Клан не найден.'};
         if(now-Number(clan.lastRaidAt||0)<30*60*1000)return {error:`Клановый поход доступен через ${Math.ceil((30*60*1000-(now-Number(clan.lastRaidAt||0)))/60000)} мин.`};
         clan.lastRaidAt=now;
         const power=(p.level+p.strength*.15*(1+activeBuffValue(p,'attack',now))+p.defense*.1*(1+activeBuffValue(p,'defense',now))+clan.level*5)*(1+activeBuffValue(p,'crit',now)*.5)*(1+Number((clan.upgrades||{}).barracks||0)*.02);
@@ -1003,8 +1003,8 @@ class GameRoom extends Room<RoomState> {
     });
     this.onAuthenticatedMessage('clanQuests',(c)=>{
       const response=transactClanStateMutation(({clans})=>{
-        const p=ONLINE_PLAYERS.get(this.playerId);
-        const clan=p?.clan?clans[p.clan]:null;
+        const membershipClanId=findPlayerClanMembership(clans,this.playerId);
+        const clan=membershipClanId?clans[membershipClanId]:null;
         if(!clan||!isClanMember(clan,this.playerId)){
           return {quests:[],upgrades:{barracks:0,treasury:0,banner:0},clans,changed:false};
         }
@@ -1133,8 +1133,9 @@ class GameRoom extends Room<RoomState> {
     this.onAuthenticatedMessage('clanWarChallenge',(c,d:any)=>{
       if(!this.requireCharacter(c))return;
       const result=transactClanMutation(this.playerId,({p,clans,wars})=>{
-        if(!p?.clan)return {error:'Сначала вступи в клан.'};
-        const own=clans[p.clan],target=clans[String(d?.clanId||'')];
+        const membershipClanId=findPlayerClanMembership(clans,this.playerId);
+        if(!membershipClanId)return {error:'Сначала вступи в клан.'};
+        const own=clans[membershipClanId],target=clans[String(d?.clanId||'')];
         if(!own||!target||own.id===target.id)return {error:'Выбери другой существующий клан.'};
         if(!isClanMember(own,this.playerId))return {error:'Персонаж не состоит в этом клане.'};
         if(own.leader!==this.playerId)return {error:'Объявить войну может только лидер клана.'};
