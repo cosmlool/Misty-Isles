@@ -58,3 +58,31 @@ export function createPlayerSaveStore(saveFile:string,dataDir:string){
 
   return {loadPlayers,savePlayers};
 }
+
+export function applyPlayerSave(player:Record<string,any>, saved:unknown):Record<string,any> {
+  if (!saved || typeof saved !== 'object' || Array.isArray(saved)) return player;
+  for (const [key, value] of Object.entries(saved)) {
+    if (!Object.prototype.hasOwnProperty.call(player, key) || value === undefined) continue;
+    const current = player[key];
+    if (typeof current === 'number') {
+      if (typeof value === 'number' && Number.isFinite(value)) player[key] = value;
+      continue;
+    }
+    if (typeof current === 'string') {
+      if (typeof value === 'string') player[key] = value;
+      continue;
+    }
+    if (typeof current === 'boolean') {
+      if (typeof value === 'boolean') player[key] = value;
+      continue;
+    }
+    if (Array.isArray(current)) {
+      if (Array.isArray(value)) player[key] = value;
+      continue;
+    }
+    if (current && typeof current === 'object' && value && typeof value === 'object' && !Array.isArray(value)) {
+      player[key] = value;
+    }
+  }
+  return player;
+}

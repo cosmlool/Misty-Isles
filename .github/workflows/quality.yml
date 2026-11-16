@@ -66,3 +66,41 @@ jobs:
       - name: Compile server
         run: npm run build
         working-directory: server
+
+  browser-e2e:
+    name: Playwright browser smoke tests
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: e2e/package-lock.json
+      - name: Install locked server dependencies
+        run: npm ci --no-audit --no-fund
+        working-directory: server
+      - name: Install locked client dependencies
+        run: npm ci --no-audit --no-fund
+        working-directory: client
+      - name: Install locked E2E dependencies
+        run: npm ci --no-audit --no-fund
+        working-directory: e2e
+      - name: Install Google Chrome for Playwright
+        run: npx playwright install chrome
+        working-directory: e2e
+      - name: Run isolated browser scenarios
+        run: npm test
+        working-directory: e2e
+      - name: Upload Playwright diagnostics
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: misty-isles-playwright-results
+          path: |
+            e2e/test-results/
+            e2e/playwright-report/
+          if-no-files-found: ignore
