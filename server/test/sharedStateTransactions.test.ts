@@ -18,8 +18,10 @@ function fixture(testHooks?: any, platform?: NodeJS.Platform) {
     clans: join(dataDir, 'clans.json'),
     wars: join(dataDir, 'clan_wars.json'),
     territories: join(dataDir, 'clan_territories.json'),
+    mining: join(dataDir, 'mining.json'),
     huntGroups: join(dataDir, 'hunt_groups.json'),
     dungeonRuns: join(dataDir, 'dungeon_runs.json'),
+    dungeonOutbox: join(dataDir, 'dungeon_outbox.json'),
     accounts: join(dataDir, 'accounts.json'),
     sessions: join(dataDir, 'sessions.json'),
     guestCredentials: join(dataDir, 'guest_credentials.json'),
@@ -244,6 +246,59 @@ test('a process crash between target writes is replayed from the single shared j
     assert.equal(existsSync(restarted.journalFile), false);
     assert.equal(restarted.recover(), false);
   } finally { f.cleanup(); }
+});
+
+test('a process crash after every shared WAL target boundary replays the complete transaction', () => {
+  const targets = [
+    'players', 'auction', 'auctionHistory', 'clans', 'wars', 'territories',
+    'mining', 'huntGroups', 'dungeonRuns', 'dungeonOutbox', 'accounts',
+    'sessions', 'guestCredentials',
+  ] as const;
+  const snapshot = {
+    players: { p1: { gold: 501 } },
+    auction: [{ id: 'wal_auction', price: 12 }],
+    auctionHistory: [{ id: 'wal_history', buyerId: 'p1' }],
+    clans: { c1: { vault: 42 } },
+    wars: [{ id: 'wal_war', status: 'finished' }],
+    territories: [{ id: 'wal_territory', owner: 'c1' }],
+    mining: { p1: { ore: 7 } },
+    huntGroups: [{ id: 'wal_group', members: ['p1', 'p2'] }],
+    dungeonRuns: { run_1: { status: 'active', roundIndex: 3 } },
+    dungeonOutbox: { event_1: { delivered: false } },
+    accounts: [{ usernameKey: 'p1', playerId: 'p1' }],
+    sessions: [{ tokenHash: 'wal_session', playerId: 'p1' }],
+    guestCredentials: [{ playerId: 'p1', tokenHash: 'wal_guest' }],
+  };
+
+  for (const crashAt of targets) {
+    const f = fixture();
+    try {
+      const moduleUrl = new URL('../src/sharedStateTransactions.ts', import.meta.url).href;
+      const childScript = `
+        import { createSharedStateTransactionStore } from ${JSON.stringify(moduleUrl)};
+        const store = createSharedStateTransactionStore({
+          dataDir: ${JSON.stringify(f.dataDir)},
+          files: ${JSON.stringify(f.files)},
+          testHooks: { afterTargetWrite(key) { if (key === ${JSON.stringify(crashAt)}) process.exit(76); } },
+        });
+        store.transact(() => ({ files: ${JSON.stringify(snapshot)}, result: null }));
+        process.exit(0);
+      `;
+      const child = spawnSync(process.execPath, ['--import', 'tsx', '--input-type=module', '-e', childScript], {
+        cwd: process.cwd(), encoding: 'utf8', timeout: 15_000,
+      });
+      assert.equal(child.status, 76, `child must crash after writing ${crashAt}: ${child.stderr}`);
+      assert.equal(existsSync(f.store.journalFile), true, `journal must remain after crash at ${crashAt}`);
+
+      const restarted = createSharedStateTransactionStore({ dataDir: f.dataDir, files: f.files });
+      assert.equal(restarted.recover(), true, `restart must replay crash at ${crashAt}`);
+      for (const key of targets) {
+        assert.deepEqual(readJson(f.files[key]), snapshot[key], `${key} must match the complete journal snapshot after crash at ${crashAt}`);
+      }
+      assert.equal(existsSync(restarted.journalFile), false, `journal must be removed after recovery from ${crashAt}`);
+      assert.equal(restarted.recover(), false, 'a second recovery must be a no-op');
+    } finally { f.cleanup(); }
+  }
 });
 
 test('startup migration recovery replays legacy journals before the newer shared journal', () => {
