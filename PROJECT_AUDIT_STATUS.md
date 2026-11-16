@@ -2987,3 +2987,13 @@ Quality Gate 43931230374 failed because the new dungeon test file contained a li
 - Explicit unresolved semantics include three-round scope, per-wave vs terminal healing/drop/reward policy, intermediate death vs HP clamp, passive/buff recalculation, leader AFK/death, and run schema migration. No speculative gameplay choices were made.
 - No production combat, RNG, drops, rewards, persistence, client protocol, economy, or balance changes. PR #18 remains Draft/open/unmerged; `main` untouched.
 
+
+
+## Durable dungeon transition invariant audit — 2026-11-16
+- Confirmed startup validation checks roster identity, health/status, round-plan dimensions/cursors, boss snapshot bounds, prepared-encounter identity and terminal marker shape.
+- Found that the exported manual round transition could accept participant HP=0 or above max HP and could advance a run while leaving a deterministic round-plan cursor behind. It also silently ignored extra participant HP entries.
+- Hardened `advanceDungeonRunRound()`: exact participant snapshot cardinality, strictly positive HP bounded by each participant's max HP, boss HP bounded by max HP, no bypass of deterministic planned rounds, and validation of the resulting durable record.
+- Found that direct `finishDungeonRun()` could bypass the unresolved-round guard already present in the finalization transaction. Added the same guard for win/loss at the state-transition boundary.
+- Added regression tests for zero/over-max HP, extra participant entries, planned-round bypass, and premature terminal completion.
+- No live production handler wiring, combat formulas, RNG, rewards, dungeon content, client behavior, or balance changed. Latest code commits: `d43485a`, `b0944cf`; CI must be checked on final HEAD.
+- PR #18 remains Draft/open/unmerged; `main` untouched.
