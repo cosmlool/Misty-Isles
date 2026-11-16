@@ -3077,3 +3077,11 @@ Quality Gate 43931230374 failed because the new dungeon test file contained a li
 - PR #18 targets `main` at the audited head and all four jobs in its latest Quality Gate attempt succeeded. GitHub nevertheless rejected the merge because two historical required-check entries on that commit are cancelled. Retrying the old run was not permitted; branch protection was not bypassed.
 - A fresh documentation-only checkpoint commit is being added to the PR branch to trigger a clean check set before merging PR #18. Next audit after integration: missing/corrupt player-save handling for persisted group roster members.
 - User-approved ongoing workflow: work directly on `main` after the current PR #18 checkpoint is integrated; retain change history, checkpoints, and critical-path verification.
+
+
+## Missing save for persisted hunt-group member (2026-11-17)
+- Confirmed risk: onJoin previously created a default Путник state when the authenticated player ID had no players.json record, even if that ID remained in a restored hunt_groups.json roster. Subsequent leave/autosave could turn the missing record into a new blank save.
+- Added a fail-closed guard before registering the session or mutating player state: if the player has no durable save but is present in PLAYER_GROUP, login is rejected with a recovery-oriented message. No group/member records are deleted and no blank player save is fabricated.
+- Added isolated runtime regression coverage with one valid saved group member and one roster member whose player save is absent. The test verifies the missing member cannot join and both players.json and hunt_groups.json remain unchanged.
+- Legitimate first-time players who are not in a persisted group retain the existing new-character path.
+- Branch: fix/missing-group-member-save. Await exact-head CI before merging. No change to game balance or existing player data.
