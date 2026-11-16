@@ -1129,3 +1129,12 @@ PR #15 остаётся Draft/open и не объединён. Слияние б
 - Commits: `29c470b0826f9b08fba9bbfad16596efedcb29cc`, `0710a84301adf82ec81718bbfc3ed73ecf23d351`, `aadb98e10d3e3e7afeb3a1d741789d43ee0e421b`, `084f614f34daf1b59f000da31f334739b79c8140`.
 - Existing helper regression tests cover roster lookup and leave resolution. No new dedicated end-to-end stale-pointer runtime test was added in this pass. Local tests were not run; Quality Gate is pending for the evolving final HEAD.
 - No save migration, automatic repair, balance change, `main` change, or PR merge.
+
+
+## Player backup amplification during WAL replay — 2026-11-16
+- Rechecked PR #18 exact HEAD `f69153fd0052cfc6647871039397b843c350e8d1`; runs `43780235860` and `43780228849` were both still in progress. PR remains Draft/open/unmerged.
+- Fixed a confirmed retry-amplification issue in the shared WAL player backup path: after a transaction had already replaced `players.json` but a later target failed, each recovery retry backed up the already-applied new snapshot again. Repeated failures could grow backups without bound.
+- Player backup creation now compares the current JSON snapshot with the journal target and skips creating another backup when that target is already applied. Unreadable existing player bytes are still backed up before replacement. The original pre-transaction snapshot remains preserved.
+- Added a regression test that blocks a later target, forces repeated WAL recovery failures, verifies the backup count stays at one, then unblocks recovery and checks the final snapshots and original backup.
+- Commits: `85f4ac494ebd97d8e2bd5e282f6da347b2cd0f6b` (implementation), `890e8d0c2f01f4329f62388185e2bfdbe02edf0e` (test).
+- Local tests were not run. Full Quality Gate is required on the new final HEAD. No save migration, automatic restore, balance change, `main` change, or PR merge.
