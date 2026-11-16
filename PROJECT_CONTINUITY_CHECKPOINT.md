@@ -1410,3 +1410,12 @@ PR #15 остаётся Draft/open и не объединён. Слияние б
 - Commits: `d43485ad94da5af115bc44e2a741edc50f8d7583` (runtime hardening), `b0944cf6b0c43bdb7055635e4720d30f67d547a1` (tests).
 - Next: verify Quality Gate for the latest HEAD; then inspect outbox validation/acknowledgement and the boundary between prepared aggregate combat and durable run state. Do not activate multi-wave combat or change unresolved gameplay semantics.
 - PR #18 remains Draft/open/unmerged; `main` untouched.
+
+
+## Latest continuation checkpoint — dungeon result outbox validation — 2026-11-16
+- Verified Quality Gate 43952636862 on HEAD 642815b22bb5293f6a310e51673742f1fa9569e2: 4/4 jobs passed.
+- Audited result event persistence, dispatch, acknowledgement, reconnect replay and client dedup. Events and player result snapshots are committed atomically through shared WAL. Dispatch sends pending events then acknowledges; crash between these operations causes an intentional at-least-once replay, suppressed by the client's stable event-ID deduplication.
+- Found malformed outbox records could be silently skipped or accepted because only the root JSON object was checked. Added strict validation and regression coverage for mismatched keys, invalid status and absent/invalid delivery timestamps. Validation is applied before enqueue, dispatch and acknowledgement.
+- Code commits: aa4d774d881a6a024116958a354368c299f30077, 046723b51fc002d09092793a2c123d0b0f141965, 2bf19ec93449b331f7fae07fe9e765afa515d79e, 0c76059a62ca8ba825d76aa4784e94c58ec06eda, b3fd4fa5882a750ccac314a14c85f0430397f1ee.
+- Next: verify the new Quality Gate on final HEAD, then audit the boundary between aggregate prepared combat snapshots and durable per-round state. Keep at-least-once delivery explicit; do not claim exactly-once transport or wire multi-wave gameplay.
+- PR #18 remains Draft/open/unmerged; main untouched.
