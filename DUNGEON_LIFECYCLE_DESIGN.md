@@ -294,3 +294,10 @@ Added server/src/dungeonEncounterConfig.ts:
 Added tests for legacy four-dungeon boss parity, ordered wave expansion, invalid versions/references/counts, duplicate/empty/oversized input, and the actual checked-in JSON against forgotten_lands.json. The new test is registered in the server test script.
 
 This is a configuration/schema foundation only. It does not create rooms or multiple fights in production, alter combat, RNG, rewards, saves, client protocol, or balance. Production integration remains a later stage after lifecycle and settlement parity are designed and tested.
+
+
+## Legacy boss adapter boundary — 2026-11-16
+
+Added resolveLegacyDungeonBossId() to the pure encounter config module. It projects a validated expanded definition into the old single-boss contract only when it contains exactly one encounter, one wave and one monster spawn. Multi-encounter, multi-wave or multi-monster content fails closed instead of being silently truncated. Regression tests assert the four configured dungeon boss IDs and all rejected shapes.
+
+The adapter is intentionally not wired into runExpeditionDungeon yet. The production handler continues reading the existing dungeon.bossId directly, preserving current combat calculations and execution order while this boundary is characterized. The Quality Gate for the previous config commit exposed one incorrect test fixture: a count of 101 violated the per-spawn cap before reaching the total-dungeon cap. The fixture now uses six legal 20-monster waves to exercise the aggregate cap correctly.
