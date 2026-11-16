@@ -14,3 +14,14 @@ export function resolveEquipmentSlot(item: { kind?: unknown; slot?: unknown }): 
   }
   return null;
 }
+
+
+import { isProfessionAllowedForRace, normalizeProfession } from './professionProfiles.js';
+
+/** Checks new item access without rewriting or invalidating previously saved equipment. */
+export function canEquipProfessionItem(race: unknown, profession: unknown, activeProfession: unknown, requiredProfession: unknown): boolean {
+  if (requiredProfession == null || String(requiredProfession).trim() === '') return true;
+  if (!isProfessionAllowedForRace(race, requiredProfession)) return false;
+  const required = normalizeProfession(requiredProfession);
+  return normalizeProfession(profession) === required || normalizeProfession(activeProfession) === required;
+}
