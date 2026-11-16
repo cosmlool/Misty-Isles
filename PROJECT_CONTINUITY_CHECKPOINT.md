@@ -1552,3 +1552,16 @@ PR #15 остаётся Draft/open и не объединён. Слияние б
 2. Resolve the dungeon HP/death, AFK/leader-death, revival, round-limit, and drop-scope decisions; only then plan the production durable-run integration.
 3. Complete a launch-security implementation plan and tests; do not expose the server publicly until the blockers above are closed.
 4. Administrative cleanup remains pending: close no more PRs (none open after the current documentation checkpoint), update the Russian repository description, and delete all remote branches except `main`. The available GitHub connector still has no repository-description mutation or branch-delete action.
+
+
+## 2026-11-17 — безопасная очистка и main checkpoint
+
+- PR #22 `Document dungeon lifecycle and public-launch security audit` проверен на точном HEAD `ac953c3c364ee9360b07465db20aace3c90fb0f2`: все 4 CI jobs завершились успешно. PR объединён в `main`; merge commit `9989aa9f27e5943dc4e96db240ae517713285c01`.
+- Инвентаризация дерева `main` после merge: 495 файлов, tree не truncated. Нулевых файлов нет; пустых каталогов в Git tree нет (Git не хранит пустые каталоги).
+- Найдены два файла с mojibake-именами. Их содержимое сохранено под корректными именами: инструкция перенесена в `README_LAUNCHER.md`, проверочный BAT — в `Проверить игру.bat`; старые некорректно названные пути удалены в ветке `cleanup/main-hygiene`.
+- Корневой `README.md` полностью заменён актуальной точкой входа: запуск, проверки, структура проекта, защита `server/data`, ограничения публичного запуска и ссылки на актуальные технические документы. Исторические stage-документы пока сохранены: они не удалялись без проверки всех ссылок и актуальности содержащихся в них фактов.
+- CI workflow `.github/workflows/quality.yml` запускает аудит данных, client build, server tests/build и Playwright. `.github/workflows/server-checks.yml` выглядит частично дублирующим, но не удалять до проверки branch protection/required status checks.
+- Удаление старых remote branches пока технически недоступно: доступный GitHub connector предоставляет поиск/создание/обновление refs, но не delete ref. В репозитории обнаружено 24 ветки, включая `main`; список старых веток зафиксирован в сессии аудита. Не имитировать удаление через force-update.
+- Изменение repository description также недоступно через поддерживаемые GitHub actions. Текущее описание осталось `Misty Isles game project`.
+- Следующий шаг: открыть PR для `cleanup/main-hygiene`, проверить diff и все CI jobs; затем отдельным этапом проверить исторические README/stage notes на ссылки и дубли, а также выяснить required checks перед удалением redundant workflow. Удаление веток и изменение repository description требуют GitHub UI/дополнительных прав или поддерживаемых операций.
+- Игровой код, баланс, сохранения, `server/data`, roster и данные игроков не изменялись.
