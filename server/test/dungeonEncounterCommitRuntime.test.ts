@@ -168,3 +168,25 @@ test('prepared encounter commit recovers the immutable snapshot across WAL crash
     }
   }
 });
+
+
+test('prepared encounter cannot overwrite newer participant HP or another player snapshot', () => {
+  const newerHealth = {
+    run_1: {
+      ...runStore().run_1,
+      participants: {
+        ...runStore().run_1.participants,
+        p1: { ...runStore().run_1.participants.p1, health: 99 },
+      },
+    },
+  };
+  assert.throws(() => prepareDungeonEncounterCommit({
+    runId: 'run_1', runs: newerHealth, encounter: encounter(),
+  }), /snapshot is stale or belongs to another player/);
+
+  const wrongOwner = JSON.parse(JSON.stringify(encounter()));
+  wrongOwner.playerSnapshots.p2.id = 'p1';
+  assert.throws(() => prepareDungeonEncounterCommit({
+    runId: 'run_1', runs: runStore(), encounter: createPreparedDungeonEncounter(wrongOwner),
+  }), /snapshot is stale or belongs to another player/);
+});
