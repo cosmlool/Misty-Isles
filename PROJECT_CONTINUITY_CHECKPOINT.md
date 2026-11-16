@@ -1289,3 +1289,12 @@ PR #15 остаётся Draft/open и не объединён. Слияние б
 - Current legacy mapping treats only Боевой маг as magical resistance; other professions are treated as physical. This is documented compatibility behavior, not evidence that the profession damage-type design is complete.
 - No safe production fix was made this stage: enabling fire weakness or dynamic passive behavior in the aggregate path without authoritative damage-type mapping / turn-state semantics would alter combat balance and could diverge from the typed engine. No changes to combat formulas, drops, RNG, rewards, PvP, saves or economy.
 - PR #18 remains Draft/open/unmerged; `main` untouched.
+
+
+## Equipment catalog and rare-property PvE routing checkpoint — 2026-11-16
+- Audited PR #18 code HEAD `ba8ee55c3667726f7c4152e5c636396fc1a16c30`; all 8 check runs passed (two duplicate four-job sets). PR #18 remains Draft/open/unmerged; do not merge without explicit approval.
+- Catalog audit covered all 387 `equipment_catalog.json` items and 64 sets. Numeric structured `combatStats` are the current source for most modern gear effects; nonnumeric descriptive phrases are not converted into guessed combat values.
+- Three of five rare properties (critical, bulwark, arcane) are resolved into typed modifiers but not consumed by live legacy hunt/dungeon calculations. The typed combat engine is not production-wired.
+- Two further rare-property semantics need design resolution: leech currently heals from attack-based lifesteal rather than the described 3% maximum HP; hunter increases drop chance but does not increase gold despite its description.
+- Modern catalog health percentages are applied by `effectiveMaxHealth()`; do not add the typed health modifier again. Old legacy descriptions with HP bonuses but no numeric health field need separate review.
+- No gameplay/balance changes were made. Next stage: audit exact PvE and PvP consumption of every equipment modifier and produce a per-channel parity matrix before any engine migration.
