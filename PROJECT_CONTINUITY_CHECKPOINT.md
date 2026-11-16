@@ -1177,3 +1177,12 @@ PR #15 остаётся Draft/open и не объединён. Слияние б
 - Only the documented legacy profession alias `Воин` maps to `Рыцарь`; other historical labels are preserved rather than coerced based on race. Broad race/profession repair requires sanitized deployed-save examples and explicit compatibility rules.
 - Quality Gate `43783068961` failed on prior exact HEAD `5e1acb310b1860f36a29ca448a8664549058013c`: 464/465 server tests passed. Sole failure: intermittent clan-war runtime test timeout waiting for nonmember rejection of `clanDonate`. The latest WAL and migration regressions passed in that run; client build, Playwright smoke, and data/docs jobs passed. No behavior was changed to hide the intermittent failure.
 - New regression commit: `a63e67718c88cfb70832d4a3705f3ac6bc6ac549`. Local tests not run; fresh CI required for the current HEAD. PR #18 remains Draft/open/unmerged; no main changes.
+
+
+## Equipment slot integrity audit — 2026-11-16
+- Rechecked PR #18 exact HEAD `d164e6fabf35472823b11c55d340f51852ea3ec9`; Quality Gate `43783700326` failed the server suite on the known intermittent `clanWarRuntime.test.ts` timeout waiting for nonmember `clanDonate` rejection. Client build, browser smoke (3/3), and data/docs validation passed. Server build was skipped after the test failure.
+- Audited `equipment` save hydration, catalog assignments, equip/unequip/enhancement handlers, and combat equipment lookup. The serialized equipment field is preserved as a string during generic save hydration; no migration or catalog-based filtering is performed on join.
+- The current 387-entry equipment catalog has canonical slots only: weapon, five armor slots, and amulet. Found that `equipItem` trusted arbitrary `item.slot` values and wrote them directly into the equipment object. Added `server/src/equipmentIntegrity.ts` to strictly resolve allowed slots by item kind; malformed catalog entries are rejected before mutating player state.
+- Added tests in `server/test/inventoryOperations.test.ts` for canonical slots, legacy armor fallback, mismatches, unknown/prototype-sensitive slots, and preservation of an existing legacy equipment snapshot.
+- Existing saved equipment is not repaired or stripped. Unknown/retired IDs remain in the save; no claim is made that retired item stats can still be calculated if their definitions are absent from the current catalog.
+- No balance/catalog/save migration changes. Local tests not run. PR #18 remains Draft/open/unmerged; `main` untouched.
