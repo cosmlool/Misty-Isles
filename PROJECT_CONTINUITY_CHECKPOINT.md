@@ -1475,3 +1475,9 @@ PR #15 остаётся Draft/open и не объединён. Слияние б
 - Добавлен runtime тест: отключить участника, проверить сохранение offline слота, отказ лидеру во входе, неизменность золота и дневных попыток, затем подключить участника обратно и продолжить проверки win/loss.
 - Исправлены два дефекта тестов на предыдущем HEAD `11d0242e`: неверный ожидаемый тип конфликта для некорректного порядка participant snapshots и несуществующий dungeon ID `fl_dungeon_02`. Для реальной проверки повторного использования requestId выбран существующий `fl_dungeon_06`.
 - Production-код не менялся. Durable resumable dungeon lifecycle по-прежнему не подключён к live handler. Новый CI точного HEAD ожидается.
+
+
+## Group dungeon replay fixture correction (2026-11-17)
+- The latest Quality Gate exposed one test-only timeout in `groupDungeonRuntime.test.ts`: the cross-dungeon replay fixture used `fl_dungeon_06` (minimum level 12), but the seeded leader remained level 5, so the public handler rejected the request at its level gate before reaching the replay-identity guard.
+- Raised only the strong win-party fixture to level 12; the weak loss-party fixture remains level 5. This keeps the replay test exercising the intended identity conflict without changing production code or game balance.
+- Fix commit: `9aaf4e5c25056e02b407656d6d962ed7b1e610e8`. Awaiting the exact-HEAD Quality Gate.
