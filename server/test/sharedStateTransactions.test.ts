@@ -402,6 +402,44 @@ test('target write failure retains the journal and blocks a later transaction un
 
 
 
+test('a process crash after WAL removal but before directory sync leaves all targets committed', () => {
+  for (const crashAt of ['afterJournalRemoved', 'afterJournalDirectorySynced'] as const) {
+    const f = fixture();
+    try {
+      const moduleUrl = new URL('../src/sharedStateTransactions.ts', import.meta.url).href;
+      const childScript = `
+        import { createSharedStateTransactionStore } from ${JSON.stringify(moduleUrl)};
+        const store = createSharedStateTransactionStore({
+          dataDir: ${JSON.stringify(f.dataDir)},
+          files: ${JSON.stringify(f.files)},
+          testHooks: { ${crashAt}() { process.exit(77); } },
+        });
+        store.transact(() => ({ files: {
+          players: { p1: { gold: 777 } },
+          auction: [{ id: 'finalized_lot' }],
+          dungeonOutbox: { reward_1: { delivered: false } },
+          sessions: [{ tokenHash: 'finalized_session' }],
+        }, result: null }));
+        process.exit(0);
+      `;
+      const child = spawnSync(process.execPath, ['--import', 'tsx', '--input-type=module', '-e', childScript], {
+        cwd: process.cwd(), encoding: 'utf8', timeout: 15_000,
+      });
+      assert.equal(child.status, 77, `child must crash at ${crashAt}: ${child.stderr}`);
+      assert.equal(existsSync(f.store.journalFile), false, 'journal removal has already occurred');
+      assert.deepEqual(readJson(f.files.players), { p1: { gold: 777 } });
+      assert.deepEqual(readJson(f.files.auction), [{ id: 'finalized_lot' }]);
+      assert.deepEqual(readJson(f.files.dungeonOutbox), { reward_1: { delivered: false } });
+      assert.deepEqual(readJson(f.files.sessions), [{ tokenHash: 'finalized_session' }]);
+
+      const restarted = createSharedStateTransactionStore({ dataDir: f.dataDir, files: f.files });
+      assert.equal(restarted.recover(), false, 'restart must not replay a transaction whose journal was removed');
+      assert.deepEqual(readJson(f.files.players), { p1: { gold: 777 } });
+      assert.deepEqual(readJson(f.files.auction), [{ id: 'finalized_lot' }]);
+    } finally { f.cleanup(); }
+  }
+});
+
 test('the WAL file and directory are synced before the first transaction target is written', () => {
   const events: string[] = [];
   const f = fixture({
