@@ -1419,3 +1419,12 @@ PR #15 остаётся Draft/open и не объединён. Слияние б
 - Code commits: aa4d774d881a6a024116958a354368c299f30077, 046723b51fc002d09092793a2c123d0b0f141965, 2bf19ec93449b331f7fae07fe9e765afa515d79e, 0c76059a62ca8ba825d76aa4784e94c58ec06eda, b3fd4fa5882a750ccac314a14c85f0430397f1ee.
 - Next: verify the new Quality Gate on final HEAD, then audit the boundary between aggregate prepared combat snapshots and durable per-round state. Keep at-least-once delivery explicit; do not claim exactly-once transport or wire multi-wave gameplay.
 - PR #18 remains Draft/open/unmerged; main untouched.
+
+
+## Latest continuation checkpoint — prepared encounter snapshot consistency — 2026-11-16
+- Verified Quality Gate 43953631192 passed 4/4 on HEAD 5eeaad7e1010e6bc20dfd8aeb8de3a7e9ee04248.
+- Reviewed durable run validation, prepared encounter commit/finalization, per-round snapshots and WAL crash recovery. Found prepared settlement could be attached to the right run ID/roster but still contain stale hpBefore values or a player snapshot ID belonging to another participant.
+- Fixed at both commit boundary and startup validation: each prepared hpBefore must equal the durable participant's current HP; an embedded snapshot id, when present, must equal its map/player key. Added commit and recovery regression tests.
+- Code commits: 4a818b8e35739e7af9cc1dbd84eec0e1d552b323, 331d45452d192659582b4f15eab656632d716dfe, 97453bba56386f185ce8360382653618219ec12a, 7e690cb6630a5f7288d7a4934ce2f6586fbd0f61.
+- Next: verify Quality Gate on final documentation HEAD, then inspect the interaction between terminal settlement, outbox generation and per-round HP snapshots. Preserve the current at-least-once event delivery contract; no production multi-wave activation.
+- PR #18 remains Draft/open/unmerged; main untouched.
