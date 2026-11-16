@@ -252,3 +252,31 @@ This stage is an implementation audit and sequencing correction only. It changes
 - Fixed the pure preparation helper to require both rescuer and target player snapshots and to write `target.health = reviveHealth` in the same returned player snapshot as the rescuer inventory change. Regression tests now assert target HP synchronization, input immutability, JSON round-trip, and missing-target rejection. Commits: `303d139411b40328190e27569d0b839925bb7074`, `7f7d89c0d35203e6e94ec3efd6a267368967f02d`.
 - This helper remains a preparation layer and is not yet called by the live dungeon handler; the fix prevents a future integration defect but does not make revival playable today.
 - Death semantics still need a deliberate integration decision: the legacy `prepareDungeonMemberHealthOutcome()` and durable `resolveNextDungeonRunRound()` both clamp a participant's HP to at least 1, while the lifecycle design includes a spectator state and explicit death transition. The current aggregate victory condition also requires every participant to survive incoming damage. Do not silently change this behavior during refactoring; define exactly when a participant becomes a spectator and how that interacts with group victory, leader death, and resurrection before switching the live handler.
+
+
+## Dungeon content configurability audit — 2026-11-16
+
+The production dungeon content contract was traced from server/data/forgotten_lands.json into DUNGEONS and the live runExpeditionDungeon() handler.
+
+Confirmed:
+- The data file currently defines four dungeons. Each record has min, power, xp, gold, resource, bossId, and rooms.
+- rooms contains three human-readable room labels per dungeon (two descriptive stages and a final boss label). It is not an encounter roster: no monster IDs, per-room spawn counts, wave definitions, or room combat settings are present.
+- The live handler resolves exactly one monster by dungeon.bossId and passes that boss plus dungeon.power to calculateDungeonCombatPlan(). It does not iterate rooms, spawn intermediate monsters, or run multiple combat encounters.
+- The existing rooms values therefore describe dungeon flavor/progression but do not control the number of enemies fought. Changing the number of strings in rooms alone will not change combat.
+- The existing fields min, power, xp, gold, resource, and bossId are live inputs to entry checks, combat calculation, rewards/drop selection, and boss resolution respectively. Changes to these values can affect live gameplay immediately and require parity/balance tests.
+- The current data contract has no dedicated monsterCount, waves, encounters, spawns, or per-room reward configuration. A requested multi-mob dungeon cannot be implemented as a data-only edit to the current schema.
+
+Prepared but not live:
+- The immutable prepared-encounter model can freeze the legacy aggregate combat result, selected drop IDs/recipients, per-participant settlement and player snapshots.
+- The durable start/round/finalization helpers provide tested WAL boundaries, but the production handler still does not call them. The live handler remains one synchronous boss encounter. The durable outbox is integrated for result delivery, which is separate from resumable run progression.
+- The prepared encounter and durable run foundations do not yet implement configurable waves or multiple sequential enemies.
+
+Safe next implementation sequence:
+1. Define a versioned dungeon content schema with explicit ordered encounters/waves and explicit enemy references/counts; keep legacy rooms presentation-only or migrate it with a deliberate compatibility rule.
+2. Validate every referenced monster and every count/round/reward field at startup; reject invalid content rather than silently skipping enemies.
+3. Add pure encounter expansion tests for exact enemy count, ordering, duplicates, missing IDs, and boundary counts.
+4. Build a legacy single-boss adapter that maps each existing dungeon to exactly its current boss encounter and current rewards. Golden tests must prove current four dungeons remain behaviorally identical.
+5. Only then add multi-enemy/wave execution and connect the prepared immutable settlement plus durable run lifecycle. Freeze all random outcomes and settlement before WAL commit; never reroll on retries/restarts.
+6. Add full live runtime tests for multiple enemies/waves, party distribution, victory/loss, attempt charging, quest/history/report/outbox delivery, crash recovery and idempotency.
+
+No gameplay code, dungeon data, combat formula, RNG, rewards, economy, save format, or client behavior changed in this audit. Do not treat rooms as a working wave system.
