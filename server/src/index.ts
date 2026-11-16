@@ -43,7 +43,7 @@ import { resetWeeklyHuntProgress, utcIsoWeekKey } from './calendarOperations.js'
 import { checkExpeditionTravelConsistency, checkExpeditionTravelReadiness, checkExpeditionTravelStartReadiness, canInviteToHuntGroup, countHuntGroupInvites, expireHuntGroupInvites, invalidateHuntGroupInvites, isHuntGroupLevelRangeValid } from './expeditionOperations.js';
 import { parseAdminPlayerIds } from './adminAuthorization.js';
 import { isCharacterGender } from './characterIdentity.js';
-import { validateClanStore, validateTerritoryStore } from './clanStateValidation.js';
+import { validateClanStore, validateClanWarStore, validateTerritoryStore } from './clanStateValidation.js';
 import { parseMonsterWeakness, resolveLegacyMonsterAttackMultiplier, resolveLegacyMonsterDefenseMultiplier, resolveLegacyMonsterProfessionDamageMultiplier, resolveLegacyMonsterHitMultiplier, resolveLegacyMonsterResistance, resolveLegacyPlayerHitMultiplier, resolveLegacyHealingMultiplier, resolveLegacyMonsterWeaknessMultiplier, resolveMonsterPassive } from './monsterCombat.js';
 import { prepareXpProgression } from './xpProgression.js';
 import { isPasswordLengthWithinLimit } from './authPasswordPolicy.js';
