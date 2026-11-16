@@ -3064,3 +3064,9 @@ Quality Gate 43931230374 failed because the new dungeon test file contained a li
 - Corrected the prior replay regression to use an existing second dungeon ID (`fl_dungeon_06`), so the cross-dungeon request binding check reaches the intended handler. Corrected the unit test's reversed-roster case to reverse the participant snapshots too; malformed caller order is tested separately as `invalid`, while a valid reordered identity is `identity` conflict.
 - CI for prior HEAD `11d0242e` exposed these two test defects (not production failures): unit expected `identity` where its own participant order was invalid, and runtime test used nonexistent `fl_dungeon_02`, so it timed out before replay validation. Fixes are included here; await new exact-HEAD CI.
 - No production behavior changed. Active dungeon combat remains synchronous legacy settlement; durable resumable run lifecycle remains unwired.
+
+
+## Group dungeon replay fixture correction (2026-11-17)
+- The latest Quality Gate exposed one test-only timeout in `groupDungeonRuntime.test.ts`: the cross-dungeon replay fixture used `fl_dungeon_06` (minimum level 12), but the seeded leader remained level 5, so the public handler rejected the request at its level gate before reaching the replay-identity guard.
+- Raised only the strong win-party fixture to level 12; the weak loss-party fixture remains level 5. This keeps the replay test exercising the intended identity conflict without changing production code or game balance.
+- Fix commit: `9aaf4e5c25056e02b407656d6d962ed7b1e610e8`. Awaiting the exact-HEAD Quality Gate.
