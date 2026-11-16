@@ -1350,3 +1350,13 @@ PR #15 остаётся Draft/open и не объединён. Слияние б
 - Prior Quality Gate on `00ff903` failed solely because the >8-round fixture did not actually exceed eight rounds. Fixture corrected to 9000 monster HP; production helper and handler were not changed by this fix.
 - No current Quality Gate run has appeared for the corrected/matrix HEAD. Verify Actions on the exact resulting HEAD before proceeding to any further production refactor.
 - PR #18 remains Draft/open/unmerged; `main` untouched. Preserve all RNG, reward, quest, report and persistence ordering.
+
+
+## Continuation checkpoint — dungeon content configurability audit — 2026-11-16
+- Exact code HEAD audited: 5fc6a9b44e64f693e241994f72e026d2b9953151; Quality Gate run 43908403266 passed 4/4.
+- Four configured dungeons are in server/data/forgotten_lands.json. Each has one bossId and three rooms strings. The live runExpeditionDungeon() resolves only the bossId; rooms is presentation text and does not spawn enemies.
+- No current monsterCount, wave/encounter list, per-room spawn list or multi-enemy combat loop exists in the active dungeon path. To change the number of mobs, a schema + runtime implementation is required; editing room labels is insufficient.
+- Live configurable fields: min (entry level), power (combat input), xp/gold (base win rewards), resource (guaranteed/drop resource), bossId (the single combat target). Treat edits to these as balance-affecting and test them.
+- Prepared encounter settlement and durable run/WAL helpers exist, but production does not yet call durable start/round/finalization. Current dungeon combat is still synchronous one-boss settlement; durable result outbox is integrated separately.
+- Next: design a versioned encounter/wave config, strict reference/count validation, exact single-boss legacy adapter and golden tests before implementing multiple enemies. Preserve RNG order, drop allocation, attempts, rewards, quests, reports, events and persistence semantics.
+- No production or data changes. PR #18 remains Draft/open/unmerged; do not merge; do not touch main.
