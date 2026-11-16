@@ -188,3 +188,18 @@ No catalog IDs, recipes, drops, prices, stats, saves, or production code were ch
 - Added regression coverage proving an unknown output from a retired recipe cannot be granted and the original job is retained. Existing claim/reconnect/unique-amulet tests now supply the valid item set.
 - This does not rewrite old queue entries or refund materials. If an old output ID is genuinely absent from the current runtime catalog, the job is retained rather than silently discarded or converted.
 - GitHub Actions validation is required for this production hardening change; no local tests were run.
+
+
+## Legacy city migration loss-prevention follow-up — 2026-11-16
+
+- Rechecked the actual join-time normalizer. The prior reputation migration used `Number(value || 0)` followed by `Math.max`; malformed strings or negative values could be coerced into a new number (including `NaN`, which JSON serialization turns into `null`) and the legacy key was then deleted. The visited-city migration also treated any truthy value (including the string `"false"`) as a confirmed visit and removed the original key.
+- Extracted the two narrow transforms into `server/src/playerSaveMigrations.ts`. Reputation aliases now move only when the legacy value and any existing current value are finite, nonnegative numbers. Invalid, negative, or ambiguous values are retained under their original keys; the transform does not mutate its input. Visited-city aliases move only when the legacy flag is exactly boolean `true`; malformed flags remain untouched.
+- Wired the loss-preserving transforms into the existing join-time normalizer and added unit tests for numeric merge, malformed/negative preservation, explicit boolean flags, and input immutability. Existing city aliases and normal valid migration behavior remain unchanged.
+- No full player schema migration was attempted: runtime player saves are intentionally gitignored, and inspected core files have only the initial import in repository history. There is no representative sanitized deployed-save corpus to justify broad enum/range coercion, schema caps, or automatic repair. Existing characters' identity, inventory, currency, progression, gender, and achievements remain untouched except for the already-supported city/profession aliases.
+
+## WAL finalization durability error handling — 2026-11-16
+
+- Found a real error-reporting gap after journal unlink: if the final data-directory fsync failed, `recover()` returned `false` because the journal was no longer visible, and `transact()` swallowed the original sync error and returned success despite uncertain journal-deletion durability.
+- Changed the transaction path to track journal removal and successful final directory sync separately. If the journal has been removed but its final directory sync fails, the transaction now throws an explicit durability-uncertain error instead of reporting success. Target files remain applied; callers must not assume the operation was rolled back.
+- Added a regression test simulating failure specifically at the final directory sync. Also corrected an over-escaped backup filename regex in the retry-amplification test, which caused the previous CI run to report zero backups despite the backup file being present.
+- CI run `43780783664` on the PR merge ref containing HEAD `c7ae22b7d54a48c3b171f54d833b25e55a3ee6ff` failed the server suite: 459/461 passed. The two failures were (1) the over-escaped backup-test regex and (2) an intermittent clan-war runtime timeout waiting for a nonmember rejection. The latter is recorded for verification on the new HEAD; no gameplay rule was changed to mask it.
