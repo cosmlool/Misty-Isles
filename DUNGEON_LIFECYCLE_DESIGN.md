@@ -309,3 +309,7 @@ Quality Gate 43931230374 exposed a literal escaped newline accidentally inserted
 
 ### CI correction — 2026-11-16 (follow-up)
 The subsequent Quality Gate 43936898345 showed that the earlier newline correction had not actually removed the literal `\\n` from the checked-in test source. Replaced the literal two-character escape with a real source line break in commit dca7f4e3b8b3bf57237835cdc4e777225c813c77. The new run 43946425041 has data/docs and client jobs passing; server and Playwright jobs were still in progress at the latest check. No production runtime behavior changed.
+
+
+Append the wave runtime integration contract and current implementation boundaries. See `DUNGEON_WAVE_RUNTIME_CONTRACT.md` for required state, invariants, unresolved gameplay decisions, and staged wiring sequence. Verified that the current config/legacy adapter are pure schema boundaries; production still executes one synchronous `bossId` encounter and the durable run types still store one boss and one aggregate result. No live combat behavior changed.
+
