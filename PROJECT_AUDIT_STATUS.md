@@ -3043,3 +3043,13 @@ Quality Gate 43931230374 failed because the new dungeon test file contained a li
 - Existing pre-migration request records without identity binding now fail closed if encountered as replay candidates; users must create a fresh request rather than risk replaying an unbound result. No player migration or destructive cleanup was performed.
 - Combat formulas, RNG order, attempts, XP/gold/drop allocation, quests, health, client protocol and durable multi-wave wiring are otherwise unchanged. Added tests have not yet been run locally; require the new exact-HEAD Quality Gate.
 - PR #18 remains Draft/open/unmerged; main untouched.
+
+
+## Dungeon replay after restart / partial WAL recovery (2026-11-17)
+
+- Confirmed legacy replay identity is persisted inside each participant's `quests` JSON in `players.json`; the replay path reads the saved player state, not an in-memory request map. Persisted `hunt_groups.json` restores the exact roster/group identity at startup.
+- Added an end-to-end group runtime test that completes a dungeon, stops the server process, restarts against the same data directory, reconnects all participants, and retries the same requestId. The expected replay returns the saved result to both participants without awarding gold or consuming another attempt. The test then verifies cross-dungeon reuse remains rejected after restart.
+- Extended the WAL/outbox crash-recovery test so the player snapshot contains the request binding and result history at the same time as the pending outbox event. The simulated process exits after the players target is written but before the outbox target; restart replays the single journal and restores both exact snapshots.
+- Existing shared-state transaction tests already cover process death immediately after journal publication and after each target write boundary, including players, dungeonRuns and dungeonOutbox. Combined with the new payload fixture, this checks that request history is not detached from its result event during partial recovery.
+- No production behavior change in this stage; tests only. The request cache remains bounded to five entries per player, and a request evicted from every participant history is no longer recognizable. Corrupt/unreadable WAL continues to block startup/writes fail-closed; this stage does not add speculative repair or mutate player saves.
+- New integration and WAL tests are part of the existing server test script. They are committed but have not yet run locally; require exact-HEAD CI.
