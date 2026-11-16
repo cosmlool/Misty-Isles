@@ -2959,3 +2959,10 @@ PEN-009 стоит 100 кристаллов и при максимальном �
 - Deliberately not wired into production dungeon execution. Existing live handler remains unchanged and continues its synchronous single-boss flow. No combat/RNG/reward/save/client/economy changes.
 - Exact previous HEAD 6c0eee2013d728e90d7fd1b14ae959a047dcf0d6 passed Quality Gate 43911118722 4/4. New config/helper/tests/docs HEAD requires its own Quality Gate.
 - PR #18 remains Draft/open/unmerged; main untouched.
+
+
+## Legacy dungeon adapter boundary — 2026-11-16
+- Added resolveLegacyDungeonBossId(): only permits projection when a validated dungeon has exactly one encounter, one wave and one monster spawn. Multi-wave/multi-enemy definitions fail closed.
+- Added regression tests for exact existing boss IDs across all four dungeons and for rejecting multi-encounter, multi-wave and multi-monster structures.
+- Corrected aggregate-limit test fixture after Quality Gate 43923382306 failed one new test: the prior count=101 hit the stricter per-spawn maximum first; the revised test uses six legal waves of 20 to test the aggregate 100 limit. Other three CI jobs passed.
+- Production handler is not yet wired to the adapter and remains unchanged.
