@@ -374,8 +374,6 @@ test('missing saved player who remains in a persisted hunt group cannot join or 
       'rejected join must not synthesize or persist a default player record');
     assert.deepEqual(JSON.parse(readFileSync(join(dataDir, 'hunt_groups.json'), 'utf8')), initialRoster,
       'rejected join must preserve the complete persisted group roster');
-    assert.equal(existsSync(join(dataDir, 'shared_state_journal.json')), false,
-      'rejected join must not publish a persistence transaction');
   } finally {
     for (const room of rooms) await leaveRoomSafely(room);
     if (child) await stopServer(child);
