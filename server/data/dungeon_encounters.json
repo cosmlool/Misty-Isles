@@ -1,0 +1,81 @@
+{
+  "schemaVersion": 1,
+  "dungeons": [
+    {
+      "dungeonId": "fl_dungeon_03",
+      "encounters": [
+        {
+          "id": "legacy_boss",
+          "waves": [
+            {
+              "id": "boss",
+              "spawns": [
+                {
+                  "monsterId": "FL-03-10",
+                  "count": 1
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "dungeonId": "fl_dungeon_06",
+      "encounters": [
+        {
+          "id": "legacy_boss",
+          "waves": [
+            {
+              "id": "boss",
+              "spawns": [
+                {
+                  "monsterId": "FL-06-10",
+                  "count": 1
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "dungeonId": "fl_dungeon_09",
+      "encounters": [
+        {
+          "id": "legacy_boss",
+          "waves": [
+            {
+              "id": "boss",
+              "spawns": [
+                {
+                  "monsterId": "FL-09-10",
+                  "count": 1
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "dungeonId": "fl_dungeon_10",
+      "encounters": [
+        {
+          "id": "legacy_boss",
+          "waves": [
+            {
+              "id": "boss",
+              "spawns": [
+                {
+                  "monsterId": "FL-10-10",
+                  "count": 1
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}
