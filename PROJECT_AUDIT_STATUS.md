@@ -2900,3 +2900,10 @@ PEN-009 стоит 100 кристаллов и при максимальном �
 - **Health / pendants:** equipped armor health and health pendant are applied by the legacy `effectiveMaxHealth()`; typed health is not independently applied in that live normalization path. Pendant XP/gold/regen and other legacy-supported pendant effects are handled by their dedicated progression/reward/regen paths, not by PvP rating. Avoid double-applying health.
 - **Confirmed no safe balance-neutral gameplay patch:** gaps are integration/design differences, not isolated parsing defects. Wiring typed crit/defense/attack into legacy PvE, enabling set tiers, or changing PvP slot scope would alter outcomes. No gameplay, catalog, reward, RNG or economy code changed.
 - Follow-up: produce an approved effect-to-mode contract and parity tests before migrating legacy hunt/dungeon to typed combat. PR #18 remains Draft/open/unmerged; `main` untouched.
+
+
+## Equipment effect contract drafted — 2026-11-16
+- Added EQUIPMENT_COMBAT_EFFECT_CONTRACT.md as an audit/design artifact. It distinguishes confirmed live behavior across legacy hunt, synchronous dungeon, arena PvP and the disconnected typed engine from candidate semantics that still require approval.
+- Recorded explicit mode/channel boundaries, stacking and cap questions, HP double-application risk, the unused applyFivePieceSetBonus gate, and the unresolved leech/hunter descriptions. The document does not activate effects or decide balance.
+- Reconfirmed current PR #18 Quality Gate run 43838788643: all four jobs (server TypeScript, client build, data/docs/structure, Playwright smoke) have completed successfully. The workflow summary had still shown in_progress at the first poll; job-level results are all success. Verify final workflow conclusion on the new documentation HEAD.
+- No production code, catalog, combat coefficients, RNG, rewards, saves, PvP behavior or economy changed. PR #18 remains Draft/open/unmerged; main untouched.
