@@ -3085,3 +3085,15 @@ Quality Gate 43931230374 failed because the new dungeon test file contained a li
 - Added isolated runtime regression coverage with one valid saved group member and one roster member whose player save is absent. The test verifies the missing member cannot join and both players.json and hunt_groups.json remain unchanged.
 - Legitimate first-time players who are not in a persisted group retain the existing new-character path.
 - Branch: fix/missing-group-member-save. Await exact-head CI before merging. No change to game balance or existing player data.
+
+
+## Main-only workflow checkpoint — 2026-11-17
+
+- Verified default branch `main` at starting HEAD `a0c2f737923969762e33f0c48381a15b9acaa45f`; it is protected. Future implementation work targets `main`. Where protection requires PR/CI, use a short-lived checkpoint PR and merge only after all required checks pass; never bypass protection.
+- PR #19's missing persisted hunt-group member save guard is already merged into main. It blocks login before session/player mutation when the player is still in a restored group roster but has no durable save; it preserves both roster and player files. Ordinary first-time onboarding remains unchanged.
+- Review of old Draft PRs: #14's Playwright infrastructure is already in main; main's smoke test is newer and includes cosmetic gender selection, so do not restore the stale test. PR #16's quality workflow already matches main; its three reusable contribution templates were selected for preservation and are being added to main through this checkpoint. PR #17's older Markdown templates duplicate the stronger #16 templates and are not being copied.
+- The three #16 templates: `.github/ISSUE_TEMPLATE/bug_report.yml`, `.github/ISSUE_TEMPLATE/technical_task.yml`, `.github/PULL_REQUEST_TEMPLATE.md`.
+- Old branches must not be deleted until every open PR is closed/merged and all unique work has either been integrated or deliberately archived. Keep `main`; remove stale remote branches only after exact branch/PR verification. GitHub connector currently exposes no branch-delete or repository-description mutation operation, so these administrative actions remain pending through a suitable GitHub UI/API permission path.
+- Next: merge this template/checkpoint PR after exact-head CI; close obsolete Draft PRs #14 and #17 (and #16 after template preservation) without merging their stale branches; verify no open PRs; update repository description; delete every remote branch except `main`; verify final branch list and main HEAD.
+- Continuing audit: verify group persistence/autosave does not synthesize absent members or silently prune roster; then resume remaining dungeon lifecycle/replay audit and public-launch security blockers. Keep regression tests and journal/checkpoint current.
+- Working rules: no gameplay balance changes without approval; no destructive player-save or roster repair; use isolated synthetic data for runtime tests; maintain audit and continuity journals; critical paths require regression coverage and exact-HEAD CI.
