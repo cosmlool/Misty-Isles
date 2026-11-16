@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { validateClanStore, validateClanWarStore, validateTerritoryStore } from '../src/clanStateValidation.js';
+import { findPlayerClanMembership, validateClanStore, validateClanWarStore, validateTerritoryStore } from '../src/clanStateValidation.js';
 
 const clans = {
   clan_a: { id: 'clan_a', name: 'Туманный дозор', leader: 'p1', level: 1, xp: 0, vault: 0, seasonPoints: 0,
@@ -70,4 +70,12 @@ test('historical wars may retain references to clans that were later disbanded',
     validWar({ status: 'finished', a: 'deleted-clan', b: 'clan_b', winnerId: 'deleted-clan', finishedAt: 60_000, reward: 150 }),
     validWar({ id: 'war-cancelled', status: 'cancelled', a: 'deleted-clan', b: 'also-deleted', winnerId: '', finishedAt: 60_000, reward: 0 }),
   ], twoClans), true);
+});
+
+
+test('player clan membership lookup detects roster membership independently of saved player.clan', () => {
+  assert.equal(findPlayerClanMembership(twoClans, 'p1'), 'clan_a');
+  assert.equal(findPlayerClanMembership(twoClans, 'p2'), 'clan_b');
+  assert.equal(findPlayerClanMembership(twoClans, 'missing-player'), null);
+  assert.equal(findPlayerClanMembership(twoClans, ''), null);
 });
