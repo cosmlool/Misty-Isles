@@ -2839,3 +2839,10 @@ PEN-009 стоит 100 кристаллов и при максимальном �
 - At the time of this entry, prior Quality Gate `43798030467` still had its server transaction test step running; its final result is not yet known. The new diagnostic commit is awaiting its own CI run.
 - Combat coverage spot-check: `monsterCombat.test.ts` already has extensive unit coverage for typed modifiers, HP normalization, accuracy/evasion, healing/lifesteal, criticals, resistance, set tiers, and deterministic party matrices. `pvpCombat.test.ts` explicitly protects the legacy PvP formula and exclusion boundaries. The gap is production integration/route coverage, not absence of unit-level typed combat tests. No combat code or balance changed.
 - Next: read stderr from the instrumented CI failure if it reproduces; only then fix the proven production/test issue. Keep the live typed combat engine unwired until design mapping is approved.
+
+
+## Clan nonmember rejection test correction — 2026-11-16
+- Inspected Quality Gate `43798297230` on HEAD `69495d3a0a0ab260185d8dc5a33c45dbf752e7db`: data/docs, client build and Playwright passed; server suite failed in `clanWarRuntime.test.ts` at the **clanRaid** nonmember rejection (10.588s). The added isolated-server stderr capture was empty, so there is no evidence of a server crash or persistence exception.
+- Root cause is a test expectation defect: the loop incorrectly required every unauthorized clan action to return `Сначала вступи в клан.`, but the production `clanRaid` handler intentionally returns `Для кланового похода нужен клан.`. The handler's membership rejection is correct; the generic test expectation was not.
+- Corrected the test to map each action to its actual canonical rejection text. `clanDonate` and the other listed handlers retain `Сначала вступи в клан.`; `clanRaid` now expects its own established message. No production behavior, economy, membership rules, or game balance changed.
+- Test fix commit: `a77f5e62321c3f19aae808bf9c02d9e9c49b008b`. Awaiting Quality Gate on this exact HEAD. Do not call the fix validated until CI confirms it.
