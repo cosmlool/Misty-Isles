@@ -97,3 +97,17 @@ export function expandDungeonEncounterConfig(
   }
   return expanded;
 }
+
+/** Projects a versioned definition into the legacy single-boss contract; rejects any multi-wave content. */
+export function resolveLegacyDungeonBossId(
+  dungeon: ExpandedDungeonDefinition,
+): string {
+  if (dungeon.encounters.length !== 1) {
+    throw new Error(`Dungeon ${dungeon.dungeonId} cannot use the legacy combat adapter: expected exactly one encounter.`);
+  }
+  const [encounter] = dungeon.encounters;
+  if (encounter.waves.length !== 1 || encounter.waves[0].monsterIds.length !== 1) {
+    throw new Error(`Dungeon ${dungeon.dungeonId} cannot use the legacy combat adapter: expected exactly one boss spawn.`);
+  }
+  return encounter.waves[0].monsterIds[0];
+}
