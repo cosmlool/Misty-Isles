@@ -1428,3 +1428,17 @@ PR #15 остаётся Draft/open и не объединён. Слияние б
 - Code commits: 4a818b8e35739e7af9cc1dbd84eec0e1d552b323, 331d45452d192659582b4f15eab656632d716dfe, 97453bba56386f185ce8360382653618219ec12a, 7e690cb6630a5f7288d7a4934ce2f6586fbd0f61.
 - Next: verify Quality Gate on final documentation HEAD, then inspect the interaction between terminal settlement, outbox generation and per-round HP snapshots. Preserve the current at-least-once event delivery contract; no production multi-wave activation.
 - PR #18 remains Draft/open/unmerged; main untouched.
+
+
+## Контрольная точка — 2026-11-17: атомарность финального результата подземелья
+
+- Проверен Quality Gate run `43960204529` на точном HEAD `5102293f7e4bc3755ad87551620910bb18d53943`: 4/4 jobs success (Playwright, data/docs/structure, server build, client build).
+- Прослежен production путь `Room.runExpeditionDungeon()` → `prepareDungeonMemberQuestSettlement()` → `persistDungeonResultPlayers()` → shared WAL → outbox enqueue → reconnect dispatch/ACK.
+- В live legacy пути HP, списание дневной попытки, battle/victory counters, XP/gold, inventory/drop assignment, activity counters/log, combat history и request replay cache входят в player snapshots. Все player snapshots участников и `dungeon_outbox.json` записываются одной WAL-транзакцией. Эти части settlement атомарны друг с другом.
+- До появления WAL- журнала ошибка откатывает live Player из rollback snapshots. Если журнал уже существует после частичного применения, live roster сверяется с диском, а WAL повторно применяет полный snapshot при recovery.
+- Outbox delivery остаётся at-least-once: transport send идёт до durable ACK; повтор подавляется клиентом по eventId.
+- Ограничение: live `runExpeditionDungeon()` не создаёт и не финализирует durable `DungeonRunRecord`. Для live-события используется синтетический `legacy_<requestId>` как runId; terminal run marker/claimId не записывается вместе с player settlement. `commitCommittedDungeonEncounterFinalization()` способен атомарно записать players + terminal run + outbox, но production handler его не вызывает.
+- Legacy replay cache проверяет requestId, но не связывает его с dungeon/group/leader/ordered roster. Это остаётся известным ограничением; production нельзя считать защищённым durable run-level replay.
+- Код намеренно не менялся: частичное переключение на durable helper опасно. Перед подключением нужны полная preparation/recovery интеграция и решения по ранее отмеченным death/round/multi-wave семантикам.
+- Баланс, формулы боя, RNG, распределение наград, квестовая семантика, клиентский протокол и реальные сохранения не менялись.
+- PR #18 остаётся Draft/open/unmerged; main не затронута.
