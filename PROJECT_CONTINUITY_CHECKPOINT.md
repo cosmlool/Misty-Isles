@@ -1239,3 +1239,14 @@ PR #15 остаётся Draft/open и не объединён. Слияние б
 - Correction to the previous checkpoint: the test at this HEAD already accepts both known nonmember rejection texts. Thus stale message wording alone does not explain the failure; previous claim that the test-only fix resolved the issue was premature/incorrect. Do not repeat that conclusion.
 - Source confirms roster-authoritative lookup is correct and should remain. `clanDonate` routes through `transactClanMutation`; an exception in shared transaction preparation/recovery could escape before the handler sends its notice. Exact exception has not yet been captured.
 - No code changes in this stage. Next: inspect `sharedStateRuntime.commitClan`, underlying WAL commit and test fixture/server stderr; establish why this specific request does not produce a notice. Then fix only the proven cause and run CI on exact new HEAD.
+
+
+## Current work log / continuation point — 2026-11-16 (diagnostic instrumentation)
+- PR #18 working branch `staging/local-isolated-launcher`, base `stage29/clean-validation-recovery`, still Draft/open/unmerged; `main` untouched.
+- Latest code HEAD: `3e20af22db7a03b71733af2d83d13b6fc09d8edc`.
+- Confirmed the clan runtime test's current expected message is exactly `Сначала вступи в клан.`; commit `88e5b3e` intentionally tightened it. Production `clanDonate` returns that exact message for a roster nonmember. The earlier suggestion that this was merely a stale wording assertion is invalid.
+- Request path includes a notable response-loss possibility: `this.notice()` persists the player before sending the notice. A failure in that save could suppress the notice. This is only a hypothesis until stderr is captured.
+- Test-only diagnostic commit `3e20af2`: pipe isolated server stderr and include the latest 6,000 characters in the nonmember timeout error. No production logic changed.
+- Quality Gate `43798030467` still running at last check (client, Playwright, docs/data jobs passed; server transaction test step still in progress). The diagnostic commit has not yet reported a run.
+- Combat coverage review: `monsterCombat.test.ts` has broad typed-engine unit coverage; `pvpCombat.test.ts` locks down legacy PvP boundaries. Remaining gap is live integration, not missing typed-engine unit tests. No balance or combat runtime changes.
+- Next action: inspect exact CI result and captured stderr; trace any persistence failure to its first throw site. Do not relax the canonical membership assertion or wire typed combat effects without approved mapping.
