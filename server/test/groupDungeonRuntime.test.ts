@@ -155,6 +155,15 @@ test('group boss dungeon persists win rewards and loss costs for every participa
     connected[ids[0]].send('dungeonRun', { id: 'fl_dungeon_03', requestId: 'group_dungeon_win_001' });
     await waitFor(() => results[ids[0]].length === 2, 'idempotent replay of the same group dungeon request');
     await waitFor(() => results[ids[1]].length === 2, 'replay of the saved group result to the second participant');
+    const replayConflictNotices: string[] = [];
+    connected[ids[0]].onMessage('notice', payload => replayConflictNotices.push(String(payload?.text || '')));
+    connected[ids[0]].send('dungeonRun', { id: 'fl_dungeon_02', requestId: 'group_dungeon_win_001' });
+    await waitFor(
+      () => replayConflictNotices.find(message => message.includes('Повтор запроса не подтверждён')),
+      'rejecting reuse of a request ID for another dungeon',
+    );
+    assert.equal(results[ids[0]].length, 2, 'a request ID bound to another dungeon must not replay the old result');
+    assert.equal(results[ids[1]].length, 2, 'a rejected replay must not send a partial group result');
     const afterReplay = readPlayers(join(dataDir, 'players.json'));
     assert.equal(afterReplay[ids[0]].gold, 610, 'replaying a dungeon request must not duplicate gold');
     assert.equal(afterReplay[ids[1]].gold, 610, 'replaying a group dungeon request must not duplicate member gold');
