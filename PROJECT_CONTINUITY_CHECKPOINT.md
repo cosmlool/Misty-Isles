@@ -1490,3 +1490,9 @@ PR #15 остаётся Draft/open и не объединён. Слияние б
 - GitHub rejected the merge because two historical required-check entries for this same commit are cancelled. A retry of the old workflow was rejected by GitHub (workflow run cannot be retried); no protection rule was bypassed.
 - Next: create a fresh documentation checkpoint commit on the PR branch to obtain a clean required-check set, wait for every check to succeed, then merge PR #18 into `main`. After verifying the final main SHA, continue the missing/corrupt group participant-save recovery audit.
 - Working policy confirmed by the user: after this checkpoint is integrated, perform future project work directly on `main`, keep a durable change journal/checkpoints, and test critical paths. Do not routinely create intermediate branches or PR transfers.
+
+
+## Required-check refresh (2026-11-17)
+- On checkpoint commit `59bdc4520dc2bd99398c254eea65cb3664f810be`, the latest Quality Gate attempt completed successfully across all four jobs; the separate server workflow also succeeded.
+- GitHub still reports an older failed `Server TypeScript build` status on the same commit and blocks PR #18 merge under repository rules. Merge was attempted with the exact expected HEAD and rejected; no bypass was used.
+- Next: advance the PR head with a documentation-only commit to trigger a new complete required-check set, then merge only when GitHub accepts the required checks. This is the final checkpoint transfer; subsequent work will be directly on `main` as requested.
