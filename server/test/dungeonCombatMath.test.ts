@@ -75,3 +75,49 @@ test('rejects invalid participant counts and non-finite combat snapshots', () =>
     participants: [{ attack: Number.NaN, defense: 1, health: 1, outgoingResistanceMultiplier: 1, weaknessMultiplier: 1, hitMultiplier: 1, incomingProfessionMultiplier: 1, incomingHitMultiplier: 1 }],
   }), /Invalid dungeon combat calculation input/);
 });
+
+test('preserves deterministic three-player dungeon scaling and participant outcomes', () => {
+  // Characterization fixture: three members, mixed outgoing/incoming modifiers, no RNG.
+  const input = {
+    dungeonPower: 500,
+    partySize: 3,
+    bossDefense: 20,
+    bossAttack: 100,
+    bossAccuracy: 100,
+    groupGuard: 0.08,
+    participants: [
+      {
+        attack: 30, defense: 20, health: 100,
+        outgoingResistanceMultiplier: 0.9, weaknessMultiplier: 0.95, hitMultiplier: 0.8,
+        incomingProfessionMultiplier: 1, incomingHitMultiplier: 1,
+      },
+      {
+        attack: 40, defense: 30, health: 120,
+        outgoingResistanceMultiplier: 1, weaknessMultiplier: 0.7, hitMultiplier: 1,
+        incomingProfessionMultiplier: 0.9, incomingHitMultiplier: 1.1,
+      },
+      {
+        attack: 25, defense: 10, health: 90,
+        outgoingResistanceMultiplier: 1, weaknessMultiplier: 1, hitMultiplier: 1,
+        incomingProfessionMultiplier: 1.1, incomingHitMultiplier: 0.95,
+      },
+    ],
+  };
+
+  const result = calculateDungeonCombatPlan(input);
+  assert.equal(result.rounds, 3);
+  assert.deepEqual(result.incoming, [33, 30, 37]);
+  assert.equal(result.win, true);
+  const expectedDamage = [359.1, 490, 437.5];
+  result.damageByParticipant.forEach((damage, index) => {
+    assert.ok(Math.abs(damage - expectedDamage[index]) < 1e-9, `participant ${index + 1} damage`);
+  });
+
+  const exactLethal = calculateDungeonCombatPlan({
+    ...input,
+    participants: input.participants.map((participant, index) =>
+      index === 2 ? { ...participant, health: 37 } : participant),
+  });
+  assert.equal(exactLethal.incoming[2], 37);
+  assert.equal(exactLethal.win, false);
+});
