@@ -3008,3 +3008,13 @@ Quality Gate 43931230374 failed because the new dungeon test file contained a li
 - Added regression tests for malformed keys, invalid status, missing delivery timestamp and fail-closed acknowledgement. Existing crash/replay tests continue to define at-least-once semantics.
 - No change to event payloads, event ordering, send-before-ack ordering, client dedup policy, combat/rewards, production multi-wave wiring or balance. New code commits: aa4d774, 046723b, 2bf19ec, 0c76059, b3fd4fa. New Quality Gate must pass on the final documentation HEAD.
 - PR #18 remains Draft/open/unmerged; main untouched.
+
+
+## Prepared encounter / durable round consistency audit — 2026-11-16
+- Quality Gate 43953631192 passed 4/4 on prior HEAD 5eeaad7e1010e6bc20dfd8aeb8de3a7e9ee04248.
+- Audited prepared encounter attachment, durable run recovery, round cursor validation, and WAL recovery tests. Existing code already persists the prepared settlement immutably and finalizes only from that snapshot; round-plan cursor and participant schedules are checked on load.
+- Found a missing cross-check: a correctly identified run/roster could accept a prepared snapshot whose hpBefore did not match the durable participant health, or whose embedded player snapshot ID referred to another player. This could let stale or misbound settlement data replace newer player state at finalization.
+- Hardened prepareDungeonEncounterCommit to bind each prepared participant's hpBefore to the current durable run participant and reject mismatched embedded player IDs. Added the same invariant to validateDungeonRunStore so startup/recovery rejects corrupted detached snapshots.
+- Added regression tests for stale HP, wrong embedded player identity, and recovery of a prepared snapshot detached from durable participant state.
+- No combat formulas, RNG, drops, reward amounts, round splitting, death/revival rules, live multi-wave wiring, or client protocol changed. Code commits: 4a818b8, 331d454, 97453bb, 7e690cb. New Quality Gate must pass on final HEAD.
+- PR #18 remains Draft/open/unmerged; main untouched.
