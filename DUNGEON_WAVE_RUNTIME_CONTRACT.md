@@ -129,3 +129,12 @@ Regression coverage now includes:
 - WAL crash after the players target is written but before the outbox target: the single journal must restore the request-bound player snapshot and pending result outbox together.
 
 Existing shared WAL crash tests continue to cover journal publication and each configured target-write boundary. These additions are test-only; no production recovery behavior or player saves were changed. The five-entry per-player cache limit remains a known boundary; durable run-level idempotency is still required for an unbounded guarantee.
+
+
+## Offline party entry and group restore verification — 2026-11-17
+
+The persisted group roster is restored from `hunt_groups.json` after shared WAL recovery. Disconnect does not remove a member from the roster. The legacy dungeon handler requires every roster member to be online before checking attempts or performing combat/settlement; a missing member blocks the whole party without partial combat or attempt consumption.
+
+Runtime coverage now disconnects a party member, verifies the offline roster slot remains, verifies the leader's dungeon entry is rejected with player gold and daily attempts unchanged, and reconnects the member before continuing normal party settlement tests.
+
+This is current legacy behavior only. The durable resumable dungeon lifecycle remains unwired in production.
