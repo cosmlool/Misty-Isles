@@ -2997,3 +2997,14 @@ Quality Gate 43931230374 failed because the new dungeon test file contained a li
 - Added regression tests for zero/over-max HP, extra participant entries, planned-round bypass, and premature terminal completion.
 - No live production handler wiring, combat formulas, RNG, rewards, dungeon content, client behavior, or balance changed. Latest code commits: `d43485a`, `b0944cf`; CI must be checked on final HEAD.
 - PR #18 remains Draft/open/unmerged; `main` untouched.
+
+
+## Dungeon result outbox integrity audit — 2026-11-16
+- Quality Gate 43952636862 passed on exact prior HEAD 642815b22bb5293f6a310e51673742f1fa9569e2: all 4/4 jobs green (server build/transaction recovery, client build, data/docs structure, Playwright smoke).
+- Traced the live legacy dungeon result path: player snapshots and per-player result events are committed together through shared WAL; login and post-settlement dispatch pending events; acknowledgement is persisted only after transport send.
+- Confirmed delivery is deliberately at-least-once. A crash after transport acceptance but before acknowledgement can replay the same event. Client claimDungeonResultEvent() deduplicates by stable event ID in session and localStorage; this is not exactly-once transport.
+- Found the outbox reader previously checked only the root object and silently filtered key/event-ID mismatches or malformed event records during dispatch. Such records could remain pending forever without an actionable corruption error.
+- Added strict outbox validation for key/event identity, required event fields, object payload, pending/delivered status, finite creation timestamp and required delivered timestamp. Validation now runs before enqueue and dispatch, and before acknowledgement.
+- Added regression tests for malformed keys, invalid status, missing delivery timestamp and fail-closed acknowledgement. Existing crash/replay tests continue to define at-least-once semantics.
+- No change to event payloads, event ordering, send-before-ack ordering, client dedup policy, combat/rewards, production multi-wave wiring or balance. New code commits: aa4d774, 046723b, 2bf19ec, 0c76059, b3fd4fa. New Quality Gate must pass on the final documentation HEAD.
+- PR #18 remains Draft/open/unmerged; main untouched.
