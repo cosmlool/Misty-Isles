@@ -1334,3 +1334,11 @@ PR #15 остаётся Draft/open и не объединён. Слияние б
 - Random monster selection, ordered optional-drop rolls, ordered recipient rolls, all settlement/reward/quest/report/persistence logic remain outside the helper and were not moved. Preserve the original random draw count and order.
 - Exact HEAD Quality Gate has not yet appeared in the workflow list. Next: inspect CI and its logs; if any failure, fix only confirmed defects. If green, compare the helper outputs against a wider set of legacy inline formula fixtures and then inspect full live settlement parity gaps.
 - No balance, catalog, save schema, PvP, economy or `main` changes. Do not merge PR #18 without explicit approval.
+
+
+## Continuation checkpoint — CI fixture correction — 2026-11-16
+- Previous HEAD `00ff903fc26bfd71126752fe5384ba167912c9d4` Quality Gate failed because the new >8-round test fixture used insufficient monster HP; 474/475 server tests passed and other three jobs succeeded.
+- Corrected only `server/test/expeditionCombatMath.test.ts`: changed the slow encounter fixture HP from 900 to 9000 to force rounds above eight under the selected party DPS.
+- Fix commit: `4fc0a65cad1db7968d5a63fcde427b195bc6fb6f`. Current HEAD at checkpoint update: `4fc0a65cad1db7968d5a63fcde427b195bc6fb6f`.
+- Next: inspect new Quality Gate run and ensure the full server suite and all other jobs pass. Then compare legacy inline and extracted arithmetic across a deterministic scenario matrix; do not alter RNG, settlement or reward behavior.
+- PR #18 remains Draft/open/unmerged; main untouched.
