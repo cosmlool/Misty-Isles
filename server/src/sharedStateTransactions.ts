@@ -123,8 +123,17 @@ export function createSharedStateTransactionStore(options: Options) {
     validateFiles(value.files);
   }
 
-  function backupPlayersBeforeWrite(target: string) {
+  function backupPlayersBeforeWrite(target: string, nextValue: unknown) {
     if (!existsSync(target)) return undefined;
+    // Recovery may replay a journal after players.json was already replaced but
+    // a later target failed. Do not back up that already-committed snapshot on
+    // every retry; the original pre-transaction save is already preserved.
+    try {
+      const current = JSON.parse(readFileSync(target, 'utf8'));
+      if (JSON.stringify(current) === JSON.stringify(nextValue)) return undefined;
+    } catch {
+      // Preserve unreadable legacy bytes before attempting to replace them.
+    }
     const timestamp = Math.max(Date.now(), lastPlayerBackupTimestamp + 1);
     lastPlayerBackupTimestamp = timestamp;
     const suffix = new Date(timestamp).toISOString().replace(/[:.]/g, '-') + '.' + process.pid + '.' + randomBytes(4).toString('hex');
@@ -156,7 +165,7 @@ export function createSharedStateTransactionStore(options: Options) {
       if (!Object.prototype.hasOwnProperty.call(files, key)) continue;
       const target = configuredFiles.get(key);
       if (!target) throw new Error(`Shared-state target "${key}" is not configured.`);
-      if (key === 'players') backupPlayersBeforeWrite(target);
+      if (key === 'players') backupPlayersBeforeWrite(target, files[key]);
       atomicWrite(target, files[key]);
       if (key === 'players') prunePlayerBackups();
       options.testHooks?.afterTargetWrite?.(key);
