@@ -2940,3 +2940,13 @@ PEN-009 стоит 100 кристаллов и при максимальном �
 - Scenarios vary party sizes 1–3, attack/defense/health, resistance/weakness/hit modifiers, incoming profession/evasion modifiers, monster HP/defense/attack and Knight guard.
 - The earlier Quality Gate failure was isolated to an insufficient >8-round fixture input; that fixture was increased from 900 to 9000 HP. This does not modify production formulas.
 - The correction commit is `4fc0a65`; the parity matrix commit is `fc9bf89`. GitHub Actions has not yet exposed a run for the latest branch head, so neither the fixture correction nor parity matrix is considered CI-validated yet.
+
+
+## Dungeon content/configuration audit — 2026-11-16
+- Quality Gate 43908403266 passed on exact HEAD 5fc6a9b44e64f693e241994f72e026d2b9953151: all 4/4 jobs green (server TypeScript, client build, Playwright smoke, data/docs/structure).
+- Traced the four dungeon records in server/data/forgotten_lands.json into DUNGEONS and the live runExpeditionDungeon() handler.
+- Confirmed each dungeon currently contains one bossId; the live handler resolves and fights exactly that one boss. rooms is three descriptive strings, not a combat roster. There are no configured monster counts, waves, per-room enemy IDs, or spawn rules. Editing rooms alone does not add/remove enemies.
+- Confirmed min, power, xp, gold, resource, and bossId are live configuration inputs and changing them can affect access, combat, rewards, loot, or boss resolution.
+- The immutable prepared-encounter and durable run/WAL helpers are foundations only; production still runs one synchronous boss encounter and does not call durable start/round/finalization. Durable result outbox delivery is live, but it is not resumable wave progression.
+- Added a detailed safe migration sequence to DUNGEON_LIFECYCLE_DESIGN.md: versioned wave schema, strict content validation, exact legacy single-boss adapter, golden parity fixtures, then staged multi-enemy runtime wiring and crash/idempotency coverage.
+- No production code, dungeon data, balance, RNG, rewards, saves, or client behavior changed. PR #18 remains Draft/open/unmerged; main untouched.
