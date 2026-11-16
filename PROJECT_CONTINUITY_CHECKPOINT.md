@@ -1576,3 +1576,13 @@ PR #15 остаётся Draft/open и не объединён. Слияние б
 - GitHub показывает 25 веток, включая `main`; connector не предоставляет delete-branch action. Не пытаться удалять ветки через force-update или обходные операции.
 - Root tree содержит 495 файлов; пустых файлов нет. Исторические stage-документы не удалять пакетно до проверки уникальной информации и ссылок.
 - Следующий безопасный этап: ревизия исторических документов на фактические ссылки и уникальное содержимое; затем отдельное решение о переносе архивных записей в компактный архив. Игровой код, баланс, сохранения, `server/data` и roster не затрагивались.
+
+
+## 2026-11-17 — branch inventory after PR #24
+
+- PR #24 merged into main; merge SHA `9c19b6eed62cadde9014ed7a5c4a8feea951a4c4`; all four Quality Gate checks succeeded on exact PR head.
+- Confirmed 17 branches are strictly behind main (ahead_by=0) and are deletion candidates after checking open PR references: checkpoint/* (3), fix/missing-group-member-save, stage28 branches (10), stage29/clean-validation-recovery, staging/local-isolated-launcher, cleanup/main-hygiene.
+- Five branches contain unique/diverged history and are preserved: chore/github-contribution-templates, infra/github-quality-baseline, stage28/crafting-queue-safety, stage29/playwright-eyes-foundation, stage29/pvp-rules-implementation. Some contain code/tests or a long independent history; they require detailed semantic audit before deletion.
+- GitHub branch listing returned 26 branches including main. No branch deletion action is exposed by the connected GitHub tools, so no remote refs were removed.
+- Temporary branch for this documentation checkpoint: `cleanup/main-hygiene-followup`; it is a short-lived PR branch and should itself be deleted after merge if GitHub permissions/UI allow.
+- No gameplay, balance, player saves, group roster, or server/data files were changed.
