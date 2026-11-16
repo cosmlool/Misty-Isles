@@ -117,7 +117,7 @@ test('group boss dungeon persists win rewards and loss costs for every participa
       stdio: 'ignore',
     });
     await waitForServer(port, child);
-    const client = new Client(`ws://127.0.0.1:${port}`);
+    let client = new Client(`ws://127.0.0.1:${port}`);
     const connected: Record<string, Room> = {};
     for (const id of ids) {
       const token = await guestToken(port, id);
@@ -151,6 +151,27 @@ test('group boss dungeon persists win rewards and loss costs for every participa
     assert.equal(win.report.result, 'win');
     assert.equal(win.requestId, 'group_dungeon_win_001', 'the server must echo the durable request ID so the client can clear its pending receipt');
     assert.equal(winMember.report.result, 'win');
+
+    // Simulate a full process restart after the result commit but before the
+    // client retries. The replay binding and persisted group roster must load
+    // from disk; a repeated request must not settle rewards a second time.
+    for (const room of rooms) await leaveRoomSafely(room);
+    rooms.length = 0;
+    await stopServer(child!);
+    child = spawn(process.execPath, ['--import', 'tsx', 'src/index.ts'], {
+      cwd: serverDir,
+      env: { ...process.env, MISTY_DATA_DIR: dataDir, MISTY_PORT: String(port) },
+      stdio: 'ignore',
+    });
+    await waitForServer(port, child);
+    client = new Client(`ws://127.0.0.1:${port}`);
+    for (const id of ids) {
+      const token = await guestToken(port, id);
+      connected[id] = await client.joinOrCreate('my_room', { playerId: id, sessionToken: token });
+      rooms.push(connected[id]);
+      connected[id].onMessage('combatResult', payload => results[id].push(payload));
+      connected[id].onMessage('combatHistory', payload => histories[id].push(payload));
+    }
 
     connected[ids[0]].send('dungeonRun', { id: 'fl_dungeon_03', requestId: 'group_dungeon_win_001' });
     await waitFor(() => results[ids[0]].length === 2, 'idempotent replay of the same group dungeon request');
