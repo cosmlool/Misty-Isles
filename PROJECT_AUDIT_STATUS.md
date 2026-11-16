@@ -3070,3 +3070,10 @@ Quality Gate 43931230374 failed because the new dungeon test file contained a li
 - The latest Quality Gate exposed one test-only timeout in `groupDungeonRuntime.test.ts`: the cross-dungeon replay fixture used `fl_dungeon_06` (minimum level 12), but the seeded leader remained level 5, so the public handler rejected the request at its level gate before reaching the replay-identity guard.
 - Raised only the strong win-party fixture to level 12; the weak loss-party fixture remains level 5. This keeps the replay test exercising the intended identity conflict without changing production code or game balance.
 - Fix commit: `9aaf4e5c25056e02b407656d6d962ed7b1e610e8`. Awaiting the exact-HEAD Quality Gate.
+
+
+## Main checkpoint integration (2026-11-17)
+- PR #15 is merged into `main`; verified checkpoint main SHA: `81fa43583a7dec649a2525fe4bda14300d7fba7a`.
+- PR #18 targets `main` at the audited head and all four jobs in its latest Quality Gate attempt succeeded. GitHub nevertheless rejected the merge because two historical required-check entries on that commit are cancelled. Retrying the old run was not permitted; branch protection was not bypassed.
+- A fresh documentation-only checkpoint commit is being added to the PR branch to trigger a clean check set before merging PR #18. Next audit after integration: missing/corrupt player-save handling for persisted group roster members.
+- User-approved ongoing workflow: work directly on `main` after the current PR #18 checkpoint is integrated; retain change history, checkpoints, and critical-path verification.
