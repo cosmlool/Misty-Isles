@@ -1,5 +1,6 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
+import { readFileSync } from 'node:fs';
 import { expandDungeonEncounterConfig } from '../src/dungeonEncounterConfig.js';
 
 const dungeonIds = new Set(['fl_dungeon_03', 'fl_dungeon_06', 'fl_dungeon_09', 'fl_dungeon_10']);
@@ -64,4 +65,18 @@ test('rejects invalid counts, duplicate IDs, empty waves and oversized encounter
   assert.throws(() => expandDungeonEncounterConfig(makeConfig({ monsterId: 'FL-03-10', count: 21 }), new Set(['fl_dungeon_03']), monsterIds), /invalid spawn count/);
   assert.throws(() => expandDungeonEncounterConfig({ schemaVersion: 1, dungeons: [{ dungeonId: 'fl_dungeon_03', encounters: [{ id: 'e', waves: [{ id: 'w', spawns: [] }] }] }] }, new Set(['fl_dungeon_03']), monsterIds), /no spawns/);
   assert.throws(() => expandDungeonEncounterConfig(makeConfig({ monsterId: 'FL-03-10', count: 101 }), new Set(['fl_dungeon_03']), monsterIds), /exceeds the monster limit/);
+});
+
+test('checked-in encounter configuration exactly preserves the live dungeon boss targets', () => {
+  const world = JSON.parse(readFileSync(new URL('../data/forgotten_lands.json', import.meta.url), 'utf8'));
+  const config = JSON.parse(readFileSync(new URL('../data/dungeon_encounters.json', import.meta.url), 'utf8'));
+  const knownDungeonIds = new Set(world.dungeons.map((dungeon: { id: string }) => dungeon.id));
+  const knownMonsterIds = new Set(world.monsters.map((monster: { id: string }) => monster.id));
+  const expanded = expandDungeonEncounterConfig(config, knownDungeonIds, knownMonsterIds);
+  assert.equal(expanded.length, world.dungeons.length);
+  for (const dungeon of world.dungeons) {
+    const entry = expanded.find(candidate => candidate.dungeonId === dungeon.id);
+    assert.ok(entry, `missing encounter config for ${dungeon.id}`);
+    assert.deepEqual(entry.encounters.flatMap(encounter => encounter.waves.flatMap(wave => wave.monsterIds)), [dungeon.bossId]);
+  }
 });
