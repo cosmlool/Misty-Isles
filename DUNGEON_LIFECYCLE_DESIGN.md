@@ -280,3 +280,17 @@ Safe next implementation sequence:
 6. Add full live runtime tests for multiple enemies/waves, party distribution, victory/loss, attempt charging, quest/history/report/outbox delivery, crash recovery and idempotency.
 
 No gameplay code, dungeon data, combat formula, RNG, rewards, economy, save format, or client behavior changed in this audit. Do not treat rooms as a working wave system.
+
+
+## Versioned encounter configuration foundation — 2026-11-16
+
+Added server/data/dungeon_encounters.json with schemaVersion 1 and an explicit ordered encounter/wave/spawn structure. All four current dungeons are represented as one encounter, one boss wave, and exactly one spawn of their existing bossId. The config is intentionally not consumed by the production dungeon handler yet.
+
+Added server/src/dungeonEncounterConfig.ts:
+- Strict schema-version, ID, known-dungeon, known-monster and full dungeon-coverage validation.
+- Rejects duplicate dungeon/encounter/wave IDs, empty encounters/waves/spawns, duplicate monster entries within one wave, non-safe/non-positive/oversized spawn counts, more than 20 waves per encounter, and more than 100 expanded monsters per dungeon.
+- Expands counts into a deterministic ordered monster ID list without RNG or side effects.
+
+Added tests for legacy four-dungeon boss parity, ordered wave expansion, invalid versions/references/counts, duplicate/empty/oversized input, and the actual checked-in JSON against forgotten_lands.json. The new test is registered in the server test script.
+
+This is a configuration/schema foundation only. It does not create rooms or multiple fights in production, alter combat, RNG, rewards, saves, client protocol, or balance. Production integration remains a later stage after lifecycle and settlement parity are designed and tested.
