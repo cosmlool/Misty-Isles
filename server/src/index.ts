@@ -660,9 +660,14 @@ class GameRoom extends Room<RoomState> {
     if(!session||session.playerId!==requestedPlayerId) throw new Error('Требуется войти в аккаунт.');
     if (ONLINE_PLAYERS.has(session.playerId)) throw new Error('Этот персонаж уже находится в игре.');
     recoverPlayerStateBeforeMutation();
+    const savedPlayers = loadPlayers();
+    const saved = savedPlayers[session.playerId];
+    if (!saved && PLAYER_GROUP.has(session.playerId)) {
+      console.error('Refusing group member login without a durable player save:', session.playerId);
+      throw new Error('Сохранение персонажа не найдено. Вход в участника охотничьей группы временно заблокирован, чтобы не перезаписать данные. Обратись к поддержке для восстановления сохранения.');
+    }
     this.playerId = session.playerId;
     this.sessionToken = String(options?.sessionToken||'');
-    const saved = loadPlayers()[this.playerId];
     if (saved) { applySaved(this.state.player, saved); this.state.player.id = this.playerId; }
     else { this.state.player.id = this.playerId; this.state.player.name = 'Путник'; }
     const player=this.state.player; normalizePlayerProfessionData(player); normalizePlayerCityData(player); applyHealthRegeneration(player); const regenState=readObject(player.quests); if(!regenState.hpRegenAt){regenState.hpRegenAt=Date.now();player.quests=JSON.stringify(regenState);} const now=Date.now(); if(player.lastSeenAt>0 && now-player.lastSeenAt>=3*24*60*60*1000) player.returnBonusAvailable=1; player.lastSeenAt=now;
