@@ -1250,3 +1250,12 @@ PR #15 остаётся Draft/open и не объединён. Слияние б
 - Quality Gate `43798030467` still running at last check (client, Playwright, docs/data jobs passed; server transaction test step still in progress). The diagnostic commit has not yet reported a run.
 - Combat coverage review: `monsterCombat.test.ts` has broad typed-engine unit coverage; `pvpCombat.test.ts` locks down legacy PvP boundaries. Remaining gap is live integration, not missing typed-engine unit tests. No balance or combat runtime changes.
 - Next action: inspect exact CI result and captured stderr; trace any persistence failure to its first throw site. Do not relax the canonical membership assertion or wire typed combat effects without approved mapping.
+
+
+## Continuation — clan test root cause confirmed — 2026-11-16
+- CI run `43798297230` on previous HEAD `69495d3a0a0ab260185d8dc5a33c45dbf752e7db`: client build, Playwright and data/docs jobs passed; server job failed at the unauthorized `clanRaid` check. Captured server stderr was empty.
+- Confirmed exact cause: test loop used one shared expected message for every clan action. `clanRaid` production handler correctly returns `Для кланового похода нужен клан.`, unlike the other actions' `Сначала вступи в клан.`. This is a test assertion bug, not a persistence or handler defect.
+- Fixed action-specific expected responses in `server/test/clanWarRuntime.test.ts`; no production code changed. Commit `a77f5e62321c3f19aae808bf9c02d9e9c49b008b`.
+- Audit log updated in `40457f6d43ec38ef4e6c7dc29c414a82da4a2dfc`.
+- Next: verify Quality Gate on the exact final documentation HEAD. If green, continue the equipment/combat live integration audit; do not wire typed effects or alter balance without design approval.
+- PR #18 remains Draft/open/unmerged; `main` untouched.
