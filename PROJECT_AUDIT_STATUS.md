@@ -2950,3 +2950,12 @@ PEN-009 стоит 100 кристаллов и при максимальном �
 - The immutable prepared-encounter and durable run/WAL helpers are foundations only; production still runs one synchronous boss encounter and does not call durable start/round/finalization. Durable result outbox delivery is live, but it is not resumable wave progression.
 - Added a detailed safe migration sequence to DUNGEON_LIFECYCLE_DESIGN.md: versioned wave schema, strict content validation, exact legacy single-boss adapter, golden parity fixtures, then staged multi-enemy runtime wiring and crash/idempotency coverage.
 - No production code, dungeon data, balance, RNG, rewards, saves, or client behavior changed. PR #18 remains Draft/open/unmerged; main untouched.
+
+
+## Versioned dungeon encounter configuration foundation — 2026-11-16
+- Added server/data/dungeon_encounters.json (schemaVersion 1) with explicit ordered encounters, waves and spawn counts. Each of the four existing dungeons maps to exactly one encounter, one wave and one spawn of its existing bossId.
+- Added pure server/src/dungeonEncounterConfig.ts to validate schema version, dungeon/monster references, complete dungeon coverage, unique IDs, non-empty structures, safe spawn counts and total expansion limits; it deterministically expands counts without RNG or side effects.
+- Added server/test/dungeonEncounterConfig.test.ts and registered it in server/package.json. Tests cover actual checked-in config parity with forgotten_lands.json, legacy boss preservation, ordering/count expansion, unknown references, invalid counts, duplicate IDs, empty waves and safety limits.
+- Deliberately not wired into production dungeon execution. Existing live handler remains unchanged and continues its synchronous single-boss flow. No combat/RNG/reward/save/client/economy changes.
+- Exact previous HEAD 6c0eee2013d728e90d7fd1b14ae959a047dcf0d6 passed Quality Gate 43911118722 4/4. New config/helper/tests/docs HEAD requires its own Quality Gate.
+- PR #18 remains Draft/open/unmerged; main untouched.
