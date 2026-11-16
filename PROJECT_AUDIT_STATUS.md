@@ -2970,3 +2970,10 @@ PEN-009 стоит 100 кристаллов и при максимальном �
 
 ### CI follow-up — 2026-11-16
 Quality Gate 43931230374 failed because the new dungeon test file contained a literal `\n` token (syntax error), not because of production code. Corrected the source newline in commit 95b8b817fe06be814aa4f3c8de25403e828146b6; latest commit CI must be checked before treating this stage as green.
+
+
+### CI correction — 2026-11-16 (follow-up)
+- Run 43936898345 failed again in `server/test/dungeonEncounterConfig.test.ts:67`: the literal escaped newline was still present despite the earlier attempted correction.
+- Fixed the actual source in commit `dca7f4e3b8b3bf57237835cdc4e777225c813c77`; verified the fetched file now contains a real newline between the fixture and assertion.
+- Quality Gate 43946425041: data/docs and client jobs passed; server and Playwright jobs were in progress at last inspection. Do not mark CI green until all four jobs complete successfully.
+- Production dungeon combat remains unchanged; PR #18 remains Draft/open/unmerged; `main` untouched.
