@@ -43,7 +43,7 @@ import { resetWeeklyHuntProgress, utcIsoWeekKey } from './calendarOperations.js'
 import { checkExpeditionTravelConsistency, checkExpeditionTravelReadiness, checkExpeditionTravelStartReadiness, canInviteToHuntGroup, countHuntGroupInvites, expireHuntGroupInvites, invalidateHuntGroupInvites, isHuntGroupLevelRangeValid } from './expeditionOperations.js';
 import { parseAdminPlayerIds } from './adminAuthorization.js';
 import { isCharacterGender } from './characterIdentity.js';
-import { validateClanStore, validateClanWarStore, validateTerritoryStore } from './clanStateValidation.js';
+import { findPlayerClanMembership, validateClanStore, validateClanWarStore, validateTerritoryStore } from './clanStateValidation.js';
 import { parseMonsterWeakness, resolveLegacyMonsterAttackMultiplier, resolveLegacyMonsterDefenseMultiplier, resolveLegacyMonsterProfessionDamageMultiplier, resolveLegacyMonsterHitMultiplier, resolveLegacyMonsterResistance, resolveLegacyPlayerHitMultiplier, resolveLegacyHealingMultiplier, resolveLegacyMonsterWeaknessMultiplier, resolveMonsterPassive } from './monsterCombat.js';
 import { prepareXpProgression } from './xpProgression.js';
 import { isPasswordLengthWithinLimit } from './authPasswordPolicy.js';
@@ -868,7 +868,7 @@ class GameRoom extends Room<RoomState> {
       const name=String(d?.name||'').trim().replace(/[<>]/g,'').slice(0,24);
       const result=transactClanMutation(this.playerId,({p,clans})=>{
         if(p.level<20)return {error:'Создать клан можно с 20 уровня.'};
-        if(p.clan)return {error:'Ты уже состоишь в клане.'};
+        if(p.clan||findPlayerClanMembership(clans,this.playerId))return {error:'Ты уже состоишь в клане или числишься в составе другого клана.'};
         if(name.length<3)return {error:'Название клана должно содержать 3–24 символа.'};
         if(Object.values(clans).some((x:any)=>String(x.name||'').toLowerCase()===name.toLowerCase()))return {error:'Клан с таким названием уже существует.'};
         const cost=5000;
@@ -888,7 +888,7 @@ class GameRoom extends Room<RoomState> {
       const clanId=String(d?.id||'');
       const result=transactClanMutation(this.playerId,({p,clans})=>{
         if(p.level<20)return {error:'Вступить в клан можно с 20 уровня.'};
-        if(p.clan)return {error:'Сначала выйди из текущего клана.'};
+        if(p.clan||findPlayerClanMembership(clans,this.playerId))return {error:'Сначала выйди из текущего клана или восстанови корректное членство.'};
         const clan=clans[clanId];
         if(!clan)return {error:'Клан не найден. Обнови список.'};
         if(!Array.isArray(clan.members))clan.members=[];
