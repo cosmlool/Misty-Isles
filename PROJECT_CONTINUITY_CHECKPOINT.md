@@ -1307,3 +1307,12 @@ PR #15 остаётся Draft/open и не объединён. Слияние б
 - `applyFivePieceSetBonus` is forwarded but not consumed as a gate by the typed stats calculator. Hunt passes true, dungeon false; this currently does not prove a runtime difference.
 - Health is already applied through `effectiveMaxHealth()`; do not double-apply typed health. No gameplay changes made.
 - Next stage: specify and approve the canonical equipment effect scope/stacking for hunt, dungeon and PvP, then add parity tests before any migration. PR #18 stays Draft/open/unmerged; `main` untouched.
+
+
+## Continuity checkpoint — equipment effect contract — 2026-11-16
+- Current task completed: traced the typed effect aggregation and consumption boundaries, compared live hunt/dungeon/PvP routing, and created EQUIPMENT_COMBAT_EFFECT_CONTRACT.md.
+- Important confirmed boundaries: production hunt and synchronous dungeon still consume legacy combat totals plus selected adapter channels; typed resolveMonsterBattle remains unwired. PvP remains a separate, regression-protected rating formula. Health is already applied through effectiveMaxHealth; do not double-apply typed health.
+- applyFivePieceSetBonus is passed true for hunt and false for dungeon but is not consumed by the typed aggregation helper. This flag currently does not prove different live set behavior.
+- The new contract deliberately separates observed behavior, candidate rules, unresolved design decisions and a safe migration sequence. No combat implementation was activated because damage types, crit baselines, accuracy scale, stacking/caps, healing selection, five-piece semantics and reward parity remain undefined.
+- Last verified code HEAD before this docs update: 8bd8ac0c277c22c7dca2fb85036336f531d6f1e9. Contract creation commit: b0b262e22f45bd60761f61c6394081be33ada705. Latest documentation commits and exact HEAD are recorded by GitHub after the append operations; check CI on that exact HEAD.
+- Next: review the new contract for source-level precision and add a deterministic test/fixture inventory for legacy hunt/dungeon parity without changing live combat. PR #18 stays Draft/open/unmerged; do not touch main.
