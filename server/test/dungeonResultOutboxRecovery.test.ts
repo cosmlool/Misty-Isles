@@ -49,7 +49,7 @@ test('a process crash between player and outbox target writes restores the pendi
       const event = ${JSON.stringify(resultEvent())};
       store.transact(() => ({
         files: {
-          players: { p1: { health: 80, dungeonRuns: 1 } },
+          players: { p1: { health: 80, quests: JSON.stringify({ dungeonRuns: 1, dungeonRequestHistory: [{ id: 'request_1', report: { result: 'win' }, text: 'Victory', binding: { dungeonId: 'dungeon_1', groupId: '', leaderId: 'p1', participantIds: ['p1'] } }] }) } },
           dungeonOutbox: enqueueDungeonResultEvents({ outbox: {}, events: [event], now: 100 }),
         },
         result: null,
@@ -63,7 +63,7 @@ test('a process crash between player and outbox target writes restores the pendi
     const firstBoot = f.createStore();
     assert.equal(existsSync(firstBoot.journalFile), true);
     assert.equal(firstBoot.recover(), true);
-    assert.deepEqual(readJson(f.files.players), { p1: { health: 80, dungeonRuns: 1 } });
+    assert.deepEqual(readJson(f.files.players), { p1: { health: 80, quests: JSON.stringify({ dungeonRuns: 1, dungeonRequestHistory: [{ id: 'request_1', report: { result: 'win' }, text: 'Victory', binding: { dungeonId: 'dungeon_1', groupId: '', leaderId: 'p1', participantIds: ['p1'] } }] }) } });
     assert.deepEqual(readJson(f.files.dungeonOutbox), {
       [resultEvent().eventId]: { ...resultEvent(), status: 'pending', createdAt: 100 },
     });
