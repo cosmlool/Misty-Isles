@@ -1298,3 +1298,12 @@ PR #15 остаётся Draft/open и не объединён. Слияние б
 - Two further rare-property semantics need design resolution: leech currently heals from attack-based lifesteal rather than the described 3% maximum HP; hunter increases drop chance but does not increase gold despite its description.
 - Modern catalog health percentages are applied by `effectiveMaxHealth()`; do not add the typed health modifier again. Old legacy descriptions with HP bonuses but no numeric health field need separate review.
 - No gameplay/balance changes were made. Next stage: audit exact PvE and PvP consumption of every equipment modifier and produce a per-channel parity matrix before any engine migration.
+
+
+## Equipment channel parity checkpoint — 2026-11-16
+- Quality Gate `43837956085` passed 4/4 on code HEAD `a7ea120d2d85bcb2c106ecf3d9e8976b70eab747`.
+- PvP remains a deliberately narrow legacy rating formula: weapon attack + armor defense, weapon/armor rare properties for attack/defense/crit, three-slot set lookup, profession and active buffs. Catalog combatStats, attributes, amulet effects, other armor slots and modern five-piece sets are explicitly excluded by tests.
+- Live hunt and dungeon use legacy combat; selected accuracy/evasion/healing/loot/lifesteal channels are adapted, while typed crit, resistance, damage-type, attack-speed, boss-damage and other channels are not applied to legacy attack/defense/damage. The typed battle engine remains disconnected from production.
+- `applyFivePieceSetBonus` is forwarded but not consumed as a gate by the typed stats calculator. Hunt passes true, dungeon false; this currently does not prove a runtime difference.
+- Health is already applied through `effectiveMaxHealth()`; do not double-apply typed health. No gameplay changes made.
+- Next stage: specify and approve the canonical equipment effect scope/stacking for hunt, dungeon and PvP, then add parity tests before any migration. PR #18 stays Draft/open/unmerged; `main` untouched.
