@@ -174,9 +174,8 @@ test('clan war attacks enforce per-player cooldown and accumulate real damage', 
       const before = noticesC.length;
       roomC.send(action, payload);
       await waitFor(
-        () => noticesC.slice(before).find(text =>
-          text === 'Сначала вступи в клан.' || text === 'Персонаж не состоит в этом клане.'),
-        `nonmember rejection for ${action}`,
+        () => noticesC.slice(before).find(text => text === 'Сначала вступи в клан.'),
+        `roster-based nonmember rejection for ${action}`,
       );
     }
     const nonmemberPlayers = readJson(join(dataDir, 'players.json'));
