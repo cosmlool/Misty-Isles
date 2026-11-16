@@ -1325,3 +1325,12 @@ PR #15 остаётся Draft/open и не объединён. Слияние б
 - Confirmed live hunt still has inline deterministic math plus random monster selection, ordered drop rolls and ordered recipient selection. A complete golden settlement fixture is absent. Existing dungeon trio fixture covers math only, not live settlement.
 - Next safe code stage: extract only the expedition arithmetic (no RNG, rewards, quest mutation, reports or persistence), add solo/duo/trio and strict boundary golden fixtures, then compare against old inline outputs. Preserve random draw count/order and all settlement side effects. Do not wire typed engine or change PvP.
 - No gameplay implementation performed in this stage. PR #18 remains Draft/open/unmerged; `main` untouched. Await CI for the updated docs HEAD.
+
+
+## Continuation checkpoint — expedition arithmetic extracted — 2026-11-16
+- Latest code HEAD: `2b801b17a80f560d2b29ce049e78eaebbf776833` on `staging/local-isolated-launcher`; PR #18 base `stage29/clean-validation-recovery`, Draft/open/unmerged.
+- `server/src/expeditionCombatMath.ts` now owns deterministic hunt arithmetic; production `expeditionSearchClaim` calls it after resolving legacy passive, weakness, profession and evasion multipliers.
+- Tests added in `server/test/expeditionCombatMath.test.ts` and wired into `server/package.json`. Cases cover solo, duo, trio, mixed modifiers, zero DPS, >8 rounds and strict survival boundary.
+- Random monster selection, ordered optional-drop rolls, ordered recipient rolls, all settlement/reward/quest/report/persistence logic remain outside the helper and were not moved. Preserve the original random draw count and order.
+- Exact HEAD Quality Gate has not yet appeared in the workflow list. Next: inspect CI and its logs; if any failure, fix only confirmed defects. If green, compare the helper outputs against a wider set of legacy inline formula fixtures and then inspect full live settlement parity gaps.
+- No balance, catalog, save schema, PvP, economy or `main` changes. Do not merge PR #18 without explicit approval.
