@@ -3053,3 +3053,14 @@ Quality Gate 43931230374 failed because the new dungeon test file contained a li
 - Existing shared-state transaction tests already cover process death immediately after journal publication and after each target write boundary, including players, dungeonRuns and dungeonOutbox. Combined with the new payload fixture, this checks that request history is not detached from its result event during partial recovery.
 - No production behavior change in this stage; tests only. The request cache remains bounded to five entries per player, and a request evicted from every participant history is no longer recognizable. Corrupt/unreadable WAL continues to block startup/writes fail-closed; this stage does not add speculative repair or mutate player saves.
 - New integration and WAL tests are part of the existing server test script. They are committed but have not yet run locally; require exact-HEAD CI.
+
+
+## Group membership and offline dungeon-entry audit (2026-11-17)
+
+- Startup restores the persisted group roster from `hunt_groups.json` after shared WAL recovery; malformed rosters, duplicate group IDs, duplicate player membership, invalid leaders, and party sizes above three fail closed.
+- Disconnect preserves the roster slot. The leaving player's saved expedition association is cleared, while remaining online members retain the group ID; reconnect rehydrates the association from the persisted roster.
+- Legacy dungeon entry snapshots the full roster and requires every member to be present in `ONLINE_PLAYERS` before attempt checks, combat, or settlement. An offline member therefore blocks the whole party; no partial solo/group battle is started and no attempt/reward mutation occurs.
+- Added runtime regression coverage for disconnecting a member, confirming their offline roster slot remains, rejecting leader dungeon entry, asserting both players' gold and daily attempts remain unchanged, then reconnecting the member before the existing full-group win/loss checks.
+- Corrected the prior replay regression to use an existing second dungeon ID (`fl_dungeon_06`), so the cross-dungeon request binding check reaches the intended handler. Corrected the unit test's reversed-roster case to reverse the participant snapshots too; malformed caller order is tested separately as `invalid`, while a valid reordered identity is `identity` conflict.
+- CI for prior HEAD `11d0242e` exposed these two test defects (not production failures): unit expected `identity` where its own participant order was invalid, and runtime test used nonexistent `fl_dungeon_02`, so it timed out before replay validation. Fixes are included here; await new exact-HEAD CI.
+- No production behavior changed. Active dungeon combat remains synchronous legacy settlement; durable resumable run lifecycle remains unwired.
