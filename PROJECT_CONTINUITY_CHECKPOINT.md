@@ -1186,3 +1186,11 @@ PR #15 остаётся Draft/open и не объединён. Слияние б
 - Added tests in `server/test/inventoryOperations.test.ts` for canonical slots, legacy armor fallback, mismatches, unknown/prototype-sensitive slots, and preservation of an existing legacy equipment snapshot.
 - Existing saved equipment is not repaired or stripped. Unknown/retired IDs remain in the save; no claim is made that retired item stats can still be calculated if their definitions are absent from the current catalog.
 - No balance/catalog/save migration changes. Local tests not run. PR #18 remains Draft/open/unmerged; `main` untouched.
+
+
+## Race/profession equipment compatibility — 2026-11-16
+- On previous HEAD `85f17f0c950bb73382a4109de1ee2b811b129002`, Quality Gate `43784964594` had client build, Playwright smoke and data/docs jobs passed; server transaction tests/build remained in progress at audit time.
+- Reviewed `equipItem`, `buyItem`, `shopCatalogForPlayer`, profession profiles, and the full 387-entry equipment catalog. All 41 explicitly race-bound catalog items correctly map Bird Assassin gear to the Bird race; 287 profession-bound items omit a race field and depend on player race/profession validation.
+- Found that shop/purchase/equip checks matched the required profession string but did not independently confirm that the profession is available to the player's race. Added `canEquipProfessionItem()` using the canonical race-profession map; wired into shop visibility, buying, and equipping. Historical `Воин` normalizes to `Рыцарь`; Bird Assassin remains a distinct allowed profession.
+- Added tests for valid race/class pairs, active subclass, cross-race mismatch, unknown profession, unrestricted gear and legacy alias. Existing saved equipment remains untouched and no automatic retroactive compatibility stripping was added.
+- No game balance or catalog changes. Local tests not run. New final HEAD requires complete Quality Gate.
