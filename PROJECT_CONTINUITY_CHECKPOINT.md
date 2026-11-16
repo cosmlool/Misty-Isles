@@ -1378,3 +1378,9 @@ PR #15 остаётся Draft/open и не объединён. Слияние б
 - Corrected total monster cap test fixture: six waves × 20 mobs now exercises the aggregate cap while respecting the individual spawn cap.
 - Previous CI run 43923382306: 3 jobs passed, server test job failed on the faulty aggregate-limit fixture. Re-run CI on latest HEAD before advancing.
 - Production dungeon handler remains unchanged; no new combat behavior. PR #18 Draft/open/unmerged, main untouched.
+
+
+### Latest checkpoint — 2026-11-16
+- The CI run on 17a4eede failed to parse `dungeonEncounterConfig.test.ts` due to a literal escaped newline introduced in the test fixture; fixed in 95b8b817fe06be814aa4f3c8de25403e828146b6.
+- New Quality Gate run 43936788178 was queued when checked. Verify all four jobs on latest HEAD before proceeding.
+- Adapter remains pure/test-only and is not connected to the production dungeon handler.
