@@ -1084,3 +1084,16 @@ PR #15 остаётся Draft/open и не объединён. Слияние б
 - Corrected validation to preserve legacy leaderless clan records while still requiring any present leader to be a member; updated the runtime fixture to use canonical territory `crossroads`; added a leaderless-legacy regression case.
 - Latest corrected source HEAD at this note: `5bfc7c98ca275c2893664e6db84c63115773783f`. Quality Gate run `43776634500` is in progress; final result pending. Local tests not run.
 - Clan war source review: challenge creation is leader-only; attacks require actual membership and active participation; settlement is idempotent via active-to-finished status. Remaining follow-up: validate persisted war record identities and cross-references before any settlement.
+
+
+## Clan-war persisted identity and cross-reference validation — 2026-11-16
+
+- Rechecked PR #18: exact pre-stage HEAD `d50ddae98b35a0a960ef4347357dce51cc8956db`, Draft/open/unmerged. Quality Gate run `43776680381` completed successfully on that exact HEAD (4/4 jobs).
+- Found that `loadWars()` accepted any array of plain objects. Persisted duplicate/empty war IDs, invalid statuses, same-clan pairings, malformed timestamps/damage/reward fields, invalid cooldown maps, and active wars referencing missing clans could therefore reach challenge, attack, listing, or expiry settlement logic.
+- Added `validateClanWarStore` and wired it into the production war loader. It validates unique stable IDs, distinct clan IDs, supported statuses, safe nonnegative timestamps/counters, optional winner/name/reward fields, and cooldown-map timestamps. Active wars must reference two existing clans.
+- Compatibility preserved: legacy optional damage/creation/cooldown fields may be absent; finished/cancelled historical wars may retain references to clans that were later disbanded. No save rewrite, migration, automatic repair, or historical deletion.
+- Added regression tests for valid and legacy records, duplicate IDs, invalid status/identity, orphaned active references, malformed counters/timestamps/cooldowns, and historical records after clan disband.
+- Production game rules, war duration, damage, cooldown, rewards, and settlement behavior are unchanged.
+- Changes: `9e65d797b65bd8146a971446ae39d30afa821790` (validator), `443786591a1d9a082c5c7ad234dc9a951bc1b34a` (tests), `e8f55c5a83e87eb4cd6c6d1e99275a1579e95a49` (loader), `0649afb944ee51bd1af8bcf0a42f93a6a2c47026` (import wiring).
+- Local tests were not run. Full Quality Gate is required on the final checkpoint/PR HEAD.
+- PR #18 remains Draft/open/unmerged. No `main` changes or save migration.
