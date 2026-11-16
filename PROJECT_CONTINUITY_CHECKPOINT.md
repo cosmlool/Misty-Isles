@@ -1384,3 +1384,10 @@ PR #15 остаётся Draft/open и не объединён. Слияние б
 - The CI run on 17a4eede failed to parse `dungeonEncounterConfig.test.ts` due to a literal escaped newline introduced in the test fixture; fixed in 95b8b817fe06be814aa4f3c8de25403e828146b6.
 - New Quality Gate run 43936788178 was queued when checked. Verify all four jobs on latest HEAD before proceeding.
 - Adapter remains pure/test-only and is not connected to the production dungeon handler.
+
+
+### Continuation checkpoint — CI newline correction — 2026-11-16
+- Rechecked run 43936898345: server job failed at `dungeonEncounterConfig.test.ts:67` because the literal `\\n` was still present. The earlier correction commit did not remove it from the branch file.
+- Replaced the literal escape with a true newline in commit `dca7f4e3b8b3bf57237835cdc4e777225c813c77` and verified the exact source at the new HEAD.
+- Run 43946425041 is active: data/docs + client passed; server + Playwright remained in progress. Next action: recheck this run and inspect logs if any job fails.
+- No production dungeon integration, combat, rewards, RNG or persistence behavior changed. PR #18 remains Draft/open/unmerged; `main` untouched.
