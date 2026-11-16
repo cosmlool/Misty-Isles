@@ -404,6 +404,39 @@ test('Windows skips unsupported directory fsync but still fsyncs transaction fil
   } finally { f.cleanup(); }
 });
 
+test('repeated WAL recovery failures do not create duplicate backups of an already-applied player snapshot', () => {
+  const f = fixture();
+  try {
+    writeFileSync(f.files.players, JSON.stringify({ p1: { gold: 10 } }));
+    mkdirSync(f.files.clans);
+    assert.throws(() => f.store.transact(() => ({
+      files: {
+        players: { p1: { gold: 25 } },
+        clans: { c1: { vault: 40 } },
+      },
+      result: null,
+    })), /could not be recovered; journal retained/);
+
+    const backupsAfterFirstFailure = () => readdirSync(f.dataDir)
+      .filter(name => /^players\\.json\\..+\\.bak$/.test(name));
+    assert.equal(backupsAfterFirstFailure().length, 1);
+    assert.deepEqual(readJson(f.files.players), { p1: { gold: 25 } });
+    const restarted = createSharedStateTransactionStore({ dataDir: f.dataDir, files: f.files });
+    for (let attempt = 0; attempt < 3; attempt++) {
+      assert.throws(() => restarted.recover());
+      assert.equal(backupsAfterFirstFailure().length, 1, 'replaying the same journal must not back up its already-applied player snapshot');
+    }
+
+    rmSync(f.files.clans, { recursive: true, force: true });
+    assert.equal(restarted.recover(), true);
+    assert.deepEqual(readJson(f.files.players), { p1: { gold: 25 } });
+    assert.deepEqual(readJson(f.files.clans), { c1: { vault: 40 } });
+    assert.equal(backupsAfterFirstFailure().length, 1);
+    assert.deepEqual(readJson(join(f.dataDir, backupsAfterFirstFailure()[0])), { p1: { gold: 10 } });
+    assert.equal(existsSync(restarted.journalFile), false);
+  } finally { f.cleanup(); }
+});
+
 test('shared player writes preserve the previous save in a backup', () => {
   const f = fixture();
   try {
