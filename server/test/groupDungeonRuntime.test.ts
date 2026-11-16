@@ -92,7 +92,7 @@ test('group boss dungeon persists win rewards and loss costs for every participa
     for (const file of staticDataFiles) copyFileSync(join(serverDir, 'data', file), join(dataDir, file));
     const today = new Date().toISOString().slice(0, 10);
     const makePlayer = (id: string, name: string, friend: string, strong: boolean) => ({
-      id, name, race: 'Кот', profession: '', level: 5,
+      id, name, race: 'Кот', profession: '', level: strong ? 12 : 5,
       strength: strong ? 100_000 : 1, dexterity: strong ? 100_000 : 1,
       intelligence: strong ? 100_000 : 1, defense: strong ? 100_000 : 1,
       vitality: strong ? 100_000 : 1, stamina: strong ? 100_000 : 1,
