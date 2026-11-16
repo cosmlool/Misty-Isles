@@ -1108,3 +1108,14 @@ PR #15 остаётся Draft/open и не объединён. Слияние б
 - Existing clan leave/disband behavior, rewards, progression, and save schema are unchanged. No bulk migration, no main changes, no PR merge.
 - Commits: `eb8ec385b8b0615ade90f5aadf9d40851f0ac2e1` (lookup), `8acfdc593f32ee3b1d4c9988d11f649480d99878` (tests), `b7b01c1e3a260c58a409cc55b651992fb8a85332` (handler guards).
 - Local tests were not run. Quality Gate must be checked on the final PR HEAD.
+
+
+## Clan leave recovery for stale player references — 2026-11-16
+
+- Follow-up review found a dead-end introduced by the roster-based duplicate-membership guard: when a player's `clan` field was blank/stale but the player still appeared in a clan roster, create/join correctly blocked duplicate membership, while leave still consulted only `player.clan`.
+- Added `resolvePlayerClanForLeave`: the actual clan roster is authoritative when it contains the player; the saved player field remains a fallback for legacy orphan cleanup.
+- Updated `clanLeave` to resolve the real roster first, then apply the existing leader restriction, remove the player, and preserve existing last-member disband/war/territory behavior.
+- Added tests for blank and mismatched player clan fields, and fallback behavior when the player is not in any roster.
+- No leader-transfer/kick endpoint exists in the current server handler set; no new gameplay feature was invented. Existing transaction WAL/recovery behavior unchanged.
+- Commits: `ec69db3afb7f8ddaef75763e3ed952ae726e7c4c` (resolver), `cab12c35299810e4787b97391bf616c523a49172` (tests), `fa829b77ca873257dcb37ebf9e9689764f38e21b` (leave handler).
+- Local tests not run; final-head CI required. No save migration, no main changes, PR remains unmerged.
