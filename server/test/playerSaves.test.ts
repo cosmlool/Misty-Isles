@@ -100,3 +100,25 @@ test('malformed player save field types cannot overwrite numeric defaults or pro
   assert.equal((player as any).polluted, undefined);
   assert.equal(Object.getPrototypeOf(player), Object.prototype);
 });
+
+
+test('legacy inventory IDs, queued craft outputs, achievements and profession labels survive save hydration unchanged', () => {
+  const player: Record<string, any> = {
+    id: 'legacy_player',
+    profession: 'Воин',
+    inventory: '[]',
+    craftQueue: '[]',
+    achievements: '{}',
+  };
+  const saved = {
+    profession: 'Воин',
+    inventory: JSON.stringify(['retired_catalog_item_2023', 'moon_dust', 'unknown_legacy_material']),
+    craftQueue: JSON.stringify([{ id: 'legacy-job-1', output: 'retired_recipe_output', count: 1, finishAt: 1_900_000_000_000 }]),
+    achievements: JSON.stringify({ retired_achievement_2023: true }),
+  };
+  applyPlayerSave(player, saved);
+  assert.equal(player.profession, 'Воин', 'generic save hydration must not invent a profession migration');
+  assert.deepEqual(JSON.parse(player.inventory), ['retired_catalog_item_2023', 'moon_dust', 'unknown_legacy_material']);
+  assert.deepEqual(JSON.parse(player.craftQueue), [{ id: 'legacy-job-1', output: 'retired_recipe_output', count: 1, finishAt: 1_900_000_000_000 }]);
+  assert.deepEqual(JSON.parse(player.achievements), { retired_achievement_2023: true });
+});
