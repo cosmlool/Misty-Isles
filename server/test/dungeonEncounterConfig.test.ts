@@ -64,7 +64,7 @@ test('rejects invalid counts, duplicate IDs, empty waves and oversized encounter
   assert.throws(() => expandDungeonEncounterConfig(makeConfig({ monsterId: 'FL-03-10', count: 1.5 }), new Set(['fl_dungeon_03']), monsterIds), /invalid spawn count/);
   assert.throws(() => expandDungeonEncounterConfig(makeConfig({ monsterId: 'FL-03-10', count: 21 }), new Set(['fl_dungeon_03']), monsterIds), /invalid spawn count/);
   assert.throws(() => expandDungeonEncounterConfig({ schemaVersion: 1, dungeons: [{ dungeonId: 'fl_dungeon_03', encounters: [{ id: 'e', waves: [{ id: 'w', spawns: [] }] }] }] }, new Set(['fl_dungeon_03']), monsterIds), /no spawns/);
-  assert.throws(() => expandDungeonEncounterConfig(makeConfig({ monsterId: 'FL-03-10', count: 101 }), new Set(['fl_dungeon_03']), monsterIds), /exceeds the monster limit/);
+  const oversized = { schemaVersion: 1, dungeons: [{ dungeonId: 'fl_dungeon_03', encounters: [{ id: 'e', waves: Array.from({ length: 6 }, (_, index) => ({ id: `w${index}`, spawns: [{ monsterId: 'FL-03-10', count: 20 }] })) }] }] };\n  assert.throws(() => expandDungeonEncounterConfig(oversized, new Set(['fl_dungeon_03']), monsterIds), /exceeds the monster limit/);
 });
 
 test('checked-in encounter configuration exactly preserves the live dungeon boss targets', () => {
