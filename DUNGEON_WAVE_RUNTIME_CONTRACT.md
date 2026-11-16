@@ -117,3 +117,15 @@ Legacy synchronous dungeon requests now persist a binding alongside each saved r
 A replay is accepted only if every current participant has a matching saved entry and every binding field matches. Partial group cache, cross-dungeon/group/leader/roster reuse, malformed participant order, and pre-binding historical entries fail closed. The `dungeonLastRequest` compatibility fallback remains included in lookup but is not trusted without a binding. Both win and loss settlements persist the same frozen binding.
 
 This closes cross-context replay while the request remains in the per-player cache. The legacy history is still capped at five entries per player; there is no permanent global request-ID registry, so this is not equivalent to durable run-level idempotency. Durable lifecycle integration remains a separate prerequisite. No gameplay formulas, RNG, rewards, attempt accounting, client protocol or multi-wave runtime changed.
+
+
+## Restart and partial-recovery verification — 2026-11-17
+
+The legacy request binding is stored with each participant's request history inside `players.json`; group identity/order is restored from `hunt_groups.json`. It is therefore available after a normal server restart and does not depend on an in-memory replay map.
+
+Regression coverage now includes:
+- Full group dungeon completion, server process stop/restart on the same data directory, participant reconnect, same-request replay to every participant, and no duplicate gold/attempt consumption.
+- Cross-dungeon reuse rejection after restart.
+- WAL crash after the players target is written but before the outbox target: the single journal must restore the request-bound player snapshot and pending result outbox together.
+
+Existing shared WAL crash tests continue to cover journal publication and each configured target-write boundary. These additions are test-only; no production recovery behavior or player saves were changed. The five-entry per-player cache limit remains a known boundary; durable run-level idempotency is still required for an unbounded guarantee.
