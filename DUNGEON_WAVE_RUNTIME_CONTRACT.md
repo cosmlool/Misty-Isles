@@ -56,3 +56,15 @@ A future run format must persist, at minimum:
 ## Explicit non-goals
 
 This design does not authorize new enemy balance, combat coefficients, RNG ordering, loot rates, reward amounts, attempt rules, client protocol changes, or live multi-wave content. The production dungeon handler remains unchanged until the required decisions and parity tests exist.
+
+
+## Follow-up audit: durable transition guards — 2026-11-16
+
+The single-boss durable state layer has now received additional fail-closed guards:
+
+- Manual round snapshots must contain exactly the frozen participant roster, with each participant HP in the valid positive range and boss HP no higher than its frozen maximum.
+- The manual snapshot transition cannot be used when a deterministic round plan exists; planned rounds must advance through the cursor-aware resolver.
+- Win/loss terminal transitions cannot bypass unresolved planned rounds, even when callers invoke the state helper directly rather than the higher-level WAL finalization helper.
+- Regression tests cover these bypass attempts.
+
+These are state-integrity protections only. They do not decide whether a boss defeated before the end of a prepared plan should immediately end combat, nor do they change the existing HP-floor/death semantics. Those remain explicit design decisions before multi-wave wiring.
