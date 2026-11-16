@@ -1148,3 +1148,12 @@ PR #15 остаётся Draft/open и не объединён. Слияние б
 - Test-only change; no production logic changed in this stage. The previous stage's WAL backup retry fix remains in place.
 - Commit: `23c0c642dcae214485020ed91723d0e68bee8f54`.
 - Local tests were not run. Await fresh Quality Gate on the new final HEAD. No save migration, auto-restore, balance change, `main` change, or PR merge.
+
+
+## WAL finalization crash boundaries — 2026-11-16
+- Rechecked PR #18 before work: HEAD `2c93b6c89df46378d6666a3df2d6474ea586edaa`; runs `43780645980` and `43780639461` were both in progress. PR remains Draft/open/unmerged.
+- Added test-only hooks for the two finalization boundaries: immediately after journal unlink and immediately after the final data-directory sync.
+- Added child-process crash/restart tests at both boundaries. They verify the journal has been removed only after all targets are applied, all representative player/auction/dungeon-outbox/session snapshots are complete, and restart does not replay a removed journal.
+- This validates process-crash ordering, not sudden power-loss persistence guarantees on every filesystem/device. Windows continues to skip directory fsync because Node cannot reliably open directory handles there; transaction file contents are still fsynced.
+- Commits: `991421cbfdc702e31b64b8b59518ee0bf65e54b3` (test hooks), `7da218deed7f674a33f32a58a846af881892fb9e` (tests).
+- Local tests were not run. Fresh Quality Gate required on the new final HEAD. No migration, auto-restore, balance change, `main` change, or PR merge.
