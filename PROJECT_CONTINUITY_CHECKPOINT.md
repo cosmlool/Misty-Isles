@@ -1496,3 +1496,11 @@ PR #15 остаётся Draft/open и не объединён. Слияние б
 - On checkpoint commit `59bdc4520dc2bd99398c254eea65cb3664f810be`, the latest Quality Gate attempt completed successfully across all four jobs; the separate server workflow also succeeded.
 - GitHub still reports an older failed `Server TypeScript build` status on the same commit and blocks PR #18 merge under repository rules. Merge was attempted with the exact expected HEAD and rejected; no bypass was used.
 - Next: advance the PR head with a documentation-only commit to trigger a new complete required-check set, then merge only when GitHub accepts the required checks. This is the final checkpoint transfer; subsequent work will be directly on `main` as requested.
+
+
+## Missing save for persisted hunt-group member (2026-11-17)
+- Confirmed risk: onJoin previously created a default Путник state when the authenticated player ID had no players.json record, even if that ID remained in a restored hunt_groups.json roster. Subsequent leave/autosave could turn the missing record into a new blank save.
+- Added a fail-closed guard before registering the session or mutating player state: if the player has no durable save but is present in PLAYER_GROUP, login is rejected with a recovery-oriented message. No group/member records are deleted and no blank player save is fabricated.
+- Added isolated runtime regression coverage with one valid saved group member and one roster member whose player save is absent. The test verifies the missing member cannot join and both players.json and hunt_groups.json remain unchanged.
+- Legitimate first-time players who are not in a persisted group retain the existing new-character path.
+- Branch: fix/missing-group-member-save. Await exact-head CI before merging. No change to game balance or existing player data.
