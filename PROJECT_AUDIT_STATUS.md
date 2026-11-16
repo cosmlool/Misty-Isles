@@ -2916,3 +2916,13 @@ PEN-009 стоит 100 кристаллов и при максимальном �
 - Expanded `LEGACY_PVE_COMBAT_PARITY_FIXTURES.md` with exact test ownership, expedition deterministic/RNG boundaries, prioritized gaps and safe extraction constraints (commit `146e3cba0a242131752296500b44425df32f2bec`).
 - No production code or test behavior changed. No combat formulas, random calls, reward/quest semantics, catalog, save or economy behavior changed. Next implementation candidate: extract only expedition arithmetic into a pure helper and compare golden outputs before replacing the inline calculation; RNG and settlement remain in the handler.
 - PR #18 remains Draft/open/unmerged; `main` untouched. New documentation HEAD requires a fresh Quality Gate.
+
+
+## Expedition combat arithmetic extraction — 2026-11-16
+- Extracted only the deterministic legacy expedition calculation into `server/src/expeditionCombatMath.ts` and routed `expeditionSearchClaim` through it.
+- Preserved the current arithmetic order for party HP scaling (+55% per additional participant), monster defense/attack passive multipliers, participant DPS modifiers, minimum DPS denominator, ceiling round count, incoming damage floors, Knight group guard, profession damage and evasion multipliers, the eight-round cap, and strict positive-survival victory condition.
+- Passive/weakness/evasion resolution remains in the handler and is passed as resolved multipliers. Monster selection, all random draws, optional-drop roll order, drop recipient selection, health/lifesteal/buffer healing, rewards, quests, reports, activity, persistence and network sends remain in their existing code paths.
+- Added solo/duo/trio characterization tests, mixed modifier coverage, zero-DPS minimum, >8-round loss, and exact-lethal versus one-HP-above boundary tests. Added the test to the server test script.
+- Commits: helper `c5e3404`; fixtures `35c9a80`; handler integration `89b020f`; test script `2b801b1`.
+- No RNG calls were added, removed or reordered. No combat coefficients, balance, rewards, saves or PvP behavior were intentionally changed. CI for exact HEAD `2b801b17a80f560d2b29ce049e78eaebbf776833` is pending/not yet visible; do not treat the new code as validated until all four Quality Gate jobs pass.
+- PR #18 remains Draft/open/unmerged; `main` untouched.
