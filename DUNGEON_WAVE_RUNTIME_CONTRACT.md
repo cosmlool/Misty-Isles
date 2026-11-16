@@ -93,3 +93,17 @@ Prepared encounter identity validation now extends beyond run/request/dungeon/bo
 The invariant is enforced both when attaching a prepared encounter and when validating dungeon_runs.json after restart. This prevents a stale settlement or a snapshot for a different player from being accepted merely because the outer run identity matches. Regression tests cover both commit-time rejection and startup recovery rejection.
 
 This does not change combat calculations, RNG, reward/drop allocation, round resolution, or production wiring.
+
+
+## Terminal settlement / WAL audit — 2026-11-17
+
+The live legacy dungeon path was traced separately from the dormant durable-run helpers.
+
+- Live `runExpeditionDungeon()` prepares each participant's complete player state, including health, consumed attempt, battle/victory counters, XP/gold, inventory, activity counters/log, combat history and request replay cache.
+- `persistDungeonResultPlayers()` writes all affected player snapshots and the result outbox in one shared WAL transaction. These live player-side settlement fields and event enqueue are therefore committed/recovered together.
+- A pre-journal persistence failure restores in-memory player snapshots. A pending journal is retained for recovery; online state is reconciled rather than allowed to drift from partially written files.
+- Delivery remains at-least-once: send precedes durable acknowledgement, and the client eventId cache suppresses repeat presentation.
+
+This does **not** mean durable dungeon-run finalization is live. The production handler does not create/finalize a `DungeonRunRecord`; it uses `legacy_<requestId>` as a synthetic outbox runId. The helper that atomically commits frozen player snapshots + terminal run marker + outbox remains unwired. The legacy request cache also does not bind request IDs to dungeon/group/leader/ordered roster.
+
+Do not bridge this gap by calling only the finalization helper or by partially switching the handler. The live path must first be converted to a single immutable preparation/recovery flow, with the existing combat/RNG/reward order preserved and unresolved death/round/multi-wave semantics explicitly decided.
