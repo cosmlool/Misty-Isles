@@ -1,12 +1,12 @@
 # Misty Isles — Project Audit Status
 
-Updated: 2026-11-09 (continued audit checkpoint)
+Updated: 2026-11-17 (historical audit archive; current checkpoint is appended at end)
 
 ## Purpose and handoff rule
 
 This file is the durable checkpoint for the ongoing full-game audit. On every chat transition, read this file first, then verify the referenced GitHub branch/PR and current commit before continuing. Do not repeat completed checks unless the code changed, a test failed, or the previous evidence was incomplete.
 
-Do not merge to `main`, change gameplay rules, or alter real player data without explicit user approval.
+The user has explicitly approved the main-only workflow and project cleanup. Merge cleanup PRs only after all required CI checks pass on the exact PR HEAD. Gameplay rules and real player data remain protected: do not change them without separate explicit approval.
 
 ## Repository and active work
 
@@ -3146,3 +3146,16 @@ Quality Gate 43931230374 failed because the new dungeon test file contained a li
 - Изменение repository description также недоступно через поддерживаемые GitHub actions. Текущее описание осталось `Misty Isles game project`.
 - Следующий шаг: открыть PR для `cleanup/main-hygiene`, проверить diff и все CI jobs; затем отдельным этапом проверить исторические README/stage notes на ссылки и дубли, а также выяснить required checks перед удалением redundant workflow. Удаление веток и изменение repository description требуют GitHub UI/дополнительных прав или поддерживаемых операций.
 - Игровой код, баланс, сохранения, `server/data`, roster и данные игроков не изменялись.
+
+
+## 2026-11-17 — актуальный статус после PR #23
+
+- Текущая рабочая/целевая ветка: `main`; подтверждённый HEAD после PR #23: `e6a072f0b8e5aa0fbfbf3eb260385e56c00a1429`.
+- PR #22 и #23 объединены. PR #23 включал только документацию и исправление имён launcher-файлов; все 4 CI checks завершились успешно.
+- Старые упоминания PR #14–#18 и веток `stage28/*`, `stage29/*`, `staging/*` выше — исторические наблюдения на даты соответствующих аудитов, не текущий статус репозитория.
+- Root `README.md` теперь является краткой актуальной точкой входа. `PROJECT_TECHNICAL_PASSPORT.md` обновлён под main-only workflow в PR #24.
+- `quality.yml` является основным полным Quality Gate. `server-checks.yml` повторяет серверные тесты и сборку, но пока не удаляется: GitHub API запретил чтение branch protection (403), поэтому статус required checks неизвестен.
+- Remote branches: 25 всего, включая `main`. Доступный connector не имеет операции delete branch; никакие ветки не удалены. Нельзя подменять удаление force-update.
+- Инвентаризация дерева: 495 файлов, нулевых файлов нет. Исторические README/STAGE/CHANGELOG пока сохранены; до удаления требуется проверка ссылок, уникальной информации и роли каждого документа.
+- Следующая задача: продолжить документную инвентаризацию без массового удаления; отдельно определить безопасный список архивируемых/удаляемых файлов. Затем вернуться к проверке периодического autosave для offline roster member без durable save.
+- Не менялись игровые механики, баланс, `server/data`, сохранения игроков или roster.
