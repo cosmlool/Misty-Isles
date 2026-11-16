@@ -89,6 +89,7 @@ test('clan war attacks enforce per-player cooldown and accumulate real damage', 
   const today = yesterday + 1;
   const port = await unusedPort();
   let child: ChildProcess | undefined;
+  let serverStderr = '';
   let roomA: Room | undefined;
   let roomB: Room | undefined;
   let roomC: Room | undefined;
@@ -128,8 +129,9 @@ test('clan war attacks enforce per-player cooldown and accumulate real damage', 
     child = spawn(process.execPath, ['--import', 'tsx', 'src/index.ts'], {
       cwd: serverDir,
       env: { ...process.env, MISTY_DATA_DIR: dataDir, MISTY_PORT: String(port) },
-      stdio: 'ignore',
+      stdio: ['ignore', 'ignore', 'pipe'],
     });
+    child.stderr?.on('data', chunk => { serverStderr += String(chunk); });
     await waitForServer(port, child);
     const client = new Client(`ws://127.0.0.1:${port}`);
     const [tokenA, tokenB, tokenC] = await Promise.all([guestToken(port, playerA), guestToken(port, playerB), guestToken(port, playerC)]);
@@ -173,10 +175,14 @@ test('clan war attacks enforce per-player cooldown and accumulate real damage', 
     for (const [action, payload] of unauthorizedClanActions) {
       const before = noticesC.length;
       roomC.send(action, payload);
-      await waitFor(
-        () => noticesC.slice(before).find(text => text === 'Сначала вступи в клан.'),
-        `roster-based nonmember rejection for ${action}`,
-      );
+      try {
+        await waitFor(
+          () => noticesC.slice(before).find(text => text === 'Сначала вступи в клан.'),
+          `roster-based nonmember rejection for ${action}`,
+        );
+      } catch (error) {
+        throw new Error(`${error instanceof Error ? error.message : String(error)}\\nIsolated server stderr:\\n${serverStderr.slice(-6000)}`);
+      }
     }
     const nonmemberPlayers = readJson(join(dataDir, 'players.json'));
     const nonmemberClans = readJson(join(dataDir, 'clans.json'));
