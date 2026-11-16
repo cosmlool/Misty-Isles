@@ -216,14 +216,24 @@ export function createSharedStateTransactionStore(options: Options) {
     const journal: Journal = { version: 1, files: prepared.files };
     atomicWrite(journalFile, journal);
 
+    let journalRemoved = false;
+    let finalDirectorySynced = false;
     try {
       options.testHooks?.afterJournalPersisted?.();
       apply(prepared.files);
       unlinkSync(journalFile);
+      journalRemoved = true;
       options.testHooks?.afterJournalRemoved?.();
       syncDirectory(dataDir);
+      finalDirectorySynced = true;
       options.testHooks?.afterJournalDirectorySynced?.();
     } catch (error) {
+      // Once the journal has been unlinked, a failed final directory sync
+      // leaves its deletion durability uncertain. Recovery cannot replay a
+      // journal that is no longer visible, so never report this as success.
+      if (journalRemoved && !finalDirectorySynced) {
+        throw new Error(`Shared-state transaction targets were applied, but final journal-removal durability could not be confirmed: ${String(error)}`);
+      }
       // A successful replay means the journaled transaction committed despite
       // the interrupted first attempt. If replay fails, keep the journal and
       // fail closed; the next writer will retry recovery before preparing.
