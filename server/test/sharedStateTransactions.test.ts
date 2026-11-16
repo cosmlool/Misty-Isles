@@ -481,6 +481,31 @@ test('a failed journal directory sync blocks target writes and leaves recovery d
   } finally { f.cleanup(); }
 });
 
+test('final WAL directory-sync failure is reported instead of being mistaken for a successful commit', () => {
+  let directorySyncs = 0;
+  let dataDir = '';
+  const f = fixture({
+    afterSync(path: string) {
+      if (path !== dataDir) return;
+      directorySyncs++;
+      // Journal publication and target publication are the first two directory
+      // syncs; the third is the final journal-unlink durability barrier.
+      if (directorySyncs === 3) throw new Error('simulated final directory sync failure');
+    },
+  });
+  dataDir = f.dataDir;
+  try {
+    assert.throws(() => f.store.transact(() => ({
+      files: { auction: [{ id: 'final-sync-lot' }] },
+      result: 'committed',
+    })), /final journal-removal durability could not be confirmed: Error: simulated final directory sync failure/);
+    assert.deepEqual(readJson(f.files.auction), [{ id: 'final-sync-lot' }]);
+    assert.equal(existsSync(f.store.journalFile), false);
+    const restarted = createSharedStateTransactionStore({ dataDir: f.dataDir, files: f.files });
+    assert.equal(restarted.recover(), false, 'a removed journal cannot be replayed after an uncertain final directory sync');
+  } finally { f.cleanup(); }
+});
+
 test('Windows skips unsupported directory fsync but still fsyncs transaction files', () => {
   const synced: string[] = [];
   const f = fixture({ afterSync(path: string) { synced.push(path); } }, 'win32');
@@ -511,7 +536,7 @@ test('repeated WAL recovery failures do not create duplicate backups of an alrea
     })), /could not be recovered; journal retained/);
 
     const backupsAfterFirstFailure = () => readdirSync(f.dataDir)
-      .filter(name => /^players\\.json\\..+\\.bak$/.test(name));
+      .filter(name => /^players\.json\..+\.bak$/.test(name));
     assert.equal(backupsAfterFirstFailure().length, 1);
     assert.deepEqual(readJson(f.files.players), { p1: { gold: 25 } });
     const restarted = createSharedStateTransactionStore({ dataDir: f.dataDir, files: f.files });
