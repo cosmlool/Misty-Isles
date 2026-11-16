@@ -111,3 +111,20 @@ test('equipment slot validation does not mutate a legacy equipped snapshot', () 
   assert.equal(resolveEquipmentSlot({ kind: 'armor', slot: '__proto__' }), null);
   assert.deepEqual(legacyEquipment, before);
 });
+
+
+import { canEquipProfessionItem } from '../src/equipmentIntegrity.js';
+
+test('profession-restricted equipment respects race profession availability', () => {
+  assert.equal(canEquipProfessionItem('Кот', 'Боевой маг', '', 'Боевой маг'), true);
+  assert.equal(canEquipProfessionItem('Кот', 'Ассасин', '', 'Ассасин'), true);
+  assert.equal(canEquipProfessionItem('Собака', 'Воин', '', 'Рыцарь'), true);
+  assert.equal(canEquipProfessionItem('Птица', 'Ассасин птицы', '', 'Ассасин птицы'), true);
+  assert.equal(canEquipProfessionItem('Грызун', 'Добытчик', '', 'Добытчик'), true);
+  assert.equal(canEquipProfessionItem('Птица', '', 'Ассасин птицы', 'Ассасин птицы'), true);
+  assert.equal(canEquipProfessionItem('Собака', 'Боевой маг', '', 'Боевой маг'), false);
+  assert.equal(canEquipProfessionItem('Кот', 'Ассасин', '', 'Ассасин птицы'), false);
+  assert.equal(canEquipProfessionItem('Грызун', 'Добытчик', '', 'Рыцарь'), false);
+  assert.equal(canEquipProfessionItem('Кот', '', '', 'Неизвестная профессия'), false);
+  assert.equal(canEquipProfessionItem('Птица', '', '', undefined), true);
+});
