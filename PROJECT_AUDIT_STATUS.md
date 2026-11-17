@@ -3322,3 +3322,11 @@ Quality Gate 43931230374 failed because the new dungeon test file contained a li
 - Added non-empty string validation for all required run identity fields and type/whitespace validation for optional `groupId`; empty `groupId` remains supported for the existing solo-run representation.
 - Added regression coverage for invalid required identifiers and group IDs. This is input validation only; no combat, reward, attempt, RNG, or persisted player data changes.
 - Exact-head CI must complete on the updated branch before this follow-up is considered verified.
+
+
+## 2026-11-17 — persisted dungeon identity validation gap closed
+
+- Confirmed a constructor-vs-store-validator mismatch: whitespace-only identity strings could be accepted by `validateDungeonRunStore()` during startup/recovery despite the constructor's stricter runtime validation.
+- Hardened validation for run key, request ID, dungeon ID, leader ID, all participant IDs, optional group ID (preserving empty solo group IDs), boss ID and seed.
+- Added regression tests for whitespace-only persisted identity fields and empty run keys. Invalid persisted records now fail closed rather than entering recovery state.
+- No valid stored data, combat rules, RNG, rewards or player progression is modified. CI is pending on the updated PR head.
