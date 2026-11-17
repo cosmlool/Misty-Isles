@@ -3183,3 +3183,15 @@ Quality Gate 43931230374 failed because the new dungeon test file contained a li
 - `stage29/playwright-eyes-foundation` и `stage29/pvp-rules-implementation` не удалять: в их diff остаются многочисленные игровые, тестовые и документальные изменения, включая крупные наборы данных и отдельную историю. Нужен отдельный commit/content audit.
 - Текущий connector не предоставляет подтверждённой операции delete branch. Ни одна ветка в этом этапе не удалена; force-update не использовался. Удаление 21 устаревшей ветки и смена описания репозитория пока остаются административными задачами, требующими поддерживаемого GitHub UI/API доступа.
 - Изменения только документационные. Игровой код, баланс, `server/data`, сохранения игроков и roster не менялись.
+
+
+## 2026-11-17 — PR #26 verification and Stage 29 snapshot review
+
+- PR #26 was merged: exact PR head 2082a24f4e820bd42dfd34c168a7ba6d9fa83a1c, merge commit a399b5454062940dcb32b236130a21a0cd9970cc. Quality Gate run 43980449840 completed successfully on the exact PR head: data/docs/structure, client TypeScript/Vite, Playwright browser smoke, and server TypeScript build. The GitHub PR search currently returns no open PRs.
+- The current branch listing contains 28 refs. The existing cleanup inventory identifies 25 candidate refs for removal after final reference checks; preserve main and both Stage 29 history branches. No branch was deleted in this checkpoint.
+- Local checkout and origin/main are clean at a399b5454062940dcb32b236130a21a0cd9970cc. A fresh local ls-remote could not connect to github.com:443.
+- Preliminary Stage 29 head/tree review only (not a complete commit-by-commit history audit):
+  - stage29/playwright-eyes-foundation is at 92754808c9438926242bdeae37f609be8b7373bc. Relative to origin/main, 1,118 commits are branch-only and 853 are main-only; the final tree differs in 144 files (+545/-12,566). It removes current dungeon/outbox/persistence helpers and tests and reverts newer client behavior such as cosmetic gender selection and the dungeon-result deduplication flow. Do not merge this snapshot.
+  - stage29/pvp-rules-implementation is at 2d22a4f6ed1a5c16f3561d8d409e26185c20207b. Relative to origin/main, 112 commits are branch-only and 866 are main-only; the final tree differs in 183 files (+1,235/-32,522). Its PvP implementation restricts opponents to within two levels, contrary to the approved all-registered-character pool, and drops the gold-cap-safe outcome helper and offer-rotation behavior present on main. It also reverts substantial current server modules/tests and older equipment data. Do not merge this snapshot.
+- Both history audits remain open: retained commit histories still need complete content review before the two protected refs can be deleted. The current GitHub connector exposes no delete-ref operation; the signed-in Chrome window cannot currently be operated through the available UI control, the in-app browser is signed out, and local GitHub network access is unavailable. Preserve all refs until a supported delete route is available.
+- No game code, balance, server/data, player saves, characters, or hunt-group roster changed.
