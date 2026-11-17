@@ -3295,3 +3295,11 @@ Quality Gate 43931230374 failed because the new dungeon test file contained a li
 - `server/test/dungeonResultOutboxRecovery.test.ts`: fixed the real crash/replay fixture to write actual newline-delimited JSON; now parses and verifies both transport records. Added coverage for a crash after one event is acknowledged while a second remains pending; restart replays only the pending event.
 - Changes are isolated to validation/test coverage. No combat math, RNG, reward calculation, daily attempt rules, character data, group roster data, or `server/data` files changed.
 - Runtime tests/build and exact-head CI: pending.
+
+
+## 2026-11-17 — CI regression correction for multi-event outbox test
+
+- Initial PR #34 CI: client build, Playwright browser smoke and data/docs checks passed; server test suites each reported 507/508 passing.
+- The only failure was the new multi-event test: equal-createdAt ordering is lexical by eventId, and the test's `combatHistory` ID sorted before `combatResult`. The simulated interruption therefore happened before acknowledgement.
+- Corrected test fixture with `event_a` then `event_b`, and interruption on the second send. No production delivery code change was needed based on this failure.
+- Awaiting exact updated-head CI.
