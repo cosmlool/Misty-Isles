@@ -3249,3 +3249,14 @@ Quality Gate 43931230374 failed because the new dungeon test file contained a li
 - Cross-checks on main confirm the rodent combat professions remain Vampire and Gatherer; gender remains cosmetic; unique-amulet ownership checks remain in chest, auction, and crafting paths; group-leader departure and offline-member cleanup retain their current behavior. Historical Stage 29 files contain no tracked player-save, character, account/session, clan, or hunt-group roster data files. No balance change or data migration is needed.
 - The complete audit finds no branch-only gameplay behavior, data, or fix that should replace current main. Per the user's explicit audit-first instruction, the disposition is to delete all 27 non-main remote branch refs after this journal-only PR passes the exact-head Quality Gate and merges. This intentionally retires the two divergent historical refs after review; their active effects are represented in main or superseded by newer behavior.
 - This PR updates documentation only. No branch has been deleted yet; deletion results will be recorded in a post-cleanup checkpoint. Current data/saves, characters, balance, group rosters, and game source remain untouched.
+
+
+
+## 2026-11-17 — user cleanup verified: main is the only remote branch
+
+- After the user removed the audited branch refs, a fresh GitHub API listing returned exactly one remote branch: protected `main` at `0f9a48e20eb0d07bd33c6178b702f5c03b51b6e0`. The previous inventory had 29 refs, so all 28 non-main refs are now absent.
+- The 28 removed refs comprise the 27 audited historical branches listed above plus the temporary PR #29 documentation branch `audit/main-only-retirement-2026-11-17` at `cea6491d6699533c83879a5143ee3ba51b6bd06d`. No game files or data were deleted.
+- PR #29 merged at `0f9a48e20eb0d07bd33c6178b702f5c03b51b6e0`; its exact head `cea6491d6699533c83879a5143ee3ba51b6bd06d` passed all four Quality Gate jobs in run `44017863251`.
+- The local checkout `C:\Users\bodya\Desktop\project\Misty-Isles` was verified clean on `main`; both local `HEAD` and `origin/main` matched `0f9a48e20eb0d07bd33c6178b702f5c03b51b6e0`. The 14 commits previously missing from that checkout touched only these two project journals.
+- A direct attempt to record this checkpoint on main was rejected by repository rules (HTTP 409: changes must go through a pull request; four status checks required). This single temporary checkpoint branch exists only to submit the journal update and will be removed after the PR passes CI and merges. The user's standing instruction remains: main only; create a branch only when repository protections make one necessary.
+- No source code, game data, saves, characters, balance, or group roster changed during cleanup.
