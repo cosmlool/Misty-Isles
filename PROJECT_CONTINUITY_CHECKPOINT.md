@@ -1668,7 +1668,7 @@ PR #15 остаётся Draft/open и не объединён. Слияние б
 
 ## 2026-11-17 — technical audit checkpoint: duplicate CI and stale scripts
 
-- Local folder `C:\\Users\\bodya\\Desktop\\project\\Misty-Isles` was confirmed synchronized after the user clicked Fetch/Pull: clean `main`, local `HEAD` = `origin/main` = GitHub main `5686d205dab5130e4bea8b90f81109d32c06934a`.
+- Local folder `C:\Users\\bodya\\Desktop\\project\\Misty-Isles` was confirmed synchronized after the user clicked Fetch/Pull: clean `main`, local `HEAD` = `origin/main` = GitHub main `5686d205dab5130e4bea8b90f81109d32c06934a`.
 - Remote repository still has two branches only: protected `main` and the existing temporary test/checkpoint branch. No additional branch was created.
 - The audit found two Quality Gate runs per PR head because the workflow listened to pushes on every branch as well as PR events. PR #33 limits push runs to `main` and PR runs to `main`; manual dispatch remains.
 - Removed the obsolete deleted Stage 28 push target from `server-checks.yml` and the unused exact duplicate client command `audit:visual`. Kept all server test/build checks.
