@@ -1723,3 +1723,12 @@ PR #15 остаётся Draft/open и не объединён. Слияние б
 - No new confirmed defect found in the inspected crash/restart boundary. No code changes were needed. This remains a module-level durable lifecycle: it is not wired into the live `runExpeditionDungeon()` handler. Do not enable partial integration without a separate full combat/RNG/reward parity audit.
 - PR #34 remains Draft/open/unmerged; PR #33 remains open and untouched. Protected `main` was not modified. No saves, characters, group rosters, balance, or `server/data` were changed.
 - Next audit: inspect the live dungeon request/response boundary and compare it against the prepared snapshot contract without modifying the live path; identify exactly which handler effects still need to be captured before any durable integration is considered.
+
+
+## 2026-11-17 — dungeon defeat HP floor confirmation
+
+- User requirement: after a dungeon defeat, every participant must retain at least 1 HP, never 0.
+- Read-only inspection confirmed the live loss path calls `prepareDungeonMemberHealthOutcome()`, whose initial settlement uses `Math.max(1, health - incomingDamage)`. The prepared encounter validator also rejects `hpAfter < 1` and requires the persisted player snapshot health to equal that validated value.
+- No production logic change was necessary: the existing implementation already enforces the requested floor. Added explicit regression cases for lethal/overkill loss damage and for rejecting a prepared loss snapshot with 0 HP.
+- Existing combat outcome rules, incoming damage, victory threshold, healing, rewards, attempt consumption, RNG and player persistence remain unchanged.
+- Exact-head CI must complete before this regression-only follow-up is considered verified. PR #34 remains Draft/open/unmerged; main and PR #33 are untouched.
