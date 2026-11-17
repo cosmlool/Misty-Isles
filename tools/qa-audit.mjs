@@ -47,6 +47,33 @@ for (const rel of required) {
   }
 }
 
+const serverTestDir = path.join(root, 'server', 'test');
+const serverPackagePath = path.join(root, 'server', 'package.json');
+if (!fs.existsSync(serverTestDir)) {
+  errors.push('Missing server test directory: server/test');
+} else if (fs.existsSync(serverPackagePath)) {
+  try {
+    const serverPackage = JSON.parse(fs.readFileSync(serverPackagePath, 'utf8'));
+    const testCommand = String(serverPackage.scripts?.test || '');
+    const listedTests = [...testCommand.matchAll(/\btest\/([A-Za-z0-9._-]+\.test\.ts)\b/g)]
+      .map(match => match[1]);
+    const testFiles = fs.readdirSync(serverTestDir, { withFileTypes: true })
+      .filter(entry => entry.isFile() && entry.name.endsWith('.test.ts'))
+      .map(entry => entry.name)
+      .sort();
+    const listedSet = new Set(listedTests);
+    const missing = testFiles.filter(name => !listedSet.has(name));
+    const stale = [...listedSet].filter(name => !testFiles.includes(name)).sort();
+    const duplicates = listedTests.filter((name, index) => listedTests.indexOf(name) !== index);
+    if (missing.length) errors.push('server/package.json npm test omits: ' + missing.join(', '));
+    if (stale.length) errors.push('server/package.json npm test references missing files: ' + stale.join(', '));
+    if (duplicates.length) errors.push('server/package.json npm test lists duplicates: ' + [...new Set(duplicates)].join(', '));
+    console.log('Server test discovery: ' + testFiles.length + ' files; ' + listedSet.size + ' listed in npm test.');
+  } catch (error) {
+    errors.push('Unable to verify server test discovery: ' + error.message);
+  }
+}
+
 let jsonCount = 0;
 function walk(dir) {
   for (const entry of fs.readdirSync(dir, { withFileTypes: true })) {

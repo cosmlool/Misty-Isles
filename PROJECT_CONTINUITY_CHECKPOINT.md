@@ -1642,7 +1642,7 @@ PR #15 остаётся Draft/open и не объединён. Слияние б
 
 ## 2026-11-17 — continuing technical audit: complete server test discovery
 
-- Starting point was the merged main `a3e1ecf4a9c3f12486c0768cfba83580a9284005`; local checkout `C:\\Users\\bodya\\Desktop\\project\\Misty-Isles` was clean on `main` at that SHA. Live GitHub confirmed only two remote branches: protected `main` and the existing temporary checkpoint/test branch. The latter was fast-forwarded to main and reused; no additional branch was created.
+- Starting point was the merged main `a3e1ecf4a9c3f12486c0768cfba83580a9284005`; local checkout `C:\Users\\bodya\\Desktop\\project\\Misty-Isles` was clean on `main` at that SHA. Live GitHub confirmed only two remote branches: protected `main` and the existing temporary checkpoint/test branch. The latter was fast-forwarded to main and reused; no additional branch was created.
 - PR #26's retry is verified successful: all 4 Quality Gate jobs passed on exact HEAD `2082a24f4e820bd42dfd34c168a7ba6d9fa83a1c`, run `43980449840`, attempt 2. PR #26 is merged. Main's latest run `44022528122` also passed all 4 jobs on `a3e1ecf4a9c3f12486c0768cfba83580a9284005`.
 - Audit found 78 server test files and only 75 referenced by `npm test`. Added the three omitted in-memory tests (`authPasswordPolicy`, `dungeonRequestRecovery`, `resurrectionScrolls`) to `server/package.json`; the test-list count is now 78. Audit findings are recorded in `PROJECT_AUDIT_STATUS.md`.
 - The CI result for this change is pending. Do not merge until every required check has completed successfully on the exact PR head. Then sync the merged main into the local game folder and verify clean status and matching commit SHA.
@@ -1655,3 +1655,12 @@ PR #15 остаётся Draft/open и не объединён. Слияние б
 - The test waited for any notice, allowing a delayed login notice to be mistaken for the response to the daily-reward request. Changed the test to wait for the specific daily-reward/gem-exchange response. No server implementation, balance, or data was edited.
 - PR #31 now has a newer head; all CI workflows must finish on that exact SHA before merge. Keep the existing test branch; do not create another.
 - After green CI and merge, update the local game checkout from GitHub main and verify its SHA and clean status. Local `server/data` remains untouched.
+
+
+## 2026-11-17 — PR #31 merged; CI verified
+
+- PR #31 merged into protected `main`: `9586e55098a55a4894ab9901b48743a9a70eebc9`. Its exact head `ba07bc185c5082a47d5415411becdd8b46f63fb7` passed all four Quality Gate jobs, the separate server workflow, and the push-triggered Quality Gate. The post-merge main runs also passed: Quality Gate `44025614937` (4/4) and server checks `44025614998`.
+- The server test list now covers all 78 discovered test files. The newly added QA rule in `tools/qa-audit.mjs` checks that package scripts do not omit tests, reference nonexistent tests, or list duplicates. It has been validated against the current 78-file main suite.
+- Follow-up PR #32 adds this guard and updates the audit record, using the same existing test branch `checkpoint/main-only-cleanup-2026-11-17`; current proposed commit before opening PR: `196bcd3fab945ec68d817c0704a618806ebd1890`. Wait for all required checks on its exact final head.
+- Local folder `C:\Users\bodya\Desktop\project\Misty-Isles` remains on the last confirmed `main` SHA `a3e1ecf4a9c3f12486c0768cfba83580a9284005`. Updating it is blocked by GitHub connection refusal in shell and repeated GitHub Desktop window-capture timeout; no local files or game data were changed. After PR #32 CI/merge, retry fetch/pull and verify a clean checkout at the then-current GitHub main SHA.
+- No saves, character data, group rosters, server gameplay source, or balance were changed in PR #31 or this follow-up.
