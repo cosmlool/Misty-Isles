@@ -1732,3 +1732,13 @@ PR #15 остаётся Draft/open и не объединён. Слияние б
 - No production logic change was necessary: the existing implementation already enforces the requested floor. Added explicit regression cases for lethal/overkill loss damage and for rejecting a prepared loss snapshot with 0 HP.
 - Existing combat outcome rules, incoming damage, victory threshold, healing, rewards, attempt consumption, RNG and player persistence remain unchanged.
 - Exact-head CI must complete before this regression-only follow-up is considered verified. PR #34 remains Draft/open/unmerged; main and PR #33 are untouched.
+
+
+## 2026-11-17 — dungeon combat outcome semantics clarification
+
+- User clarified that a dungeon defeat is not defined merely by a participant reaching 0 HP. The outcome is determined by combat performance: which side dealt more damage, or which side's HP is depleted first. A separate settlement rule requires player HP to remain at least 1 after a recorded defeat.
+- Read-only source audit found the current `calculateDungeonCombatPlan()` implementation does not compare party damage against boss damage/HP to determine the outcome. It currently sets `win` only when `rounds <= 3` and every participant has `health > incoming[index]`. `damageByParticipant` is calculated for reporting but is not part of the win predicate.
+- The live `runExpeditionDungeon()` branches directly on `combatPlan.win`; loss settlement then applies `prepareDungeonMemberHealthOutcome()`, which clamps player health to at least 1. The prepared encounter stores the same combat result and finalization trusts the frozen `combat.win` value without recalculating it.
+- Existing `dungeonCombatMath.test.ts` characterizes the current rounds/survival predicate; it does not prove that this predicate matches the newly clarified intended combat rule.
+- No combat formula or outcome logic changed in this audit step. Do not change victory/loss calculation until the damage comparison model, boss HP/depletion representation, and tie behavior are explicitly established. The HP settlement floor remains separate and must not decide the combat result.
+- Current source refs: `server/src/dungeonCombatMath.ts` at `71482b34c31b1a94f6d37724e0e234720dbb6a90`; live handler `server/src/index.ts` at `e47b978c4d5b453521e7477be7f7cfaa5d27f4b8`; HP settlement `server/src/dungeonMemberHealthOutcome.ts` at `90ce71e7c0e4995a0e1aae6fc4edc67edd6d3a93`; prepared finalization uses committed `combat.win`.
