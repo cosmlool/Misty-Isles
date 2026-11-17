@@ -3425,3 +3425,11 @@ Quality Gate 43931230374 failed because the new dungeon test file contained a li
 - Boss balancing must use the intended city dungeon ladder 20/30/40/50/60/70/80/90/100, not confuse it with the four currently populated legacy Forgotten Lands bosses at 7/15/25/30. Full-set reference loadouts and city transitions are recorded in the continuity checkpoint.
 - Prior level-30 gear conclusion is superseded. Previous level 7/15/25/30 boss profile table remains only a preliminary study of current legacy bosses, not a final city-progression balance model.
 - No code/data/gameplay changes; no local tests run. Updated checkpoint commit: `b95f11e949978ab5988dadea3eeef95c8d9dec3d`. Re-run CI on the final documentation HEAD.
+
+
+### Equipment milestone stat curve checked
+
+- Summed the six primary pieces of each existing professional set. Across all eight professions, generic totals are identical at each tier: levels 25/40/55/70/85/100 provide respectively attack 72/102/139/185/244/314, defense 320/429/560/709/880/1,080 and flat HP 400/550/720/920/1,150/1,400.
+- Catalog full-set prices are 30k/72k/156k/312k/624k/1.2m; with the documented shop multiplier ×1.3: 39k/93.6k/202.8k/405.6k/811.2k/1.56m.
+- Profession identity is expressed through attributes and typed combatStats, not different generic attack/defense/HP sums. Set mastery, enhancements, pendants and buffs are excluded.
+- This steep price curve reinforces the proposal to avoid mandatory full six-slot replacement every five levels. Affordability must be modelled against actual gold progression before any new price or item is authored.
