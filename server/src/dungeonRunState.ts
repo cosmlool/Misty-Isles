@@ -162,7 +162,14 @@ export function createDungeonRunRecord(input: {
     !participantIds.includes(input.leaderId)) {
     throw new Error('A dungeon run requires 1–3 unique non-empty string participants including its leader.');
   }
-  if (!input.runId || !input.requestId || !input.dungeonId || !input.bossId || !input.seed ||
+  if (typeof input.runId !== 'string' || !input.runId.trim() ||
+    typeof input.requestId !== 'string' || !input.requestId.trim() ||
+    typeof input.dungeonId !== 'string' || !input.dungeonId.trim() ||
+    typeof input.leaderId !== 'string' || !input.leaderId.trim() ||
+    (input.groupId !== undefined && (typeof input.groupId !== 'string' ||
+      (input.groupId.length > 0 && !input.groupId.trim()))) ||
+    typeof input.bossId !== 'string' || !input.bossId.trim() ||
+    typeof input.seed !== 'string' || !input.seed.trim() ||
     !Number.isFinite(input.now) || !Number.isFinite(input.bossHealth) || input.bossHealth <= 0) {
     throw new Error('A dungeon run is missing required durable encounter data.');
   }
