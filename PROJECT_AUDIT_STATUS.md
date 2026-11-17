@@ -3350,3 +3350,12 @@ Quality Gate 43931230374 failed because the new dungeon test file contained a li
 - Added regression tests proving lethal and overkill defeat damage leave exactly 1 HP, and durable prepared defeat snapshots with 0 HP are rejected.
 - No gameplay source change was required. Combat formulas, damage, victory determination, healing, rewards, attempts, RNG and persistence behavior are unchanged.
 - Await exact-head CI. PR #34 remains Draft/open/unmerged; main and PR #33 unchanged.
+
+
+## 2026-11-17 — dungeon combat outcome rule requires reconciliation
+
+- User clarified that defeat depends on comparative damage dealt or which side's HP is depleted first; the player's post-defeat HP must separately remain at least 1.
+- Current combat planner still uses `rounds <= 3 && every participant.health > incoming[index]` as its win predicate. Damage dealt is calculated for reports but is not compared with boss damage/HP. Live handler branches on this predicate; durable finalization preserves the committed `combat.win` result.
+- The current HP settlement helper clamps health to at least 1 after loss, but this does not correct or define the combat outcome itself.
+- No source changes made: the intended damage comparison, boss HP/depletion representation and tie handling must be established before changing gameplay logic. Existing tests characterize the current behavior only.
+- Main remains unchanged; PR #34 remains Draft/open/unmerged.
