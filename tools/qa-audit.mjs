@@ -55,7 +55,7 @@ if (!fs.existsSync(serverTestDir)) {
   try {
     const serverPackage = JSON.parse(fs.readFileSync(serverPackagePath, 'utf8'));
     const testCommand = String(serverPackage.scripts?.test || '');
-    const listedTests = [...testCommand.matchAll(/(?:^|\\s)test\\/([A-Za-z0-9._-]+\\.test\\.ts)(?=\\s|$)/g)]
+    const listedTests = [...testCommand.matchAll(/\btest\/([A-Za-z0-9._-]+\.test\.ts)\b/g)]
       .map(match => match[1]);
     const testFiles = fs.readdirSync(serverTestDir, { withFileTypes: true })
       .filter(entry => entry.isFile() && entry.name.endsWith('.test.ts'))
