@@ -3287,3 +3287,11 @@ Quality Gate 43931230374 failed because the new dungeon test file contained a li
 - To prevent a repeat of the discovered omission, `tools/qa-audit.mjs` now compares every `server/test/*.test.ts` with the test paths in `server/package.json`; it reports omitted, stale, or duplicate paths as errors. The rule was checked against the live main manifest and test directory: 78 listed / 78 discovered, with no mismatches.
 - The audit guard is on the existing temporary test branch in commit `196bcd3fab945ec68d817c0704a618806ebd1890`; PR #32 must pass its exact-head Quality Gate before merge. No new branch was created.
 - The local game folder could not yet be advanced: shell Git access returned `Failed to connect to github.com:443`; the GitHub Desktop window capture timed out after one refreshed retry. No local project files, saves, characters, rosters, or `server/data` were changed. Retry local sync only when the connected Git client can fetch; verify the resulting SHA before treating it as installed.
+
+
+## 2026-11-17 — dungeon roster guard and multi-event outbox recovery tests
+
+- `server/src/dungeonRunState.ts`: `createDungeonRunRecord()` now rejects participant IDs that are not non-empty strings (including whitespace-only values), matching durable-store roster validation. Added focused regression cases.
+- `server/test/dungeonResultOutboxRecovery.test.ts`: fixed the real crash/replay fixture to write actual newline-delimited JSON; now parses and verifies both transport records. Added coverage for a crash after one event is acknowledged while a second remains pending; restart replays only the pending event.
+- Changes are isolated to validation/test coverage. No combat math, RNG, reward calculation, daily attempt rules, character data, group roster data, or `server/data` files changed.
+- Runtime tests/build and exact-head CI: pending.
