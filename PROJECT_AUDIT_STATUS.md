@@ -3404,7 +3404,7 @@ Quality Gate 43931230374 failed because the new dungeon test file contained a li
 
 ## 2026-11-18 — equipment-backed boss profile study (read-only)
 
-- Built formula-based level 7/15/25/30 profiles from current player progression, profession coefficients and exact equipment catalog records. Balanced vs offensive stat allocations are labelled scenarios, not inferred player averages.
+- Built formula-based level 7/15/25/30 profiles for Mage, Assassin, Knight and Archer from current player progression, profession coefficients and exact equipment catalog records. Vampire, Buffer and Gatherer are deferred for a separate support/lifesteal/role pass. Balanced vs offensive stat allocations are labelled scenarios, not inferred player averages; set-tier effects are excluded.
 - Catalog gear progression: level 7 common set (weapon attack 7, armor defense 18); level 14 common set for level 15 (weapon attack 14, armor defense 35, gloves +1 attack); level 25 professional set (weapon attack 34, gloves +38 attack, five armor pieces total 320 defense). The new catalog has no level-30+ equipment; legacy inventory items are a separate compatibility case.
 - Calculated attacks range from 36–53 at level 7, 57–92 at level 15, 131–193 at level 25 and 136–212 at level 30 across the four tested archetypes and two allocations. Full matrix and assumptions are in `PROJECT_CONTINUITY_CHECKPOINT.md`.
 - Extrapolated boss HP-depletion duration with the current outgoing formula: first boss ~3.0–3.9 rounds; second ~7.0–14.5 rounds before its periodic regeneration; third ~12.9–29.6 rounds with its defense/resistance passive; final boss ~47.3–71.6 rounds before accounting for enrage-driven incoming damage. These are repeated-round estimates, not live-handler simulations.
