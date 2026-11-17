@@ -3330,3 +3330,15 @@ Quality Gate 43931230374 failed because the new dungeon test file contained a li
 - Hardened validation for run key, request ID, dungeon ID, leader ID, all participant IDs, optional group ID (preserving empty solo group IDs), boss ID and seed.
 - Added regression tests for whitespace-only persisted identity fields and empty run keys. Invalid persisted records now fail closed rather than entering recovery state.
 - No valid stored data, combat rules, RNG, rewards or player progression is modified. CI is pending on the updated PR head.
+
+
+## 2026-11-17 — prepared encounter and finalization recovery audit
+
+- Verified exact source/test HEAD `f7d3b1192e105eaec401aed7af199936f91f10b4` and all 9 CI jobs: PR Quality Gate 4/4, Server checks 1/1, push Quality Gate 4/4.
+- Prepared encounter validation freezes detached combat results, player snapshots, and deterministic loot allocation. Restart validation restores the exact payload; it does not rerun combat or RNG.
+- WAL crash tests cover the prepared-encounter commit at journal persistence and target-write boundaries. Recovery restores the committed prepared encounter while leaving pre-finalization player snapshots unchanged.
+- Finalization consumes only the committed encounter. WAL crash tests cover journal persistence and each player/run/outbox target write; recovery restores player snapshots, terminal run marker, and pending Outbox event as one consistent transaction.
+- Duplicate finalization is a no-op; a conflicting terminal outcome is rejected. Outbox delivery is at-least-once and relies on client eventId deduplication.
+- No new confirmed defect found; no source change was warranted. Important scope boundary: durable lifecycle modules are still not integrated into live `runExpeditionDungeon()`; integration remains blocked on a separate complete parity audit of handler side effects, RNG order, rewards, quests, reports, and persistence.
+- PR #34 remains Draft/open/unmerged; PR #33 untouched; main unchanged. No player data, saves, group rosters, balance, or `server/data` changed.
+- Next: map the live dungeon handler's side effects against the immutable prepared snapshot contract, read-only first.
