@@ -33,6 +33,17 @@ test('durable dungeon run freezes the party roster and captures independent part
   assert.equal(validateDungeonRunStore({ run_001: state }).run_001.requestId, 'dungeon_req_001');
 });
 
+test('dungeon run creation rejects empty, whitespace-only and non-string participant IDs', () => {
+  for (const playerId of ['', '   ', 42, null]) {
+    assert.throws(() => createDungeonRunRecord({
+      runId: 'bad_roster', requestId: 'bad_roster_request', dungeonId: 'dungeon',
+      leaderId: 'p1',
+      participants: [{ playerId, health: 100, maxHealth: 100 }] as unknown as Array<{ playerId: string; health: number; maxHealth: number }>,
+      bossId: 'boss', bossHealth: 10, seed: 'seed', now: 1,
+    }), /unique non-empty string participants/);
+  }
+});
+
 test('a saved round restores its exact HP, boss HP, round index and activity snapshot', () => {
   const afterRound = advanceDungeonRunRound(run(), {
     now: 2000, bossHealth: 320, participantHealth: { p1: 75, p2: 62 },
