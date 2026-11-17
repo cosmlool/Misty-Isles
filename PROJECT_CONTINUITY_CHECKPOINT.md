@@ -1664,3 +1664,14 @@ PR #15 остаётся Draft/open и не объединён. Слияние б
 - Follow-up PR #32 adds this guard and updates the audit record, using the same existing test branch `checkpoint/main-only-cleanup-2026-11-17`; current proposed commit before opening PR: `196bcd3fab945ec68d817c0704a618806ebd1890`. Wait for all required checks on its exact final head.
 - Local folder `C:\Users\bodya\Desktop\project\Misty-Isles` remains on the last confirmed `main` SHA `a3e1ecf4a9c3f12486c0768cfba83580a9284005`. Updating it is blocked by GitHub connection refusal in shell and repeated GitHub Desktop window-capture timeout; no local files or game data were changed. After PR #32 CI/merge, retry fetch/pull and verify a clean checkout at the then-current GitHub main SHA.
 - No saves, character data, group rosters, server gameplay source, or balance were changed in PR #31 or this follow-up.
+
+
+## 2026-11-17 — dungeon participant validation and outbox replay hardening
+
+- Created focused branch `fix/dungeon-run-validation-outbox-2026-11-17` from protected main `5686d205dab5130e4bea8b90f81109d32c06934a`; existing checkpoint branch remains dedicated to open PR #33 and was not modified.
+- Confirmed `createDungeonRunRecord()` accepted empty, whitespace-only, and non-string participant IDs even though durable-store validation rejects malformed roster IDs. Added an early non-empty-string check and regression coverage for all malformed forms; valid participant IDs and gameplay rules are unchanged.
+- Fixed the real-process outbox replay test to append an actual newline rather than the two-character backslash+n sequence. Strengthened the test to parse both emitted JSON lines and verify their event IDs.
+- Added a two-event partial-acknowledgement crash/restart test: first event remains delivered, second remains pending and is replayed once; final state confirms both are delivered.
+- No changes to live combat handler integration, RNG, rewards, attempt consumption, balance, player saves, characters, group rosters, or `server/data`.
+- Source-level review completed; server tests/build and exact-head CI pending. Do not claim runtime validation until run on this exact branch head.
+- PR #33 remains open and untouched; no merge or base change performed.
