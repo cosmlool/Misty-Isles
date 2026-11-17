@@ -1647,3 +1647,11 @@ PR #15 остаётся Draft/open и не объединён. Слияние б
 - Audit found 78 server test files and only 75 referenced by `npm test`. Added the three omitted in-memory tests (`authPasswordPolicy`, `dungeonRequestRecovery`, `resurrectionScrolls`) to `server/package.json`; the test-list count is now 78. Audit findings are recorded in `PROJECT_AUDIT_STATUS.md`.
 - The CI result for this change is pending. Do not merge until every required check has completed successfully on the exact PR head. Then sync the merged main into the local game folder and verify clean status and matching commit SHA.
 - `server/data` exists locally but has not been opened, changed, or included in test execution. No saves, characters, group rosters, gameplay code, or balance were changed.
+
+
+## 2026-11-17 — PR #31 CI follow-up: reward test race
+
+- The first CI attempt on `fa60898fcd75c046f12d76dd71246e86853791b3` failed one existing live reward assertion: the saved gold remained at `9,999,999,990` where the test expected the cap `9,999,999,999`. The run had 78 test files configured; the prior main run passed the same scenario.
+- The test waited for any notice, allowing a delayed login notice to be mistaken for the response to the daily-reward request. Changed the test to wait for the specific daily-reward/gem-exchange response. No server implementation, balance, or data was edited.
+- PR #31 now has a newer head; all CI workflows must finish on that exact SHA before merge. Keep the existing test branch; do not create another.
+- After green CI and merge, update the local game checkout from GitHub main and verify its SHA and clean status. Local `server/data` remains untouched.
