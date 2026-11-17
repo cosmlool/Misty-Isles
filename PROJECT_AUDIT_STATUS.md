@@ -3303,3 +3303,14 @@ Quality Gate 43931230374 failed because the new dungeon test file contained a li
 - The only failure was the new multi-event test: equal-createdAt ordering is lexical by eventId, and the test's `combatHistory` ID sorted before `combatResult`. The simulated interruption therefore happened before acknowledgement.
 - Corrected test fixture with `event_a` then `event_b`, and interruption on the second send. No production delivery code change was needed based on this failure.
 - Awaiting exact updated-head CI.
+
+
+## 2026-11-17 — verification result for dungeon outbox hardening
+
+- PR #34 CI run `44135559841`, exact code/test HEAD `f75fa42efbbbfa88a6eee3362594b0c783a1f26e`: all four jobs passed.
+- Server recovery test output: `# pass 508`, `# fail 0`; server build completed successfully.
+- Client asset audit: 192 entries / 4 groups; TypeScript and Vite production build passed.
+- Playwright browser smoke and data/docs/project structure checks passed.
+- Re-reviewed `dispatchDungeonResultsToClient()`: each acknowledgement loads the current outbox from disk immediately before calling `markDungeonResultEventDelivered()`. Since delivery and the shared-state transaction store are synchronous and explicitly single-process, the suspected stale-outbox acknowledgement race is not reproduced in the production call path. No code change was warranted.
+- This journal update is documentation-only and creates a new PR head; rerun CI on that new head before treating the updated PR checkpoint as fully verified.
+- PR #34 remains Draft/open/unmerged; PR #33 remains open and untouched. Main remains `5686d205dab5130e4bea8b90f81109d32c06934a`.
