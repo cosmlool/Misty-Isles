@@ -58,14 +58,16 @@ export function validateDungeonRunStore(value: unknown): DungeonRunStore {
   const result: DungeonRunStore = {};
   for (const [key, raw] of Object.entries(value)) {
     if (!isRecord(raw) || raw.version !== 1 || raw.runId !== key ||
-      typeof raw.requestId !== 'string' || !raw.requestId ||
-      typeof raw.dungeonId !== 'string' || !raw.dungeonId ||
-      typeof raw.leaderId !== 'string' || !raw.leaderId ||
+      !key.trim() ||
+      typeof raw.requestId !== 'string' || !raw.requestId.trim() ||
+      typeof raw.dungeonId !== 'string' || !raw.dungeonId.trim() ||
+      typeof raw.leaderId !== 'string' || !raw.leaderId.trim() ||
       !Array.isArray(raw.participantIds) || raw.participantIds.length < 1 || raw.participantIds.length > 3 ||
+      raw.participantIds.some((id: unknown) => typeof id !== 'string' || !id.trim()) ||
       new Set(raw.participantIds).size !== raw.participantIds.length ||
       !raw.participantIds.includes(raw.leaderId) ||
       !['active', 'completed', 'aborted'].includes(raw.status) ||
-      typeof raw.groupId !== 'string' ||
+      typeof raw.groupId !== 'string' || (raw.groupId.length > 0 && !raw.groupId.trim()) ||
       !Number.isFinite(raw.startedAt) || !Number.isFinite(raw.updatedAt) || raw.startedAt > raw.updatedAt ||
       !Number.isInteger(raw.roundIndex) || raw.roundIndex < 0 ||
       (raw.roundPlan !== undefined && (!isRecord(raw.roundPlan) ||
@@ -87,8 +89,8 @@ export function validateDungeonRunStore(value: unknown): DungeonRunStore {
       raw.participantIds.some((id: unknown) => typeof id !== 'string' || !id)) {
       throw new Error(`dungeon_runs.json contains an incomplete participant map for ${key}.`);
     }
-    if (typeof raw.encounter.bossId !== 'string' || !raw.encounter.bossId ||
-      typeof raw.encounter.seed !== 'string' || !raw.encounter.seed ||
+    if (typeof raw.encounter.bossId !== 'string' || !raw.encounter.bossId.trim() ||
+      typeof raw.encounter.seed !== 'string' || !raw.encounter.seed.trim() ||
       !Number.isFinite(raw.encounter.bossHealth) || raw.encounter.bossHealth < 0 ||
       !Number.isFinite(raw.encounter.bossMaxHealth) || raw.encounter.bossMaxHealth <= 0 ||
       raw.encounter.bossHealth > raw.encounter.bossMaxHealth) {
@@ -157,11 +159,19 @@ export function createDungeonRunRecord(input: {
 }): DungeonRunRecord {
   const participantIds = input.participants.map(p => p.playerId);
   if (participantIds.length < 1 || participantIds.length > 3 ||
+    participantIds.some(id => typeof id !== 'string' || !id.trim()) ||
     new Set(participantIds).size !== participantIds.length ||
     !participantIds.includes(input.leaderId)) {
-    throw new Error('A dungeon run requires 1–3 unique participants including its leader.');
+    throw new Error('A dungeon run requires 1–3 unique non-empty string participants including its leader.');
   }
-  if (!input.runId || !input.requestId || !input.dungeonId || !input.bossId || !input.seed ||
+  if (typeof input.runId !== 'string' || !input.runId.trim() ||
+    typeof input.requestId !== 'string' || !input.requestId.trim() ||
+    typeof input.dungeonId !== 'string' || !input.dungeonId.trim() ||
+    typeof input.leaderId !== 'string' || !input.leaderId.trim() ||
+    (input.groupId !== undefined && (typeof input.groupId !== 'string' ||
+      (input.groupId.length > 0 && !input.groupId.trim()))) ||
+    typeof input.bossId !== 'string' || !input.bossId.trim() ||
+    typeof input.seed !== 'string' || !input.seed.trim() ||
     !Number.isFinite(input.now) || !Number.isFinite(input.bossHealth) || input.bossHealth <= 0) {
     throw new Error('A dungeon run is missing required durable encounter data.');
   }

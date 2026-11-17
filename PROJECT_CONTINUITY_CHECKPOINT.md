@@ -1664,3 +1664,249 @@ PR #15 остаётся Draft/open и не объединён. Слияние б
 - Follow-up PR #32 adds this guard and updates the audit record, using the same existing test branch `checkpoint/main-only-cleanup-2026-11-17`; current proposed commit before opening PR: `196bcd3fab945ec68d817c0704a618806ebd1890`. Wait for all required checks on its exact final head.
 - Local folder `C:\Users\bodya\Desktop\project\Misty-Isles` remains on the last confirmed `main` SHA `a3e1ecf4a9c3f12486c0768cfba83580a9284005`. Updating it is blocked by GitHub connection refusal in shell and repeated GitHub Desktop window-capture timeout; no local files or game data were changed. After PR #32 CI/merge, retry fetch/pull and verify a clean checkout at the then-current GitHub main SHA.
 - No saves, character data, group rosters, server gameplay source, or balance were changed in PR #31 or this follow-up.
+
+
+## 2026-11-17 — dungeon participant validation and outbox replay hardening
+
+- Created focused branch `fix/dungeon-run-validation-outbox-2026-11-17` from protected main `5686d205dab5130e4bea8b90f81109d32c06934a`; existing checkpoint branch remains dedicated to open PR #33 and was not modified.
+- Confirmed `createDungeonRunRecord()` accepted empty, whitespace-only, and non-string participant IDs even though durable-store validation rejects malformed roster IDs. Added an early non-empty-string check and regression coverage for all malformed forms; valid participant IDs and gameplay rules are unchanged.
+- Fixed the real-process outbox replay test to append an actual newline rather than the two-character backslash+n sequence. Strengthened the test to parse both emitted JSON lines and verify their event IDs.
+- Added a two-event partial-acknowledgement crash/restart test: first event remains delivered, second remains pending and is replayed once; final state confirms both are delivered.
+- No changes to live combat handler integration, RNG, rewards, attempt consumption, balance, player saves, characters, group rosters, or `server/data`.
+- Source-level review completed; server tests/build and exact-head CI pending. Do not claim runtime validation until run on this exact branch head.
+- PR #33 remains open and untouched; no merge or base change performed.
+
+
+## 2026-11-17 — CI follow-up: deterministic multi-event ordering
+
+- Exact-head CI for initial PR #34 completed: client build, browser smoke, and data/docs checks passed; server recovery suite failed only in the newly added partial-acknowledgement test.
+- Root cause was test fixture ordering: the delivery function sorts equal-timestamp events by event ID, so the `combatHistory` event was first and the simulated interruption occurred before any acknowledgement. This did not establish a runtime Outbox defect.
+- Updated the fixture to use explicit lexical event IDs (`event_a`, `event_b`) and to interrupt on the second send. The assertions now verify the first event was acknowledged, the second remained pending, and restart replays only the latter.
+- Re-run all CI checks on the updated PR head before considering this checkpoint complete.
+
+
+## 2026-11-17 — PR #34 exact-head CI passed
+
+- Workflow run `44135559841` completed successfully on code/test HEAD `f75fa42efbbbfa88a6eee3362594b0c783a1f26e`.
+- Server transaction recovery suite: **508 passed, 0 failed**; server TypeScript compilation passed.
+- Client TypeScript/Vite production build passed; asset audit checked 192 entries across 4 groups.
+- Playwright browser smoke tests passed; data/docs/project-structure checks passed.
+- Follow-up source audit reviewed outbox dispatch, acknowledgement, WAL recovery and client deduplication. The production acknowledgement callback reloads the latest outbox for each event; delivery and shared-state writes are synchronous in the documented single-process server model. No stale-snapshot/concurrent-acknowledgement defect was confirmed.
+- A documentation-only follow-up commit records this result. CI must be rechecked on the resulting updated PR head; the above successful run applies to the exact code/test HEAD stated above.
+- PR #34 remains Draft/open and unmerged; PR #33 remains open and was not modified. Main remains `5686d205dab5130e4bea8b90f81109d32c06934a`.
+
+
+## 2026-11-17 — constructor identifier validation follow-up
+
+- Further audit found that `createDungeonRunRecord()` checked participant IDs but trusted the TypeScript types of the remaining identifiers. A malformed runtime value could therefore produce a record rejected by `validateDungeonRunStore()`.
+- Added runtime non-empty-string checks for `runId`, `requestId`, `dungeonId`, `leaderId`, `bossId`, and `seed`; optional `groupId` must be a string when supplied, and whitespace-only group IDs are rejected while the existing empty-string solo representation remains valid.
+- Added regression cases for numeric, null, empty, whitespace-only, and wrong-type identifiers. No persisted data or gameplay behavior is changed.
+- This source/test follow-up supersedes the preceding documentation-only head. CI is pending on the new exact head.
+
+
+## 2026-11-17 — durable store validator consistency
+
+- Continued recovery-path audit found that `createDungeonRunRecord()` already rejected malformed identifiers, but `validateDungeonRunStore()` still accepted whitespace-only run/request/dungeon/leader/participant/group/boss/seed identifiers in persisted snapshots.
+- Aligned startup/store validation with constructor rules: non-empty trimmed required IDs, non-empty trimmed participant IDs, optional group ID remains allowed as the empty solo representation but rejects whitespace-only values, and boss ID/seed must be non-empty after trimming.
+- Added startup-recovery regression coverage for malformed durable identity snapshots. No existing valid IDs or persisted records are rewritten; malformed records fail closed.
+- Exact-head CI is pending.
+
+
+## 2026-11-17 — prepared encounter and finalization crash-boundary audit
+
+- Exact code/test HEAD reviewed: `f7d3b1192e105eaec401aed7af199936f91f10b4`. All CI jobs passed on this HEAD: Quality Gate PR run `44155966295` (4/4), standalone Server checks `44155966307` (1/1), and push-triggered Quality Gate `44155958213` (4/4).
+- Reviewed `dungeonEncounterPreparation.ts`: prepared encounter snapshots detach and deep-freeze the already-calculated combat result, per-player settlement, player snapshots, and exact loot recipient allocation. Restore revalidates the same payload; it does not roll RNG or recalculate rewards.
+- Reviewed `dungeonEncounterCommitRuntime.ts` and its crash-boundary test: prepared encounter plus run state are committed through shared WAL. Tests interrupt after journal persistence and after each target write; restart replays the immutable prepared encounter while player files remain at their pre-finalization state. Same prepared payload is idempotent; conflicting payload is rejected.
+- Reviewed `dungeonPreparedEncounterFinalizationRuntime.ts`: finalization derives win/loss and participant snapshots only from the committed prepared encounter. It does not rerun combat, drops, recipient selection, or reward calculations.
+- Reviewed `dungeonRunFinalizationRuntime.ts` and its process-crash matrix: player snapshots, terminal run marker, and result Outbox are committed in one WAL transaction. Tests interrupt after journal persistence and after each of the players, dungeonRuns, and dungeonOutbox writes; restart restores a consistent terminal run, player rewards, and pending event.
+- Duplicate finalization is a no-op; conflicting outcomes and stale run snapshots are rejected. Outbox delivery remains at-least-once with client-side eventId deduplication, not exactly-once transport.
+- No new confirmed defect found in the inspected crash/restart boundary. No code changes were needed. This remains a module-level durable lifecycle: it is not wired into the live `runExpeditionDungeon()` handler. Do not enable partial integration without a separate full combat/RNG/reward parity audit.
+- PR #34 remains Draft/open/unmerged; PR #33 remains open and untouched. Protected `main` was not modified. No saves, characters, group rosters, balance, or `server/data` were changed.
+- Next audit: inspect the live dungeon request/response boundary and compare it against the prepared snapshot contract without modifying the live path; identify exactly which handler effects still need to be captured before any durable integration is considered.
+
+
+## 2026-11-17 — dungeon defeat HP floor confirmation
+
+- User requirement: after a dungeon defeat, every participant must retain at least 1 HP, never 0.
+- Read-only inspection confirmed the live loss path calls `prepareDungeonMemberHealthOutcome()`, whose initial settlement uses `Math.max(1, health - incomingDamage)`. The prepared encounter validator also rejects `hpAfter < 1` and requires the persisted player snapshot health to equal that validated value.
+- No production logic change was necessary: the existing implementation already enforces the requested floor. Added explicit regression cases for lethal/overkill loss damage and for rejecting a prepared loss snapshot with 0 HP.
+- Existing combat outcome rules, incoming damage, victory threshold, healing, rewards, attempt consumption, RNG and player persistence remain unchanged.
+- Exact-head CI must complete before this regression-only follow-up is considered verified. PR #34 remains Draft/open/unmerged; main and PR #33 are untouched.
+
+
+## 2026-11-17 — dungeon combat outcome semantics clarification
+
+- User clarified that a dungeon defeat is not defined merely by a participant reaching 0 HP. The outcome is determined by combat performance: which side dealt more damage, or which side's HP is depleted first. A separate settlement rule requires player HP to remain at least 1 after a recorded defeat.
+- Read-only source audit found the current `calculateDungeonCombatPlan()` implementation does not compare party damage against boss damage/HP to determine the outcome. It currently sets `win` only when `rounds <= 3` and every participant has `health > incoming[index]`. `damageByParticipant` is calculated for reporting but is not part of the win predicate.
+- The live `runExpeditionDungeon()` branches directly on `combatPlan.win`; loss settlement then applies `prepareDungeonMemberHealthOutcome()`, which clamps player health to at least 1. The prepared encounter stores the same combat result and finalization trusts the frozen `combat.win` value without recalculating it.
+- Existing `dungeonCombatMath.test.ts` characterizes the current rounds/survival predicate; it does not prove that this predicate matches the newly clarified intended combat rule.
+- No combat formula or outcome logic changed in this audit step. Do not change victory/loss calculation until the damage comparison model, boss HP/depletion representation, and tie behavior are explicitly established. The HP settlement floor remains separate and must not decide the combat result.
+- Current source refs: `server/src/dungeonCombatMath.ts` at `71482b34c31b1a94f6d37724e0e234720dbb6a90`; live handler `server/src/index.ts` at `e47b978c4d5b453521e7477be7f7cfaa5d27f4b8`; HP settlement `server/src/dungeonMemberHealthOutcome.ts` at `90ce71e7c0e4995a0e1aae6fc4edc67edd6d3a93`; prepared finalization uses committed `combat.win`.
+
+
+## 2026-11-18 — F2P product direction and dungeon outcome model audit
+
+- Product decision recorded from the user: Misty-Isles uses a Free-to-Play (F2P) monetization model. Planned monetization categories are premium accounts, timer acceleration, cosmetics, and inventory expansion.
+- These are product-direction categories only, not approval to implement or price specific products. Any future design must explicitly review fairness and pay-to-win risk. Do not silently alter combat stats/formulas, drop odds, rewards, progression, economy, timer values, inventory limits, or gameplay access; concrete benefits, prices, caps and restrictions require a separate design decision.
+- Read-only comparison of the legacy live handler and durable run state found that the durable model stores `bossHealth`/`bossMaxHealth` and can apply per-round `bossDamageByRound`, while the live aggregate planner still uses `dungeonPower` to derive round count and does not compare party damage against boss HP.
+- `resolveNextDungeonRunRound()` clamps active participants to at least 1 HP during its planned aggregate round resolver; explicit spectator/death transitions are separate operations. Boss HP, by contrast, can reach 0. `finishDungeonRun()` currently checks that planned rounds are complete but does not itself require boss HP to be 0 for a win or participant HP to be depleted for a loss. This is a state-transition primitive, not a complete combat-outcome adjudicator.
+- The durable test fixtures use explicit boss HP values (for example 500) independently of `dungeonPower`; no proven mapping from legacy `dungeonPower` to boss maximum HP has been established. Do not infer one.
+- No live handler, combat, round, RNG, reward, attempt, HP, or persistence logic was changed. Outcome semantics remain blocked on an explicit definition of boss HP, party damage aggregation, simultaneous depletion/ties, and whether round limit remains a separate condition.
+- Main remains unchanged; PR #34 remains Draft/open/unmerged; PR #33 untouched. Exact-head CI status for the prior PR #34 HEAD is recorded separately; this documentation-only follow-up needs its own CI verification.
+
+
+## 2026-11-18 — boss HP and player defeat-health rules clarified
+
+- User explicitly clarified: a boss is defeated when its HP reaches 0. The minimum-1-HP rule applies to the player after a recorded defeat only; it is not the combat outcome predicate. Keep these as separate rules.
+- User direction for boss durability: derive it from the boss's own characteristics and dungeon progression/difficulty, with later/harder dungeons producing tougher bosses. This is a design direction, not approval of a numeric formula or balance changes.
+- Read-only inspection of `server/data/forgotten_lands.json` found boss/guardian records already contain `hp`, `attack`, `defense`, `speed`, `level`, `rank`, passive and weakness fields; zones contain ordered `index` and level ranges; dungeons reference bosses via `bossId` and separately have `power`. Existing boss HP values progress from 260 (zone 1 guardian) through 850 (zone 3 boss), 2700 (zone 6 boss), 6500 (zone 9 boss), to 14000 (zone 10 final boss). Dungeon entries exist for zones 3, 6, 9, and 10 with power 35, 85, 145, and 210 respectively.
+- The live dungeon handler currently reads the referenced monster's attack/defense and passive/weakness data but calls `calculateDungeonCombatPlan()` with `dungeon.power`; the current planner does not use `boss.hp` as a boss health pool or reduce it to zero. In contrast, the separate expedition planner accepts `monsterHp` and computes group HP as `monsterHp * (1 + .55 * (partySize - 1))`, but this is a different combat path and must not be copied into boss dungeons without parity/balance analysis.
+- Durable dungeon records already store `bossHealth` and `bossMaxHealth`; deterministic round plans store `bossDamageByRound` and reduce boss HP to zero. These values are not yet shown to be sourced from the legacy monster `hp` or dungeon progression formula.
+- No combat logic, monster stats, dungeon values, player HP, RNG, rewards, or persistence behavior changed. Next audit should map all boss records and existing monster HP scaling patterns, then prepare a proposed calculation using existing fields for review before any implementation. Preserve the current live handler until full side-effect/RNG/reward parity is proven.
+
+
+## 2026-11-18 — boss roster and player progression scaling audit
+
+- Read-only audit of all 10 guardian/boss records in `server/data/forgotten_lands.json` confirms boss HP/attack/defense/speed/level already rise across zone progression: HP values are 260, 520, 850, 1050, 1750, 2700, 3600, 4800, 6500, and 14000 for zones 1–10. The four dungeon bosses are zones 3/6/9/10, with HP 850/2700/6500/14000 and dungeon power 35/85/145/210.
+- Player combat attack is not determined by level alone. `PlayerSchema` starts primary stats at 10 (defense 8); `prepareXpProgression()` grants 3 stat points per level and increases max HP by 18 + 0.5 × current vitality. The player chooses how stat points are allocated, while actual attack/defense also depend on profession, equipped weapon/armor attributes and enhancements, set/equipment effects, pendants and active buffs. Therefore a fair balance comparison must use multiple representative builds and equipment tiers, not one assumed level-to-attack curve.
+- `calculatePlayerMonsterCombatStats()` derives attack from strength/dexterity/intelligence, profession coefficients and equipment; defense derives from base defense, vitality/stamina and armor. The dungeon planner currently computes outgoing damage per participant from attack × 7 × boss-defense mitigation and modifiers, then multiplies by its calculated round count. It does not use boss HP as an encounter depletion pool. The separate expedition planner does use monster HP and a +55% HP factor per additional party member, but that is a distinct system and is not a safe default for boss dungeons.
+- Design recommendation for review (not implemented): use the referenced boss record's `hp` as the canonical base `bossMaxHealth`; resolve it through the dungeon's `bossId` and retain the dungeon/zone context for difficulty. Do not add another large zone/power multiplier by default because boss HP already encodes progression. If later simulation shows a need for a dungeon-specific modifier, calibrate it as a separate, small, explicit parameter rather than multiplying two progression curves. Treat party-size scaling independently and test solo/duo/trio before choosing any modifier.
+- Exact tuning cannot yet be justified from source values alone: player stat allocation, profession, gear, enhancements, buffs, boss passives and group composition create wide variation. Next quantitative step should build representative low/typical/high player profiles for levels around 7, 15, 25 and 30, run a read-only matrix for party sizes 1–3, and compare boss HP/time-to-zero against incoming damage and survival. No numeric formula should be merged until those scenarios and the tie/round-limit rules are agreed.
+- No code, combat formulas, monster/dungeon data, player data, saves, RNG, rewards, attempts or live handler behavior changed. `main` remains `5686d205dab5130e4bea8b90f81109d32c06934a`; PR #34 remains Draft/open/unmerged on `fix/dungeon-run-validation-outbox-2026-11-17`; PR #33 remains open and untouched. This documentation-only checkpoint has no exact-head CI result yet.
+
+
+## 2026-11-18 — user decision: boss difficulty for solo and groups
+
+- User clarified the target difficulty: a boss must be difficult but realistically defeatable both by one player and by a group of 2–3 players. Neither solo nor group play should be an automatic/effortless win, and solo play must not be artificially prohibited.
+- Balance target: solo victory should be possible with a sufficiently developed and prepared character; group victory should also require preparation and meaningful contribution. Groups gain combined damage and tactical coverage, while boss durability/threat must account for party size so that adding members does not trivialize the encounter. The exact party-size scaling must be established by simulation, not guessed.
+- Preserve the distinct outcome rules already clarified by the user: the boss is defeated at 0 HP; a defeated player remains at no less than 1 HP. Player HP reaching 1 is not itself the boss-death condition. The exact simultaneous-depletion/tie rule and any round cap still need formal design.
+- Clarification of progression: level 3 in zone 1 is a guardian, not the first actual dungeon boss. The first actual dungeon boss is the Rust Captain in zone 3 at level 7. Do not conflate early guardians with major dungeon bosses.
+- Earlier tentative level suggestions (12/20/30/40) are not approved. In particular, level 40 conflicts with the current zone 10 maximum level 30. Rework boss placement/levels only after reviewing the full progression curve and dungeon unlock structure; do not change monster records yet.
+- Next step: construct a read-only combat simulation matrix for representative low/typical/high builds, solo/duo/trio, and each dungeon boss. Measure boss time-to-zero, incoming damage, survival margin, and sensitivity to profession/equipment. Use boss hp as the initial canonical base candidate, then evaluate party scaling independently; do not add a second large zone multiplier because existing boss HP already rises with progression.
+- No gameplay code, combat formulas, monster/dungeon data, RNG, player saves, rewards, attempts, or live handler behavior changed as part of this decision.
+
+
+## 2026-11-18 — read-only boss HP / party-size threshold study
+
+Scope and formula
+- Read-only analysis of `server/src/dungeonCombatMath.ts` and `server/data/forgotten_lands.json` on main. No runtime or data changes.
+- Current dungeon planner calculates outgoing damage per participant as `attack * 7 * 100 / (100 + bossDefense)` multiplied by caller-resolved resistance, weakness and hit modifiers. It computes `rounds` from `dungeonPower`, party size and total party attack/defense; `damageByParticipant` is reporting output. The current `win` predicate is `rounds <= 3` and every participant survives incoming damage. It does not subtract damage from boss HP and does not use `monster.hp` as a depletion pool.
+- For a first-order threshold only, calculate raw attack needed per participant to deplete the boss in exactly 3 rounds, using the boss's catalog HP and defense, neutral outgoing modifiers (all 1.0), and no passive modifiers: `required total attack = bossHP * partyHpScale * (100 + bossDefense) / (3 * 7 * 100)`. This is not a proposed final combat formula and does not model incoming damage, boss phases, healing, or RNG.
+
+Dungeon bosses from the current catalog
+- `fl_dungeon_03`: Rust Captain, level 7, HP 850, defense 30, attack 48, dungeon power 35.
+- `fl_dungeon_06`: Last Harvest Master, level 15, HP 2700, defense 75, attack 120, dungeon power 85.
+- `fl_dungeon_09`: Bone Valley King, level 25, HP 6500, defense 185, attack 290, dungeon power 145.
+- `fl_dungeon_10`: Archon of Oblivion, level 30, HP 14000, defense 300, attack 450, dungeon power 210.
+
+Raw attack thresholds to deal the boss's full HP within 3 rounds (ceil to integer; identical members; neutral modifiers)
+| Boss | Party | No HP scaling: attack/member | Existing expedition +55% per extra member: attack/member | Linear HP scaling by party size: attack/member |
+| --- | ---: | ---: | ---: | ---: |
+| Rust Captain | 1 | 53 | 53 | 53 |
+| Rust Captain | 2 | 27 | 41 | 53 |
+| Rust Captain | 3 | 18 | 37 | 53 |
+| Last Harvest Master | 1 | 225 | 225 | 225 |
+| Last Harvest Master | 2 | 113 | 175 | 225 |
+| Last Harvest Master | 3 | 75 | 158 | 225 |
+| Bone Valley King | 1 | 883 | 883 | 883 |
+| Bone Valley King | 2 | 442 | 684 | 883 |
+| Bone Valley King | 3 | 295 | 618 | 883 |
+| Archon of Oblivion | 1 | 2667 | 2667 | 2667 |
+| Archon of Oblivion | 2 | 1334 | 2067 | 2667 |
+| Archon of Oblivion | 3 | 889 | 1867 | 2667 |
+
+Interpretation / constraints
+- With the current expedition-style +55% HP per extra member, each member needs only 77.5% of solo attack in a duo and 70% in a trio. That is a substantial group efficiency bonus and may make bosses too easy for coordinated groups.
+- With no party HP scaling, the per-member threshold falls to 50% in a duo and 33.3% in a trio; this is likely to trivialize bosses and is not a good default for the stated difficulty target.
+- Linear HP scaling (`bossMaxHp = catalogBossHp * partySize`) keeps the per-member damage threshold equal to solo, which is a useful neutral baseline to test. It is not approved as final tuning: group guard, support/healing, unequal builds, boss targeting and phase mechanics can change the outcome.
+- The three-round threshold is diagnostic only. It exposes a major design question: the legacy dungeon path hard-caps victory at 3 calculated rounds. A real boss HP depletion encounter may need a longer, explicit round loop; carrying over the 3-round cap without design would make the high-tier HP thresholds extremely demanding. Do not change the cap yet.
+- These values are raw attack thresholds, not level-appropriate build conclusions. Player attack depends on allocated stats, profession, weapon/armor, enhancements, set/pendant effects and buffs. No representative low/typical/high gear profiles have been validated against actual catalog equipment yet; therefore no claim is made that the current bosses are solo-feasible at their listed levels.
+- Boss passives matter materially: the second boss regenerates 10% HP every third round; the third boss gains +15% attack/defense and resists physical damage; the final boss resists physical and magic damage and gains +30% attack below 30% HP. Those effects must be modelled explicitly in the next phase rather than folded into arbitrary HP multipliers.
+- The boss attack and defense stats already increase sharply by dungeon progression. Do not stack a second large zone multiplier on top of catalog HP without a measured reason.
+- Next: build actual low/typical/high character profiles from `PlayerSchema`, XP/stat-point progression, `calculatePlayerMonsterCombatStats`, and real equipment records; include profession/build archetypes and each boss passive. Then test solo/duo/trio with both candidate HP scaling approaches and an explicitly chosen round/initiative model. No combat rule or numeric scaling is approved by this analysis.
+- No source code, tests, monster records, dungeon values, player data, saves, RNG, rewards, attempt limits or live handler behavior changed. PR #34 remains a documentation-only extension on its existing branch; PR #33 and main are untouched.
+
+
+## 2026-11-18 — equipment-backed boss difficulty profiles (read-only)
+
+- Revalidated current `main` at `5686d205dab5130e4bea8b90f81109d32c06934a`; `PlayerSchema.ts`, `xpProgression.ts`, `monsterCombatStats.ts`, `professionProfiles.ts`, `dungeonCombatMath.ts`, `index.ts`, `equipmentIntegrity.ts`, `equipment_catalog.json` and `forgotten_lands.json` were inspected.
+- The current equipment catalog contains 387 items. At level 7, the highest-level standard weapon is `WPN-C-007` (attack 7, +2 to the profession's primary stat) and the complete five-piece common armor set has 18 defense. At level 15, the best standard set is level 14: weapon attack 14 (+3 primary stat), armor defense 35, gloves add 1 attack. At levels 25 and 30, the highest currently purchasable/new-catalog professional equipment is level 25: weapon attack 34 (+8 primary stat), gloves add 38 attack and 48 defense, and the five armor pieces total 320 defense. No level-30+ equipment exists in this catalog; older static legacy items can remain in existing inventories but are not current shop stock.
+- Equipment purchase/equip paths enforce the item's level requirement and profession compatibility. The profile calculations use only the exact catalog gear available at each level: full common set at levels 7/15 and the matching profession set at 25/30.
+- Formula inputs: base attributes 10 each, base defense 8, 3 stat points per gained level; no enhancements, active buffs, pendants, rare properties or set mastery. The "balanced" scenario assigns half of available stat points to the profession's main damage attribute and half to vitality; "offensive" assigns all points to the main damage attribute. These are explicit test scenarios, not claims about average player behavior. The tested archetypes are Mage, Assassin, Knight and Archer; Vampire, Buffer and Gatherer are deferred for a separate support/lifesteal/role pass. Set-tier effects are not included. Attack/defense outputs are legacy stat-formula results rounded to one decimal.
+- Attack / defense scenario matrix (balanced / offensive):
+  - Level 7 — Mage 36.2/37.1 vs 44.6/33.1; Assassin 41.4/37.1 vs 47.7/33.1; Knight 41.6/40.8 vs 52.9/36.4; Archer 40.6/37.1 vs 46.8/33.1.
+  - Level 15 — Mage 57.1/59.5 vs 76.8/50.1; Assassin 59.1/59.5 vs 73.9/50.1; Knight 65.8/65.5 vs 92.1/55.1; Archer 58.0/59.5 vs 72.5/50.1.
+  - Level 25 — Mage 139.6/351.3 vs 173.3/335.1; Assassin 134.8/351.0 vs 160.1/334.8; Knight 147.8/387.3 vs 192.8/369.4; Archer 131.0/351.3 vs 155.8/335.1.
+  - Level 30 — Mage 146.2/354.9 vs 187.3/335.1; Assassin 139.7/354.6 vs 170.6/334.8; Knight 156.6/391.2 vs 211.6/369.4; Archer 135.8/354.9 vs 166.1/335.1.
+- Indicative repeated-round boss damage uses the current outgoing formula `attack × 7 × 100/(100 + effectiveBossDefense)`, with catalog weakness/resistance modifiers. It is an extrapolation for a future HP-depletion loop, not a simulation of the current live handler:
+  - Level 7 / Rust Captain (HP 850, DEF 30, Mage weakness +20%): balanced profiles deal about 219–234 damage/round, or 3.6–3.9 rounds to zero; offensive profiles about 252–288, or 3.0–3.4 rounds.
+  - Level 15 / Last Harvest Master (HP 2700, DEF 75, Mage weakness +25%, Archer damage −20%): balanced profiles about 186–286 damage/round, or 9.5–14.5 rounds before its 10% HP regeneration every third round; offensive profiles about 232–384, or 7.0–11.6 rounds before regeneration.
+  - Level 25 / Bone Valley King (HP 6500, DEF +15%, physical damage −25%, Mage weakness +30%): balanced profiles about 220–406 damage/round, or 16.0–29.6 rounds; offensive profiles about 262–504, or 12.9–24.9 rounds.
+  - Level 30 / Archon (HP 14000, DEF 300, physical damage −20%, magic damage −15%, Archer weakness +20%): balanced profiles about 196–228 damage/round, or 61.4–71.6 rounds; offensive profiles about 239–296, or 47.3–58.6 rounds. The +30% attack enrage below 30% HP affects survival, not these outgoing-damage estimates.
+- These figures expose two tuning risks: the final boss currently implies roughly 47–72 repeated damage rounds even with level-25 equipment, and level-30 has no new equipment tier in the current catalog. The level-15 boss also takes many rounds and its regeneration lengthens the encounter. These are design signals, not proof of solo infeasibility: exact survival needs a per-round incoming-damage/healing model and the player's HP progression history.
+- Stat allocation history matters to max HP: `prepareXpProgression()` adds `18 + 0.5 × current vitality` per level-up, so final HP cannot be reconstructed from final level/vitality alone without knowing when vitality was allocated. The balanced/offensive attack matrix therefore does not claim exact HP or survival.
+- Current legacy dungeon handler passes attack/defense plus selected accuracy/evasion/healing/loot/lifesteal values into its combat plan. Catalog `physicalDamage` / `magicDamage` combat modifiers are aggregated by `monsterCombatStats.ts` but are not passed as outgoing damage multipliers by the live dungeon handler. Do not silently include them in a new formula; decide whether they should affect dungeon damage as a separate balance/compatibility decision.
+- Party-size baseline remains: no HP scaling makes a trio approximately 3× faster than solo; the expedition +55% per additional member model makes a trio approximately 30% faster; linear boss HP scaling preserves similar damage rounds for equal-strength solo and trio parties. Linear scaling remains a useful neutral test baseline, not an approved formula. Boss2 regeneration, support/healing, Knight group guard, uneven builds and enrage need full round-by-round modelling.
+- No source, test, monster data, equipment data, player saves, combat formula, RNG, rewards, attempts or live handler behavior changed. No local tests were run. This is a documentation-only audit milestone; rerun CI on the new exact PR head.
+- Next: model incoming damage and HP survival per round for solo/duo/trio, include boss passives and support roles, then compare the resulting encounter duration with the user's target: hard but realistically beatable both solo and in a group. Do not alter the live handler or approve numeric boss tuning until that model is reviewed.
+
+
+## 2026-11-18 — correction and consolidation: city-based equipment progression
+
+**Correction to the preceding equipment-profile note:** the statement that the catalog has no level-30+ equipment was wrong. That scan only considered items up to level 30 and did not inspect the later city tiers. The current catalog does contain complete professional sets above level 30. The earlier level-30 profile must not be treated as a verified city/shop loadout.
+
+### Confirmed city progression (existing project decision; not a new proposal)
+
+- Native race capital: levels 1–29; common gear 1–20 and first professional progression 20/25.
+- Каменный порт: opens at level 30; farm 30–49; equipment range 30/35/40/45.
+- Изумрудная долина: opens at level 50; farm 50–69; equipment range 50/55/60/65.
+- Золотые дюны: opens at level 70; farm 70–89; equipment range 70/75/80/85.
+- Серебряные руины: opens at level 90; farm 90–100; equipment range 90/95/100.
+- Северная корона remains closed, is not an ordinary progression step and must not sell required level-1–100 gear.
+- Professional shop visibility is intended to require the matching city range, player level, race and chosen profession. Server purchase validation must repeat the same checks. Already owned/equipped items remain valid after travel; do not delete them or make them unusable merely because the player changed city.
+- This is recorded in `PVE_2_SPEC.md` sections 20.1–20.8 and is the binding design context for further boss balancing.
+
+### What actually exists in the current data
+
+- `equipment_catalog.json` has 387 entries. Complete six-slot professional sets (weapon, helmet, armor, gloves, boots, cloak) exist for all eight professions at levels **25, 40, 55, 70, 85 and 100**: 48 primary items per tier.
+- Level 100 contains 88 entries because it also contains 40 separate legendary armor pieces (five slots × eight professions). Those legendary pieces are not a second six-slot shop set; their recipe/source and equip-level-100 constraints are documented separately.
+- Inline `ITEMS` in `server/src/index.ts` adds 16 level-20 records (seven profession weapons, seven race-specific variants, one ring and one material) and seven level-35 records (six profession weapons and one ring). Level 20 and level 35 are partial inline offers, not full six-slot professional sets; the level-35 weapons omit Buffer and Bird Assassin.
+- Therefore the complete current set milestones are 25/40/55/70/85/100. This is distinct from the city shop's five-level availability windows. The target city windows do not mean a complete six-slot set already exists at every listed five-level point.
+- The city/range rules are a design target, not proof that the live shop currently enforces them. The existing audit already found that shop listing and purchase logic do not yet fully apply current-city progression gates.
+
+### Proposed equipment structure to avoid a needless full-set treadmill (not yet owner-approved)
+
+1. Keep the existing complete six-slot set milestones at 25/40/55/70/85/100 as the main equipment progression. Preserve every current item ID, stat, price and reference.
+2. Treat the other five-level points as optional, selective slot upgrades (for example a weapon or one defensive slot), not automatically another mandatory six-piece set. Add only the slots that simulation shows are needed to bridge a real power gap.
+3. The level-20 capital stage uses the common level-20 gear plus the profession/race weapon offers already present; do not describe it as a complete professional set.
+4. Complete sets and selective upgrades are sold only in the city range already specified above. A player entering a city should not be forced to replace six pieces immediately; old gear remains usable, and each upgrade should be independently worthwhile.
+5. Do not generate the missing five-level items yet. First produce a single runtime inventory combining JSON and inline ITEMS, resolve profession aliases (including legacy Воин→Рыцарь), and simulate each profession with old-set, mixed-set and new-set loadouts. Check shop-price affordability against actual gold progression before setting new prices.
+
+This proposal preserves the actual catalog structure and the already defined city progression while avoiding an assumption that 17 complete six-slot tiers are required. It is a recommendation for owner review, not an approved change to `PVE_2_SPEC.md` or live data.
+
+### Consequence for boss difficulty work
+
+- Use the intended dungeon progression from `PVE_2_SPEC.md`: levels 20, 30, 40, 50, 60, 70, 80, 90 and 100 across the capital and four progression cities. Do not mistake the four currently populated Forgotten Lands dungeon bosses (levels 7/15/25/30) for the complete future 1–100 boss ladder.
+- For each target dungeon, record the actual city, minimum entry level, best full set legally available at that level, previous full set, and optional intermediate pieces. Balance against realistic mixed loadouts, not a character assumed to own a full new set every five levels.
+- Initial reference loadouts from current full-set milestones: dungeon 20 uses level-20 common gear plus available profession weapon; dungeon 30 enters Каменный порт with the level-25 full set; dungeon 40 can use level-40 set; dungeon 50 enters Изумрудная долина with level-40 set; dungeon 60 can use level-55 set; dungeon 70 can use level-70 set; dungeon 80 uses level-70 plus any justified level-75/80 pieces; dungeon 90 enters Серебряные руины with level-85 set; dungeon 100 can use level-100 set. These are modelling baselines, not claims that every character will own the full set.
+- Keep the user's difficulty target: hard but realistically beatable both solo and in a party. Linear boss HP scaling by party size remains the neutral first comparison, not an approved formula; include boss incoming-damage budget, group guard, healing/support, mechanics and uneven builds before choosing final scaling.
+- Do not add a second large zone multiplier on top of monster HP without measured need. Resolve typed physical/magic combat-stat integration and round/defeat/tie rules before changing the live dungeon handler.
+- The prior level 7/15/25/30 profile matrix remains a preliminary analysis of the current four legacy bosses only. It does not establish the final level-20–100 city progression balance and the level-30 equipment conclusion is superseded by this correction.
+
+No gameplay code, item data, city gates, prices, stats, boss values, saves, rewards or combat formulas changed in this step.
+
+
+### Actual full-set stat and price curve (JSON catalog; six primary pieces summed)
+
+| Set level | Attack sum | Defense sum | Flat HP sum | Catalog price | Shop price ×1.3 |
+|---:|---:|---:|---:|---:|---:|
+| 25 | 72 | 320 | 400 | 30,000 | 39,000 |
+| 40 | 102 | 429 | 550 | 72,000 | 93,600 |
+| 55 | 139 | 560 | 720 | 156,000 | 202,800 |
+| 70 | 185 | 709 | 920 | 312,000 | 405,600 |
+| 85 | 244 | 880 | 1,150 | 624,000 | 811,200 |
+| 100 | 314 | 1,080 | 1,400 | 1,200,000 | 1,560,000 |
+
+- These totals are identical across the eight professions for the generic attack/defense/flat-HP columns; profession differences are carried by attributes and typed `combatStats` (e.g. magic damage, physical damage, healing, lifesteal, loot, critical channels and defensive channels).
+- The full-set cost roughly doubles at each 15-level milestone. This is another reason not to make a complete six-piece purchase compulsory every five levels. Actual affordability still requires comparison with gold earnings and should not be inferred from item prices alone.
+- Set bonuses/mastery, enhancements, pendants and buffs are excluded from these sums. The level-100 legendary five-piece set is also excluded; its acquisition is a separate long-term craft path and all pieces are level-100 equip-gated.

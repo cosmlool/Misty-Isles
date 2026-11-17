@@ -33,6 +33,39 @@ test('durable dungeon run freezes the party roster and captures independent part
   assert.equal(validateDungeonRunStore({ run_001: state }).run_001.requestId, 'dungeon_req_001');
 });
 
+test('dungeon run creation rejects empty, whitespace-only and non-string participant IDs', () => {
+  for (const playerId of ['', '   ', 42, null]) {
+    assert.throws(() => createDungeonRunRecord({
+      runId: 'bad_roster', requestId: 'bad_roster_request', dungeonId: 'dungeon',
+      leaderId: 'p1',
+      participants: [{ playerId, health: 100, maxHealth: 100 }] as unknown as Array<{ playerId: string; health: number; maxHealth: number }>,
+      bossId: 'boss', bossHealth: 10, seed: 'seed', now: 1,
+    }), /unique non-empty string participants/);
+  }
+});
+
+test('dungeon run creation rejects malformed required identifiers and group IDs', () => {
+  const valid = {
+    runId: 'bad_identity', requestId: 'bad_identity_request', dungeonId: 'dungeon',
+    groupId: 'group_1', leaderId: 'p1',
+    participants: [{ playerId: 'p1', health: 100, maxHealth: 100 }],
+    bossId: 'boss', bossHealth: 10, seed: 'seed', now: 1,
+  };
+  const malformed: Array<Partial<typeof valid>> = [
+    { runId: 42 as unknown as string },
+    { requestId: '   ' },
+    { dungeonId: null as unknown as string },
+    { leaderId: '' },
+    { groupId: 42 as unknown as string },
+    { groupId: '   ' },
+    { bossId: false as unknown as string },
+    { seed: ' ' },
+  ];
+  for (const override of malformed) {
+    assert.throws(() => createDungeonRunRecord({ ...valid, ...override }));
+  }
+});
+
 test('a saved round restores its exact HP, boss HP, round index and activity snapshot', () => {
   const afterRound = advanceDungeonRunRound(run(), {
     now: 2000, bossHealth: 320, participantHealth: { p1: 75, p2: 62 },
@@ -197,6 +230,26 @@ test('deterministic round plan preserves aggregate damage exactly and resumes at
   assert.equal(finalRound.participants.p1.health, 90);
   assert.equal(finalRound.participants.p2.health, 85);
   assert.throws(() => resolveNextDungeonRunRound(finalRound, 5000), /No unresolved dungeon round/);
+});
+
+test('startup recovery rejects whitespace-only durable identity fields', () => {
+  const state = run();
+  const malformed: unknown[] = [
+    { ...state, runId: '   ' },
+    { ...state, requestId: '   ' },
+    { ...state, dungeonId: '   ' },
+    { ...state, leaderId: '   ' },
+    { ...state, participantIds: ['p1', '   '] },
+    { ...state, groupId: '   ' },
+    { ...state, encounter: { ...state.encounter, bossId: '   ' } },
+    { ...state, encounter: { ...state.encounter, seed: '   ' } },
+  ];
+  for (const candidate of malformed) {
+    const record = candidate as Record<string, unknown>;
+    const key = typeof record.runId === 'string' ? record.runId : state.runId;
+    assert.throws(() => validateDungeonRunStore({ [key]: candidate }), /invalid run record|invalid boss snapshot/);
+  }
+  assert.throws(() => validateDungeonRunStore({ '   ': { ...state, runId: '   ' } }), /invalid run record/);
 });
 
 test('startup validation rejects round cursor drift, impossible health and malformed encounter snapshots', () => {

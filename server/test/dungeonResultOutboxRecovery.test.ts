@@ -170,7 +170,7 @@ test('a real process crash after transport send leaves the event pending for at-
       playerId: 'p1',
       outbox: readJson(f.files.dungeonOutbox),
       send: (type, payload) => {
-        appendFileSync(sentFile, JSON.stringify({ type, payload }) + '\\n');
+        appendFileSync(sentFile, JSON.stringify({ type, payload }) + '\n');
       },
       acknowledge: (eventId) => {
         const currentOutbox = readJson(f.files.dungeonOutbox);
@@ -182,8 +182,83 @@ test('a real process crash after transport send leaves the event pending for at-
       },
     });
     assert.equal(replayCount, 1);
-    assert.equal(readFileSync(sentFile, 'utf8').trim().split(/\r?\n/).length, 2);
+    const sentLines = readFileSync(sentFile, 'utf8').trimEnd().split(/\r?\n/);
+    assert.equal(sentLines.length, 2);
+    const sentEvents = sentLines.map(line => JSON.parse(line));
+    assert.deepEqual(sentEvents.map(item => item.type), ['combatResult', 'combatResult']);
+    assert.deepEqual(sentEvents.map(item => item.payload.eventId), [event.eventId, event.eventId]);
     assert.equal(readJson(f.files.dungeonOutbox)[event.eventId].status, 'delivered');
+  } finally { f.cleanup(); }
+});
+
+
+test('partial acknowledgement of multiple result events replays only the unacknowledged event', () => {
+  const f = fixture();
+  try {
+    const first = {
+      ...resultEvent(),
+      eventId: 'dungeon:run_1:p1:event_a',
+      payload: { eventId: 'dungeon:run_1:p1:event_a', requestId: 'request_1', text: 'Victory' },
+    };
+    const second = {
+      ...resultEvent(),
+      eventId: 'dungeon:run_1:p1:event_b',
+      messageType: 'combatHistory',
+      payload: { eventId: 'dungeon:run_1:p1:event_b', requestId: 'request_1', text: 'History' },
+    };
+    const initial = f.createStore();
+    initial.transact(() => ({
+      files: {
+        players: { p1: { health: 80 } },
+        dungeonOutbox: enqueueDungeonResultEvents({ outbox: {}, events: [first, second], now: 100 }),
+      },
+      result: null,
+    }));
+
+    const sent: Array<{ type: string; eventId: unknown }> = [];
+    const beforeCrash = f.createStore();
+    assert.throws(() => dispatchPendingDungeonResultEvents({
+      playerId: 'p1',
+      outbox: readJson(f.files.dungeonOutbox),
+      send: (type, payload) => {
+        sent.push({ type, eventId: payload.eventId });
+        if (sent.length === 2) throw new Error('simulated interruption after first acknowledgement');
+      },
+      acknowledge: (eventId) => {
+        const current = readJson(f.files.dungeonOutbox);
+        const next = { ...current, [eventId]: { ...current[eventId], status: 'delivered', deliveredAt: 200 } };
+        beforeCrash.transact(() => ({ files: { dungeonOutbox: next }, result: null }));
+      },
+    }), /simulated interruption after first acknowledgement/);
+
+    const interrupted = readJson(f.files.dungeonOutbox);
+    assert.deepEqual(sent, [
+      { type: 'combatResult', eventId: first.eventId },
+      { type: 'combatHistory', eventId: second.eventId },
+    ]);
+    assert.equal(interrupted[first.eventId].status, 'delivered');
+    assert.equal(interrupted[second.eventId].status, 'pending');
+
+    const restarted = f.createStore();
+    const replayed = dispatchPendingDungeonResultEvents({
+      playerId: 'p1',
+      outbox: readJson(f.files.dungeonOutbox),
+      send: (type, payload) => sent.push({ type, eventId: payload.eventId }),
+      acknowledge: (eventId) => {
+        const current = readJson(f.files.dungeonOutbox);
+        const next = { ...current, [eventId]: { ...current[eventId], status: 'delivered', deliveredAt: 300 } };
+        restarted.transact(() => ({ files: { dungeonOutbox: next }, result: null }));
+      },
+    });
+    assert.equal(replayed, 1);
+    assert.deepEqual(sent, [
+      { type: 'combatResult', eventId: first.eventId },
+      { type: 'combatHistory', eventId: second.eventId },
+      { type: 'combatHistory', eventId: second.eventId },
+    ]);
+    const finalOutbox = readJson(f.files.dungeonOutbox);
+    assert.equal(finalOutbox[first.eventId].status, 'delivered');
+    assert.equal(finalOutbox[second.eventId].status, 'delivered');
   } finally { f.cleanup(); }
 });
 

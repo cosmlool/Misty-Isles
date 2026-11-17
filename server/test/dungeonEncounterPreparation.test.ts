@@ -89,3 +89,21 @@ test('rejects missing participant snapshots and combat arrays with mismatched ro
   badCombat.combat.incoming.pop();
   assert.throws(() => createPreparedDungeonEncounter(badCombat), /header or combat result/);
 });
+
+
+test('rejects a losing prepared encounter that would leave a participant at zero HP', () => {
+  const invalid = fixture();
+  invalid.combat.win = false;
+  invalid.drops = [];
+  invalid.participants.p1.lootIds = [];
+  invalid.participants.p1.hpAfter = 0;
+  invalid.participants.p1.xp = 0;
+  invalid.participants.p1.gold = 0;
+  invalid.participants.p2.lootIds = [];
+  invalid.participants.p2.hpAfter = 1;
+  invalid.participants.p2.xp = 0;
+  invalid.participants.p2.gold = 0;
+  invalid.playerSnapshots.p1.health = 0;
+  invalid.playerSnapshots.p2.health = 1;
+  assert.throws(() => createPreparedDungeonEncounter(invalid), /settlement is invalid/);
+});
