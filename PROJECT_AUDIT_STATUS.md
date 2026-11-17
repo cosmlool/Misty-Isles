@@ -3204,3 +3204,48 @@ Quality Gate 43931230374 failed because the new dungeon test file contained a li
 - The Stage 29 review remains preliminary and does not authorize deleting either protected history branch. Complete the unique-history content audit before revisiting them.
 - The branch deletion blocker remains: no delete-ref operation is available through the GitHub connector, the authenticated desktop Chrome page cannot currently be operated through CUA, and local Git cannot reach github.com.
 - No game code, balance, server/data, saves, characters, or group rosters changed.
+
+
+
+## 2026-11-17 — complete branch audit and retirement decision
+
+- Verified the live GitHub refs through the repository API: 28 branches total, with `main` at `cc8abff79d40cbd907cfe20583b5efdf1e87e6ce`. All 27 non-main heads matched the audited SHAs below; GitHub marks only `main` as protected. No open pull requests were present.
+- The latest main integration baseline is PR #28 head `420b3e342bdcb8b82cdbe88eaf6a0bbfe2779608`; Quality Gate run `44009464753` completed successfully with all four jobs: Data/docs/project structure, Client TypeScript/Vite, Server TypeScript build, and Playwright browser smoke.
+- Audit method: compare reachability and unique commit ranges against main, inspect non-equivalent patches and changed trees, and cross-check current source/tests/docs for behavior carried by the older refs. The audit made no source, gameplay-data, save, character, or roster changes.
+- 22 branch tips are already ancestors of main; deleting these refs removes only redundant names, not commits reachable from main:
+
+| Branch | Audited head SHA | Finding |
+| --- | --- | --- |
+| `checkpoint/dungeon-security-audit` | `ac953c3c364ee9360b07465db20aace3c90fb0f2` | tip is reachable from current main |
+| `checkpoint/group-persistence-audit` | `2b81bafa6b39591f954db8741016647275239eda` | tip is reachable from current main |
+| `checkpoint/main-only-transition` | `7bc4fb0f191a920c023e509a65514695f2386cb1` | tip is reachable from current main |
+| `cleanup/branch-inventory-correction` | `420b3e342bdcb8b82cdbe88eaf6a0bbfe2779608` | tip is reachable from current main |
+| `cleanup/main-hygiene` | `75bd426337d211162fc6061cc420871037cf92b6` | tip is reachable from current main |
+| `cleanup/main-hygiene-docs` | `f1a9e42a5b86a537ca868bb4ac35cd01c35145da` | tip is reachable from current main |
+| `cleanup/main-hygiene-followup` | `efacffde48f96b3c36ea3d43f43b38c64308f4e7` | tip is reachable from current main |
+| `fix/missing-group-member-save` | `48a495cdc86ea84f1403fc826a2b273e4c3d6ac9` | tip is reachable from current main |
+| `stage28/auction-concurrent-purchase` | `228b650e8e92c185973a546a6a0dc364dde43e83` | tip is reachable from current main |
+| `stage28/client-action-guard` | `72a908bcbfe3a17cac843acd5623049ee99530bc` | tip is reachable from current main |
+| `stage28/connection-test` | `e697941813a6a227c11cd635a799c83a66c3d1f7` | tip is reachable from current main |
+| `stage28/crafting-queue-safety-clean` | `e4a36a2a364445db39c384dedd3af68974140f10` | tip is reachable from current main |
+| `stage28/economy-crash-recovery` | `441f72445cb081c5f11807b81cfda3e42f1c4d6c` | tip is reachable from current main |
+| `stage28/economy-flow-tests` | `81f807d7e8ff9dee60223310b0c823152d4107bd` | tip is reachable from current main |
+| `stage28/economy-runtime-diagnostics` | `68a9ed17e2c09f5376937f423355127a91c17f8f` | tip is reachable from current main |
+| `stage28/economy-runtime-integration` | `d0a7c33f9ce7a8d80fa737dd63635990676a8625` | tip is reachable from current main |
+| `stage28/economy-transaction-audit` | `9f46b37636923718d6c3b54caa8b284d58e191a0` | tip is reachable from current main |
+| `stage28/final-integration` | `15fe654a26f7ddfebb58a7b11438cce4c14f76e2` | tip is reachable from current main |
+| `stage28/qa-audit-alignment` | `f7d5e7ae49f933a282ae16e5bd97b4acd95f785a` | tip is reachable from current main |
+| `stage28/save-protection` | `f79a42e44b455b6039cce41aa4a241834b1fb0c4` | tip is reachable from current main |
+| `stage29/clean-validation-recovery` | `81ca1b8893bd2284aa21c9911178550efa47fc9b` | tip is reachable from current main |
+| `staging/local-isolated-launcher` | `5735cde7aa8fbcd4ebd020be80e6518aec802c72` | tip is reachable from current main |
+
+- Three additional branches have unique commit tips but no remaining implementation worth retaining separately:
+  - `chore/github-contribution-templates` — `79ca2982b42c2cccfde5207576489859ebac840b`; its two unique commits add older Markdown templates superseded by the current pull-request and structured issue templates in main.
+  - `infra/github-quality-baseline` — `340c1515739dad2bca33838fcfb0d7c1a1fda773`; its four unique commits are represented by current contribution templates and the four-job Quality Gate on main.
+  - `stage28/crafting-queue-safety` — `da6282357fa6848231da96f0e53035a6ac1e21d6`; its refund helper/base tests are patch-equivalent, while unique duplicate-amulet and script changes are superseded by main's crafting start/claim/cancel validation and tests.
+- Completed deep review of the two highly divergent Stage 29 histories, which are not Git-protected:
+  - `stage29/playwright-eyes-foundation` — `92754808c9438926242bdeae37f609be8b7373bc`; 1,118 branch-only commits (11 patch-equivalent), 144 changed paths against main. Its snapshot removes or rolls back current dungeon, outbox, persistence, auth, and test code; drops the dungeon encounter data and result-deduplication helper; removes fsync from transaction stores; and weakens player-session ownership. It also removes the explicit cosmetic-gender step and isolated data-directory setting from its E2E setup.
+  - `stage29/pvp-rules-implementation` — `2d22a4f6ed1a5c16f3561d8d409e26185c20207b`; 112 branch-only commits (6 patch-equivalent), 183 changed paths. This ref is an ancestor of the Playwright ref. Its PvP snapshot narrows matchmaking to ±2 levels, drops cap-safe gold transfer and offer rotation, weakens PvP tests, and contains an obsolete `hunt` message while missing current `craftCancel`. Its equipment catalog is a stale subset without unique content. Current main contains the approved broader matchmaking pool and corresponding newer systems.
+- Cross-checks on main confirm the rodent combat professions remain Vampire and Gatherer; gender remains cosmetic; unique-amulet ownership checks remain in chest, auction, and crafting paths; group-leader departure and offline-member cleanup retain their current behavior. Historical Stage 29 files contain no tracked player-save, character, account/session, clan, or hunt-group roster data files. No balance change or data migration is needed.
+- The complete audit finds no branch-only gameplay behavior, data, or fix that should replace current main. Per the user's explicit audit-first instruction, the disposition is to delete all 27 non-main remote branch refs after this journal-only PR passes the exact-head Quality Gate and merges. This intentionally retires the two divergent historical refs after review; their active effects are represented in main or superseded by newer behavior.
+- This PR updates documentation only. No branch has been deleted yet; deletion results will be recorded in a post-cleanup checkpoint. Current data/saves, characters, balance, group rosters, and game source remain untouched.
