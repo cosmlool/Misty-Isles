@@ -195,12 +195,16 @@ test('a real process crash after transport send leaves the event pending for at-
 test('partial acknowledgement of multiple result events replays only the unacknowledged event', () => {
   const f = fixture();
   try {
-    const first = resultEvent();
+    const first = {
+      ...resultEvent(),
+      eventId: 'dungeon:run_1:p1:event_a',
+      payload: { eventId: 'dungeon:run_1:p1:event_a', requestId: 'request_1', text: 'Victory' },
+    };
     const second = {
       ...resultEvent(),
-      eventId: 'dungeon:run_1:p1:combatHistory',
+      eventId: 'dungeon:run_1:p1:event_b',
       messageType: 'combatHistory',
-      payload: { eventId: 'dungeon:run_1:p1:combatHistory', requestId: 'request_1', text: 'History' },
+      payload: { eventId: 'dungeon:run_1:p1:event_b', requestId: 'request_1', text: 'History' },
     };
     const initial = f.createStore();
     initial.transact(() => ({
@@ -218,7 +222,7 @@ test('partial acknowledgement of multiple result events replays only the unackno
       outbox: readJson(f.files.dungeonOutbox),
       send: (type, payload) => {
         sent.push({ type, eventId: payload.eventId });
-        if (type === 'combatHistory') throw new Error('simulated interruption after first acknowledgement');
+        if (sent.length === 2) throw new Error('simulated interruption after first acknowledgement');
       },
       acknowledge: (eventId) => {
         const current = readJson(f.files.dungeonOutbox);
@@ -228,6 +232,10 @@ test('partial acknowledgement of multiple result events replays only the unackno
     }), /simulated interruption after first acknowledgement/);
 
     const interrupted = readJson(f.files.dungeonOutbox);
+    assert.deepEqual(sent, [
+      { type: 'combatResult', eventId: first.eventId },
+      { type: 'combatHistory', eventId: second.eventId },
+    ]);
     assert.equal(interrupted[first.eventId].status, 'delivered');
     assert.equal(interrupted[second.eventId].status, 'pending');
 
