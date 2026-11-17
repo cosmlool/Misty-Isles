@@ -1664,3 +1664,13 @@ PR #15 остаётся Draft/open и не объединён. Слияние б
 - Follow-up PR #32 adds this guard and updates the audit record, using the same existing test branch `checkpoint/main-only-cleanup-2026-11-17`; current proposed commit before opening PR: `196bcd3fab945ec68d817c0704a618806ebd1890`. Wait for all required checks on its exact final head.
 - Local folder `C:\Users\bodya\Desktop\project\Misty-Isles` remains on the last confirmed `main` SHA `a3e1ecf4a9c3f12486c0768cfba83580a9284005`. Updating it is blocked by GitHub connection refusal in shell and repeated GitHub Desktop window-capture timeout; no local files or game data were changed. After PR #32 CI/merge, retry fetch/pull and verify a clean checkout at the then-current GitHub main SHA.
 - No saves, character data, group rosters, server gameplay source, or balance were changed in PR #31 or this follow-up.
+
+
+## 2026-11-17 — technical audit checkpoint: duplicate CI and stale scripts
+
+- Local folder `C:\Users\\bodya\\Desktop\\project\\Misty-Isles` was confirmed synchronized after the user clicked Fetch/Pull: clean `main`, local `HEAD` = `origin/main` = GitHub main `5686d205dab5130e4bea8b90f81109d32c06934a`.
+- Remote repository still has two branches only: protected `main` and the existing temporary test/checkpoint branch. No additional branch was created.
+- The audit found two Quality Gate runs per PR head because the workflow listened to pushes on every branch as well as PR events. PR #33 limits push runs to `main` and PR runs to `main`; manual dispatch remains.
+- Removed the obsolete deleted Stage 28 push target from `server-checks.yml` and the unused exact duplicate client command `audit:visual`. Kept all server test/build checks.
+- PR #33 contains these configuration cleanup changes and the audit log update. Wait for every applicable check on the exact PR head before merging; then sync the merged main into the local game folder and verify the new commit.
+- Player saves, characters, group rosters, gameplay behavior, and balance are unchanged.
