@@ -1675,3 +1675,11 @@ PR #15 остаётся Draft/open и не объединён. Слияние б
 - No changes to live combat handler integration, RNG, rewards, attempt consumption, balance, player saves, characters, group rosters, or `server/data`.
 - Source-level review completed; server tests/build and exact-head CI pending. Do not claim runtime validation until run on this exact branch head.
 - PR #33 remains open and untouched; no merge or base change performed.
+
+
+## 2026-11-17 — CI follow-up: deterministic multi-event ordering
+
+- Exact-head CI for initial PR #34 completed: client build, browser smoke, and data/docs checks passed; server recovery suite failed only in the newly added partial-acknowledgement test.
+- Root cause was test fixture ordering: the delivery function sorts equal-timestamp events by event ID, so the `combatHistory` event was first and the simulated interruption occurred before any acknowledgement. This did not establish a runtime Outbox defect.
+- Updated the fixture to use explicit lexical event IDs (`event_a`, `event_b`) and to interrupt on the second send. The assertions now verify the first event was acknowledged, the second remained pending, and restart replays only the latter.
+- Re-run all CI checks on the updated PR head before considering this checkpoint complete.
