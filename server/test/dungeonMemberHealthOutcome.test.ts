@@ -33,3 +33,16 @@ test('loss outcome applies damage only when no healing sources are supplied', ()
     health: 80, incomingDamage: 25, maxHealth: 100,
   }), 55);
 });
+
+
+test('loss outcome never leaves a dungeon participant at zero or negative HP', () => {
+  assert.equal(prepareDungeonMemberHealthOutcome({
+    health: 1, incomingDamage: 1, maxHealth: 100,
+  }), 1);
+  assert.equal(prepareDungeonMemberHealthOutcome({
+    health: 1, incomingDamage: 25, maxHealth: 100,
+  }), 1);
+  assert.equal(prepareDungeonMemberHealthOutcome({
+    health: 10, incomingDamage: 25, maxHealth: 100,
+  }), 1);
+});
