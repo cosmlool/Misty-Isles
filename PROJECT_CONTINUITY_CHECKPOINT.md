@@ -1664,3 +1664,15 @@ PR #15 остаётся Draft/open и не объединён. Слияние б
 - Follow-up PR #32 adds this guard and updates the audit record, using the same existing test branch `checkpoint/main-only-cleanup-2026-11-17`; current proposed commit before opening PR: `196bcd3fab945ec68d817c0704a618806ebd1890`. Wait for all required checks on its exact final head.
 - Local folder `C:\Users\bodya\Desktop\project\Misty-Isles` remains on the last confirmed `main` SHA `a3e1ecf4a9c3f12486c0768cfba83580a9284005`. Updating it is blocked by GitHub connection refusal in shell and repeated GitHub Desktop window-capture timeout; no local files or game data were changed. After PR #32 CI/merge, retry fetch/pull and verify a clean checkout at the then-current GitHub main SHA.
 - No saves, character data, group rosters, server gameplay source, or balance were changed in PR #31 or this follow-up.
+
+
+## 2026-11-18 — Misty-Isles armor progression candidate checkpoint
+
+- Base `main`: `5686d205dab5130e4bea8b90f81109d32c06934a` (unchanged).
+- Documentation branch: `design/gradual-armor-progression-2026-11-18`; PR #35 Draft/open/unmerged. PR #34 and #33 remain untouched and unmerged.
+- Earlier PR #35 head `1f45fcd29a1349166b0bdac37b55ca7f3542c357` passed all 4 PR Quality Gate jobs (run `44201785023`). The candidate schedule and audit/checkpoint additions are newer commits; recheck CI against the final exact PR head before declaring the stage green.
+- `PVE_2_SPEC.md` now records section 21 (agreed gradual per-piece unlock concept and catalog inventory) and section 22 (candidate level distribution). `PROJECT_AUDIT_STATUS.md` records the audit and unresolved checks.
+- Candidate order for each five-piece set: body at base level, helmet +1, cloak +2, gloves +3, boots +4. Common set bases: 1/4/7/10/14/17/19/20. Professional set bases: 25/40/55/70/85, with the level-100 set provisionally distributed 96–100 due to the character cap.
+- This schedule is a simulation candidate, not a final gameplay approval. Preserve the separate weapon slot; eight professions and their typed combatStats; all existing IDs; five-piece set identity; 2/5–5/5 thresholds; mastery requiring all five pieces; city progression; F2P fairness; legacy save compatibility.
+- Important gaps remain: no complete professional armor tiers at 30/35/45/50/60/65/75/80/90/95; only partial inline level-35 weapons exist. Current shop listing does not filter by level/city; purchase checks level/race/profession but not ordinary armor city access. Do not change handlers before shared access rules and boundary tests are designed.
+- Do not modify `main`, merge PR #35, or change `equipment_catalog.json`, inline `ITEMS`, prices, stats, recipes, drops, combat formulas, player saves, or data. The next stage is numerical combat/economy simulation of the proposed schedule and design of missing tiers; keep all changes documentation-only until results and final values are reviewed.
