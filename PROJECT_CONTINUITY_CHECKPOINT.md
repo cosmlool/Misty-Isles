@@ -1894,3 +1894,19 @@ This proposal preserves the actual catalog structure and the already defined cit
 - The prior level 7/15/25/30 profile matrix remains a preliminary analysis of the current four legacy bosses only. It does not establish the final level-20–100 city progression balance and the level-30 equipment conclusion is superseded by this correction.
 
 No gameplay code, item data, city gates, prices, stats, boss values, saves, rewards or combat formulas changed in this step.
+
+
+### Actual full-set stat and price curve (JSON catalog; six primary pieces summed)
+
+| Set level | Attack sum | Defense sum | Flat HP sum | Catalog price | Shop price ×1.3 |
+|---:|---:|---:|---:|---:|---:|
+| 25 | 72 | 320 | 400 | 30,000 | 39,000 |
+| 40 | 102 | 429 | 550 | 72,000 | 93,600 |
+| 55 | 139 | 560 | 720 | 156,000 | 202,800 |
+| 70 | 185 | 709 | 920 | 312,000 | 405,600 |
+| 85 | 244 | 880 | 1,150 | 624,000 | 811,200 |
+| 100 | 314 | 1,080 | 1,400 | 1,200,000 | 1,560,000 |
+
+- These totals are identical across the eight professions for the generic attack/defense/flat-HP columns; profession differences are carried by attributes and typed `combatStats` (e.g. magic damage, physical damage, healing, lifesteal, loot, critical channels and defensive channels).
+- The full-set cost roughly doubles at each 15-level milestone. This is another reason not to make a complete six-piece purchase compulsory every five levels. Actual affordability still requires comparison with gold earnings and should not be inferred from item prices alone.
+- Set bonuses/mastery, enhancements, pendants and buffs are excluded from these sums. The level-100 legendary five-piece set is also excluded; its acquisition is a separate long-term craft path and all pieces are level-100 equip-gated.
