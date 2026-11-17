@@ -3187,7 +3187,7 @@ Quality Gate 43931230374 failed because the new dungeon test file contained a li
 
 ## 2026-11-17 — PR #26 verification and Stage 29 snapshot review
 
-- PR #26 was merged: exact PR head 2082a24f4e820bd42dfd34c168a7ba6d9fa83a1c, merge commit a399b5454062940dcb32b236130a21a0cd9970cc. Quality Gate run 43980449840 completed successfully on the exact PR head: data/docs/structure, client TypeScript/Vite, Playwright browser smoke, and server TypeScript build. The GitHub PR search currently returns no open PRs.
+- PR #26 was merged: exact PR head 2082a24f4e820bd42dfd34c168a7ba6d9fa83a1c, merge commit a399b5454062940dcb32b236130a21a0cd9970cc. Quality Gate run 43980449840 completed successfully on the exact PR head: data/docs/structure, client TypeScript/Vite, Playwright browser smoke, and server TypeScript build. An open-PR search immediately before opening this documentation checkpoint returned no results; PR #27 now carries this journal update.
 - The current branch listing contains 28 refs. The existing cleanup inventory identifies 25 candidate refs for removal after final reference checks; preserve main and both Stage 29 history branches. No branch was deleted in this checkpoint.
 - Local checkout and origin/main are clean at a399b5454062940dcb32b236130a21a0cd9970cc. A fresh local ls-remote could not connect to github.com:443.
 - Preliminary Stage 29 head/tree review only (not a complete commit-by-commit history audit):
