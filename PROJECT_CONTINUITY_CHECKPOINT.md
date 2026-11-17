@@ -1702,3 +1702,11 @@ PR #15 остаётся Draft/open и не объединён. Слияние б
 - Added runtime non-empty-string checks for `runId`, `requestId`, `dungeonId`, `leaderId`, `bossId`, and `seed`; optional `groupId` must be a string when supplied, and whitespace-only group IDs are rejected while the existing empty-string solo representation remains valid.
 - Added regression cases for numeric, null, empty, whitespace-only, and wrong-type identifiers. No persisted data or gameplay behavior is changed.
 - This source/test follow-up supersedes the preceding documentation-only head. CI is pending on the new exact head.
+
+
+## 2026-11-17 — durable store validator consistency
+
+- Continued recovery-path audit found that `createDungeonRunRecord()` already rejected malformed identifiers, but `validateDungeonRunStore()` still accepted whitespace-only run/request/dungeon/leader/participant/group/boss/seed identifiers in persisted snapshots.
+- Aligned startup/store validation with constructor rules: non-empty trimmed required IDs, non-empty trimmed participant IDs, optional group ID remains allowed as the empty solo representation but rejects whitespace-only values, and boss ID/seed must be non-empty after trimming.
+- Added startup-recovery regression coverage for malformed durable identity snapshots. No existing valid IDs or persisted records are rewritten; malformed records fail closed.
+- Exact-head CI is pending.
