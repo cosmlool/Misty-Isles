@@ -3269,3 +3269,11 @@ Quality Gate 43931230374 failed because the new dungeon test file contained a li
 - Test discovery found 78 `server/test/*.test.ts` files, but `server/package.json`'s `npm test` script listed only 75. The omitted tests were `authPasswordPolicy.test.ts`, `dungeonRequestRecovery.test.ts`, and `resurrectionScrolls.test.ts`.
 - Inspected all three omitted tests: they exercise pure in-memory functions, do not start the game server, and do not read or write `server/data`. Added all three to the existing `npm test` command in commit `2a60d35722d9f62f05bfcd6d4cd8324a0d7b7017` on the already-existing temporary branch.
 - The full server suite has not been declared clean yet: CI must run on the final PR head. No gameplay implementation, balance, player saves, characters, or group rosters were changed. The local `server/data` directory was detected but not opened or modified.
+
+
+## 2026-11-17 — deterministic reward runtime assertions
+
+- Initial PR #31 CI on exact HEAD `fa60898fcd75c046f12d76dd71246e86853791b3` exposed one failure in the existing `questRewardsRuntime.test.ts`: the daily reward assertion read the initial balance `9,999,999,990` instead of the expected cap `9,999,999,999`. The same test passed in the preceding main Quality Gate run `44022528122`, so the result is intermittent.
+- Diagnosis: the test helper treated any `notice` message after a send as completion. Login and gameplay notices share that channel, so a late login notice could satisfy the wait before the reward response. The gameplay handler persists the player before sending its response.
+- Updated only the test helper to wait for the action-specific response prefix (`Ежедневная награда:` or `Обмен выполнен:`). This removes the race without changing reward amounts, server gameplay code, or balance.
+- CI on the updated PR head must complete successfully before merge. No player saves, characters, group rosters, or local `server/data` were changed.
