@@ -3413,3 +3413,15 @@ Quality Gate 43931230374 failed because the new dungeon test file contained a li
 - Party-size baseline remains under evaluation: linear boss HP scaling is a neutral candidate to preserve per-member difficulty; no party scaling or the expedition +55% model can make groups substantially faster. No formula is approved.
 - No gameplay/source/data changes; no local tests run. Updated continuity checkpoint in commit `b16c0e5247c49bcece4ff9cfe7e286e1be7d9f4e`. CI must be checked on the resulting exact branch head.
 - Next: build a round-by-round survival matrix for solo/duo/trio, including boss attack/passives, HP history, healing, Knight guard and support roles. Keep `runExpeditionDungeon()` unchanged.
+
+
+## 2026-11-18 — correction: equipment tiers are distributed by city
+
+- Corrected the previous stage's mistaken statement that the equipment catalog has no level-30+ gear. The earlier scan was limited to levels <=30; it failed to inspect the later city tiers.
+- Confirmed design in `PVE_2_SPEC.md`: native capital 1–29 (professional gear 20/25); Каменный порт 30–49 (30/35/40/45); Изумрудная долина 50–69 (50/55/60/65); Золотые дюны 70–89 (70/75/80/85); Серебряные руины 90–100 (90/95/100); Северная корона remains closed and outside ordinary progression.
+- Current JSON catalog has complete six-slot professional sets for all eight professions at 25/40/55/70/85/100 (48 primary items per tier). Level 100 has 40 additional legendary armor pieces. Inline server items add partial level-20 and level-35 offers; level 35 has six profession weapons but omits Buffer and Bird Assassin. No complete professional six-slot set exists at every five-level shop point.
+- Reconfirmed intended store rule: current city/range + player level + race + chosen profession; server purchase validation must enforce it. Already owned/equipped items survive city changes. Current live shop enforcement remains an audited implementation gap.
+- Proposed, not approved: retain full six-slot milestones at 25/40/55/70/85/100 and use selective intermediate slot upgrades only where simulations show a progression gap. This avoids assuming that every five-level point needs a mandatory full set. Preserve all existing IDs/stats/prices; do not generate missing gear until a combined JSON+inline inventory, profession mapping, mixed-loadout simulation and affordability review are complete.
+- Boss balancing must use the intended city dungeon ladder 20/30/40/50/60/70/80/90/100, not confuse it with the four currently populated legacy Forgotten Lands bosses at 7/15/25/30. Full-set reference loadouts and city transitions are recorded in the continuity checkpoint.
+- Prior level-30 gear conclusion is superseded. Previous level 7/15/25/30 boss profile table remains only a preliminary study of current legacy bosses, not a final city-progression balance model.
+- No code/data/gameplay changes; no local tests run. Updated checkpoint commit: `b95f11e949978ab5988dadea3eeef95c8d9dec3d`. Re-run CI on the final documentation HEAD.
