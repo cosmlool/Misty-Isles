@@ -1784,3 +1784,44 @@ PR #15 остаётся Draft/open и не объединён. Слияние б
 - Earlier tentative level suggestions (12/20/30/40) are not approved. In particular, level 40 conflicts with the current zone 10 maximum level 30. Rework boss placement/levels only after reviewing the full progression curve and dungeon unlock structure; do not change monster records yet.
 - Next step: construct a read-only combat simulation matrix for representative low/typical/high builds, solo/duo/trio, and each dungeon boss. Measure boss time-to-zero, incoming damage, survival margin, and sensitivity to profession/equipment. Use boss hp as the initial canonical base candidate, then evaluate party scaling independently; do not add a second large zone multiplier because existing boss HP already rises with progression.
 - No gameplay code, combat formulas, monster/dungeon data, RNG, player saves, rewards, attempts, or live handler behavior changed as part of this decision.
+
+
+## 2026-11-18 — read-only boss HP / party-size threshold study
+
+Scope and formula
+- Read-only analysis of `server/src/dungeonCombatMath.ts` and `server/data/forgotten_lands.json` on main. No runtime or data changes.
+- Current dungeon planner calculates outgoing damage per participant as `attack * 7 * 100 / (100 + bossDefense)` multiplied by caller-resolved resistance, weakness and hit modifiers. It computes `rounds` from `dungeonPower`, party size and total party attack/defense; `damageByParticipant` is reporting output. The current `win` predicate is `rounds <= 3` and every participant survives incoming damage. It does not subtract damage from boss HP and does not use `monster.hp` as a depletion pool.
+- For a first-order threshold only, calculate raw attack needed per participant to deplete the boss in exactly 3 rounds, using the boss's catalog HP and defense, neutral outgoing modifiers (all 1.0), and no passive modifiers: `required total attack = bossHP * partyHpScale * (100 + bossDefense) / (3 * 7 * 100)`. This is not a proposed final combat formula and does not model incoming damage, boss phases, healing, or RNG.
+
+Dungeon bosses from the current catalog
+- `fl_dungeon_03`: Rust Captain, level 7, HP 850, defense 30, attack 48, dungeon power 35.
+- `fl_dungeon_06`: Last Harvest Master, level 15, HP 2700, defense 75, attack 120, dungeon power 85.
+- `fl_dungeon_09`: Bone Valley King, level 25, HP 6500, defense 185, attack 290, dungeon power 145.
+- `fl_dungeon_10`: Archon of Oblivion, level 30, HP 14000, defense 300, attack 450, dungeon power 210.
+
+Raw attack thresholds to deal the boss's full HP within 3 rounds (ceil to integer; identical members; neutral modifiers)
+| Boss | Party | No HP scaling: attack/member | Existing expedition +55% per extra member: attack/member | Linear HP scaling by party size: attack/member |
+| --- | ---: | ---: | ---: | ---: |
+| Rust Captain | 1 | 53 | 53 | 53 |
+| Rust Captain | 2 | 27 | 41 | 53 |
+| Rust Captain | 3 | 18 | 37 | 53 |
+| Last Harvest Master | 1 | 225 | 225 | 225 |
+| Last Harvest Master | 2 | 113 | 175 | 225 |
+| Last Harvest Master | 3 | 75 | 158 | 225 |
+| Bone Valley King | 1 | 883 | 883 | 883 |
+| Bone Valley King | 2 | 442 | 684 | 883 |
+| Bone Valley King | 3 | 295 | 618 | 883 |
+| Archon of Oblivion | 1 | 2667 | 2667 | 2667 |
+| Archon of Oblivion | 2 | 1334 | 2067 | 2667 |
+| Archon of Oblivion | 3 | 889 | 1867 | 2667 |
+
+Interpretation / constraints
+- With the current expedition-style +55% HP per extra member, each member needs only 77.5% of solo attack in a duo and 70% in a trio. That is a substantial group efficiency bonus and may make bosses too easy for coordinated groups.
+- With no party HP scaling, the per-member threshold falls to 50% in a duo and 33.3% in a trio; this is likely to trivialize bosses and is not a good default for the stated difficulty target.
+- Linear HP scaling (`bossMaxHp = catalogBossHp * partySize`) keeps the per-member damage threshold equal to solo, which is a useful neutral baseline to test. It is not approved as final tuning: group guard, support/healing, unequal builds, boss targeting and phase mechanics can change the outcome.
+- The three-round threshold is diagnostic only. It exposes a major design question: the legacy dungeon path hard-caps victory at 3 calculated rounds. A real boss HP depletion encounter may need a longer, explicit round loop; carrying over the 3-round cap without design would make the high-tier HP thresholds extremely demanding. Do not change the cap yet.
+- These values are raw attack thresholds, not level-appropriate build conclusions. Player attack depends on allocated stats, profession, weapon/armor, enhancements, set/pendant effects and buffs. No representative low/typical/high gear profiles have been validated against actual catalog equipment yet; therefore no claim is made that the current bosses are solo-feasible at their listed levels.
+- Boss passives matter materially: the second boss regenerates 10% HP every third round; the third boss gains +15% attack/defense and resists physical damage; the final boss resists physical and magic damage and gains +30% attack below 30% HP. Those effects must be modelled explicitly in the next phase rather than folded into arbitrary HP multipliers.
+- The boss attack and defense stats already increase sharply by dungeon progression. Do not stack a second large zone multiplier on top of catalog HP without a measured reason.
+- Next: build actual low/typical/high character profiles from `PlayerSchema`, XP/stat-point progression, `calculatePlayerMonsterCombatStats`, and real equipment records; include profession/build archetypes and each boss passive. Then test solo/duo/trio with both candidate HP scaling approaches and an explicitly chosen round/initiative model. No combat rule or numeric scaling is approved by this analysis.
+- No source code, tests, monster records, dungeon values, player data, saves, RNG, rewards, attempt limits or live handler behavior changed. PR #34 remains a documentation-only extension on its existing branch; PR #33 and main are untouched.
