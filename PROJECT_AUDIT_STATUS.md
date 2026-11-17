@@ -3300,3 +3300,8 @@ Quality Gate 43931230374 failed because the new dungeon test file contained a li
 - Confirmed `shopCatalogForPlayer` does not filter by player level or current city. `buyItem` enforces item level, race and profession but not the agreed city gate for ordinary professional armor. The required shared server-side access predicate remains future implementation work.
 - Scope is documentation-only. No equipment JSON, inline items, gameplay handlers, set bonuses, recipes, drops, combat formulas, prices, economy, player data, or saves were modified. The candidate schedule is not approved for runtime application until combat/economy simulation and user review.
 - Next: simulate the staggered pieces at level/city boundaries for all eight professions and compare mixed gear, set thresholds and gold affordability; then identify missing intermediate armor tiers without inventing balance values.
+
+
+- Follow-up set/combat contract check: the catalog has 64 complete five-piece sets (8 common, 48 ordinary professional, 8 legendary), not only the 56 non-legendary groups. All 64 pass the current structural five-slot catalog test. The eight common sets have explicit 2/5–5/5 bonuses and must be included in mixed-set simulation.
+- The candidate common-set windows overlap (e.g. Общий-1 at 1–5 and Общий-4 at 4–8). Equipping a new part replaces the old item in that slot, so simulation must evaluate mixed sets and threshold trade-offs rather than assume a full-set swap.
+- `EQUIPMENT_COMBAT_EFFECT_CONTRACT.md` confirms many typed `combatStats` channels are not automatically consumed by legacy hunt/synchronous dungeon paths. Distinguish live legacy base stats from typed effects and do not treat every catalog percentage as active in every mode.
