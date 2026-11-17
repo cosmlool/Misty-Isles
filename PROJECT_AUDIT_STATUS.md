@@ -3314,3 +3314,11 @@ Quality Gate 43931230374 failed because the new dungeon test file contained a li
 - Re-reviewed `dispatchDungeonResultsToClient()`: each acknowledgement loads the current outbox from disk immediately before calling `markDungeonResultEventDelivered()`. Since delivery and the shared-state transaction store are synchronous and explicitly single-process, the suspected stale-outbox acknowledgement race is not reproduced in the production call path. No code change was warranted.
 - This journal update is documentation-only and creates a new PR head; rerun CI on that new head before treating the updated PR checkpoint as fully verified.
 - PR #34 remains Draft/open/unmerged; PR #33 remains open and untouched. Main remains `5686d205dab5130e4bea8b90f81109d32c06934a`.
+
+
+## 2026-11-17 — follow-up validation gap found and corrected
+
+- Audit found a constructor/store-validator mismatch: `createDungeonRunRecord()` did not runtime-check required IDs other than participant IDs. Malformed values could be returned from the constructor and rejected only later by durable-store validation.
+- Added non-empty string validation for all required run identity fields and type/whitespace validation for optional `groupId`; empty `groupId` remains supported for the existing solo-run representation.
+- Added regression coverage for invalid required identifiers and group IDs. This is input validation only; no combat, reward, attempt, RNG, or persisted player data changes.
+- Exact-head CI must complete on the updated branch before this follow-up is considered verified.
