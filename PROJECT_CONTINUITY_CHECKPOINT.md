@@ -1710,3 +1710,16 @@ PR #15 остаётся Draft/open и не объединён. Слияние б
 - Aligned startup/store validation with constructor rules: non-empty trimmed required IDs, non-empty trimmed participant IDs, optional group ID remains allowed as the empty solo representation but rejects whitespace-only values, and boss ID/seed must be non-empty after trimming.
 - Added startup-recovery regression coverage for malformed durable identity snapshots. No existing valid IDs or persisted records are rewritten; malformed records fail closed.
 - Exact-head CI is pending.
+
+
+## 2026-11-17 — prepared encounter and finalization crash-boundary audit
+
+- Exact code/test HEAD reviewed: `f7d3b1192e105eaec401aed7af199936f91f10b4`. All CI jobs passed on this HEAD: Quality Gate PR run `44155966295` (4/4), standalone Server checks `44155966307` (1/1), and push-triggered Quality Gate `44155958213` (4/4).
+- Reviewed `dungeonEncounterPreparation.ts`: prepared encounter snapshots detach and deep-freeze the already-calculated combat result, per-player settlement, player snapshots, and exact loot recipient allocation. Restore revalidates the same payload; it does not roll RNG or recalculate rewards.
+- Reviewed `dungeonEncounterCommitRuntime.ts` and its crash-boundary test: prepared encounter plus run state are committed through shared WAL. Tests interrupt after journal persistence and after each target write; restart replays the immutable prepared encounter while player files remain at their pre-finalization state. Same prepared payload is idempotent; conflicting payload is rejected.
+- Reviewed `dungeonPreparedEncounterFinalizationRuntime.ts`: finalization derives win/loss and participant snapshots only from the committed prepared encounter. It does not rerun combat, drops, recipient selection, or reward calculations.
+- Reviewed `dungeonRunFinalizationRuntime.ts` and its process-crash matrix: player snapshots, terminal run marker, and result Outbox are committed in one WAL transaction. Tests interrupt after journal persistence and after each of the players, dungeonRuns, and dungeonOutbox writes; restart restores a consistent terminal run, player rewards, and pending event.
+- Duplicate finalization is a no-op; conflicting outcomes and stale run snapshots are rejected. Outbox delivery remains at-least-once with client-side eventId deduplication, not exactly-once transport.
+- No new confirmed defect found in the inspected crash/restart boundary. No code changes were needed. This remains a module-level durable lifecycle: it is not wired into the live `runExpeditionDungeon()` handler. Do not enable partial integration without a separate full combat/RNG/reward parity audit.
+- PR #34 remains Draft/open/unmerged; PR #33 remains open and untouched. Protected `main` was not modified. No saves, characters, group rosters, balance, or `server/data` were changed.
+- Next audit: inspect the live dungeon request/response boundary and compare it against the prepared snapshot contract without modifying the live path; identify exactly which handler effects still need to be captured before any durable integration is considered.
