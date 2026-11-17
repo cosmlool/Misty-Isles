@@ -3342,3 +3342,11 @@ Quality Gate 43931230374 failed because the new dungeon test file contained a li
 - No new confirmed defect found; no source change was warranted. Important scope boundary: durable lifecycle modules are still not integrated into live `runExpeditionDungeon()`; integration remains blocked on a separate complete parity audit of handler side effects, RNG order, rewards, quests, reports, and persistence.
 - PR #34 remains Draft/open/unmerged; PR #33 untouched; main unchanged. No player data, saves, group rosters, balance, or `server/data` changed.
 - Next: map the live dungeon handler's side effects against the immutable prepared snapshot contract, read-only first.
+
+
+## 2026-11-17 — dungeon defeat minimum HP regression coverage
+
+- Confirmed live dungeon defeat settlement already clamps post-damage HP with `Math.max(1, ...)`; durable prepared encounter validation independently rejects participant `hpAfter < 1` and mismatched player snapshot health.
+- Added regression tests proving lethal and overkill defeat damage leave exactly 1 HP, and durable prepared defeat snapshots with 0 HP are rejected.
+- No gameplay source change was required. Combat formulas, damage, victory determination, healing, rewards, attempts, RNG and persistence behavior are unchanged.
+- Await exact-head CI. PR #34 remains Draft/open/unmerged; main and PR #33 unchanged.
