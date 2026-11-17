@@ -1683,3 +1683,14 @@ PR #15 остаётся Draft/open и не объединён. Слияние б
 - Root cause was test fixture ordering: the delivery function sorts equal-timestamp events by event ID, so the `combatHistory` event was first and the simulated interruption occurred before any acknowledgement. This did not establish a runtime Outbox defect.
 - Updated the fixture to use explicit lexical event IDs (`event_a`, `event_b`) and to interrupt on the second send. The assertions now verify the first event was acknowledged, the second remained pending, and restart replays only the latter.
 - Re-run all CI checks on the updated PR head before considering this checkpoint complete.
+
+
+## 2026-11-17 — PR #34 exact-head CI passed
+
+- Workflow run `44135559841` completed successfully on code/test HEAD `f75fa42efbbbfa88a6eee3362594b0c783a1f26e`.
+- Server transaction recovery suite: **508 passed, 0 failed**; server TypeScript compilation passed.
+- Client TypeScript/Vite production build passed; asset audit checked 192 entries across 4 groups.
+- Playwright browser smoke tests passed; data/docs/project-structure checks passed.
+- Follow-up source audit reviewed outbox dispatch, acknowledgement, WAL recovery and client deduplication. The production acknowledgement callback reloads the latest outbox for each event; delivery and shared-state writes are synchronous in the documented single-process server model. No stale-snapshot/concurrent-acknowledgement defect was confirmed.
+- A documentation-only follow-up commit records this result. CI must be rechecked on the resulting updated PR head; the above successful run applies to the exact code/test HEAD stated above.
+- PR #34 remains Draft/open and unmerged; PR #33 remains open and was not modified. Main remains `5686d205dab5130e4bea8b90f81109d32c06934a`.
