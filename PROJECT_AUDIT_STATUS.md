@@ -3277,3 +3277,13 @@ Quality Gate 43931230374 failed because the new dungeon test file contained a li
 - Diagnosis: the test helper treated any `notice` message after a send as completion. Login and gameplay notices share that channel, so a late login notice could satisfy the wait before the reward response. The gameplay handler persists the player before sending its response.
 - Updated only the test helper to wait for the action-specific response prefix (`Ежедневная награда:` or `Обмен выполнен:`). This removes the race without changing reward amounts, server gameplay code, or balance.
 - CI on the updated PR head must complete successfully before merge. No player saves, characters, group rosters, or local `server/data` were changed.
+
+
+## 2026-11-17 — PR #31 verified; test discovery guard added
+
+- PR #31 merged as `9586e55098a55a4894ab9901b48743a9a70eebc9` from exact PR head `ba07bc185c5082a47d5415411becdd8b46f63fb7`.
+- On exact PR head, Quality Gate passed 4/4 in run `44025156576`; the additional push-triggered Quality Gate passed 4/4 in run `44025149414`; the standalone `Server checks` run passed in `44025156646`.
+- After merge, current main `9586e55098a55a4894ab9901b48743a9a70eebc9` passed all 4 Quality Gate jobs in run `44025614937` and standalone server checks in run `44025614998`.
+- To prevent a repeat of the discovered omission, `tools/qa-audit.mjs` now compares every `server/test/*.test.ts` with the test paths in `server/package.json`; it reports omitted, stale, or duplicate paths as errors. The rule was checked against the live main manifest and test directory: 78 listed / 78 discovered, with no mismatches.
+- The audit guard is on the existing temporary test branch in commit `196bcd3fab945ec68d817c0704a618806ebd1890`; PR #32 must pass its exact-head Quality Gate before merge. No new branch was created.
+- The local game folder could not yet be advanced: shell Git access returned `Failed to connect to github.com:443`; the GitHub Desktop window capture timed out after one refreshed retry. No local project files, saves, characters, rosters, or `server/data` were changed. Retry local sync only when the connected Git client can fetch; verify the resulting SHA before treating it as installed.
