@@ -3260,3 +3260,20 @@ Quality Gate 43931230374 failed because the new dungeon test file contained a li
 - The local checkout `C:\Users\bodya\Desktop\project\Misty-Isles` was verified clean on `main`; both local `HEAD` and `origin/main` matched `0f9a48e20eb0d07bd33c6178b702f5c03b51b6e0`. The 14 commits previously missing from that checkout touched only these two project journals.
 - A direct attempt to record this checkpoint on main was rejected by repository rules (HTTP 409: changes must go through a pull request; four status checks required). This single temporary checkpoint branch exists only to submit the journal update and will be removed after the PR passes CI and merges. The user's standing instruction remains: main only; create a branch only when repository protections make one necessary.
 - No source code, game data, saves, characters, balance, or group roster changed during cleanup.
+
+
+## 2026-11-17 — technical audit: server-test coverage gap
+
+- Live GitHub API check at the start of this audit: exactly two remote branches exist — protected `main` at `a3e1ecf4a9c3f12486c0768cfba83580a9284005` and the existing temporary checkpoint/test branch. No open PRs existed before this change. Older branch refs shown by the local Git cache are stale; they are not present on GitHub.
+- PR #26's retry passed all four Quality Gate jobs on exact HEAD `2082a24f4e820bd42dfd34c168a7ba6d9fa83a1c` (run `43980449840`, attempt 2); PR #26 is merged. The current main Quality Gate also passed all four jobs on exact commit `a3e1ecf4a9c3f12486c0768cfba83580a9284005` (run `44022528122`).
+- Test discovery found 78 `server/test/*.test.ts` files, but `server/package.json`'s `npm test` script listed only 75. The omitted tests were `authPasswordPolicy.test.ts`, `dungeonRequestRecovery.test.ts`, and `resurrectionScrolls.test.ts`.
+- Inspected all three omitted tests: they exercise pure in-memory functions, do not start the game server, and do not read or write `server/data`. Added all three to the existing `npm test` command in commit `2a60d35722d9f62f05bfcd6d4cd8324a0d7b7017` on the already-existing temporary branch.
+- The full server suite has not been declared clean yet: CI must run on the final PR head. No gameplay implementation, balance, player saves, characters, or group rosters were changed. The local `server/data` directory was detected but not opened or modified.
+
+
+## 2026-11-17 — deterministic reward runtime assertions
+
+- Initial PR #31 CI on exact HEAD `fa60898fcd75c046f12d76dd71246e86853791b3` exposed one failure in the existing `questRewardsRuntime.test.ts`: the daily reward assertion read the initial balance `9,999,999,990` instead of the expected cap `9,999,999,999`. The same test passed in the preceding main Quality Gate run `44022528122`, so the result is intermittent.
+- Diagnosis: the test helper treated any `notice` message after a send as completion. Login and gameplay notices share that channel, so a late login notice could satisfy the wait before the reward response. The gameplay handler persists the player before sending its response.
+- Updated only the test helper to wait for the action-specific response prefix (`Ежедневная награда:` or `Обмен выполнен:`). This removes the race without changing reward amounts, server gameplay code, or balance.
+- CI on the updated PR head must complete successfully before merge. No player saves, characters, group rosters, or local `server/data` were changed.

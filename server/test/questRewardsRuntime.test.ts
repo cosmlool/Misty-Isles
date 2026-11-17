@@ -274,18 +274,18 @@ test('live daily and gem-exchange credits burn currency above the hard balance c
     room = await client.joinOrCreate('my_room', { playerId, sessionToken: await guestToken(port, playerId) });
     const notices: string[] = [];
     room.onMessage('notice', payload => notices.push(String(payload?.text || '')));
-    const sendAndWait = async (type: string, data: Record<string, unknown>, label: string) => {
+    const sendAndWait = async (type: string, data: Record<string, unknown>, expectedPrefix: string, label: string) => {
       const before = notices.length;
       room!.send(type, data);
-      return waitFor(() => notices.length > before ? notices[before] : undefined, label);
+      return waitFor(() => notices.slice(before).find(message => message.startsWith(expectedPrefix)), label);
     };
 
-    await sendAndWait('daily', {}, 'daily reward under gold cap');
+    await sendAndWait('daily', {}, 'Ежедневная награда:', 'daily reward under gold cap');
     let saved = readPlayer(savePath, playerId);
     assert.equal(saved.gold, 9_999_999_999);
     assert.equal(saved.goldEarned, 87, 'lifetime earned counter continues to record gross generated rewards');
 
-    await sendAndWait('exchangeGem', { amount: 1 }, 'gem exchange under crystal cap');
+    await sendAndWait('exchangeGem', { amount: 1 }, 'Обмен выполнен:', 'gem exchange under crystal cap');
     saved = readPlayer(savePath, playerId);
     assert.equal(saved.crystals, 50_000);
     assert.equal(saved.gems, 0, 'the full gem cost is consumed even when excess crystals burn');

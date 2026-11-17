@@ -1638,3 +1638,20 @@ PR #15 остаётся Draft/open и не объединён. Слияние б
 - Локальная папка `C:\Users\bodya\Desktop\project\Misty-Isles` проверена: ветка `main`, рабочее дерево чистое, локальный `HEAD` и `origin/main` равны `0f9a48e20eb0d07bd33c6178b702f5c03b51b6e0`. Отсутствовавшие 14 коммитов изменяли только два журнала.
 - Прямая запись нового checkpoint в main отклонена правилом репозитория (HTTP 409: требуется PR и четыре статус-проверки). Для двух журнальных файлов создана единственная временная ветка `checkpoint/main-only-cleanup-2026-11-17`; она будет удалена после успешного CI и слияния. Постоянная рабочая ветка — только main; создавать другие ветки только когда защита репозитория делает это необходимым.
 - Игровой код, сохранения, персонажи, баланс, server/data и roster групп не менялись.
+
+
+## 2026-11-17 — continuing technical audit: complete server test discovery
+
+- Starting point was the merged main `a3e1ecf4a9c3f12486c0768cfba83580a9284005`; local checkout `C:\\Users\\bodya\\Desktop\\project\\Misty-Isles` was clean on `main` at that SHA. Live GitHub confirmed only two remote branches: protected `main` and the existing temporary checkpoint/test branch. The latter was fast-forwarded to main and reused; no additional branch was created.
+- PR #26's retry is verified successful: all 4 Quality Gate jobs passed on exact HEAD `2082a24f4e820bd42dfd34c168a7ba6d9fa83a1c`, run `43980449840`, attempt 2. PR #26 is merged. Main's latest run `44022528122` also passed all 4 jobs on `a3e1ecf4a9c3f12486c0768cfba83580a9284005`.
+- Audit found 78 server test files and only 75 referenced by `npm test`. Added the three omitted in-memory tests (`authPasswordPolicy`, `dungeonRequestRecovery`, `resurrectionScrolls`) to `server/package.json`; the test-list count is now 78. Audit findings are recorded in `PROJECT_AUDIT_STATUS.md`.
+- The CI result for this change is pending. Do not merge until every required check has completed successfully on the exact PR head. Then sync the merged main into the local game folder and verify clean status and matching commit SHA.
+- `server/data` exists locally but has not been opened, changed, or included in test execution. No saves, characters, group rosters, gameplay code, or balance were changed.
+
+
+## 2026-11-17 — PR #31 CI follow-up: reward test race
+
+- The first CI attempt on `fa60898fcd75c046f12d76dd71246e86853791b3` failed one existing live reward assertion: the saved gold remained at `9,999,999,990` where the test expected the cap `9,999,999,999`. The run had 78 test files configured; the prior main run passed the same scenario.
+- The test waited for any notice, allowing a delayed login notice to be mistaken for the response to the daily-reward request. Changed the test to wait for the specific daily-reward/gem-exchange response. No server implementation, balance, or data was edited.
+- PR #31 now has a newer head; all CI workflows must finish on that exact SHA before merge. Keep the existing test branch; do not create another.
+- After green CI and merge, update the local game checkout from GitHub main and verify its SHA and clean status. Local `server/data` remains untouched.
