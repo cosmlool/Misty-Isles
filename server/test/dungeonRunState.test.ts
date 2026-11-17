@@ -44,6 +44,28 @@ test('dungeon run creation rejects empty, whitespace-only and non-string partici
   }
 });
 
+test('dungeon run creation rejects malformed required identifiers and group IDs', () => {
+  const valid = {
+    runId: 'bad_identity', requestId: 'bad_identity_request', dungeonId: 'dungeon',
+    groupId: 'group_1', leaderId: 'p1',
+    participants: [{ playerId: 'p1', health: 100, maxHealth: 100 }],
+    bossId: 'boss', bossHealth: 10, seed: 'seed', now: 1,
+  };
+  const malformed: Array<Partial<typeof valid>> = [
+    { runId: 42 as unknown as string },
+    { requestId: '   ' },
+    { dungeonId: null as unknown as string },
+    { leaderId: '' },
+    { groupId: 42 as unknown as string },
+    { groupId: '   ' },
+    { bossId: false as unknown as string },
+    { seed: ' ' },
+  ];
+  for (const override of malformed) {
+    assert.throws(() => createDungeonRunRecord({ ...valid, ...override }));
+  }
+});
+
 test('a saved round restores its exact HP, boss HP, round index and activity snapshot', () => {
   const afterRound = advanceDungeonRunRound(run(), {
     now: 2000, bossHealth: 320, participantHealth: { p1: 75, p2: 62 },
