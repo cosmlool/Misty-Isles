@@ -3369,3 +3369,13 @@ Quality Gate 43931230374 failed because the new dungeon test file contained a li
 - `finishDungeonRun()` does not adjudicate combat: it accepts a supplied `win`/`loss` once planned rounds are complete and does not enforce boss HP depletion or participant-side defeat conditions. Therefore durable state currently provides storage/transitions, not the missing outcome rule.
 - No demonstrated mapping exists between legacy `dungeonPower` and durable `bossMaxHealth`; do not equate them. No code change made. Before changing the outcome formula, define boss max HP source, party damage aggregation, participant defeat aggregation, simultaneous/tie behavior, and the role of the existing round cap.
 - PR #34 remains Draft/open/unmerged; PR #33 untouched; main unchanged. No player data, saves, characters, group rosters, balance, or `server/data` changed.
+
+
+## 2026-11-18 — boss HP and player defeat-health rules clarified
+
+- User confirmed the distinction: boss death occurs at 0 boss HP; the player's post-defeat health floor is separately 1 HP. Do not use the player HP floor to decide the winner.
+- User's design direction: boss maximum HP should derive from the boss's own combat characteristics plus dungeon progression/difficulty, increasing in later/harder dungeons. Numeric formula and balance values remain unapproved.
+- Read-only source data: `server/data/forgotten_lands.json` contains monster `hp`, `attack`, `defense`, `speed`, `level`, `rank`, passive and weakness fields; zone order/level ranges; and dungeon `bossId`/`power`. Boss/guardian examples: zone 1 HP 260, zone 3 HP 850, zone 6 HP 2700, zone 9 HP 6500, zone 10 final boss HP 14000. Existing dungeon powers for zones 3/6/9/10 are 35/85/145/210.
+- Legacy dungeon handler uses boss attack/defense/passive/weakness and dungeon power, but its combat planner does not treat boss `hp` as a depletion pool. A separate expedition combat planner does use `monsterHp * (1 + .55 * (partySize - 1))` as group HP, but it is a different encounter path and cannot be transplanted without analysis.
+- Durable dungeon state already stores current/max boss HP and deterministic boss damage per round, reducing boss HP to zero. The source and scaling rule for these durable boss HP values are not yet connected to the static monster/dungeon data.
+- No gameplay/data changes made. Next: audit the full boss roster and any existing monster HP scaling in combat paths; build a read-only comparison/proposal for boss HP derivation, including party-size behavior, without changing numeric balance. Live `runExpeditionDungeon()` remains untouched pending full parity audit.
