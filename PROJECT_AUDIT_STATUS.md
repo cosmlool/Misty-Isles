@@ -3187,7 +3187,7 @@ Quality Gate 43931230374 failed because the new dungeon test file contained a li
 
 ## 2026-11-17 — PR #26 verification and Stage 29 snapshot review
 
-- PR #26 was merged: exact PR head 2082a24f4e820bd42dfd34c168a7ba6d9fa83a1c, merge commit a399b5454062940dcb32b236130a21a0cd9970cc. Quality Gate run 43980449840 completed successfully on the exact PR head: data/docs/structure, client TypeScript/Vite, Playwright browser smoke, and server TypeScript build. An open-PR search immediately before opening this documentation checkpoint returned no results; PR #27 now carries this journal update.
+- PR #26 was merged: exact PR head 2082a24f4e820bd42dfd34c168a7ba6d9fa83a1c, merge commit a399b5454062940dcb32b236130a21a0cd9970cc. Quality Gate run 43980449840 completed successfully on the exact PR head: data/docs/structure, client TypeScript/Vite, Playwright browser smoke, and server TypeScript build. An open-PR search immediately before the checkpoint PR returned no results. PR #27 was later merged after all four Quality Gate jobs passed on exact head 859abaab0d9b5eb32b27acebe7b3ce6bf860fa3b; merge commit 84355d459ab09340829a904b27561aceecde38c8.
 - The current branch listing contains 28 refs. The existing cleanup inventory identifies 25 candidate refs for removal after final reference checks; preserve main and both Stage 29 history branches. No branch was deleted in this checkpoint.
 - Local checkout and origin/main are clean at a399b5454062940dcb32b236130a21a0cd9970cc. A fresh local ls-remote could not connect to github.com:443.
 - Preliminary Stage 29 head/tree review only (not a complete commit-by-commit history audit):
@@ -3195,3 +3195,12 @@ Quality Gate 43931230374 failed because the new dungeon test file contained a li
   - stage29/pvp-rules-implementation is at 2d22a4f6ed1a5c16f3561d8d409e26185c20207b. Relative to origin/main, 112 commits are branch-only and 866 are main-only; the final tree differs in 183 files (+1,235/-32,522). Its PvP implementation restricts opponents to within two levels, contrary to the approved all-registered-character pool, and drops the gold-cap-safe outcome helper and offer-rotation behavior present on main. It also reverts substantial current server modules/tests and older equipment data. Do not merge this snapshot.
 - Both history audits remain open: retained commit histories still need complete content review before the two protected refs can be deleted. The current GitHub connector exposes no delete-ref operation; the signed-in Chrome window cannot currently be operated through the available UI control, the in-app browser is signed out, and local GitHub network access is unavailable. Preserve all refs until a supported delete route is available.
 - No game code, balance, server/data, player saves, characters, or hunt-group roster changed.
+
+
+## 2026-11-17 — PR #27 merged / Stage 29 audit checkpoint
+
+- PR #27 updated only PROJECT_AUDIT_STATUS.md and PROJECT_CONTINUITY_CHECKPOINT.md. All four Quality Gate jobs passed on exact head 859abaab0d9b5eb32b27acebe7b3ce6bf860fa3b in run 44008787419; merge commit 84355d459ab09340829a904b27561aceecde38c8.
+- Main at the start of this follow-up checkpoint was 84355d459ab09340829a904b27561aceecde38c8. GitHub currently lists 28 branches; no remote branch has been deleted.
+- The Stage 29 review remains preliminary and does not authorize deleting either protected history branch. Complete the unique-history content audit before revisiting them.
+- The branch deletion blocker remains: no delete-ref operation is available through the GitHub connector, the authenticated desktop Chrome page cannot currently be operated through CUA, and local Git cannot reach github.com.
+- No game code, balance, server/data, saves, characters, or group rosters changed.
