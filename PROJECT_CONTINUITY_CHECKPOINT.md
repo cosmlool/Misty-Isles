@@ -1849,3 +1849,48 @@ Interpretation / constraints
 - Party-size baseline remains: no HP scaling makes a trio approximately 3× faster than solo; the expedition +55% per additional member model makes a trio approximately 30% faster; linear boss HP scaling preserves similar damage rounds for equal-strength solo and trio parties. Linear scaling remains a useful neutral test baseline, not an approved formula. Boss2 regeneration, support/healing, Knight group guard, uneven builds and enrage need full round-by-round modelling.
 - No source, test, monster data, equipment data, player saves, combat formula, RNG, rewards, attempts or live handler behavior changed. No local tests were run. This is a documentation-only audit milestone; rerun CI on the new exact PR head.
 - Next: model incoming damage and HP survival per round for solo/duo/trio, include boss passives and support roles, then compare the resulting encounter duration with the user's target: hard but realistically beatable both solo and in a group. Do not alter the live handler or approve numeric boss tuning until that model is reviewed.
+
+
+## 2026-11-18 — correction and consolidation: city-based equipment progression
+
+**Correction to the preceding equipment-profile note:** the statement that the catalog has no level-30+ equipment was wrong. That scan only considered items up to level 30 and did not inspect the later city tiers. The current catalog does contain complete professional sets above level 30. The earlier level-30 profile must not be treated as a verified city/shop loadout.
+
+### Confirmed city progression (existing project decision; not a new proposal)
+
+- Native race capital: levels 1–29; common gear 1–20 and first professional progression 20/25.
+- Каменный порт: opens at level 30; farm 30–49; equipment range 30/35/40/45.
+- Изумрудная долина: opens at level 50; farm 50–69; equipment range 50/55/60/65.
+- Золотые дюны: opens at level 70; farm 70–89; equipment range 70/75/80/85.
+- Серебряные руины: opens at level 90; farm 90–100; equipment range 90/95/100.
+- Северная корона remains closed, is not an ordinary progression step and must not sell required level-1–100 gear.
+- Professional shop visibility is intended to require the matching city range, player level, race and chosen profession. Server purchase validation must repeat the same checks. Already owned/equipped items remain valid after travel; do not delete them or make them unusable merely because the player changed city.
+- This is recorded in `PVE_2_SPEC.md` sections 20.1–20.8 and is the binding design context for further boss balancing.
+
+### What actually exists in the current data
+
+- `equipment_catalog.json` has 387 entries. Complete six-slot professional sets (weapon, helmet, armor, gloves, boots, cloak) exist for all eight professions at levels **25, 40, 55, 70, 85 and 100**: 48 primary items per tier.
+- Level 100 contains 88 entries because it also contains 40 separate legendary armor pieces (five slots × eight professions). Those legendary pieces are not a second six-slot shop set; their recipe/source and equip-level-100 constraints are documented separately.
+- Inline `ITEMS` in `server/src/index.ts` adds 16 level-20 records (seven profession weapons, seven race-specific variants, one ring and one material) and seven level-35 records (six profession weapons and one ring). Level 20 and level 35 are partial inline offers, not full six-slot professional sets; the level-35 weapons omit Buffer and Bird Assassin.
+- Therefore the complete current set milestones are 25/40/55/70/85/100. This is distinct from the city shop's five-level availability windows. The target city windows do not mean a complete six-slot set already exists at every listed five-level point.
+- The city/range rules are a design target, not proof that the live shop currently enforces them. The existing audit already found that shop listing and purchase logic do not yet fully apply current-city progression gates.
+
+### Proposed equipment structure to avoid a needless full-set treadmill (not yet owner-approved)
+
+1. Keep the existing complete six-slot set milestones at 25/40/55/70/85/100 as the main equipment progression. Preserve every current item ID, stat, price and reference.
+2. Treat the other five-level points as optional, selective slot upgrades (for example a weapon or one defensive slot), not automatically another mandatory six-piece set. Add only the slots that simulation shows are needed to bridge a real power gap.
+3. The level-20 capital stage uses the common level-20 gear plus the profession/race weapon offers already present; do not describe it as a complete professional set.
+4. Complete sets and selective upgrades are sold only in the city range already specified above. A player entering a city should not be forced to replace six pieces immediately; old gear remains usable, and each upgrade should be independently worthwhile.
+5. Do not generate the missing five-level items yet. First produce a single runtime inventory combining JSON and inline ITEMS, resolve profession aliases (including legacy Воин→Рыцарь), and simulate each profession with old-set, mixed-set and new-set loadouts. Check shop-price affordability against actual gold progression before setting new prices.
+
+This proposal preserves the actual catalog structure and the already defined city progression while avoiding an assumption that 17 complete six-slot tiers are required. It is a recommendation for owner review, not an approved change to `PVE_2_SPEC.md` or live data.
+
+### Consequence for boss difficulty work
+
+- Use the intended dungeon progression from `PVE_2_SPEC.md`: levels 20, 30, 40, 50, 60, 70, 80, 90 and 100 across the capital and four progression cities. Do not mistake the four currently populated Forgotten Lands dungeon bosses (levels 7/15/25/30) for the complete future 1–100 boss ladder.
+- For each target dungeon, record the actual city, minimum entry level, best full set legally available at that level, previous full set, and optional intermediate pieces. Balance against realistic mixed loadouts, not a character assumed to own a full new set every five levels.
+- Initial reference loadouts from current full-set milestones: dungeon 20 uses level-20 common gear plus available profession weapon; dungeon 30 enters Каменный порт with the level-25 full set; dungeon 40 can use level-40 set; dungeon 50 enters Изумрудная долина with level-40 set; dungeon 60 can use level-55 set; dungeon 70 can use level-70 set; dungeon 80 uses level-70 plus any justified level-75/80 pieces; dungeon 90 enters Серебряные руины with level-85 set; dungeon 100 can use level-100 set. These are modelling baselines, not claims that every character will own the full set.
+- Keep the user's difficulty target: hard but realistically beatable both solo and in a party. Linear boss HP scaling by party size remains the neutral first comparison, not an approved formula; include boss incoming-damage budget, group guard, healing/support, mechanics and uneven builds before choosing final scaling.
+- Do not add a second large zone multiplier on top of monster HP without measured need. Resolve typed physical/magic combat-stat integration and round/defeat/tie rules before changing the live dungeon handler.
+- The prior level 7/15/25/30 profile matrix remains a preliminary analysis of the current four legacy bosses only. It does not establish the final level-20–100 city progression balance and the level-30 equipment conclusion is superseded by this correction.
+
+No gameplay code, item data, city gates, prices, stats, boss values, saves, rewards or combat formulas changed in this step.
