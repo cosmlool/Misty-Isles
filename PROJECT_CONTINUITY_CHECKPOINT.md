@@ -1679,3 +1679,5 @@ PR #15 остаётся Draft/open и не объединён. Слияние б
 
 
 - Additional combat/set constraint: catalog validation confirms 64 five-piece sets (8 common, 48 ordinary profession, 8 legendary). Common sets have active authored 2/5–5/5 descriptions; their staggered windows overlap, so mixed-set slot replacement and threshold trade-offs must be modelled. Legacy hunt/dungeon do not automatically consume every typed `combatStats` channel; use `EQUIPMENT_COMBAT_EFFECT_CONTRACT.md` as the mode boundary.
+
+- Formula study added in `PVE_2_SPEC.md` 22.9: five-piece armor-only contribution to the current base attack/defense formula was calculated across all eight professions and six existing tiers. Tier 100 is ~22–23% above tier 85; candidate 96–100 remains a high-priority balance check. The calculation excludes base character stats, weapon, enhancements, buffs, set bonuses and typed channels.
