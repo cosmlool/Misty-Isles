@@ -3359,3 +3359,13 @@ Quality Gate 43931230374 failed because the new dungeon test file contained a li
 - The current HP settlement helper clamps health to at least 1 after loss, but this does not correct or define the combat outcome itself.
 - No source changes made: the intended damage comparison, boss HP/depletion representation and tie handling must be established before changing gameplay logic. Existing tests characterize the current behavior only.
 - Main remains unchanged; PR #34 remains Draft/open/unmerged.
+
+
+## 2026-11-18 — F2P product direction and dungeon outcome model audit
+
+- Recorded user-approved F2P direction: premium accounts, timer acceleration, cosmetics, and inventory expansion. This does not authorize concrete monetization implementation, prices, timer changes, inventory-cap changes, or pay-to-win effects. Future proposals must preserve fairness and separately review any impact on combat, drop odds, rewards, progression, economy, access, and timers.
+- Compared the live aggregate dungeon planner with durable run-state transitions. Legacy live combat derives rounds from `dungeonPower`, computes participant damage for reports, and decides `win` using the existing round/survival predicate. It does not compare party damage to a boss HP pool.
+- Durable state separately tracks boss current/max HP and deterministic per-round boss damage. The planned round resolver can reduce boss HP to zero, while participant HP is clamped to at least 1; spectator/death transitions are explicit separate operations.
+- `finishDungeonRun()` does not adjudicate combat: it accepts a supplied `win`/`loss` once planned rounds are complete and does not enforce boss HP depletion or participant-side defeat conditions. Therefore durable state currently provides storage/transitions, not the missing outcome rule.
+- No demonstrated mapping exists between legacy `dungeonPower` and durable `bossMaxHealth`; do not equate them. No code change made. Before changing the outcome formula, define boss max HP source, party damage aggregation, participant defeat aggregation, simultaneous/tie behavior, and the role of the existing round cap.
+- PR #34 remains Draft/open/unmerged; PR #33 untouched; main unchanged. No player data, saves, characters, group rosters, balance, or `server/data` changed.
