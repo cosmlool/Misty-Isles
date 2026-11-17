@@ -1694,3 +1694,11 @@ PR #15 остаётся Draft/open и не объединён. Слияние б
 - Follow-up source audit reviewed outbox dispatch, acknowledgement, WAL recovery and client deduplication. The production acknowledgement callback reloads the latest outbox for each event; delivery and shared-state writes are synchronous in the documented single-process server model. No stale-snapshot/concurrent-acknowledgement defect was confirmed.
 - A documentation-only follow-up commit records this result. CI must be rechecked on the resulting updated PR head; the above successful run applies to the exact code/test HEAD stated above.
 - PR #34 remains Draft/open and unmerged; PR #33 remains open and was not modified. Main remains `5686d205dab5130e4bea8b90f81109d32c06934a`.
+
+
+## 2026-11-17 — constructor identifier validation follow-up
+
+- Further audit found that `createDungeonRunRecord()` checked participant IDs but trusted the TypeScript types of the remaining identifiers. A malformed runtime value could therefore produce a record rejected by `validateDungeonRunStore()`.
+- Added runtime non-empty-string checks for `runId`, `requestId`, `dungeonId`, `leaderId`, `bossId`, and `seed`; optional `groupId` must be a string when supplied, and whitespace-only group IDs are rejected while the existing empty-string solo representation remains valid.
+- Added regression cases for numeric, null, empty, whitespace-only, and wrong-type identifiers. No persisted data or gameplay behavior is changed.
+- This source/test follow-up supersedes the preceding documentation-only head. CI is pending on the new exact head.
