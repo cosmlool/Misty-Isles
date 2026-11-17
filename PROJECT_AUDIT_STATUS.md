@@ -3287,3 +3287,12 @@ Quality Gate 43931230374 failed because the new dungeon test file contained a li
 - To prevent a repeat of the discovered omission, `tools/qa-audit.mjs` now compares every `server/test/*.test.ts` with the test paths in `server/package.json`; it reports omitted, stale, or duplicate paths as errors. The rule was checked against the live main manifest and test directory: 78 listed / 78 discovered, with no mismatches.
 - The audit guard is on the existing temporary test branch in commit `196bcd3fab945ec68d817c0704a618806ebd1890`; PR #32 must pass its exact-head Quality Gate before merge. No new branch was created.
 - The local game folder could not yet be advanced: shell Git access returned `Failed to connect to github.com:443`; the GitHub Desktop window capture timed out after one refreshed retry. No local project files, saves, characters, rosters, or `server/data` were changed. Retry local sync only when the connected Git client can fetch; verify the resulting SHA before treating it as installed.
+
+
+## 2026-11-17 — technical audit: CI duplication and stale configuration
+
+- After the user synchronized the local game checkout, both local `HEAD` and `origin/main` matched GitHub main `5686d205dab5130e4bea8b90f81109d32c06934a`; the worktree was clean. The reviewed diff from the prior checkpoint contained only journals, `server/package.json`, one test, and `tools/qa-audit.mjs`; no `server/data` paths.
+- Confirmed duplicate Quality Gate runs for branch PR heads: PR #31 and PR #32 each received both a branch-push run and a pull-request run. Scoped `.github/workflows/quality.yml` pushes to `main` and pull requests targeting `main`; manual `workflow_dispatch` remains available.
+- `.github/workflows/server-checks.yml` still named the deleted push branch `stage28/final-integration`. Removed only that stale push target; server checks on `main` and PRs to `main` remain enabled.
+- `client/package.json` defined `audit:visual` as an exact duplicate of `audit:assets`. Repository search found no consumers of `audit:visual` outside that declaration and no separate visual audit script. Removed the unused alias; `audit:assets` and `verify:project` remain.
+- Changes are in the existing temporary branch; PR #33 must pass the applicable Quality Gate and server checks on its exact head before merge. No gameplay, balance, saves, characters, group rosters, or `server/data` were changed.
