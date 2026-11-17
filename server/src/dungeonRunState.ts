@@ -157,9 +157,10 @@ export function createDungeonRunRecord(input: {
 }): DungeonRunRecord {
   const participantIds = input.participants.map(p => p.playerId);
   if (participantIds.length < 1 || participantIds.length > 3 ||
+    participantIds.some(id => typeof id !== 'string' || !id.trim()) ||
     new Set(participantIds).size !== participantIds.length ||
     !participantIds.includes(input.leaderId)) {
-    throw new Error('A dungeon run requires 1–3 unique participants including its leader.');
+    throw new Error('A dungeon run requires 1–3 unique non-empty string participants including its leader.');
   }
   if (!input.runId || !input.requestId || !input.dungeonId || !input.bossId || !input.seed ||
     !Number.isFinite(input.now) || !Number.isFinite(input.bossHealth) || input.bossHealth <= 0) {
