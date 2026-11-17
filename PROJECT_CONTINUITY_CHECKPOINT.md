@@ -1586,3 +1586,15 @@ PR #15 остаётся Draft/open и не объединён. Слияние б
 - GitHub branch listing returned 26 branches including main. No branch deletion action is exposed by the connected GitHub tools, so no remote refs were removed.
 - Temporary branch for this documentation checkpoint: `cleanup/main-hygiene-followup`; it is a short-lived PR branch and should itself be deleted after merge if GitHub permissions/UI allow.
 - No gameplay, balance, player saves, group roster, or server/data files were changed.
+
+
+## 2026-11-17 — PR #25 merged / исправленная branch inventory
+
+- PR #25 объединён в `main`; все 4 проверки CI успешны на точном head `efacffde48f96b3c36ea3d43f43b38c64308f4e7`. Merge checkpoint: `ad86fe9f21694313f6da1a82145aa7e4b65ef2fd`.
+- В remote branch list подтверждено 27 веток: `main` + 21 строго позади (ahead_by=0) + 5 с уникальной/расходящейся историей. Предыдущая цифра 17 была неполной.
+- 21 ветка позади: `checkpoint/dungeon-security-audit`, `checkpoint/group-persistence-audit`, `checkpoint/main-only-transition`, `cleanup/main-hygiene`, `cleanup/main-hygiene-docs`, `cleanup/main-hygiene-followup`, `fix/missing-group-member-save`, `stage28/auction-concurrent-purchase`, `stage28/client-action-guard`, `stage28/connection-test`, `stage28/crafting-queue-safety-clean`, `stage28/economy-crash-recovery`, `stage28/economy-flow-tests`, `stage28/economy-runtime-diagnostics`, `stage28/economy-runtime-integration`, `stage28/economy-transaction-audit`, `stage28/final-integration`, `stage28/qa-audit-alignment`, `stage28/save-protection`, `stage29/clean-validation-recovery`, `staging/local-isolated-launcher`.
+- На момент проверки открытых PR нет. Повторить проверку перед удалением веток.
+- Старые шаблоны `chore/github-contribution-templates`, инфраструктурные шаблоны/workflow `infra/github-quality-baseline` и код очереди `stage28/crafting-queue-safety` функционально/семантически покрыты текущим `main`; подробные сравнения зафиксированы в `PROJECT_AUDIT_STATUS.md`.
+- `stage29/playwright-eyes-foundation` и `stage29/pvp-rules-implementation` сохраняем до отдельной ревизии всей уникальной истории и игровых данных.
+- Ни одна ветка не удалена: доступный connector не предоставляет delete-ref action. Не использовать force-update вместо удаления.
+- PR #26 — документационная контрольная точка с исправлением branch inventory. Никаких изменений игрового кода, баланса, `server/data`, сохранений или roster.
