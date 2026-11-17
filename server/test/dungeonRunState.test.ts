@@ -232,6 +232,26 @@ test('deterministic round plan preserves aggregate damage exactly and resumes at
   assert.throws(() => resolveNextDungeonRunRound(finalRound, 5000), /No unresolved dungeon round/);
 });
 
+test('startup recovery rejects whitespace-only durable identity fields', () => {
+  const state = run();
+  const malformed: unknown[] = [
+    { ...state, runId: '   ' },
+    { ...state, requestId: '   ' },
+    { ...state, dungeonId: '   ' },
+    { ...state, leaderId: '   ' },
+    { ...state, participantIds: ['p1', '   '] },
+    { ...state, groupId: '   ' },
+    { ...state, encounter: { ...state.encounter, bossId: '   ' } },
+    { ...state, encounter: { ...state.encounter, seed: '   ' } },
+  ];
+  for (const candidate of malformed) {
+    const record = candidate as Record<string, unknown>;
+    const key = typeof record.runId === 'string' ? record.runId : state.runId;
+    assert.throws(() => validateDungeonRunStore({ [key]: candidate }), /invalid run record|invalid boss snapshot/);
+  }
+  assert.throws(() => validateDungeonRunStore({ '   ': { ...state, runId: '   ' } }), /invalid run record/);
+});
+
 test('startup validation rejects round cursor drift, impossible health and malformed encounter snapshots', () => {
   const state = run();
   const plan = createDungeonRoundPlan({
