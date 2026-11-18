@@ -1927,3 +1927,19 @@ PR #15 остаётся Draft/open и не объединён. Слияние б
 - Runtime/client/tests/data/rewards/items/saves не менялись.
 - Следующий implementation slice: atomic death transaction + round resolver 0HP/spectator + отсутствие живых участников => поражение, с unit/WAL tests; затем подключение production dungeon handlers, revive UI, затем legacy expedition lifecycle.
 
+
+
+## Контрольная точка — 2026-11-18: durable dungeon 0 HP implementation slice
+
+- Implemented in dungeonRunState: lethal round damage => health 0/status spectator; frozen roster preserved; participant-specific outgoing damage schedules ensure a dead member stops contributing to future rounds; revived status remains eligible for future rounds.
+- Round plans now store bossDamageByParticipantByRound plus incoming schedules and validate both schedules for every participant.
+- Manual advance snapshots accept 0 HP and mark spectator; spectator cannot be healed through round snapshot.
+- Last participant death terminalizes the run as loss immediately, including before remaining planned rounds; duplicate death is idempotent.
+- commitDungeonRunRound writes run/spectator and player HP through the existing shared WAL. WAL crash matrix now includes recovery of player HP=0 and spectator state.
+- Tests updated in dungeonRunState.test.ts and dungeonRunRoundRuntime.test.ts for lethal hit, future damage exclusion, all-dead loss and crash recovery.
+- Important boundary: this is still durable dungeon foundation, not production-wired. Legacy synchronous dungeon and ordinary expedition handlers still use min 1 HP; no manual respawn handler, regen guard, live revive action/UI, or reconnect/group production integration yet.
+- Round-plan schema changed to per-participant outgoing schedule; repository contains no persisted dungeon_runs.json requiring migration.
+- No enemy data, rewards, penalties, respawn HP/location, scroll pricing, player records or main branch changed.
+- CI run 44295523268 was still in progress at checkpoint creation; verify latest workflow before claiming success.
+- Next: production dungeon handler wiring + atomic ally revive, then legacy expedition lifecycle and manual respawn/regeneration guard.
+
