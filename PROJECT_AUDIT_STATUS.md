@@ -3442,3 +3442,14 @@ Quality Gate 43931230374 failed because the new dungeon test file contained a li
 - Exact TTK/win rates and late boss values remain blocked: no real monsters/encounter fixtures/dungeons exist above level 30; later-city income and affordability are not established. The eight zones/four dungeons in §22.20 remain design proposals, not runtime data.
 - Documentation only. No runtime, JSON, catalog, item IDs/prices, rewards, saves or player data changed. PR #35 remains open; main unchanged.
 - Next: create grounded player fixtures and city economy budgets, then design and test actual 30–49 encounters against the existing legacy combat plans before assigning later boss stats.
+
+
+## 2026-11-18 — baseline player fixtures and late-game economy boundary
+
+- Added §22.22 to `PVE_2_SPEC.md` in PR #35 (spec commit 8b5209d1ea51a97621ce59620065334bb70b37dd). Recorded the no-purchase baseline across every level 30–100: base attributes remain 10/10/10/10/10 and defense 8; max HP = 100 + 23×(level−1); statPoints = 3×(level−1), but upgradeStat does not consume them.
+- Baseline legacy attack: Assassin / Bird Assassin 22.68, Archer 22.26, Vampire 21.00, Battle Mage 17.05, Buffer / Gatherer 18.00, Knight 18.00; baseline defense 13.70, Knight 15.07. These are unarmed reference fixtures only, not realistic progression builds.
+- upgradeStat purchases only strength/dexterity/intelligence/vitality/defense. First purchase costs 170 gold for each attribute and 138 for defense; vitality purchases add 8 max HP and affect future level-up HP gains.
+- Current professional catalog tiers remain 25/40/55/70/85/100; all five armor pieces of a tier currently share the same level requirement. Armor set prices are 19,500 / 46,800 / 101,400 / 202,800 / 405,600 / 780,000; the weapon costs the same as the full armor set. Zero-price legendary pieces are not ordinary shop purchases.
+- Documented the required per-level fixture fields and minimum equipment states, including actual paid upgrades and affordability proof. Late-game session budgets and net gold/hour remain unverified because level 31–100 encounter/reward data do not exist. No hypothetical gold budgets or free gear were used.
+- Documentation only; no runtime, catalog, JSON, item IDs/prices, rewards, saves or player data changed. PR #35 remains open; main unchanged.
+- Next: model verified daily/dungeon income and costs, then create the first 30–39 encounter fixtures and validate them against production legacy combat math.
