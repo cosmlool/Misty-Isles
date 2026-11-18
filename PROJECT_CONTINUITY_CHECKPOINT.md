@@ -1695,3 +1695,15 @@ PR #15 остаётся Draft/open и не объединён. Слияние б
 - Tier-100 pieces individually improve over tier-85 counterparts by slot-specific amounts documented in section 22.11. This does not validate level 96 access: the items still have tier-100 stats and manual stat allocation differs across characters. Keep 96–100 provisional.
 - No game code, catalog, item levels, prices, stats, combat formula, economy values, saves, characters, or player data changed. Only three documentation files are in PR #35.
 - Next safe step: audit missing intermediate gear tiers 30/35/45/50/60/65/75/80/90/95 against current catalog, inline items, crafting, drops and city gates; produce a boundary matrix and identify missing economy inputs. Continue documentation-only; do not modify main or merge any PR.
+
+
+## 2026-11-18 — missing armor-tier inventory checkpoint
+
+- Added PVE_2_SPEC.md section 22.12 and updated PROJECT_AUDIT_STATUS.md with the current missing professional armor tier map.
+- Confirmed JSON catalog levels are 1/4/7/10/14/17/19/20/25/40/55/70/85/100. Ordinary professional five-piece armor tiers are 25/40/55/70/85/100; legendary five-piece sets are separate craft content.
+- Full professional armor gaps by city: Stone Harbor 30/35/45; Emerald Valley 50/60/65; Golden Dunes 75/80; Silver Ruins 90/95. These are missing full professional sets, not proof that no individual equipment exists at those levels.
+- Inline evidence: six level-35 weapon records (Warrior legacy label, Battle Mage, Archer, Assassin, Vampire, Gatherer) and a level-35 amulet; standalone level-45 weapon/armor; level-50 amulet/material; level-60 amulet; two standalone level-65 armor items. No exact-level inline/JSON items found at 75/80/90/95. Other nearby items exist at 32/36/38/42/46/55/68/72/78.
+- Filling all ten missing tiers with full five-piece sets for eight professions would mean up to 400 new armor records. This is a content-scope estimate only; do not fill every level by default. Decide cadence and whether each gap needs a complete set, one item, or nothing.
+- Price-zero inline entries are not automatically shop inventory; ordinary shop listing excludes price <=0. Do not merge legendary crafting gear or reward items into city progression without explicit design.
+- No catalog, inline item, ID, price, stat, recipe, drop, shop handler, city gate, save, or gameplay code was changed. Documentation only.
+- Next: create a city-by-city content cadence proposal without inventing stats/prices; then audit all proposed candidate sources against crafting, drops, auction, legacy IDs and save compatibility. Keep current unlock orders and tier-100 schedule provisional.
