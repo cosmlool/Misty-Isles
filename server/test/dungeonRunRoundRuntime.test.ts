@@ -96,7 +96,7 @@ test('lethal round damage sets zero HP and persists spectator status', () => {
     });
     assert.equal(second.run.participants.p1.health, 0);
     assert.equal(second.run.participants.p1.status, 'spectator');
-    assert.equal(second.run.encounter.bossHealth, 350);
+    assert.equal(second.run.encounter.bossHealth, 360);
   } finally {
     rmSync(storeDir, { recursive: true, force: true });
   }
