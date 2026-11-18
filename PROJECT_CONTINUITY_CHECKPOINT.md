@@ -1730,3 +1730,15 @@ PR #15 остаётся Draft/open и не объединён. Слияние б
 - Proposed target contract: native capital 1–29; Stone Harbor 30–49; Emerald Valley 50–69; Golden Dunes 70–89; Silver Ruins 90–100; level-gated travel to neutral city entry levels 30/50/70/90; city-specific shop stock plus player-level/race/profession filters; authoritative purchase revalidation; owned gear remains usable regardless of current city. This is a proposal, not implemented or approved.
 - No code, catalog, inline data, IDs, prices, stats, recipes, drops, auctions, migrations, saves or player data changed. Documentation only.
 - Next: audit how legacy inline items and other equipment are actually granted (crafting, rewards, auctions, quest paths), resolve Northern Crown status, and then prepare a minimal shared city-access predicate design. Do not implement until the product contract is settled.
+
+
+## 2026-11-18 — intermediate gear acquisition audit checkpoint
+
+- Added PVE_2_SPEC.md section 22.15 and updated PROJECT_AUDIT_STATUS.md. The section clarifies that inline legacy item records are not automatically available to new players.
+- The 149 inline ITEM entries include 101 weapon/armor/amulet records (44/26/31); all inline weapon/armor/amulet records are marked legacy=true and ordinary buyItem rejects them.
+- Confirmed current craftable equipment outputs: tempered_sword (12), rune_armor (22), crystal_amulet (30), reinforced_staff (18), guardian_armor (32), rune_blade (45), freeblade (12), dawn_charm (8). Crafting checks skill/material/specialty and selected faction reputation; it does not check city.
+- factionBuy checks faction reputation, item level and currency, not city. faction_reward grants dawn_regalia/caravan_cleaver/lore_circlet at level 40 once at 100 faction reputation. These are separate faction channels, not full professional armor sets.
+- forgotten_lands.json has 125 drops, all materials/trophies, no ready-made equipment.
+- Important correction to section 22.12: inline level 30/35/45/50/60/65 items are not ordinary shop stock. Only count them as progression when a real craft/faction/quest/reward/drop grant path is confirmed. The craftable level-30 amulet and level-45 weapon are isolated exceptions, not armor sets.
+- No runtime/data changes: no items, IDs, prices, stats, recipes, faction offers, drops, travel/shop handlers, auctions, migrations, saves or player data changed.
+- Next: finish searching explicit quest/achievement/event/admin reward grants for inline legacy gear; resolve Northern Crown travel status; then define item-city mapping and implementation tests. Keep all work docs-only until those contracts are approved.
