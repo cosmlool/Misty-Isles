@@ -204,7 +204,7 @@ export function createDungeonRunRecord(input: {
   };
 }
 
-/** Split aggregate combat damage into deterministic integer round slices without changing its total. */
+/** Split each participant's outgoing and incoming damage into deterministic integer round slices. */
 export function createDungeonRoundPlan(input: {
   totalRounds: number;
   totalBossDamageByParticipant: Record<string, number>;
@@ -345,11 +345,11 @@ export function markDungeonParticipantDead(
   playerId: string,
   now: number,
 ): DungeonRunRecord {
-  if (current.status !== 'active') throw new Error('Cannot change participants in a terminal dungeon run.');
   const participant = current.participants[playerId];
   if (!participant) throw new Error(`Unknown dungeon participant: ${playerId}.`);
-  if (!Number.isFinite(now)) throw new Error('Invalid participant activity timestamp.');
   if (participant.status === 'spectator') return current;
+  if (current.status !== 'active') throw new Error('Cannot change participants in a terminal dungeon run.');
+  if (!Number.isFinite(now)) throw new Error('Invalid participant activity timestamp.');
   const next: DungeonRunRecord = {
     ...current,
     updatedAt: now,
