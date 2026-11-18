@@ -3485,3 +3485,6 @@ Quality Gate 43931230374 failed because the new dungeon test file contained a li
 - Blocking discrepancy: expedition loss and dungeon member health outcome clamp lethal damage to 1 HP via Math.max(1, health - incomingDamage). A unit test explicitly preserves 1 HP after lethal incoming damage. This conflicts with the §22.23 rule that a player dies at 0 HP. Death/revival/persistence lifecycle must be audited before changing the clamp.
 - Next: audit death, respawn, revival, and persistence flows; then build real legacy player fixtures for every level 30–39, all eight professions, and solo/duo/trio mixed groups. Do not assign enemy stats until this is complete.
 - No runtime, JSON, equipment, reward, ID, save, or player-data changes. PR #35 remains open; main unchanged.
+
+
+- Дополнительная проверка: durable dungeon spectator/revival/WAL modules and tests exist, but no calls to `commitDungeonRunRound`, `markDungeonParticipantDead`, or `prepareDungeonRevival` were found in the reviewed production `index.ts`. Treat this as dormant scaffolding, not a live resurrection flow. The resurrection-scroll purchase path is wired; the revival transaction is not confirmed wired.
