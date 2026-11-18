@@ -1752,3 +1752,14 @@ PR #15 остаётся Draft/open и не объединён. Слияние б
 - Current active craft adds new legendary recipes from the JSON catalog only; separate from ordinary city progression.
 - PVE_2_SPEC.md section 22.15 has been corrected. No game code, data, item, recipe, faction offer, price, stat, drop, save or player record changed.
 - Next: complete search of quest/achievement/event/admin grant paths for explicit equipment IDs; decide Northern Crown travel semantics; then draft the final city/item-source mapping. Keep docs-only until design approval.
+
+
+## 2026-11-18 — final correction: active gear acquisition sources
+
+- Traced openChest in addition to RECIPES/faction handlers. Its 7% rare-result branch can grant amulet_power (level 5), amulet_guard (level 8), or tempered_sword (level 12), selected from available unique items; it can also select mystery_chest. These are early legacy items and do not close later city armor gaps.
+- Correct active RECIPES status: the server removes all recipes whose output item is legacy=true. The eight old gear-output recipes are therefore inactive. Only JSON-catalog legendary recipes remain in the active craft catalogue. Earlier notes calling old gear recipes craftable are superseded.
+- factionBuy remains active for two gear offers: freeblade (level 12) and dawn_charm (level 8), subject to faction reputation, player level and currency. No city check.
+- Other inspected inline gear at levels 30/35/45/50/60/65 has no active ordinary shop, post-filter craft, faction offer, chest or Forgotten Lands drop source.
+- FACTION_MAX_REWARDS IDs dawn_regalia/caravan_cleaver/lore_circlet are not present in inline ITEMS or equipment_catalog.json; faction_reward inserts the ID string without checking the Item. Treat as a separate integrity issue, not a usable gear grant.
+- PVE_2_SPEC.md section 22.15 and PROJECT_AUDIT_STATUS.md now reflect the corrected source audit. No runtime/data edits.
+- Next: exact-head CI and documentation consistency review; then prepare the city gear source matrix and resolve Northern Crown travel status. No merge, no main edits.
