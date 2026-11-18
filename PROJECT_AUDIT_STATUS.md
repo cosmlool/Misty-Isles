@@ -3464,3 +3464,13 @@ Quality Gate 43931230374 failed because the new dungeon test file contained a li
 - Preserved user rule: boss dies at 0 HP; player dies at 0 HP. Effects that leave a player at 1 HP must not alter that rule.
 - Current legacy combat caps remain 8 expedition rounds and 3 dungeon rounds. Long multi-phase bosses may require a separately designed combat-runtime project with parity/regression tests; do not compensate by blindly inflating HP/attack.
 - No numeric enemy stats, rewards, drop rates or win-rate targets were invented. Documentation only; no runtime/data/catalog/saves changed. PR #35 remains open; main unchanged.
+
+
+## 2026-11-18 — дизайн высокой сложности Соляного берега 30–39
+
+- Добавлен PVE_2_SPEC.md §22.24 в PR #35 (commit 5ce366d7ee323c0e05eb7517b35f3e087fe5cd54).
+- Сформирована матрица восьми обычных боевых ролей, редкого, элитного противника и локального босса Соляного берега. Названия и механические роли являются проектом, не игровыми данными.
+- Сложность предлагается повышать через различные профили атаки/защиты/сопротивления, слабости, уклонение и взаимодействие противников с союзниками. Не складывать все усиления в одного врага и не использовать голое увеличение HP как единственный способ усложнения.
+- Ограничения legacy runtime явно отражены: production expedition/dungeon используют агрегатные формулы; эффекты по раундам/HP thresholds, яд, лечение по раундам и фазы не считаются доступными без отдельного подключения/проверки. Typed combatStats не включаются автоматически.
+- Перед назначением абсолютных параметров нужны детерминированные fixtures на каждом уровне 30–39, все 8 профессий, соло/дуо/трио, реальные оплаченные билды, win/loss, rounds, incoming/outgoing damage, HP margin и экономические затраты.
+- Не менялись runtime, JSON, монстры, боссы, dungeon, предметы, ID, цены, награды, формулы, saves или player data. PR #35 открыт; main не менялся.
