@@ -3422,3 +3422,10 @@ Quality Gate 43931230374 failed because the new dungeon test file contained a li
 - The purported daily-login formula 75+12×level gold / 100+15×level XP was not found in `server/src/index.ts`; exclude it from future models until a real handler/source is confirmed.
 - No runtime, catalog, item prices/levels/IDs, XP/combat formulas, rewards, zones, dungeons, recipes, drops, city/shop/travel handlers, saves or player data changed. Documentation only.
 - Next: produce a per-city content matrix with zone/monster/boss/dungeon levels, encounter rewards, materials/recipes, gear milestones, and solo/group economy simulations before any runtime changes.
+
+## 2026-11-18 — late-game city/PvE content matrix
+
+- Added `PVE_2_SPEC.md` §22.20: eight provisional zones across levels 30–100, encounter composition, four proposed city dungeons, relative XP/gold reward ranges and validation requirements.
+- Proposed zones: Stone Harbor 30–39 and 40–49; Emerald Valley 50–59 and 60–69; Golden Dunes 70–79 and 80–89; Silver Ruins 90–94 and 95–100. Proposed dungeons enter at 40/60/80/95 and end with bosses 49/69/89/100. Names are working labels only.
+- Draft reward ratios are relative to next-level XP and next gear-piece price; they are simulation inputs, not approved rewards. No new JSON/runtime content was created.
+- Next validation: combat/economy matrix at levels 30/40/50/60/70/80/90/100, all eight professions, solo and parties of 2/3, then tune exact XP/gold and item affordability.
