@@ -1683,3 +1683,15 @@ PR #15 остаётся Draft/open и не объединён. Слияние б
 - Formula study added in `PVE_2_SPEC.md` 22.9: five-piece armor-only contribution to the current base attack/defense formula was calculated across all eight professions and six existing tiers. Tier 100 is ~22–23% above tier 85; candidate 96–100 remains a high-priority balance check. The calculation excludes base character stats, weapon, enhancements, buffs, set bonuses and typed channels.
 
 - Economy constraint: the existing PvE economy audit only models early-game progression through level 30 (dungeon entry levels 5/12/21/25). Five-piece armor costs after ×1.3 are 19.5k/46.8k/101.4k/202.8k/405.6k/780k for tiers 25/40/55/70/85/100. Candidate body-first order spends 40/20/10/15/15%; price-smoothed alternate is 10/15/15/20/40%. Compare; do not choose or change prices yet. There is no verified income/dungeon economy for levels 40–100.
+
+
+## 2026-11-18 — armor order and mixed-set analysis checkpoint
+
+- Protected main remains 5686d205dab5130e4bea8b90f81109d32c06934a. PR #35 is Draft/open/unmerged on design/gradual-armor-progression-2026-11-18. PR #34 and #33 remain untouched/open/unmerged.
+- PR #35 exact prior HEAD d91e4575def5cc3b183dc853e3ec5d4d95cf9b3b passed all four Quality Gate jobs in run 44203783378. The documentation branch has since advanced with a new docs-only commit; rerun/recheck CI on the new exact HEAD before declaring the updated PR green.
+- Added PVE_2_SPEC.md section 22.11 with a formula-based comparison of per-slot armor contributions at tiers 25 and 100, price shares, body-first vs price-smoothed opening order, «Общий-1» / «Общий-4» overlap at levels 4–8, and tier-100 slot-by-slot deltas versus tier 85.
+- Findings: body-first opens the strongest defensive slot but costs 40% up front and 60% by the 2/5 threshold. Price-smoothed order reaches 2/5 after 25% of total price but delays the strongest defense. Neither order is approved.
+- Mixed common-set replacements can preserve thresholds on two sets simultaneously; the exact counts depend on whether old and new pieces are purchased/equipped. Do not assume full-set swaps or mandatory purchases.
+- Tier-100 pieces individually improve over tier-85 counterparts by slot-specific amounts documented in section 22.11. This does not validate level 96 access: the items still have tier-100 stats and manual stat allocation differs across characters. Keep 96–100 provisional.
+- No game code, catalog, item levels, prices, stats, combat formula, economy values, saves, characters, or player data changed. Only three documentation files are in PR #35.
+- Next safe step: audit missing intermediate gear tiers 30/35/45/50/60/65/75/80/90/95 against current catalog, inline items, crafting, drops and city gates; produce a boundary matrix and identify missing economy inputs. Continue documentation-only; do not modify main or merge any PR.
