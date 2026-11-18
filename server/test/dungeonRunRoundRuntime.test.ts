@@ -24,7 +24,7 @@ function createRun() {
     ...base,
     roundPlan: createDungeonRoundPlan({
       totalRounds: 2,
-      totalBossDamage: 200,
+      totalBossDamageByParticipant: { p1: 120, p2: 80 },
       totalIncomingDamageByParticipant: { p1: 40, p2: 20 },
     }),
   };
@@ -65,7 +65,7 @@ test('one dungeon round is committed atomically and stale retry cannot apply dam
   }
 });
 
-test('round slices preserve the legacy minimum-one-HP loss outcome instead of creating a spectator', () => {
+test('lethal round damage sets zero HP and persists spectator status', () => {
   const base = createRun();
   const lowHealthRun = {
     ...base,
@@ -75,7 +75,7 @@ test('round slices preserve the legacy minimum-one-HP loss outcome instead of cr
     },
     roundPlan: createDungeonRoundPlan({
       totalRounds: 2,
-      totalBossDamage: 200,
+      totalBossDamageByParticipant: { p1: 120, p2: 80 },
       totalIncomingDamageByParticipant: { p1: 20, p2: 0 },
     }),
   };
@@ -87,14 +87,16 @@ test('round slices preserve the legacy minimum-one-HP loss outcome instead of cr
       runtime, runId: lowHealthRun.runId, expectedRoundIndex: 0,
       runs: { [lowHealthRun.runId]: lowHealthRun }, players: playerSnapshots(lowHealthRun), now: 200,
     });
-    assert.equal(first.run.participants.p1.health, 1);
-    assert.equal(first.run.participants.p1.status, 'alive');
+    assert.equal(first.run.participants.p1.health, 0);
+    assert.equal(first.run.participants.p1.status, 'spectator');
+    assert.equal(first.players.p1.health, 0);
     const second = commitDungeonRunRound({
       runtime, runId: lowHealthRun.runId, expectedRoundIndex: 1,
       runs: { [lowHealthRun.runId]: first.run }, players: first.players, now: 300,
     });
-    assert.equal(second.run.participants.p1.health, 1);
-    assert.equal(second.run.participants.p1.status, 'alive');
+    assert.equal(second.run.participants.p1.health, 0);
+    assert.equal(second.run.participants.p1.status, 'spectator');
+    assert.equal(second.run.encounter.bossHealth, 350);
   } finally {
     rmSync(storeDir, { recursive: true, force: true });
   }
@@ -125,7 +127,7 @@ test('a round journal recovers the whole committed round after process interrupt
         bossId: 'boss_20', bossHealth: 500, seed: 'seed_round_wal', now: 100,
       });
       const run = { ...base, roundPlan: createDungeonRoundPlan({
-        totalRounds: 2, totalBossDamage: 200, totalIncomingDamageByParticipant: { p1: 40, p2: 20 },
+        totalRounds: 2, totalBossDamageByParticipant: { p1: 120, p2: 80 }, totalIncomingDamageByParticipant: { p1: 40, p2: 20 },
       }) };
       const playerSnapshots = Object.fromEntries(run.participantIds.map(id => [id, { id, health: run.participants[id].health, maxHealth: run.participants[id].maxHealth }]));
       const store = createSharedStateTransactionStore({
@@ -210,7 +212,7 @@ test('round commit recovers after every shared-WAL write boundary', () => {
           bossId: 'boss_20', bossHealth: 500, seed: 'seed_round_matrix', now: 100,
         });
         const run = { ...base, roundPlan: createDungeonRoundPlan({
-          totalRounds: 2, totalBossDamage: 200, totalIncomingDamageByParticipant: { p1: 40, p2: 20 },
+          totalRounds: 2, totalBossDamageByParticipant: { p1: 120, p2: 80 }, totalIncomingDamageByParticipant: { p1: 40, p2: 20 },
         }) };
         const players = Object.fromEntries(run.participantIds.map(id => [id, {
           id, health: run.participants[id].health, maxHealth: run.participants[id].maxHealth,
