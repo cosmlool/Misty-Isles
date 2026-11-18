@@ -1873,3 +1873,14 @@ PR #15 остаётся Draft/open и не объединён. Слияние б
 - Сохранены пределы: expedition 8 раундов, dungeon 3; typed combatStats не активируются автоматически в этих режимах. Числа HP/attack/defense/speed, награды, частоты и win-rate не назначались.
 - Следующий шаг: подтвердить фактическую передачу legacy modifiers в production handlers, затем создать детерминированные fixtures 30–39 для всех восьми профессий и party size 1/2/3. Только после этого назначать параметры противников.
 - Runtime, monster JSON, equipment catalog, предметы/ID, экономика, награды, saves и player data не менялись. PR #35 открыт; main не менялся.
+
+
+## Контрольная точка — 2026-11-18: production legacy PvE wiring и HP outcome audit
+
+- В PR #35 добавлен §22.25 в PVE_2_SPEC.md. Зафиксировано фактическое подключение static legacy monster modifiers в expedition/dungeon: resistance, profession resistance, evasion/hit, profession incoming modifiers, monster attack/defense multipliers, ally fields, profession weakness; отдельно — player accuracy/evasion/healing/lifesteal recovery channels.
+- Уточнено, что fire weakness не даёт бонуса в legacy aggregate weakness path; monster `allies` не равен party size; Knight guard равен 8% для группы при наличии Knight.
+- Подтверждены лимиты: expedition 8 раундов, dungeon 3. Dynamic HP/round effects, poison, monster periodic healing, speed/crit phases не входят в aggregate plans. Отдельный `resolveMonsterBattle` не вызывается этими production handlers.
+- Существующие тесты покрывают helper/math characterization, включая соло/дуо/трио и typed engine synthetic matrix из 72 сценариев. Это не реальная legacy balance matrix 30–39.
+- Найдено блокирующее несоответствие правилу смерти: expedition loss и `prepareDungeonMemberHealthOutcome` используют `Math.max(1, health - incomingDamage)`; unit test закрепляет 1 HP при lethal damage. По §22.23 игрок должен погибать при 0 HP. Исправление отложено до аудита death/revival/persistence lifecycle, чтобы не повредить восстановление и сохранения.
+- Следующий этап: аудит полного death/respawn/revival/persistence lifecycle; затем legacy player fixture matrix 30–39 по всем 8 профессиям и solo/duo/trio. Числа врагов пока не назначать.
+- Runtime, monster data, equipment catalog, prices, rewards, IDs, saves и player records не менялись. PR #35 открыт; main не менялся.
