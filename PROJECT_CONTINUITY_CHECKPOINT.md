@@ -1900,3 +1900,17 @@ PR #15 остаётся Draft/open и не объединён. Слияние б
 - Runtime/client/tests/data/items/scroll pricing/saves/player records не менялись. PR #35 открыт; main не менялся.
 - Следующий шаг: определить поведение персонажа после 0 HP (автоматическое возвращение по таймеру или отдельный respawn в безопасной точке/городе), затем реализовать атомарный death/revive lifecycle и регрессионную матрицу.
 
+
+
+## Контрольная точка — 2026-11-18: ручное возрождение и поход группы
+
+- Пользователь выбрал ручное возрождение: смерть остаётся на 0 HP; таймерное/автоматическое возвращение не используется.
+- При смерти в группе поход продолжается с живыми участниками. Погибший остаётся в составе активного похода как spectator, сохраняет связь с run и может наблюдать; он не участвует в боевых расчётах и не получает обычное лечение.
+- Если союзник воскрешает погибшего, он возвращается в тот же run; расход свитка и revive state должны быть атомарными/идемпотентными. Если поход завершился без воскрешения, игрок вручную выбирает respawn.
+- Соло-смерть завершает попытку; ручной respawn отдельно.
+- Все HP regeneration/offline regeneration/login/autosave должны уважать dead state. Нулевое HP должно отображаться как 0, не fallback 100.
+- Открыты детали: respawn location, HP after respawn, scroll self-use/ally-use scope, rewards for dead member, disconnected spectator after group ends, early spectator leave. Штрафы смерти не назначались.
+- Добавлен §22.27 в PVE_2_SPEC.md. Runtime/client/tests/data/rewards/items/saves/player records не менялись. PR #35 открыт; main unchanged.
+- CI run 44292989558: all four jobs succeeded.
+- Следующий этап: проектирование state transitions и production integration existing durable spectator/revival/WAL foundation; не создавать второй независимый run system.
+
