@@ -1887,3 +1887,16 @@ PR #15 остаётся Draft/open и не объединён. Слияние б
 
 
 - Уточнение: dungeon spectator/revival/WAL modules и tests существуют, включая HP=0 spectator, но в проверенном production `index.ts` не обнаружено вызовов `commitDungeonRunRound`, `markDungeonParticipantDead`, `prepareDungeonRevival`. Свиток можно купить, но его revive transaction не подключён в проверенном handler. Считать это scaffolding, не действующей системой воскрешения.
+
+
+## Контрольная точка — 2026-11-18: аудит lifecycle смерти и подтверждение 0 HP
+
+- Пользователь подтвердил корректное правило: lethal damage в обычной экспедиции и legacy-подземелье должен давать 0 HP, не 1 HP.
+- В PR #35 добавлен §22.26 в PVE_2_SPEC.md: подтверждены оба legacy health floor, тесты, отсутствие live death/respawn/revive handler, пассивная регенерация с 0 HP, dormant spectator/revival/WAL scaffolding и отсутствие клиентского revive UI.
+- Важное последствие: текущая applyHealthRegeneration восстанавливает минимум 5% эффективного max HP за пятиминутный тик и вызывается на login, в комнате и autosave. Без dead-state она автоматически поднимет игрока с 0 HP. Нужен явный respawn contract, нельзя оставлять это скрытым эффектом регенерации.
+- PlayerSchema не имеет отдельного dead-state; player save принимает 0 HP. Проверенный PvP roster projection использует Number(player.health || 100), поэтому 0 ошибочно отображается как 100 — отдельная точка для исправления.
+- Durable dungeon run умеет alive/spectator/revived, spectator=0 HP и scroll revival через paired WAL, но production index.ts не вызывает round commit/death/revival transitions. Покупка scroll есть, применение не подключено. Client показывает только recovery card, revive UI/command не найден.
+- Не назначались штрафы смерти, стоимость respawn, точка появления или автоматическое воскрешение. Это открытое продуктовое решение.
+- Runtime/client/tests/data/items/scroll pricing/saves/player records не менялись. PR #35 открыт; main не менялся.
+- Следующий шаг: определить поведение персонажа после 0 HP (автоматическое возвращение по таймеру или отдельный respawn в безопасной точке/городе), затем реализовать атомарный death/revive lifecycle и регрессионную матрицу.
+
