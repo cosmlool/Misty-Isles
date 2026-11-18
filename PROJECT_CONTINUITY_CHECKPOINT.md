@@ -1884,3 +1884,6 @@ PR #15 остаётся Draft/open и не объединён. Слияние б
 - Найдено блокирующее несоответствие правилу смерти: expedition loss и `prepareDungeonMemberHealthOutcome` используют `Math.max(1, health - incomingDamage)`; unit test закрепляет 1 HP при lethal damage. По §22.23 игрок должен погибать при 0 HP. Исправление отложено до аудита death/revival/persistence lifecycle, чтобы не повредить восстановление и сохранения.
 - Следующий этап: аудит полного death/respawn/revival/persistence lifecycle; затем legacy player fixture matrix 30–39 по всем 8 профессиям и solo/duo/trio. Числа врагов пока не назначать.
 - Runtime, monster data, equipment catalog, prices, rewards, IDs, saves и player records не менялись. PR #35 открыт; main не менялся.
+
+
+- Уточнение: dungeon spectator/revival/WAL modules и tests существуют, включая HP=0 spectator, но в проверенном production `index.ts` не обнаружено вызовов `commitDungeonRunRound`, `markDungeonParticipantDead`, `prepareDungeonRevival`. Свиток можно купить, но его revive transaction не подключён в проверенном handler. Считать это scaffolding, не действующей системой воскрешения.
