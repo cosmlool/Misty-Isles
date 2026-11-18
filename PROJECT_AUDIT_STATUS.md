@@ -3453,3 +3453,14 @@ Quality Gate 43931230374 failed because the new dungeon test file contained a li
 - Documented the required per-level fixture fields and minimum equipment states, including actual paid upgrades and affordability proof. Late-game session budgets and net gold/hour remain unverified because level 31–100 encounter/reward data do not exist. No hypothetical gold budgets or free gear were used.
 - Documentation only; no runtime, catalog, JSON, item IDs/prices, rewards, saves or player data changed. PR #35 remains open; main unchanged.
 - Next: model verified daily/dungeon income and costs, then create the first 30–39 encounter fixtures and validate them against production legacy combat math.
+
+
+## 2026-11-18 — hard PvE and boss difficulty contract
+
+- Added §22.23 to `PVE_2_SPEC.md` in PR #35 (spec commit 2e339e5de727aac076a55716c96498721b01e785). Misty-Isles is explicitly a difficult MMORPG: level alone must not guarantee victory; preparation, gear, paid stat progression, mechanics, party composition and resource costs must matter.
+- Defined threat ladder from dangerous normal enemies through rares, elites, local bosses and city/dungeon bosses. Bosses must remain serious encounters for solo, duo and trio; groups gain role synergy but no automatic win.
+- Solo boss victory must be difficult but achievable for a prepared same-range character. No mandatory profession, hidden instant-kill RNG, or boss design based on unsupported typed effects. Every mechanic needs readable counterplay and runtime support.
+- Acceptance metrics include win/loss, rounds, damage, incoming damage per participant, remaining HP, minimum survival margin, party composition, costs and repeated runs. Validate solo/2/3, all eight professions and every level 30–100.
+- Preserved user rule: boss dies at 0 HP; player dies at 0 HP. Effects that leave a player at 1 HP must not alter that rule.
+- Current legacy combat caps remain 8 expedition rounds and 3 dungeon rounds. Long multi-phase bosses may require a separately designed combat-runtime project with parity/regression tests; do not compensate by blindly inflating HP/attack.
+- No numeric enemy stats, rewards, drop rates or win-rate targets were invented. Documentation only; no runtime/data/catalog/saves changed. PR #35 remains open; main unchanged.
