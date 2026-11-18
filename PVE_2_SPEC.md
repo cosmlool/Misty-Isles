@@ -2781,3 +2781,30 @@ Weakness parser распознаёт профессию и тип fire, но leg
 #### Граница этапа
 
 Это архитектурный план на основе повторного чтения существующих модулей. Runtime/client/tests/data/rewards/items/saves не менялись. Следующий implementation slice — death transaction + round resolver + no-living-participants terminal rule с unit/WAL tests; затем production wiring для dungeon и отдельная адаптация legacy expedition.
+
+
+### §22.29 — первый implementation slice: 0 HP и spectator в durable dungeon rounds
+
+#### Реализовано в текущей ветке
+
+- Dungeon round participant damage now resolves to exactly 0 HP on lethal damage and changes status to spectator in the same round state transition.
+- Party roster and participantIds remain unchanged; the dead participant remains attached to the active run.
+- Outgoing boss damage is now stored per participant and per round, not as one pre-aggregated party total. A participant who was alive at round start contributes to that simultaneous round; after death, their scheduled outgoing damage is excluded from every subsequent round. A revived participant can contribute again in future rounds.
+- Round-plan validation checks that every frozen participant has both outgoing and incoming schedules for every round.
+- Manual round snapshots accept 0 HP and convert the participant to spectator; they cannot silently revive an existing spectator.
+- When the final living participant dies, the run is immediately finalized as a durable loss, even if planned rounds remain. Repeating the same death transition is idempotent, including after terminal completion.
+- commitDungeonRunRound writes the player HP snapshots and dungeon run/spectator state through the same shared-WAL transaction. Tests now exercise a crash/recovery boundary where the player is persisted at 0 HP and the run restores spectator status.
+- Added state and runtime tests for lethal damage, future boss damage exclusion, last-participant death, party loss, and WAL recovery.
+
+#### Границы результата
+
+- This changes the durable dungeon round foundation only. The existing modules are still not wired into production dungeon gameplay handlers; this does not yet change live synchronous legacy dungeon or ordinary expedition behavior.
+- The legacy helper prepareDungeonMemberHealthOutcome and expedition handler still have the old minimum-one-HP behavior.
+- Manual respawn handler, regeneration dead-state guard, authenticated ally-revive action/UI, and reconnect/group production wiring are not implemented in this slice.
+- Existing round-plan schema now records per-participant outgoing schedules. There is no committed dungeon_runs.json snapshot in the repository; any future persisted run data must use the new validated shape or an explicit migration.
+- No monster stats, rewards, penalties, respawn HP/location, scroll pricing, player data or main branch changes.
+
+#### Проверка
+
+- Unit/WAL test changes are committed to the PR branch. CI for the implementation commits is pending at time of this checkpoint; do not describe it as green until the latest run completes.
+- Next: connect this state machine to a production dungeon encounter path, including the already prepared atomic revival transaction; then separately design the legacy expedition participant lifecycle and manual respawn/regeneration protection.
