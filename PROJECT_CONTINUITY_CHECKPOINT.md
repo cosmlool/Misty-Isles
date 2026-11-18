@@ -1774,3 +1774,14 @@ PR #15 остаётся Draft/open и не объединён. Слияние б
 - Northern Crown is confirmed closed/outside the normal city progression by prior product notes. The current travel handler still accepts it via NEUTRAL_CITIES; this is a runtime mismatch. Proposed correction is to reject travel until separately opened, with no normal gear band.
 - No item, ID, stat, price, shop handler, travel handler, recipe, drop, save or player data changed. Documentation only.
 - Next: consolidate shared city access predicate and implementation test plan, verify latest exact-head CI, then pause for explicit approval before implementing city travel/shop restrictions.
+
+
+## Контрольная точка — 2026-11-18: симуляция постепенной брони
+
+- Активная задача: PR #35, ветка design/gradual-armor-progression-2026-11-18; изменения остаются документационными, PR не объединять без отдельного решения.
+- Проверены текущие источники: каталог server/data/equipment_catalog.json (SHA 1b1e6eca2b5d39e135f1540e07dba36c3d847ef1), формула server/src/monsterCombatStats.ts (SHA be061489c6e6636f61f286f6713b85467c3b7b54), XP server/src/xpProgression.ts (SHA 29ee7682bf3cb3e638cc45eac10f7305dc563b72), live handlers server/src/index.ts (SHA e47b978c4d5b453521e7477be7f7cfaa5d27f4b8), PlayerSchema (SHA 0effe13365ef843879f7d1f02f0a55c2126b9082) и combat-effect contract (SHA 39c80441c0e0a4f3a7ef2f11e136049e9c3120ad).
+- Симуляция охватывает все 8 профессий, 6 существующих обычных профессиональных ступеней, пять слотов брони, варианты A/B и исключает нулевые по цене легендарные предметы. Итоговые суммы каждой ступени совпадают; A — защитный/дорогой старт, B — дешёвый старт с атакующими перчатками на третьем шаге.
+- Исправлена ошибка предыдущей постановки: +3 statPoints за уровень — не распределяемые атрибуты; upgradeStat списывает золото и не расходует statPoints. Между 85 и 96 — 33 счётных, но неиспользуемых очка. Уровневый рост maxHealth считается отдельно как 18 + 0.5 × текущая vitality за переход.
+- Поздняя экономика 40–100 не подтверждена текущим аудитом до 30; поэтому доступность цен и полный соло/групповой исход не объявлены. Бонусы typed combatStats не считались активными универсально.
+- Решения A/B, требований 96–100 и контента на входах городов 30/50/90 не приняты. Каталог/код/сохранения не менялись.
+- Следующий этап: построить модель поздней экономики и реальные encounter fixtures 40–100 (доходы, доступные подземелья, расход золота на экипировку/атрибуты/прочие системы), затем повторить соло/групповые сценарии. До появления этих данных не утверждать порядок и не менять runtime.
