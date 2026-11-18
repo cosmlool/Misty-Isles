@@ -3336,3 +3336,12 @@ Quality Gate 43931230374 failed because the new dungeon test file contained a li
 - Price-zero inline items may be crafted/reward/legacy sources and are excluded from the ordinary shop listing; do not treat them as city-store inventory. Legendary sets also remain separate from ordinary city gear.
 - Added PVE_2_SPEC.md section 22.12 with the city gap map, evidence from existing item sources, scope estimate and implementation boundaries. No item IDs, stats, prices, recipes, drops, shop handlers, city rules, saves or gameplay code changed.
 - Next: define a deliberate content cadence across city ranges, then cross-check candidate items against craft/drop/auction/save ownership and the server-side city/level access contract. Do not create items or assign balance values until that design and the later-city economy are reviewed.
+
+
+## 2026-11-18 — professional gear cadence options
+
+- Added PVE_2_SPEC.md section 22.13 with four content-cadence options: retain current six milestones; add three city-entry full sets (30/50/90); fill all ten missing levels; or add selected standalone profession items.
+- Scope estimates: one full tier for eight professions = 40 armor items; three city-entry tiers = 120; all ten gaps = 400; one standalone item per profession at each gap = up to 80. These are estimates, not approved content counts.
+- Recommended planning baseline is to retain the existing 25/40/55/70/85/100 milestones until combat and economy evidence supports more sets, while auditing already-existing inline/craft/reward items for meaningful interim upgrades. This avoids assuming that every five-level gap must contain a full new set.
+- No content cadence option beyond the existing schedule is approved. No new item, ID, price, stat, recipe, drop, set bonus, or unlock level was created.
+- CI for the previous documentation head d90f697ff1b135bfb400c97c12bc8ad842f87978 was cancelled/superseded after subsequent pushes. Current branch head must receive its own full Quality Gate before this stage is called green.
