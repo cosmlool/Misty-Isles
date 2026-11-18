@@ -3500,3 +3500,15 @@ Quality Gate 43931230374 failed because the new dungeon test file contained a li
 - No death penalty, respawn location, or automatic revival policy was invented. The user approved 0 HP as lethal outcome; return-from-death behavior remains a product decision.
 - Documentation-only update; no runtime, client, tests, data, item IDs/prices, saves or player records changed. PR #35 remains open; main unchanged.
 - Next: agree on the return-from-0-HP contract, then implement atomic death/revival/respawn with expedition, legacy dungeon, regeneration, persistence, reconnect and group regression tests.
+
+
+## 2026-11-18 — manual respawn and group continuity decision
+
+- User selected explicit/manual respawn; no automatic timer respawn. Dead character remains at 0 HP.
+- User confirmed that a group should continue its expedition with the remaining living party members. Dead member remains attached to the active run as spectator and may observe; it is excluded from combat calculations and ordinary healing.
+- Ally revival, if offered, must return the member to the same active run and atomically/idempotently consume the revival item and update run/player state. If the run ends before revival, player manually chooses respawn. Solo death ends the attempt.
+- Added PVE_2_SPEC.md §22.27 with the confirmed contract and unresolved implementation/product details: respawn location/HP, scroll self-use vs ally-only, reward eligibility for dead member, offline spectator behavior after group ends, early leave.
+- No death penalties or costs were invented. Runtime/client/tests/data/rewards/items/saves/player records unchanged.
+- CI run 44292989558 completed successfully: client build, data/docs/structure, server build, Playwright smoke tests all success. PR #35 open, main unchanged.
+- Next: design and wire production state transitions using the existing durable dungeon spectator/revival/WAL foundation, avoiding a parallel run system.
+
