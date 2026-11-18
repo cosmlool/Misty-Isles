@@ -3386,3 +3386,14 @@ Quality Gate 43931230374 failed because the new dungeon test file contained a li
 - The other inspected inline equipment IDs at levels 30/35/45/50/60/65 have no active source in ordinary buyItem, post-filter RECIPES, faction offers, openChest pool, or Forgotten Lands drops. Treat them as legacy-only until another grant path is proven.
 - FACTION_MAX_REWARDS IDs dawn_regalia/caravan_cleaver/lore_circlet are absent from both inline ITEMS and equipment_catalog.json; faction_reward inserts the ID string without validating an Item. This is a separate integrity defect and not a working gear source.
 - Replaced PVE_2_SPEC.md section 22.15 with the corrected acquisition-path audit. Earlier claims that old gear recipes were craftable are superseded. No runtime or game data changed.
+
+
+## 2026-11-18 — city-entry inventory matrix and Northern Crown decision
+
+- Parsed all 387 entries in equipment_catalog.json SHA 1b1e6eca2b5d39e135f1540e07dba36c3d847ef1. Item levels present: 1/4/7/10/14/17/19/20/25/40/55/70/85/100. No JSON shop gear at exact levels 30/35/45/50/60/65/75/80/90/95.
+- Ordinary professional shop tiers are 25/40/55/70/85/100. Common five-piece sets are at 1/4/7/10/14/17/19/20. Each professional tier has 8 weapons + 40 armor pieces (48 entries). At level 100, the additional 40 pieces are legendary armor, separate from ordinary shop stock.
+- City-entry gaps: Stone Harbor opens at 30 but next ordinary gear tier is 40; Emerald Valley opens at 50 but next tier is 55; Golden Dunes opens at 70 and has gear immediately; Silver Ruins opens at 90 but current tier 100 is only available at level 100 (candidate per-piece schedule would start at 96). This makes delays of 10/5/0/6 levels, respectively, if the 96–100 candidate is approved.
+- Candidate per-piece schedule 25–29/40–44/55–59/70–74/85–89/96–100 fits wholly inside each corresponding city band. It does not create stock at city entry 30/50/90.
+- Added PVE_2_SPEC.md section 22.16 with exact catalog-level matrix, city-entry gaps, candidate unlock mapping and four content options. No new gear, prices or stats proposed.
+- Northern Crown: prior product notes specify it is closed and outside the normal city progression. Current travel handler nevertheless accepts it because it is included in NEUTRAL_CITIES, with no level/progression check. Treat as a confirmed mismatch; travel should reject it until separately opened. Do not assign a gear band to it.
+- No runtime changes. Next: consolidate the proposed shared city access predicate, verify the exact PR head CI, and prepare a small implementation plan. Do not implement travel/shop gates until the approved design scope is clear.
