@@ -1914,3 +1914,16 @@ PR #15 остаётся Draft/open и не объединён. Слияние б
 - CI run 44292989558: all four jobs succeeded.
 - Следующий этап: проектирование state transitions и production integration existing durable spectator/revival/WAL foundation; не создавать второй независимый run system.
 
+
+
+## Контрольная точка — 2026-11-18: архитектура интеграции смерти
+
+- Повторно проверены dungeonRunState, dungeonRunRoundRuntime, dungeonRevivalTransaction, dungeonRunRecovery, dungeonRunFinalizationRuntime, dungeonRunStartRuntime/Transaction и legacy expedition helpers.
+- Existing durable state уже сохраняет spectator в participantIds с HP=0; revive transaction атомарно готовит player inventory + run state, но production handler отсутствует.
+- Blockers: resolveNextDungeonRunRound пока clamp-ит HP на 1; advanceDungeonRunRound запрещает HP=0; death transition не имеет найденного production WAL caller; precomputed bossDamageByRound продолжает учитывать вклад умершего в будущих раундах; all-dead terminal policy не закреплена.
+- Revived status сейчас обрабатывается как живой в round resolver, что нормально только после корректного обновления round plan.
+- Legacy expedition не имеет durable run/spectator lifecycle; синхронный encounter требует отдельной интеграции, нельзя считать dungeon spectator implementation достаточной.
+- §22.28 добавлен в PVE_2_SPEC.md с безопасным порядком реализации и запретами на частичные правки.
+- Runtime/client/tests/data/rewards/items/saves не менялись.
+- Следующий implementation slice: atomic death transaction + round resolver 0HP/spectator + отсутствие живых участников => поражение, с unit/WAL tests; затем подключение production dungeon handlers, revive UI, затем legacy expedition lifecycle.
+
