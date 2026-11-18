@@ -3488,3 +3488,15 @@ Quality Gate 43931230374 failed because the new dungeon test file contained a li
 
 
 - Дополнительная проверка: durable dungeon spectator/revival/WAL modules and tests exist, but no calls to `commitDungeonRunRound`, `markDungeonParticipantDead`, or `prepareDungeonRevival` were found in the reviewed production `index.ts`. Treat this as dormant scaffolding, not a live resurrection flow. The resurrection-scroll purchase path is wired; the revival transaction is not confirmed wired.
+
+
+## 2026-11-18 — lethal HP / death lifecycle audit
+
+- User corrected the previous rule: lethal damage in ordinary expedition and legacy dungeon must leave the player at exactly 0 HP, not 1 HP.
+- Added PVE_2_SPEC.md §22.26. Confirmed production expedition loss and dungeon win/loss paths clamp HP to at least 1. The dungeon health helper applies post-damage lifesteal/buffer healing; lethal outcomes must not be rescued by post-combat healing.
+- PlayerSchema has health/maxHealth but no persisted dead-state. Player save accepts finite HP=0. No production respawn/death/revive handler was found in the reviewed index; resurrection-scroll purchase is wired, scroll use is not.
+- Critical interaction: applyHealthRegeneration restores at least 5% effective max HP per elapsed five-minute tick and runs on login, room interval, before some actions, room disposal and autosave. Without a dead-state guard it can silently revive a 0-HP character.
+- Durable dungeon spectator/revival/WAL modules and tests exist but are dormant scaffolding: production handlers do not call round commit/death/revival transitions. Client recovery UI has no revive action. PvP roster projection uses Number(player.health || 100), which maps 0 HP to 100 for display.
+- No death penalty, respawn location, or automatic revival policy was invented. The user approved 0 HP as lethal outcome; return-from-death behavior remains a product decision.
+- Documentation-only update; no runtime, client, tests, data, item IDs/prices, saves or player records changed. PR #35 remains open; main unchanged.
+- Next: agree on the return-from-0-HP contract, then implement atomic death/revival/respawn with expedition, legacy dungeon, regeneration, persistence, reconnect and group regression tests.
