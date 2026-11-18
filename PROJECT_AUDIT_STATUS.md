@@ -3376,3 +3376,13 @@ Quality Gate 43931230374 failed because the new dungeon test file contained a li
 - FACTION_MAX_REWARDS declares dawn_regalia, caravan_cleaver and lore_circlet. None of these IDs is present in inline ITEMS or server/data/equipment_catalog.json; faction_reward appends the string ID without validating the Item. Do not count these as functional equipment rewards; flag for a separate bug fix, not this armor progression task.
 - Active craft after legacy filtering retains new legendary recipes generated from the JSON catalog; this is a separate late-game crafting route, not an intermediate city armor source.
 - Replaced PVE_2_SPEC.md section 22.15 with corrected lifecycle analysis. No runtime changes or balance edits.
+
+
+## 2026-11-18 — final correction: chest grants and retired recipes
+
+- Inspected active craft filtering and the openChest handler in server/src/index.ts main SHA e47b978c4d5b453521e7477be7f7cfaa5d27f4b8. The eight old equipment-output recipes are removed from RECIPES because their outputs are legacy. Only new JSON legendary recipes remain in the active craft catalogue.
+- Found an additional live grant path: openChest has a 7% rare-result branch (roll >= 0.93) that selects from unique available items amulet_power (level 5), amulet_guard (level 8), tempered_sword (level 12), and mystery_chest. Thus three early legacy gear items can still be granted through chests, subject to the unique-item filter. They do not cover the level-30+ city gaps.
+- factionBuy separately grants freeblade (level 12) and dawn_charm (level 8) when faction reputation/level/currency checks pass. It does not check city.
+- The other inspected inline equipment IDs at levels 30/35/45/50/60/65 have no active source in ordinary buyItem, post-filter RECIPES, faction offers, openChest pool, or Forgotten Lands drops. Treat them as legacy-only until another grant path is proven.
+- FACTION_MAX_REWARDS IDs dawn_regalia/caravan_cleaver/lore_circlet are absent from both inline ITEMS and equipment_catalog.json; faction_reward inserts the ID string without validating an Item. This is a separate integrity defect and not a working gear source.
+- Replaced PVE_2_SPEC.md section 22.15 with the corrected acquisition-path audit. Earlier claims that old gear recipes were craftable are superseded. No runtime or game data changed.
