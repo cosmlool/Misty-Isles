@@ -1763,3 +1763,14 @@ PR #15 остаётся Draft/open и не объединён. Слияние б
 - FACTION_MAX_REWARDS IDs dawn_regalia/caravan_cleaver/lore_circlet are not present in inline ITEMS or equipment_catalog.json; faction_reward inserts the ID string without checking the Item. Treat as a separate integrity issue, not a usable gear grant.
 - PVE_2_SPEC.md section 22.15 and PROJECT_AUDIT_STATUS.md now reflect the corrected source audit. No runtime/data edits.
 - Next: exact-head CI and documentation consistency review; then prepare the city gear source matrix and resolve Northern Crown travel status. No merge, no main edits.
+
+
+## 2026-11-18 — city-entry gear inventory checkpoint
+
+- Added PVE_2_SPEC.md section 22.16 and updated PROJECT_AUDIT_STATUS.md with a full 387-entry JSON catalog level matrix.
+- Catalog levels: 1/4/7/10/14/17/19/20/25/40/55/70/85/100. Common five-piece sets at 1/4/7/10/14/17/19/20; ordinary professional tiers 25/40/55/70/85/100. Each professional tier has 8 weapons + 40 armor records. Level100 also contains 40 legendary armor records, separate from ordinary city stock.
+- City-entry delay to the next ordinary professional gear: Stone Harbor 30→40 (10 levels); Emerald Valley 50→55 (5); Golden Dunes 70→70 (0); Silver Ruins 90→100 currently (10), or 90→96 only if the provisional 96–100 piece schedule is accepted (6).
+- Candidate per-piece schedule 25–29/40–44/55–59/70–74/85–89/96–100 stays inside the corresponding city bands but does not add new stock at city entry 30/50/90. Documented four choices: keep gaps; add one item per profession at entry (up to 24 pieces across 30/50/90); add full sets (120 armor records); or move existing tiers (not recommended without simulation).
+- Northern Crown is confirmed closed/outside the normal city progression by prior product notes. The current travel handler still accepts it via NEUTRAL_CITIES; this is a runtime mismatch. Proposed correction is to reject travel until separately opened, with no normal gear band.
+- No item, ID, stat, price, shop handler, travel handler, recipe, drop, save or player data changed. Documentation only.
+- Next: consolidate shared city access predicate and implementation test plan, verify latest exact-head CI, then pause for explicit approval before implementing city travel/shop restrictions.
