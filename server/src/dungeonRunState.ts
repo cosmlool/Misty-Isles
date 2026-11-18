@@ -72,9 +72,7 @@ export function validateDungeonRunStore(value: unknown): DungeonRunStore {
         !Number.isInteger(raw.roundPlan.totalRounds) || raw.roundPlan.totalRounds < 1 ||
         !Number.isInteger(raw.roundPlan.nextRoundIndex) || raw.roundPlan.nextRoundIndex < 0 ||
         raw.roundPlan.nextRoundIndex > raw.roundPlan.totalRounds ||
-        !Array.isArray(raw.roundPlan.bossDamageByRound) ||
-        raw.roundPlan.bossDamageByRound.length !== raw.roundPlan.totalRounds ||
-        raw.roundPlan.bossDamageByRound.some((damage: unknown) => !Number.isFinite(damage) || Number(damage) < 0) ||
+        !isRecord(raw.roundPlan.bossDamageByParticipantByRound) ||
         !isRecord(raw.roundPlan.incomingDamageByRound))) ||
       !isRecord(raw.participants) || !isRecord(raw.encounter)) {
       throw new Error(`dungeon_runs.json contains an invalid run record: ${key}.`);
