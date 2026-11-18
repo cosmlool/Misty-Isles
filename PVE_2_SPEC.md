@@ -2737,3 +2737,47 @@ Weakness parser распознаёт профессию и тип fire, но leg
 #### Граница этапа
 
 §22.27 фиксирует пользовательское решение и контракт реализации. Runtime, client, tests, monster data, items, rewards, saves и player records не менялись. Следующий этап — спроектировать переходы состояний и подключить существующий durable dungeon spectator/revival foundation к production без параллельной/дублирующей системы.
+
+
+### §22.28 — архитектурный план production-интеграции death/spectator lifecycle
+
+#### Повторно проверенные существующие модули
+
+- dungeonRunState.ts уже имеет participant statuses alive/spectator/revived. Валидатор требует HP=0 для spectator и HP>0 для alive/revived. Roster participantIds сохраняет умершего в составе run.
+- markDungeonParticipantDead переводит одного участника в spectator/0 HP и не удаляет его из roster.
+- reviveDungeonParticipant возвращает spectator в revived с положительным HP, запрещает self-revive, требует живого rescuer, scroll и ограничивает повторное воскрешение одним rescuer на target за run.
+- dungeonRevivalTransaction.ts готовит совместные player/run snapshots, расходует один resurrection scroll и меняет HP цели; но отдельного production caller/handler не найдено.
+- dungeonRunRecovery.ts уже восстанавливает участника по participantIds активного run и возвращает каждому статус и HP; spectator может быть показан клиенту как участник того же похода.
+- dungeonRunRoundRuntime.ts коммитит run и player HP в shared WAL, но resolveNextDungeonRunRound пока clamp-ит HP на 1. Spectator пропускает incoming damage.
+- advanceDungeonRunRound не допускает HP=0 в snapshot, то есть его контракт пока не умеет фиксировать смерть.
+- В deterministic round plan bossDamageByRound заранее распределяет весь урон группы. Если участник погибает посреди run, текущий precomputed boss damage не пересчитывается и может продолжать учитывать урон погибшего. Для настоящего spectator lifecycle это недопустимо: с момента смерти вклад участника должен исчезнуть из будущих раундов.
+- Текущий resolveNextDungeonRunRound обрабатывает status === 'spectator' отдельно, но status === 'revived' идёт обычным путём. Это подходит для возвратившегося бойца, однако план урона и HP snapshot должны быть синхронно пересобраны/проверены после revive.
+- dungeonRunFinalizationRuntime.ts умеет durable terminal result/outbox. Но не задаёт политику «все участники мертвы» и не гарантирует, что завершение run корректно учитывает живых/погибших.
+- expeditionOperations.ts содержит групповые travel readiness/consistency checks, но не содержит durable expedition combat run, participant death/spectator state или resume contract. Обычная экспедиция в index.ts сейчас разрешает aggregate encounter синхронно.
+- prepareDungeonMemberHealthOutcome и legacy expedition handlers не создают spectator transition. Нельзя внедрить spectator только в dungeon modules и считать, что обычная экспедиция тоже поддержана.
+
+#### Рекомендуемый порядок реализации
+
+1. Сначала определить единый минимальный доменный контракт: alive -> spectator (0 HP) -> revived (HP>0) -> spectator; после завершения run spectator остаётся dead на player save и должен выполнить ручной respawn.
+2. Добавить shared-WAL transaction для death transition, который атомарно фиксирует player HP=0, run participant status=spectator и все необходимые result/run snapshots. Повтор того же события должен быть безопасным.
+3. Исправить deterministic round resolver: lethal incoming damage должен приводить к 0 HP/spectator в том же round commit. Запретить последующему lifesteal/buffer heal в этом settlement отменять lethal death.
+4. Пересчитывать или пошагово строить исходящий урон только из живых участников. Не сохранять заранее фиксированный bossDamageByRound, который продолжает включать вклад погибшего после смерти. Revived участник возвращается в расчёт только со следующего корректного раунда.
+5. После каждого round commit проверять число живых участников. Если оно равно нулю — атомарно завершить run поражением; если живые остались — run и маршрут продолжаются.
+6. Подключить revive transaction к authenticated production handler и клиентскому действию; авторизация — только живой участник того же run, цель — spectator того же run, scroll и run/player snapshots меняются одной WAL-транзакцией.
+7. Для обычной экспедиции не имитировать долговечный spectator через временное поле в quests. Нужен либо общий durable expedition run/state, либо безопасный синхронный encounter settlement, который завершает текущую схватку, сохраняет погибшего на 0 HP и оставляет его в существующей hunt group для следующих походных действий. Выбор зависит от подтверждённого текущего group travel/encounter lifecycle.
+8. Добавить явный ручной respawn handler после завершения активного run/вне похода; обычная регенерация, login, autosave и offline ticks не должны воскрешать персонажа.
+9. Исправить все projections/UI, где 0 подменяется fallback-значением (найденный PvP roster использует health || 100), и отображать статус наблюдателя в group/run recovery.
+10. Регрессионная матрица: solo death, один погибший в duo/trio, второй погибший, все погибли, revive same run, duplicate revive request, restart/WAL recovery, reconnect spectator, offline regeneration, run completion while member dead, reward settlement, legacy expedition, legacy dungeon.
+
+#### Критические запреты до полного тестирования
+
+- Не просто менять Math.max(1) на Math.max(0) без синхронного spectator transition и guard для регенерации.
+- Не оставлять мёртвого участника в заранее рассчитанном boss damage.
+- Не позволять Бафферу, lifesteal, potion или пассивной регенерации поднять spectator без явного revive/respawn action.
+- Не удалять погибшего из группы/participantIds и не создавать ему отдельный параллельный run.
+- Не менять награды/штрафы и не назначать revive HP/respawn HP, пока не утверждены соответствующие параметры.
+- Не считать durable dungeon foundation production-ready: round runtime, death transaction, revival transaction и UI ещё требуют реальной wiring и интеграционных тестов.
+
+#### Граница этапа
+
+Это архитектурный план на основе повторного чтения существующих модулей. Runtime/client/tests/data/rewards/items/saves не менялись. Следующий implementation slice — death transaction + round resolver + no-living-participants terminal rule с unit/WAL tests; затем production wiring для dungeon и отдельная адаптация legacy expedition.
