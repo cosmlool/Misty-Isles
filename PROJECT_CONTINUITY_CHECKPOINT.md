@@ -1718,3 +1718,15 @@ PR #15 остаётся Draft/open и не объединён. Слияние б
 - No gameplay code/data, catalog, inline items, prices, stats, recipes, drops, player saves, or characters changed. Documentation only.
 - CI run 44206367447 was queued for the previous head ba746b736eb936a24c2dd013c2cc64721f51c1d0; after these further documentation commits, verify the Quality Gate on the latest exact PR head, not on an earlier SHA.
 - Next: perform final docs consistency review and exact-head CI verification. Then present the design trade-offs for user decision; do not merge PR #35 or modify main.
+
+
+## 2026-11-18 — city gear access enforcement checkpoint
+
+- Verified previous exact PR #35 HEAD 03e702f217f16537c326452b98a37743d806b7bf passed Quality Gate run 44206484245, all four jobs successful. Current PR #35 remains Draft/open/unmerged; main remains 5686d205dab5130e4bea8b90f81109d32c06934a.
+- Added PVE_2_SPEC.md section 22.14 and updated PROJECT_AUDIT_STATUS.md after auditing city travel, shop listing, purchase and equip handlers.
+- Confirmed gap: shopCatalogForPlayer filters price/legacy/race/profession but not player level/current city. buyItem checks level/race/profession but no current city or item-city assignment. travel allows every city in CITIES/NEUTRAL_CITIES with no level/progression gate. equipItem has no city check; preserve this so owned gear remains usable after travel.
+- All inline weapon/armor/amulet entries are marked legacy=true and rejected by buyItem, so they are not current shop stock. The 125 forgotten_lands dropItems are all price-zero materials/trophies, not gear drops.
+- Northern Crown is included in NEUTRAL_CITIES and currently travel-accessible. Its “closed” product status needs explicit clarification before implementation: travel-blocked vs simply no ordinary gear.
+- Proposed target contract: native capital 1–29; Stone Harbor 30–49; Emerald Valley 50–69; Golden Dunes 70–89; Silver Ruins 90–100; level-gated travel to neutral city entry levels 30/50/70/90; city-specific shop stock plus player-level/race/profession filters; authoritative purchase revalidation; owned gear remains usable regardless of current city. This is a proposal, not implemented or approved.
+- No code, catalog, inline data, IDs, prices, stats, recipes, drops, auctions, migrations, saves or player data changed. Documentation only.
+- Next: audit how legacy inline items and other equipment are actually granted (crafting, rewards, auctions, quest paths), resolve Northern Crown status, and then prepare a minimal shared city-access predicate design. Do not implement until the product contract is settled.
