@@ -1707,3 +1707,14 @@ PR #15 остаётся Draft/open и не объединён. Слияние б
 - Price-zero inline entries are not automatically shop inventory; ordinary shop listing excludes price <=0. Do not merge legendary crafting gear or reward items into city progression without explicit design.
 - No catalog, inline item, ID, price, stat, recipe, drop, shop handler, city gate, save, or gameplay code was changed. Documentation only.
 - Next: create a city-by-city content cadence proposal without inventing stats/prices; then audit all proposed candidate sources against crafting, drops, auction, legacy IDs and save compatibility. Keep current unlock orders and tier-100 schedule provisional.
+
+
+## 2026-11-18 — professional gear cadence checkpoint
+
+- Added PVE_2_SPEC.md section 22.13 with four alternatives for filling the missing professional armor milestones: preserve the current cadence; add city-entry sets at 30/50/90; add all ten missing sets; or use selected standalone items.
+- Scope estimates: 40 armor pieces per full tier for eight professions; 120 pieces for three city-entry tiers; 400 pieces for all ten gaps; up to 80 standalone pieces if one item per profession is created at every missing level.
+- Current recommended planning baseline: preserve the six existing ordinary professional tiers (25/40/55/70/85/100) and first test whether existing single inline/craft/reward items can provide useful intermediate upgrades. A gradual five-piece unlock schedule does not imply a new full set is mandatory every five levels.
+- No new item content or balance values were approved or added. Keep all alternate cadence options provisional.
+- No gameplay code/data, catalog, inline items, prices, stats, recipes, drops, player saves, or characters changed. Documentation only.
+- CI run 44206367447 was queued for the previous head ba746b736eb936a24c2dd013c2cc64721f51c1d0; after these further documentation commits, verify the Quality Gate on the latest exact PR head, not on an earlier SHA.
+- Next: perform final docs consistency review and exact-head CI verification. Then present the design trade-offs for user decision; do not merge PR #35 or modify main.
