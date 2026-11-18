@@ -79,7 +79,7 @@ test('finalization refuses runs without a committed encounter and rejects unreso
     runId: 'run_frozen', runs: withoutEncounter, now: 200,
   }), /no committed prepared encounter/);
   const unfinished = { run_frozen: { ...runs.run_frozen, roundPlan: {
-    totalRounds: 2, nextRoundIndex: 1, bossDamageByRound: [250, 250],
+    totalRounds: 2, nextRoundIndex: 1, bossDamageByParticipantByRound: { p1: [125, 125], p2: [125, 125] },
     incomingDamageByRound: { p1: [5, 5], p2: [10, 10] },
   }, roundIndex: 1 } };
   assert.throws(() => prepareCommittedDungeonEncounterFinalization({

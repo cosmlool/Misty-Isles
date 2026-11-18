@@ -55,9 +55,12 @@ test('terminal result is durable and duplicate same-result completion is idempot
 
 test('manual round snapshots reject invalid HP and cannot bypass a deterministic round plan', () => {
   const base = run();
-  assert.throws(() => advanceDungeonRunRound(base, {
+  const fallen = advanceDungeonRunRound(base, {
     now: 2000, bossHealth: 400, participantHealth: { p1: 0, p2: 60 },
-  }), /invalid health snapshot/);
+  });
+  assert.equal(fallen.participants.p1.health, 0);
+  assert.equal(fallen.participants.p1.status, 'spectator');
+  assert.equal(fallen.status, 'active');
   assert.throws(() => advanceDungeonRunRound(base, {
     now: 2000, bossHealth: 501, participantHealth: { p1: 80, p2: 60 },
   }), /Invalid dungeon round snapshot/);
@@ -67,7 +70,7 @@ test('manual round snapshots reject invalid HP and cannot bypass a deterministic
   const planned = {
     ...base,
     roundPlan: createDungeonRoundPlan({
-      totalRounds: 2, totalBossDamage: 100,
+      totalRounds: 2, totalBossDamageByParticipant: { p1: 60, p2: 40 },
       totalIncomingDamageByParticipant: { p1: 10, p2: 10 },
     }),
   };
@@ -81,7 +84,7 @@ test('direct terminal transition cannot bypass unresolved planned combat rounds'
   const planned = {
     ...base,
     roundPlan: createDungeonRoundPlan({
-      totalRounds: 2, totalBossDamage: 100,
+      totalRounds: 2, totalBossDamageByParticipant: { p1: 60, p2: 40 },
       totalIncomingDamageByParticipant: { p1: 10, p2: 10 },
     }),
   };
@@ -142,6 +145,17 @@ test('resurrection rejects self, duplicate rescuer-target pairs, living targets 
   }), /scroll is required/);
 });
 
+test('last participant death atomically marks the run as a loss', () => {
+  const base = run();
+  const first = markDungeonParticipantDead(base, 'p2', 2000);
+  const terminal = markDungeonParticipantDead(first, 'p1', 2100);
+  assert.equal(terminal.status, 'completed');
+  assert.equal(terminal.terminalResult?.outcome, 'loss');
+  assert.equal(terminal.participants.p1.health, 0);
+  assert.equal(terminal.participants.p2.health, 0);
+  assert.equal(markDungeonParticipantDead(terminal, 'p1', 2200), terminal);
+});
+
 test('another active participant may revive the same ally after a separate death', () => {
   const threePlayerRun = createDungeonRunRecord({
     runId: 'run_003', requestId: 'dungeon_req_003', dungeonId: 'fl_dungeon_03',
@@ -171,10 +185,10 @@ test('another active participant may revive the same ally after a separate death
 test('deterministic round plan preserves aggregate damage exactly and resumes at the next round', () => {
   const plan = createDungeonRoundPlan({
     totalRounds: 3,
-    totalBossDamage: 101,
+    totalBossDamageByParticipant: { p1: 61, p2: 40 },
     totalIncomingDamageByParticipant: { p1: 10, p2: 5 },
   });
-  assert.equal(plan.bossDamageByRound.reduce((sum, value) => sum + value, 0), 101);
+  assert.equal(Object.values(plan.bossDamageByParticipantByRound).flat().reduce((sum, value) => sum + value, 0), 101);
   assert.equal(plan.incomingDamageByRound.p1.reduce((sum, value) => sum + value, 0), 10);
   assert.equal(plan.incomingDamageByRound.p2.reduce((sum, value) => sum + value, 0), 5);
 
@@ -199,11 +213,56 @@ test('deterministic round plan preserves aggregate damage exactly and resumes at
   assert.throws(() => resolveNextDungeonRunRound(finalRound, 5000), /No unresolved dungeon round/);
 });
 
+test('a lethal planned round creates a spectator and removes their future boss damage', () => {
+  const base = run();
+  const planned = {
+    ...base,
+    roundPlan: createDungeonRoundPlan({
+      totalRounds: 2,
+      totalBossDamageByParticipant: { p1: 100, p2: 100 },
+      totalIncomingDamageByParticipant: { p1: 20, p2: 0 },
+    }),
+  };
+  const first = resolveNextDungeonRunRound({
+    ...planned,
+    participants: { ...planned.participants, p1: { ...planned.participants.p1, health: 10 } },
+  }, 2000);
+  assert.equal(first.participants.p1.health, 0);
+  assert.equal(first.participants.p1.status, 'spectator');
+  assert.equal(first.encounter.bossHealth, 400);
+  const second = resolveNextDungeonRunRound(first, 3000);
+  assert.equal(second.encounter.bossHealth, 350);
+  assert.equal(second.participants.p1.health, 0);
+  assert.equal(second.participants.p2.status, 'alive');
+});
+
+test('when every participant dies in a planned round, the run ends in loss immediately', () => {
+  const base = run();
+  const planned = {
+    ...base,
+    participants: {
+      ...base.participants,
+      p1: { ...base.participants.p1, health: 10 },
+      p2: { ...base.participants.p2, health: 5 },
+    },
+    roundPlan: createDungeonRoundPlan({
+      totalRounds: 3,
+      totalBossDamageByParticipant: { p1: 90, p2: 60 },
+      totalIncomingDamageByParticipant: { p1: 30, p2: 15 },
+    }),
+  };
+  const terminal = resolveNextDungeonRunRound(planned, 2000);
+  assert.equal(terminal.status, 'completed');
+  assert.equal(terminal.terminalResult?.outcome, 'loss');
+  assert.equal(terminal.participants.p1.health, 0);
+  assert.equal(terminal.participants.p2.health, 0);
+});
+
 test('startup validation rejects round cursor drift, impossible health and malformed encounter snapshots', () => {
   const state = run();
   const plan = createDungeonRoundPlan({
     totalRounds: 2,
-    totalBossDamage: 100,
+    totalBossDamageByParticipant: { p1: 60, p2: 40 },
     totalIncomingDamageByParticipant: { p1: 10, p2: 10 },
   });
   assert.throws(() => validateDungeonRunStore({
@@ -234,14 +293,14 @@ test('round plan validation rejects incomplete or non-finite participant schedul
     roundPlan: {
       totalRounds: 2,
       nextRoundIndex: 0,
-      bossDamageByRound: [5, 5],
+      bossDamageByParticipantByRound: { p1: [5, 5] },
       incomingDamageByRound: { p1: [1, 1] },
     },
   };
   assert.throws(() => validateDungeonRunStore({ run_001: state }), /incomplete or misaligned round plan/);
   assert.throws(() => createDungeonRoundPlan({
     totalRounds: 2,
-    totalBossDamage: 10,
+    totalBossDamageByParticipant: { p1: 5, p2: 5 },
     totalIncomingDamageByParticipant: { p1: 1, p2: Number.NaN },
   }), /Invalid deterministic dungeon round plan/);
 });

@@ -1664,3 +1664,282 @@ PR #15 остаётся Draft/open и не объединён. Слияние б
 - Follow-up PR #32 adds this guard and updates the audit record, using the same existing test branch `checkpoint/main-only-cleanup-2026-11-17`; current proposed commit before opening PR: `196bcd3fab945ec68d817c0704a618806ebd1890`. Wait for all required checks on its exact final head.
 - Local folder `C:\Users\bodya\Desktop\project\Misty-Isles` remains on the last confirmed `main` SHA `a3e1ecf4a9c3f12486c0768cfba83580a9284005`. Updating it is blocked by GitHub connection refusal in shell and repeated GitHub Desktop window-capture timeout; no local files or game data were changed. After PR #32 CI/merge, retry fetch/pull and verify a clean checkout at the then-current GitHub main SHA.
 - No saves, character data, group rosters, server gameplay source, or balance were changed in PR #31 or this follow-up.
+
+
+## 2026-11-18 — Misty-Isles armor progression candidate checkpoint
+
+- Base `main`: `5686d205dab5130e4bea8b90f81109d32c06934a` (unchanged).
+- Documentation branch: `design/gradual-armor-progression-2026-11-18`; PR #35 Draft/open/unmerged. PR #34 and #33 remain untouched and unmerged.
+- Earlier PR #35 head `1f45fcd29a1349166b0bdac37b55ca7f3542c357` passed all 4 PR Quality Gate jobs (run `44201785023`). The candidate schedule and audit/checkpoint additions are newer commits; recheck CI against the final exact PR head before declaring the stage green.
+- `PVE_2_SPEC.md` now records section 21 (agreed gradual per-piece unlock concept and catalog inventory) and section 22 (candidate level distribution). `PROJECT_AUDIT_STATUS.md` records the audit and unresolved checks.
+- Candidate order for each five-piece set: body at base level, helmet +1, cloak +2, gloves +3, boots +4. Common set bases: 1/4/7/10/14/17/19/20. Professional set bases: 25/40/55/70/85, with the level-100 set provisionally distributed 96–100 due to the character cap.
+- This schedule is a simulation candidate, not a final gameplay approval. Preserve the separate weapon slot; eight professions and their typed combatStats; all existing IDs; five-piece set identity; 2/5–5/5 thresholds; mastery requiring all five pieces; city progression; F2P fairness; legacy save compatibility.
+- Important gaps remain: no complete professional armor tiers at 30/35/45/50/60/65/75/80/90/95; only partial inline level-35 weapons exist. Current shop listing does not filter by level/city; purchase checks level/race/profession but not ordinary armor city access. Do not change handlers before shared access rules and boundary tests are designed.
+- Do not modify `main`, merge PR #35, or change `equipment_catalog.json`, inline `ITEMS`, prices, stats, recipes, drops, combat formulas, player saves, or data. The next stage is numerical combat/economy simulation of the proposed schedule and design of missing tiers; keep all changes documentation-only until results and final values are reviewed.
+
+
+- Additional combat/set constraint: catalog validation confirms 64 five-piece sets (8 common, 48 ordinary profession, 8 legendary). Common sets have active authored 2/5–5/5 descriptions; their staggered windows overlap, so mixed-set slot replacement and threshold trade-offs must be modelled. Legacy hunt/dungeon do not automatically consume every typed `combatStats` channel; use `EQUIPMENT_COMBAT_EFFECT_CONTRACT.md` as the mode boundary.
+
+- Formula study added in `PVE_2_SPEC.md` 22.9: five-piece armor-only contribution to the current base attack/defense formula was calculated across all eight professions and six existing tiers. Tier 100 is ~22–23% above tier 85; candidate 96–100 remains a high-priority balance check. The calculation excludes base character stats, weapon, enhancements, buffs, set bonuses and typed channels.
+
+- Economy constraint: the existing PvE economy audit only models early-game progression through level 30 (dungeon entry levels 5/12/21/25). Five-piece armor costs after ×1.3 are 19.5k/46.8k/101.4k/202.8k/405.6k/780k for tiers 25/40/55/70/85/100. Candidate body-first order spends 40/20/10/15/15%; price-smoothed alternate is 10/15/15/20/40%. Compare; do not choose or change prices yet. There is no verified income/dungeon economy for levels 40–100.
+
+
+## 2026-11-18 — armor order and mixed-set analysis checkpoint
+
+- Protected main remains 5686d205dab5130e4bea8b90f81109d32c06934a. PR #35 is Draft/open/unmerged on design/gradual-armor-progression-2026-11-18. PR #34 and #33 remain untouched/open/unmerged.
+- PR #35 exact prior HEAD d91e4575def5cc3b183dc853e3ec5d4d95cf9b3b passed all four Quality Gate jobs in run 44203783378. The documentation branch has since advanced with a new docs-only commit; rerun/recheck CI on the new exact HEAD before declaring the updated PR green.
+- Added PVE_2_SPEC.md section 22.11 with a formula-based comparison of per-slot armor contributions at tiers 25 and 100, price shares, body-first vs price-smoothed opening order, «Общий-1» / «Общий-4» overlap at levels 4–8, and tier-100 slot-by-slot deltas versus tier 85.
+- Findings: body-first opens the strongest defensive slot but costs 40% up front and 60% by the 2/5 threshold. Price-smoothed order reaches 2/5 after 25% of total price but delays the strongest defense. Neither order is approved.
+- Mixed common-set replacements can preserve thresholds on two sets simultaneously; the exact counts depend on whether old and new pieces are purchased/equipped. Do not assume full-set swaps or mandatory purchases.
+- Tier-100 pieces individually improve over tier-85 counterparts by slot-specific amounts documented in section 22.11. This does not validate level 96 access: the items still have tier-100 stats and manual stat allocation differs across characters. Keep 96–100 provisional.
+- No game code, catalog, item levels, prices, stats, combat formula, economy values, saves, characters, or player data changed. Only three documentation files are in PR #35.
+- Next safe step: audit missing intermediate gear tiers 30/35/45/50/60/65/75/80/90/95 against current catalog, inline items, crafting, drops and city gates; produce a boundary matrix and identify missing economy inputs. Continue documentation-only; do not modify main or merge any PR.
+
+
+## 2026-11-18 — missing armor-tier inventory checkpoint
+
+- Added PVE_2_SPEC.md section 22.12 and updated PROJECT_AUDIT_STATUS.md with the current missing professional armor tier map.
+- Confirmed JSON catalog levels are 1/4/7/10/14/17/19/20/25/40/55/70/85/100. Ordinary professional five-piece armor tiers are 25/40/55/70/85/100; legendary five-piece sets are separate craft content.
+- Full professional armor gaps by city: Stone Harbor 30/35/45; Emerald Valley 50/60/65; Golden Dunes 75/80; Silver Ruins 90/95. These are missing full professional sets, not proof that no individual equipment exists at those levels.
+- Inline evidence: six level-35 weapon records (Warrior legacy label, Battle Mage, Archer, Assassin, Vampire, Gatherer) and a level-35 amulet; standalone level-45 weapon/armor; level-50 amulet/material; level-60 amulet; two standalone level-65 armor items. No exact-level inline/JSON items found at 75/80/90/95. Other nearby items exist at 32/36/38/42/46/55/68/72/78.
+- Filling all ten missing tiers with full five-piece sets for eight professions would mean up to 400 new armor records. This is a content-scope estimate only; do not fill every level by default. Decide cadence and whether each gap needs a complete set, one item, or nothing.
+- Price-zero inline entries are not automatically shop inventory; ordinary shop listing excludes price <=0. Do not merge legendary crafting gear or reward items into city progression without explicit design.
+- No catalog, inline item, ID, price, stat, recipe, drop, shop handler, city gate, save, or gameplay code was changed. Documentation only.
+- Next: create a city-by-city content cadence proposal without inventing stats/prices; then audit all proposed candidate sources against crafting, drops, auction, legacy IDs and save compatibility. Keep current unlock orders and tier-100 schedule provisional.
+
+
+## 2026-11-18 — professional gear cadence checkpoint
+
+- Added PVE_2_SPEC.md section 22.13 with four alternatives for filling the missing professional armor milestones: preserve the current cadence; add city-entry sets at 30/50/90; add all ten missing sets; or use selected standalone items.
+- Scope estimates: 40 armor pieces per full tier for eight professions; 120 pieces for three city-entry tiers; 400 pieces for all ten gaps; up to 80 standalone pieces if one item per profession is created at every missing level.
+- Current recommended planning baseline: preserve the six existing ordinary professional tiers (25/40/55/70/85/100) and first test whether existing single inline/craft/reward items can provide useful intermediate upgrades. A gradual five-piece unlock schedule does not imply a new full set is mandatory every five levels.
+- No new item content or balance values were approved or added. Keep all alternate cadence options provisional.
+- No gameplay code/data, catalog, inline items, prices, stats, recipes, drops, player saves, or characters changed. Documentation only.
+- CI run 44206367447 was queued for the previous head ba746b736eb936a24c2dd013c2cc64721f51c1d0; after these further documentation commits, verify the Quality Gate on the latest exact PR head, not on an earlier SHA.
+- Next: perform final docs consistency review and exact-head CI verification. Then present the design trade-offs for user decision; do not merge PR #35 or modify main.
+
+
+## 2026-11-18 — city gear access enforcement checkpoint
+
+- Verified previous exact PR #35 HEAD 03e702f217f16537c326452b98a37743d806b7bf passed Quality Gate run 44206484245, all four jobs successful. Current PR #35 remains Draft/open/unmerged; main remains 5686d205dab5130e4bea8b90f81109d32c06934a.
+- Added PVE_2_SPEC.md section 22.14 and updated PROJECT_AUDIT_STATUS.md after auditing city travel, shop listing, purchase and equip handlers.
+- Confirmed gap: shopCatalogForPlayer filters price/legacy/race/profession but not player level/current city. buyItem checks level/race/profession but no current city or item-city assignment. travel allows every city in CITIES/NEUTRAL_CITIES with no level/progression gate. equipItem has no city check; preserve this so owned gear remains usable after travel.
+- All inline weapon/armor/amulet entries are marked legacy=true and rejected by buyItem, so they are not current shop stock. The 125 forgotten_lands dropItems are all price-zero materials/trophies, not gear drops.
+- Northern Crown is included in NEUTRAL_CITIES and currently travel-accessible. Its “closed” product status needs explicit clarification before implementation: travel-blocked vs simply no ordinary gear.
+- Proposed target contract: native capital 1–29; Stone Harbor 30–49; Emerald Valley 50–69; Golden Dunes 70–89; Silver Ruins 90–100; level-gated travel to neutral city entry levels 30/50/70/90; city-specific shop stock plus player-level/race/profession filters; authoritative purchase revalidation; owned gear remains usable regardless of current city. This is a proposal, not implemented or approved.
+- No code, catalog, inline data, IDs, prices, stats, recipes, drops, auctions, migrations, saves or player data changed. Documentation only.
+- Next: audit how legacy inline items and other equipment are actually granted (crafting, rewards, auctions, quest paths), resolve Northern Crown status, and then prepare a minimal shared city-access predicate design. Do not implement until the product contract is settled.
+
+
+## 2026-11-18 — intermediate gear acquisition audit checkpoint
+
+- Added PVE_2_SPEC.md section 22.15 and updated PROJECT_AUDIT_STATUS.md. The section clarifies that inline legacy item records are not automatically available to new players.
+- The 149 inline ITEM entries include 101 weapon/armor/amulet records (44/26/31); all inline weapon/armor/amulet records are marked legacy=true and ordinary buyItem rejects them.
+- Confirmed current craftable equipment outputs: tempered_sword (12), rune_armor (22), crystal_amulet (30), reinforced_staff (18), guardian_armor (32), rune_blade (45), freeblade (12), dawn_charm (8). Crafting checks skill/material/specialty and selected faction reputation; it does not check city.
+- factionBuy checks faction reputation, item level and currency, not city. faction_reward grants dawn_regalia/caravan_cleaver/lore_circlet at level 40 once at 100 faction reputation. These are separate faction channels, not full professional armor sets.
+- forgotten_lands.json has 125 drops, all materials/trophies, no ready-made equipment.
+- Important correction to section 22.12: inline level 30/35/45/50/60/65 items are not ordinary shop stock. Only count them as progression when a real craft/faction/quest/reward/drop grant path is confirmed. The craftable level-30 amulet and level-45 weapon are isolated exceptions, not armor sets.
+- No runtime/data changes: no items, IDs, prices, stats, recipes, faction offers, drops, travel/shop handlers, auctions, migrations, saves or player data changed.
+- Next: finish searching explicit quest/achievement/event/admin reward grants for inline legacy gear; resolve Northern Crown travel status; then define item-city mapping and implementation tests. Keep all work docs-only until those contracts are approved.
+
+
+## 2026-11-18 — correction: active craft and faction gear sources
+
+- Re-traced the active RECIPES lifecycle. After declaring the 11 recipes, the server removes every recipe whose output item is legacy=true. Because inline weapon/armor/amulet entries are marked legacy, the eight old equipment recipes (tempered_sword, rune_armor, crystal_amulet, reinforced_staff, guardian_armor, rune_blade, freeblade, dawn_charm) are not active craft options. Earlier checkpoint wording that called them craftable is superseded.
+- The separate factionBuy handler does not reject legacy and currently offers only two confirmed equipment items: freeblade (level 12) and dawn_charm (level 8). Neither addresses later city armor gaps; faction purchase has no city check.
+- FACTION_MAX_REWARDS names dawn_regalia, caravan_cleaver and lore_circlet, but none of those IDs exists in inline ITEMS or equipment_catalog.json. faction_reward appends the ID string without validating a catalog Item. Do not count these as working gear rewards; track as a separate issue.
+- Current active craft adds new legendary recipes from the JSON catalog only; separate from ordinary city progression.
+- PVE_2_SPEC.md section 22.15 has been corrected. No game code, data, item, recipe, faction offer, price, stat, drop, save or player record changed.
+- Next: complete search of quest/achievement/event/admin grant paths for explicit equipment IDs; decide Northern Crown travel semantics; then draft the final city/item-source mapping. Keep docs-only until design approval.
+
+
+## 2026-11-18 — final correction: active gear acquisition sources
+
+- Traced openChest in addition to RECIPES/faction handlers. Its 7% rare-result branch can grant amulet_power (level 5), amulet_guard (level 8), or tempered_sword (level 12), selected from available unique items; it can also select mystery_chest. These are early legacy items and do not close later city armor gaps.
+- Correct active RECIPES status: the server removes all recipes whose output item is legacy=true. The eight old gear-output recipes are therefore inactive. Only JSON-catalog legendary recipes remain in the active craft catalogue. Earlier notes calling old gear recipes craftable are superseded.
+- factionBuy remains active for two gear offers: freeblade (level 12) and dawn_charm (level 8), subject to faction reputation, player level and currency. No city check.
+- Other inspected inline gear at levels 30/35/45/50/60/65 has no active ordinary shop, post-filter craft, faction offer, chest or Forgotten Lands drop source.
+- FACTION_MAX_REWARDS IDs dawn_regalia/caravan_cleaver/lore_circlet are not present in inline ITEMS or equipment_catalog.json; faction_reward inserts the ID string without checking the Item. Treat as a separate integrity issue, not a usable gear grant.
+- PVE_2_SPEC.md section 22.15 and PROJECT_AUDIT_STATUS.md now reflect the corrected source audit. No runtime/data edits.
+- Next: exact-head CI and documentation consistency review; then prepare the city gear source matrix and resolve Northern Crown travel status. No merge, no main edits.
+
+
+## 2026-11-18 — city-entry gear inventory checkpoint
+
+- Added PVE_2_SPEC.md section 22.16 and updated PROJECT_AUDIT_STATUS.md with a full 387-entry JSON catalog level matrix.
+- Catalog levels: 1/4/7/10/14/17/19/20/25/40/55/70/85/100. Common five-piece sets at 1/4/7/10/14/17/19/20; ordinary professional tiers 25/40/55/70/85/100. Each professional tier has 8 weapons + 40 armor records. Level100 also contains 40 legendary armor records, separate from ordinary city stock.
+- City-entry delay to the next ordinary professional gear: Stone Harbor 30→40 (10 levels); Emerald Valley 50→55 (5); Golden Dunes 70→70 (0); Silver Ruins 90→100 currently (10), or 90→96 only if the provisional 96–100 piece schedule is accepted (6).
+- Candidate per-piece schedule 25–29/40–44/55–59/70–74/85–89/96–100 stays inside the corresponding city bands but does not add new stock at city entry 30/50/90. Documented four choices: keep gaps; add one item per profession at entry (up to 24 pieces across 30/50/90); add full sets (120 armor records); or move existing tiers (not recommended without simulation).
+- Northern Crown is confirmed closed/outside the normal city progression by prior product notes. The current travel handler still accepts it via NEUTRAL_CITIES; this is a runtime mismatch. Proposed correction is to reject travel until separately opened, with no normal gear band.
+- No item, ID, stat, price, shop handler, travel handler, recipe, drop, save or player data changed. Documentation only.
+- Next: consolidate shared city access predicate and implementation test plan, verify latest exact-head CI, then pause for explicit approval before implementing city travel/shop restrictions.
+
+
+## Контрольная точка — 2026-11-18: симуляция постепенной брони
+
+- Активная задача: PR #35, ветка design/gradual-armor-progression-2026-11-18; изменения остаются документационными, PR не объединять без отдельного решения.
+- Проверены текущие источники: каталог server/data/equipment_catalog.json (SHA 1b1e6eca2b5d39e135f1540e07dba36c3d847ef1), формула server/src/monsterCombatStats.ts (SHA be061489c6e6636f61f286f6713b85467c3b7b54), XP server/src/xpProgression.ts (SHA 29ee7682bf3cb3e638cc45eac10f7305dc563b72), live handlers server/src/index.ts (SHA e47b978c4d5b453521e7477be7f7cfaa5d27f4b8), PlayerSchema (SHA 0effe13365ef843879f7d1f02f0a55c2126b9082) и combat-effect contract (SHA 39c80441c0e0a4f3a7ef2f11e136049e9c3120ad).
+- Симуляция охватывает все 8 профессий, 6 существующих обычных профессиональных ступеней, пять слотов брони, варианты A/B и исключает нулевые по цене легендарные предметы. Итоговые суммы каждой ступени совпадают; A — защитный/дорогой старт, B — дешёвый старт с атакующими перчатками на третьем шаге.
+- Исправлена ошибка предыдущей постановки: +3 statPoints за уровень — не распределяемые атрибуты; upgradeStat списывает золото и не расходует statPoints. Между 85 и 96 — 33 счётных, но неиспользуемых очка. Уровневый рост maxHealth считается отдельно как 18 + 0.5 × текущая vitality за переход.
+- Поздняя экономика 40–100 не подтверждена текущим аудитом до 30; поэтому доступность цен и полный соло/групповой исход не объявлены. Бонусы typed combatStats не считались активными универсально.
+- Решения A/B, требований 96–100 и контента на входах городов 30/50/90 не приняты. Каталог/код/сохранения не менялись.
+- Следующий этап: построить модель поздней экономики и реальные encounter fixtures 40–100 (доходы, доступные подземелья, расход золота на экипировку/атрибуты/прочие системы), затем повторить соло/групповые сценарии. До появления этих данных не утверждать порядок и не менять runtime.
+
+## Контрольная точка — 2026-11-18: аудит экономики уровней 40–100
+
+- Активная задача: PR #35, ветка `design/gradual-armor-progression-2026-11-18`; PR остаётся отдельной документационной веткой. `main` не менялся, PR не объединялся.
+- В `PVE_2_SPEC.md` добавлен §22.18. Commit: `92ad2f234bbc476974b2bef6363f4d651809c5cc`; blob: `98afb2136424d4e9528a77f28973c49f8d314afd`.
+- Проверены `server/data/forgotten_lands.json` SHA `1efe8345db057de65a60223d86a6b786c4d16d2d`, `server/src/index.ts` SHA `e47b978c4d5b453521e7477be7f7cfaa5d27f4b8`, `server/src/xpProgression.ts` SHA `29ee7682bf3cb3e638cc45eac10f7305dc563b72`, `server/src/dungeonAttemptPreparation.ts` SHA `020ef18adbed1558c7d8589d1e630378deaacfe9`, `server/data/city_npcs.json` SHA `96ff849a08c38b37e12e49928d861f8d103b2d79`, каталог брони SHA `1b1e6eca2b5d39e135f1540e07dba36c3d847ef1` и combat formula SHA `be061489c6e6636f61f286f6713b85467c3b7b54`.
+- Позднего PvE-контента в текущих данных нет: все 10 экспедиционных зон заканчиваются уровнями 25–30; 100 монстров имеют максимум 30 уровень; все 4 подземелья имеют min 5/12/21/25 и последнее выдаёт 6 200 XP + 3 900 золота за победу.
+- `runExpeditionDungeon`: до 3 входов в сутки на участника; проверяется минимум уровня, но нет верхнего уровня, city gate или требования пройти предыдущую зону. Один dungeon можно повторять. При победе XP полностью начисляется каждому, золото делится по `floor(gold/partySize)`; поражение не даёт награду, но расходует попытку.
+- Экспедиционные охоты доступны в открытых зонах после достижения любого уровня; фиксированный контент не масштабируется. В зоне 10 после её прохождения Архонт появляется с шансом 5%. Семь успешных охот дают ожидаемо около 4 675 XP и 1 505 золота соло; группа получает полный XP и делит золото.
+- Повторяемые дневные награды масштабируются с уровнем: login `75+12L` gold / `100+15L` XP; три race dailies `470–480+24L` gold / `315–320+15L` XP; daily challenge 180g/90xp; daily hunt 300g/180xp; weekly 700g/300xp; fountain expected 33.3g/day.
+- Максимальный ежедневный сценарий (3 успешных финальных подземелья + 7 успешных охот + все daily rewards) оценивает XP от уровня 30 до 100 примерно в 640 дней при динамическом расчёте уровня. Это интенсивный сценарий с минимум 105 минутами поиска в день, не прогноз обычной игры.
+- Ожидаемое золото в этом сценарии: уровень 40 — около 15 804 соло / 7 000 на участника группы из 3; уровень 100 — около 17 964 соло / 9 160 в группе из 3. Включены средние награды зоны 10 и три финальных dungeon clear; не включены разовые rewards, случайные сундуки, торговля и бонусы pendant/buff.
+- Пять частей профессиональной брони стоят 46 800 / 101 400 / 202 800 / 405 600 / 780 000 золота на ступенях 40/55/70/85/100; оружие отдельно стоит столько же, сколько полный пятичастный набор. На уровне 100 первая часть A (тело) стоит 312 000, первая часть B (плащ) — 78 000.
+- Подтверждены конкурирующие расходы: покупаемые поля upgradeStat — сила/ловкость/интеллект/живучесть по формуле 100+7×current; защита — 90+6×current; stamina этим handler не покупается. Проф. навык 1 400–1 800 разово, благословение 500+80L за 30 минут, заточка 250×next² плюс материалы/риск неудачи, мастерство набора 50 000×next плюс материалы (2 750 000 золота за +1…+10).
+- Перепроверена таблица §22.17: минимальная атака A в первых трёх слотах корректна, не исправлять. Тело и плащ имеют attack=0 и дают в основном vitality/stamina; шлем даёт ограниченный основной атрибут; атакующие перчатки появляются только четвёртыми.
+- `city_npcs.json` содержит service labels, но не числовые награды городских заданий 40–100. Повторяемый поздний доход в основном опирается на ежедневные награды и повтор старого контента до 30 уровня.
+- Никакие runtime-файлы, каталог, цены, ID, награды, формулы, зоны, подземелья, recipes, drops, shop/travel handlers, saves или player data не менялись. Только документация.
+- Следующий этап: построить sensitivity-модель (1/2/3 dungeon clears, 3/5/7 hunt wins, solo/group, траты на статы/заточку/мастерство) и на её основе определить, достаточно ли текущего старого контента для 40–100 или нужно отдельно проектировать новые высокоуровневые зоны/подземелья. Не создавать их без отдельного решения.
+
+## Контрольная точка — 2026-11-18: единая прогрессия уровней 1–100
+
+- В `PVE_2_SPEC.md` добавлен §22.19 — дорожная карта всех уровней 1–100, городских диапазонов, XP milestones, будущего PvE и правил расчёта экономики. Commit: `55a3ef6be93d14c8f1b334cfa4b7650a58f194f3`; blob: `47629f9f9a5abec1e17da00305c1173374f52243`.
+- Baseline предметов не менялся: общие комплекты 1/4/7/10/14/17/19/20; профессиональные ступени 25/40/55/70/85/100. Кандидатные последовательности частей: 25–29, 40–44, 55–59, 70–74, 85–89, 96–100 (последняя требует отдельного одобрения).
+- Предложена карта диапазонов: 1–29 родная столица; 30–49 Каменный порт; 50–69 Изумрудная долина; 70–89 Золотые дюны; 90–100 Серебряные руины. Для 30/50/90 рекомендована точечная городская награда/мост, а не полный новый пятичастный комплект без проверки. Интервалы 30–39, 45–54, 60–69, 75–84 и 90–95 должны закрываться PvE, ремеслом, материалами, сюжетными и промежуточными наградами.
+- В §22.19 перечислены требования к будущему контенту: новые зоны 30–100, solo/group маршруты, боссы, подземелья, материалы и рецепты; босс должен быть трудным, но убиваемым соло и группой. Это план, не существующий runtime-контент.
+- XP формула подтверждена: `floor(100 × level^1.85)`. Суммарно 17 335 649 XP до уровня 100; 16 793 615 XP от 30 до 100. XP по диапазонам: 1–10 21 405; 10–20 145 119; 20–30 375 510; 30–40 703 595; 40–50 1 124 305; 50–60 1 634 105; 60–70 2 230 290; 70–80 2 910 689; 80–90 3 671 488; 90–100 4 517 143.
+- Уточнены live-награды: расовые daily quests имеют фиксированную базу 470/480 gold и 315/320 XP по расе, затем каждая награда получает `+8 × level` золота и `+5 × level` XP; три поручения суммарно дают надбавку `24 × level` gold и `15 × level` XP. Daily challenge — 180g/90xp, weekly — 700g/300xp, daily hunt — 300g/180xp. Dungeon XP каждому полностью, gold делится на partySize.
+- Не найден подтверждённый источник daily login reward `75+12×level` gold / `100+15×level` XP в `server/src/index.ts`; исключать его из будущих таблиц до нахождения реального handler. Расчёты §22.18 помечены в §22.19 как предварительные верхние сценарии, а не финальная база экономики.
+- Рекомендация для дальнейшей модели: сравнить обычный, активный и максимальный темп; считать net gold/hour и XP/hour, отдельно solo и группы 2–3; не давать игроку высокий повторяемый доход за старый контент только из-за уровня персонажа.
+- Не менялись runtime, каталог, цены, уровни предметов, ID, формулы, награды, зоны, подземелья, рецепты, drops, shop/travel handlers, saves или players. PR #35 остаётся открытым и не объединённым; `main` не менялся.
+- Следующий этап: превратить дорожную карту в конкретную таблицу контента по каждому городскому диапазону — названия/уровни зон, типы обычных/редких/элитных врагов, боссы, подземелья, материалы/рецепты, награды XP/gold и связанные ступени экипировки. Сначала дизайн/симуляция, без runtime-реализации.
+
+## Контрольная точка — 2026-11-18: матрица поздних городов и PvE 30–100
+
+- В `PVE_2_SPEC.md` добавлен §22.20: 8 рабочих зон (по две на каждый город после 30), типовой состав встреч, 4 городских подземелья, относительные диапазоны XP/gold и требования к соло/групповым симуляциям. Commit: `d3aa8e5c12bf9e20410d9e3ed14b65e7da646828`; blob: `84a7725790775de5342c0d9b10d571c24edbf24f`.
+- Рабочие пары зон: Каменный порт 30–39 / 40–49; Изумрудная долина 50–59 / 60–69; Золотые дюны 70–79 / 80–89; Серебряные руины 90–94 / 95–100. Названия и состав встреч предварительные, не существующие JSON-данные.
+- Предложены подземелья с входом 40/60/80/95 и финальными стражами 49/69/89/100. Для каждого диапазона остаётся отдельный соло-маршрут с обычными/редкими/элитными врагами и локальным боссом.
+- Коэффициенты наград в §22.20 (обычный 1–2%, редкий 3–5%, элитный 8–12%, босс 15–25%, подземелье 10–18% XP следующего уровня) — только начальные диапазоны для будущей симуляции, не финальные числа.
+- Зафиксированы требования к защите от фарма старого контента: награда по уровню/опасности монстра, а не по уровню игрока; проверка высокоуровневых ежедневных поручений; diminishing returns/лимит повторных dungeon runs; явная экономика группового деления золота.
+- Не добавлены зоны/монстры/боссы/подземелья в JSON или runtime; не менялись награды, предметы, цены, формулы, ID и сохранения. Документация только.
+- Следующий этап: построить реальную combat/economy test matrix для уровней 30/40/50/60/70/80/90/100, начиная с базовых характеристик и доступных предметов; отдельно проверить соло и группы 2/3, затем назначать точные XP/gold.
+
+
+## Контрольная точка — 2026-11-18: аудит production combat и матрица 30–100
+
+- В PR #35 добавлен раздел 22.21 в PVE_2_SPEC.md. Первый документальный commit этапа: 585399fdbc9df684325f04b374951702d909971e; blob 193632d045c234156ad650145f1094192fb7963f.
+- Перепроверены production-пути: экспедиции вызывают calculatePlayerMonsterCombatStats + calculateExpeditionCombatPlan, синхронные подземелья — calculatePlayerMonsterCombatStats + calculateDungeonCombatPlan. resolveMonsterBattle из typed engine в этих обработчиках не вызывается. Нельзя балансировать новый контент на предположении, что полный typed engine уже включён.
+- Зафиксированы реальные legacy-формулы: экспедиция имеет предел победы 8 раундов; dungeon — 3 раунда. Групповое масштабирование HP/Power и формулы входящего урона приведены в §22.21. Typed combatStats не считаются активными универсально.
+- Подтверждены формулы базовой атаки/защиты и профессий; upgradeStat расходует золото и позволяет покупать только силу/ловкость/интеллект/живучесть/защиту. statPoints не расходуются, stamina этим handler не покупается. HP-level growth и +8 max HP за покупку vitality учитываются отдельно.
+- Верхняя реальная контрольная точка текущего Forgotten Lands: 100 монстров, максимум 30 уровень; Архонт Забвения — 14 000 HP / 450 attack / 300 defense / speed 8, физический урон −20%, магический −15%, ниже 30% HP атака +30%, слабость Лучник +20%. Последний dungeon — power 210, min 25, 6 200 XP и 3 900 gold.
+- Матрица 30–100 теперь требует все уровни, все 8 профессий, соло и партии 2/3, реальные оплаченные билды, доступные предметы, enhancement/buffs, HP, раунды, входящий урон, исход и экономику. Одни контрольные уровни 30/40/…/100 недостаточны.
+- Полноценные TTK/win-rate и boss tuning пока не рассчитаны: после уровня 30 нет реальных монстров, encounter fixtures, боссов или dungeon данных; поздняя экономика и доступность комплектов не подтверждены. §22.20 остаётся проектом, не runtime-контентом.
+- Runtime, JSON, каталог, цены, предметы/ID, награды, сохранения и персонажи не менялись. PR #35 открыт; main не менялся.
+- Следующий этап: подготовить player fixtures и экономические бюджеты для каждого уровня/города, затем проектировать первые реальные encounter fixtures 30–49 и тестировать их на действующих legacy-планах. Не назначать числа боссов до получения подтверждённых player inputs и целевого темпа экономики.
+
+
+## Контрольная точка — 2026-11-18: базовые player fixtures 30–100
+
+- В PR #35 добавлен §22.22 в `PVE_2_SPEC.md`; commit 8b5209d1ea51a97621ce59620065334bb70b37dd. Зафиксирован контрольный персонаж без покупок: стартовые характеристики 10/10/10/10/10, защита 8, max HP 100; текущая система не повышает атрибуты автоматически, начисляет 3 нерасходуемых через upgradeStat statPoints за уровень.
+- Для baseline без vitality purchases max HP на любом уровне L = 100 + 23×(L−1); таблица всех уровней 30–100 находится в §22.22. Базовые legacy attack/defense по восьми профессиям также зафиксированы.
+- Уточнена стоимость upgradeStat: четыре атрибута — 100+floor(current×7), защита — 90+floor(current×6); первая покупка из стартовых значений стоит 170/138 золота. Покупка vitality даёт +8 HP и меняет последующие level-up приросты, поэтому важен порядок.
+- Подтверждено: существующие части профессиональных комплектов 25/40/55/70/85/100 пока имеют единый level requirement ступени; staggered unlock не применён. Цены комплектов: 19 500 / 46 800 / 101 400 / 202 800 / 405 600 / 780 000; оружие стоит столько же, сколько броня. Легендарные price=0 не считать покупаемыми в магазине.
+- Описан fixture-контракт: все восемь профессий, каждый уровень 30–100, реальная история оплаченных улучшений, HP, ID предметов, enhancement, set mastery, баффы, три состояния экипировки, solo и группы 2/3. Голый baseline не выдаётся за реалистичный билд.
+- Поздний net gold/hour и бюджеты короткой/обычной/активной сессии остаются неподтверждёнными, потому что реальных encounter/reward данных 31–100 нет. Не выдумывались бюджеты и не выдавалась бесплатная экипировка.
+- Runtime, каталог, JSON, предметы, цены, награды, сохранения и персонажи не менялись. PR #35 открыт, main не менялся.
+- Следующий этап: по подтверждённым daily и dungeon reward handlers собрать сценарии доходов и расходов, затем оформить первые реальные encounter fixtures 30–39 и прогнать их на legacy combat math до расширения на 40–100.
+
+
+## Контрольная точка — 2026-11-18: обязательный контракт высокой PvE-сложности
+
+- В PR #35 добавлен §22.23 в `PVE_2_SPEC.md` (commit 2e339e5de727aac076a55716c96498721b01e785). Зафиксировано, что Misty-Isles — сложная MMORPG: уровень не гарантирует победу; подготовка, экипировка, развитие, механики и расход ресурсов должны иметь значение.
+- Определена лестница угрозы: обычный враг опасен неподготовленному игроку; редкий меняет приоритеты/тактику; элитный — серьёзная проверка билда; локальный босс имеет собственную механику; городской/dungeon-босс остаётся угрозой для соло, пары и тройки.
+- Соло-победа над боссом должна быть трудной, но достижимой подготовленным персонажем. Группа получает ролевую синергию, но не автоматическую победу; проверять разные составы и отсутствие обязательной профессии.
+- Боссам нужны читаемые контрмеры и уникальные механики; скрытые мгновенные убийства, обязательный класс и бессмысленное умножение HP запрещены. Механики нельзя проектировать поверх runtime, который их не исполняет.
+- Введены критерии приёмки/отказа: win/loss, rounds, damage, входящий урон каждому, остаток HP, затраты, состав, повторные прогоны; отдельно проверять соло/2/3 и все уровни 30–100. Победа босса на 0 HP, игрок погибает на 0 HP; эффекты с 1 HP не меняют это правило.
+- Отмечено ограничение текущего legacy combat: экспедиция до 8 раундов, dungeon до 3; длинные многофазные боссы могут потребовать отдельного проекта боевого runtime и parity tests. Нельзя просто завышать HP/attack, пока не доказана честная достижимость.
+- Числовые параметры и проценты победы пока не утверждались. Runtime, JSON, каталог, награды, предметы, saves и player data не менялись; PR #35 открыт, main не менялся.
+
+
+## Контрольная точка — 2026-11-18: проект боевой сложности Соляного берега 30–39
+
+- В PR #35 добавлен §22.24 в PVE_2_SPEC.md; commit этапа 5ce366d7ee323c0e05eb7517b35f3e087fe5cd54.
+- Зафиксировано продуктовое направление: Misty-Isles должна быть ещё сложнее, но сложность создаётся разными боевыми ролями, подготовкой, сопротивлениями, составом встреч и ценой ошибки, а не бесконтрольным ростом HP/атаки.
+- Спроектированы восемь обычных ролей Соляного берега, редкий «Собиратель приливных реликвий», элитный «Смотритель ржавого мола» и локальный босс «Капитан бездонного прилива». Все названия и роли — дизайн, не live-контент.
+- Проверена совместимость с legacy combat: допустимы только зарегистрированные статические пассивки, существующие weakness parser и реально передаваемые caller-ом модификаторы. Эффекты по раундам/порогам HP, яд, периодическое лечение и фазы не считаются активными в production expedition/dungeon без отдельного runtime-подтверждения.
+- Сохранены пределы: expedition 8 раундов, dungeon 3; typed combatStats не активируются автоматически в этих режимах. Числа HP/attack/defense/speed, награды, частоты и win-rate не назначались.
+- Следующий шаг: подтвердить фактическую передачу legacy modifiers в production handlers, затем создать детерминированные fixtures 30–39 для всех восьми профессий и party size 1/2/3. Только после этого назначать параметры противников.
+- Runtime, monster JSON, equipment catalog, предметы/ID, экономика, награды, saves и player data не менялись. PR #35 открыт; main не менялся.
+
+
+## Контрольная точка — 2026-11-18: production legacy PvE wiring и HP outcome audit
+
+- В PR #35 добавлен §22.25 в PVE_2_SPEC.md. Зафиксировано фактическое подключение static legacy monster modifiers в expedition/dungeon: resistance, profession resistance, evasion/hit, profession incoming modifiers, monster attack/defense multipliers, ally fields, profession weakness; отдельно — player accuracy/evasion/healing/lifesteal recovery channels.
+- Уточнено, что fire weakness не даёт бонуса в legacy aggregate weakness path; monster `allies` не равен party size; Knight guard равен 8% для группы при наличии Knight.
+- Подтверждены лимиты: expedition 8 раундов, dungeon 3. Dynamic HP/round effects, poison, monster periodic healing, speed/crit phases не входят в aggregate plans. Отдельный `resolveMonsterBattle` не вызывается этими production handlers.
+- Существующие тесты покрывают helper/math characterization, включая соло/дуо/трио и typed engine synthetic matrix из 72 сценариев. Это не реальная legacy balance matrix 30–39.
+- Найдено блокирующее несоответствие правилу смерти: expedition loss и `prepareDungeonMemberHealthOutcome` используют `Math.max(1, health - incomingDamage)`; unit test закрепляет 1 HP при lethal damage. По §22.23 игрок должен погибать при 0 HP. Исправление отложено до аудита death/revival/persistence lifecycle, чтобы не повредить восстановление и сохранения.
+- Следующий этап: аудит полного death/respawn/revival/persistence lifecycle; затем legacy player fixture matrix 30–39 по всем 8 профессиям и solo/duo/trio. Числа врагов пока не назначать.
+- Runtime, monster data, equipment catalog, prices, rewards, IDs, saves и player records не менялись. PR #35 открыт; main не менялся.
+
+
+- Уточнение: dungeon spectator/revival/WAL modules и tests существуют, включая HP=0 spectator, но в проверенном production `index.ts` не обнаружено вызовов `commitDungeonRunRound`, `markDungeonParticipantDead`, `prepareDungeonRevival`. Свиток можно купить, но его revive transaction не подключён в проверенном handler. Считать это scaffolding, не действующей системой воскрешения.
+
+
+## Контрольная точка — 2026-11-18: аудит lifecycle смерти и подтверждение 0 HP
+
+- Пользователь подтвердил корректное правило: lethal damage в обычной экспедиции и legacy-подземелье должен давать 0 HP, не 1 HP.
+- В PR #35 добавлен §22.26 в PVE_2_SPEC.md: подтверждены оба legacy health floor, тесты, отсутствие live death/respawn/revive handler, пассивная регенерация с 0 HP, dormant spectator/revival/WAL scaffolding и отсутствие клиентского revive UI.
+- Важное последствие: текущая applyHealthRegeneration восстанавливает минимум 5% эффективного max HP за пятиминутный тик и вызывается на login, в комнате и autosave. Без dead-state она автоматически поднимет игрока с 0 HP. Нужен явный respawn contract, нельзя оставлять это скрытым эффектом регенерации.
+- PlayerSchema не имеет отдельного dead-state; player save принимает 0 HP. Проверенный PvP roster projection использует Number(player.health || 100), поэтому 0 ошибочно отображается как 100 — отдельная точка для исправления.
+- Durable dungeon run умеет alive/spectator/revived, spectator=0 HP и scroll revival через paired WAL, но production index.ts не вызывает round commit/death/revival transitions. Покупка scroll есть, применение не подключено. Client показывает только recovery card, revive UI/command не найден.
+- Не назначались штрафы смерти, стоимость respawn, точка появления или автоматическое воскрешение. Это открытое продуктовое решение.
+- Runtime/client/tests/data/items/scroll pricing/saves/player records не менялись. PR #35 открыт; main не менялся.
+- Следующий шаг: определить поведение персонажа после 0 HP (автоматическое возвращение по таймеру или отдельный respawn в безопасной точке/городе), затем реализовать атомарный death/revive lifecycle и регрессионную матрицу.
+
+
+
+## Контрольная точка — 2026-11-18: ручное возрождение и поход группы
+
+- Пользователь выбрал ручное возрождение: смерть остаётся на 0 HP; таймерное/автоматическое возвращение не используется.
+- При смерти в группе поход продолжается с живыми участниками. Погибший остаётся в составе активного похода как spectator, сохраняет связь с run и может наблюдать; он не участвует в боевых расчётах и не получает обычное лечение.
+- Если союзник воскрешает погибшего, он возвращается в тот же run; расход свитка и revive state должны быть атомарными/идемпотентными. Если поход завершился без воскрешения, игрок вручную выбирает respawn.
+- Соло-смерть завершает попытку; ручной respawn отдельно.
+- Все HP regeneration/offline regeneration/login/autosave должны уважать dead state. Нулевое HP должно отображаться как 0, не fallback 100.
+- Открыты детали: respawn location, HP after respawn, scroll self-use/ally-use scope, rewards for dead member, disconnected spectator after group ends, early spectator leave. Штрафы смерти не назначались.
+- Добавлен §22.27 в PVE_2_SPEC.md. Runtime/client/tests/data/rewards/items/saves/player records не менялись. PR #35 открыт; main unchanged.
+- CI run 44292989558: all four jobs succeeded.
+- Следующий этап: проектирование state transitions и production integration existing durable spectator/revival/WAL foundation; не создавать второй независимый run system.
+
+
+
+## Контрольная точка — 2026-11-18: архитектура интеграции смерти
+
+- Повторно проверены dungeonRunState, dungeonRunRoundRuntime, dungeonRevivalTransaction, dungeonRunRecovery, dungeonRunFinalizationRuntime, dungeonRunStartRuntime/Transaction и legacy expedition helpers.
+- Existing durable state уже сохраняет spectator в participantIds с HP=0; revive transaction атомарно готовит player inventory + run state, но production handler отсутствует.
+- Blockers: resolveNextDungeonRunRound пока clamp-ит HP на 1; advanceDungeonRunRound запрещает HP=0; death transition не имеет найденного production WAL caller; precomputed bossDamageByRound продолжает учитывать вклад умершего в будущих раундах; all-dead terminal policy не закреплена.
+- Revived status сейчас обрабатывается как живой в round resolver, что нормально только после корректного обновления round plan.
+- Legacy expedition не имеет durable run/spectator lifecycle; синхронный encounter требует отдельной интеграции, нельзя считать dungeon spectator implementation достаточной.
+- §22.28 добавлен в PVE_2_SPEC.md с безопасным порядком реализации и запретами на частичные правки.
+- Runtime/client/tests/data/rewards/items/saves не менялись.
+- Следующий implementation slice: atomic death transaction + round resolver 0HP/spectator + отсутствие живых участников => поражение, с unit/WAL tests; затем подключение production dungeon handlers, revive UI, затем legacy expedition lifecycle.
+
+
+
+## Контрольная точка — 2026-11-18: durable dungeon 0 HP implementation slice
+
+- Implemented in dungeonRunState: lethal round damage => health 0/status spectator; frozen roster preserved; participant-specific outgoing damage schedules ensure a dead member stops contributing to future rounds; revived status remains eligible for future rounds.
+- Round plans now store bossDamageByParticipantByRound plus incoming schedules and validate both schedules for every participant.
+- Manual advance snapshots accept 0 HP and mark spectator; spectator cannot be healed through round snapshot.
+- Last participant death terminalizes the run as loss immediately, including before remaining planned rounds; duplicate death is idempotent.
+- commitDungeonRunRound writes run/spectator and player HP through the existing shared WAL. WAL crash matrix now includes recovery of player HP=0 and spectator state.
+- Tests updated in dungeonRunState.test.ts and dungeonRunRoundRuntime.test.ts for lethal hit, future damage exclusion, all-dead loss and crash recovery.
+- Important boundary: this is still durable dungeon foundation, not production-wired. Legacy synchronous dungeon and ordinary expedition handlers still use min 1 HP; no manual respawn handler, regen guard, live revive action/UI, or reconnect/group production integration yet.
+- Round-plan schema changed to per-participant outgoing schedule; repository contains no persisted dungeon_runs.json requiring migration.
+- No enemy data, rewards, penalties, respawn HP/location, scroll pricing, player records or main branch changed.
+- CI run 44295523268 was still in progress at checkpoint creation; verify latest workflow before claiming success.
+- Next: production dungeon handler wiring + atomic ally revive, then legacy expedition lifecycle and manual respawn/regeneration guard.
+

@@ -26,7 +26,7 @@ function createRun(): DungeonRunRecord {
     updatedAt: 200,
     roundPlan: { ...createDungeonRoundPlan({
       totalRounds: 2,
-      totalBossDamage: 500,
+      totalBossDamageByParticipant: { p1: 300, p2: 200 },
       totalIncomingDamageByParticipant: { p1: 20, p2: 30 },
     }), nextRoundIndex: 2 },
   };
@@ -190,7 +190,7 @@ test('a finalization journal recovers terminal state and all player rewards afte
         bossId: 'boss_20', bossHealth: 500, seed: 'seed_finalize_wal', now: 100,
       });
       const run = { ...base, roundIndex: 2, updatedAt: 200, roundPlan: { ...createDungeonRoundPlan({
-        totalRounds: 2, totalBossDamage: 500, totalIncomingDamageByParticipant: { p1: 20, p2: 30 },
+        totalRounds: 2, totalBossDamageByParticipant: { p1: 300, p2: 200 }, totalIncomingDamageByParticipant: { p1: 20, p2: 30 },
       }), nextRoundIndex: 2 } };
       const players = {
         p1: { id: 'p1', health: 80, gold: 600, inventory: '["dungeon_resource"]', quests: '{}' },
@@ -286,7 +286,7 @@ test('finalization recovers after every shared-WAL write boundary', () => {
         const run = {
           ...base, roundIndex: 2, updatedAt: 200,
           roundPlan: { ...createDungeonRoundPlan({
-            totalRounds: 2, totalBossDamage: 500,
+            totalRounds: 2, totalBossDamageByParticipant: { p1: 300, p2: 200 },
             totalIncomingDamageByParticipant: { p1: 20, p2: 30 },
           }), nextRoundIndex: 2 },
         };
