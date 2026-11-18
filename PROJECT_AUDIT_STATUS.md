@@ -3512,3 +3512,13 @@ Quality Gate 43931230374 failed because the new dungeon test file contained a li
 - CI run 44292989558 completed successfully: client build, data/docs/structure, server build, Playwright smoke tests all success. PR #35 open, main unchanged.
 - Next: design and wire production state transitions using the existing durable dungeon spectator/revival/WAL foundation, avoiding a parallel run system.
 
+
+
+## 2026-11-18 — death lifecycle integration architecture
+
+- Re-read dungeonRunState, dungeonRunRoundRuntime, dungeonRevivalTransaction, dungeonRunRecovery, dungeonRunFinalizationRuntime, dungeonRunStartRuntime/Transaction, expeditionOperations and legacy expedition math.
+- Durable dungeon run already retains spectator in participantIds at 0 HP; revival transaction prepares player inventory + run state for one WAL commit; recovery view includes participant status/HP. These are foundations, not production gameplay wiring.
+- Integration blockers: deterministic round resolver still clamps at 1 HP; advanceDungeonRunRound rejects HP=0; no production death transaction caller found; precomputed bossDamageByRound may keep counting a participant after death; no all-participants-dead terminal rule; revived participants require a recalculated future damage plan.
+- Legacy expedition currently has no durable spectator/run lifecycle and resolves aggregate encounters synchronously. It needs a separate safe integration, not just reuse of dungeon-only state.
+- Added PVE_2_SPEC.md §22.28 with ordered implementation slices and safety invariants. No runtime/client/tests/data/rewards/items/saves changed.
+- Next: atomic death transaction + 0HP/spectator round resolver + all-dead terminal handling with unit/WAL tests; then wire dungeon production/revive UI, then adapt legacy expedition.
