@@ -29,7 +29,7 @@ test('rejects multiple active runs instead of choosing one arbitrarily',()=>{
 
 test('reconnect projection resumes from a serialized committed round without exposing private plan data',()=>{
   const initial=activeRun();
-  const planned={...initial,roundPlan:createDungeonRoundPlan({totalRounds:2,totalBossDamage:100,totalIncomingDamageByParticipant:{p1:10,p2:20}})};
+  const planned={...initial,roundPlan:createDungeonRoundPlan({totalRounds:2,totalBossDamageByParticipant: { p1: 60, p2: 40 },totalIncomingDamageByParticipant:{p1:10,p2:20}})};
   const committed=resolveNextDungeonRunRound(planned,200);
   const restored=validateDungeonRunStore(JSON.parse(JSON.stringify({[committed.runId]:committed})));
   const view=createDungeonRunRecoveryView(restored[committed.runId],'p2');
