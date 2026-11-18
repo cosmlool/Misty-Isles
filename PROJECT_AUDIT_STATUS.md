@@ -3474,3 +3474,14 @@ Quality Gate 43931230374 failed because the new dungeon test file contained a li
 - Ограничения legacy runtime явно отражены: production expedition/dungeon используют агрегатные формулы; эффекты по раундам/HP thresholds, яд, лечение по раундам и фазы не считаются доступными без отдельного подключения/проверки. Typed combatStats не включаются автоматически.
 - Перед назначением абсолютных параметров нужны детерминированные fixtures на каждом уровне 30–39, все 8 профессий, соло/дуо/трио, реальные оплаченные билды, win/loss, rounds, incoming/outgoing damage, HP margin и экономические затраты.
 - Не менялись runtime, JSON, монстры, боссы, dungeon, предметы, ID, цены, награды, формулы, saves или player data. PR #35 открыт; main не менялся.
+
+
+## 2026-11-18 — production PvE wiring and lethal HP floor finding
+
+- Added PVE_2_SPEC.md §22.25 in PR #35. Confirmed the actual static modifier channels passed by production expedition/dungeon handlers: resistance, profession resistance, monster evasion/hit, profession incoming multipliers, monster attack/defense and ally modifiers, profession weakness; player accuracy/evasion and post-combat healing/lifesteal are separately wired.
+- Clarified unsupported aggregate mechanics: HP/round thresholds, first/after-round attacks, poison, monster periodic healing, speed turn order and crit phases. Fire weakness is parsed but not applied by the legacy aggregate weakness helper. Monster allies are independent from player party size. Knight group guard is 8%.
+- Verified aggregate limits: expedition max 8 rounds, dungeon max 3. The separate round-based resolveMonsterBattle engine is not called by these two production handlers.
+- Existing tests characterize helper/math behavior and a synthetic typed-engine matrix (72 scenarios); they do not prove production legacy balance for real level 30–39 player/equipment fixtures.
+- Blocking discrepancy: expedition loss and dungeon member health outcome clamp lethal damage to 1 HP via Math.max(1, health - incomingDamage). A unit test explicitly preserves 1 HP after lethal incoming damage. This conflicts with the §22.23 rule that a player dies at 0 HP. Death/revival/persistence lifecycle must be audited before changing the clamp.
+- Next: audit death, respawn, revival, and persistence flows; then build real legacy player fixtures for every level 30–39, all eight professions, and solo/duo/trio mixed groups. Do not assign enemy stats until this is complete.
+- No runtime, JSON, equipment, reward, ID, save, or player-data changes. PR #35 remains open; main unchanged.
