@@ -288,7 +288,7 @@ test('round plan validation rejects incomplete or non-finite participant schedul
     roundPlan: {
       totalRounds: 2,
       nextRoundIndex: 0,
-      bossDamageByRound: [5, 5],
+      bossDamageByParticipantByRound: { p1: [5, 5] },
       incomingDamageByRound: { p1: [1, 1] },
     },
   };
