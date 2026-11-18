@@ -1742,3 +1742,13 @@ PR #15 остаётся Draft/open и не объединён. Слияние б
 - Important correction to section 22.12: inline level 30/35/45/50/60/65 items are not ordinary shop stock. Only count them as progression when a real craft/faction/quest/reward/drop grant path is confirmed. The craftable level-30 amulet and level-45 weapon are isolated exceptions, not armor sets.
 - No runtime/data changes: no items, IDs, prices, stats, recipes, faction offers, drops, travel/shop handlers, auctions, migrations, saves or player data changed.
 - Next: finish searching explicit quest/achievement/event/admin reward grants for inline legacy gear; resolve Northern Crown travel status; then define item-city mapping and implementation tests. Keep all work docs-only until those contracts are approved.
+
+
+## 2026-11-18 — correction: active craft and faction gear sources
+
+- Re-traced the active RECIPES lifecycle. After declaring the 11 recipes, the server removes every recipe whose output item is legacy=true. Because inline weapon/armor/amulet entries are marked legacy, the eight old equipment recipes (tempered_sword, rune_armor, crystal_amulet, reinforced_staff, guardian_armor, rune_blade, freeblade, dawn_charm) are not active craft options. Earlier checkpoint wording that called them craftable is superseded.
+- The separate factionBuy handler does not reject legacy and currently offers only two confirmed equipment items: freeblade (level 12) and dawn_charm (level 8). Neither addresses later city armor gaps; faction purchase has no city check.
+- FACTION_MAX_REWARDS names dawn_regalia, caravan_cleaver and lore_circlet, but none of those IDs exists in inline ITEMS or equipment_catalog.json. faction_reward appends the ID string without validating a catalog Item. Do not count these as working gear rewards; track as a separate issue.
+- Current active craft adds new legendary recipes from the JSON catalog only; separate from ordinary city progression.
+- PVE_2_SPEC.md section 22.15 has been corrected. No game code, data, item, recipe, faction offer, price, stat, drop, save or player record changed.
+- Next: complete search of quest/achievement/event/admin grant paths for explicit equipment IDs; decide Northern Crown travel semantics; then draft the final city/item-source mapping. Keep docs-only until design approval.
