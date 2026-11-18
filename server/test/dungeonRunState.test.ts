@@ -240,10 +240,15 @@ test('when every participant dies in a planned round, the run ends in loss immed
   const base = run();
   const planned = {
     ...base,
+    participants: {
+      ...base.participants,
+      p1: { ...base.participants.p1, health: 10 },
+      p2: { ...base.participants.p2, health: 5 },
+    },
     roundPlan: createDungeonRoundPlan({
       totalRounds: 3,
       totalBossDamageByParticipant: { p1: 90, p2: 60 },
-      totalIncomingDamageByParticipant: { p1: 100, p2: 90 },
+      totalIncomingDamageByParticipant: { p1: 30, p2: 15 },
     }),
   };
   const terminal = resolveNextDungeonRunRound(planned, 2000);
@@ -295,7 +300,7 @@ test('round plan validation rejects incomplete or non-finite participant schedul
   assert.throws(() => validateDungeonRunStore({ run_001: state }), /incomplete or misaligned round plan/);
   assert.throws(() => createDungeonRoundPlan({
     totalRounds: 2,
-    totalBossDamage: 10,
+    totalBossDamageByParticipant: { p1: 5, p2: 5 },
     totalIncomingDamageByParticipant: { p1: 1, p2: Number.NaN },
   }), /Invalid deterministic dungeon round plan/);
 });
