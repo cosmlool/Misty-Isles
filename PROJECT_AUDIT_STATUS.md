@@ -3429,3 +3429,16 @@ Quality Gate 43931230374 failed because the new dungeon test file contained a li
 - Proposed zones: Stone Harbor 30–39 and 40–49; Emerald Valley 50–59 and 60–69; Golden Dunes 70–79 and 80–89; Silver Ruins 90–94 and 95–100. Proposed dungeons enter at 40/60/80/95 and end with bosses 49/69/89/100. Names are working labels only.
 - Draft reward ratios are relative to next-level XP and next gear-piece price; they are simulation inputs, not approved rewards. No new JSON/runtime content was created.
 - Next validation: combat/economy matrix at levels 30/40/50/60/70/80/90/100, all eight professions, solo and parties of 2/3, then tune exact XP/gold and item affordability.
+
+
+## 2026-11-18 — production combat audit for late-game progression
+
+- Added PVE_2_SPEC.md §22.21 in PR #35; commit 585399fdbc9df684325f04b374951702d909971e, blob 193632d045c234156ad650145f1094192fb7963f.
+- Confirmed the live production route: expedition uses calculatePlayerMonsterCombatStats and calculateExpeditionCombatPlan; synchronous dungeon uses calculatePlayerMonsterCombatStats and calculateDungeonCombatPlan. resolveMonsterBattle in the typed engine is not called by those production handlers.
+- Legacy expedition victory is capped at 8 rounds; legacy dungeon victory is capped at 3 rounds. Their exact group scaling, outgoing damage, incoming damage and survival gates are documented in §22.21. Do not treat all typed equipment combatStats as active in these modes.
+- Confirmed the live player-stat formula and profession multipliers. upgradeStat spends gold and buys strength, dexterity, intelligence, vitality and defense only; it does not consume statPoints and does not buy stamina. Level-up HP growth and the +8 max HP from a vitality purchase are separate inputs.
+- Current Forgotten Lands data contains 100 monsters and ends at level 30. The verified final boss, Archon of Oblivion, has 14,000 HP / 450 attack / 300 defense / speed 8, with physical damage −20%, magic damage −15%, +30% attack below 30% HP and Archer +20% weakness. Final dungeon: power 210, min level 25, 6,200 XP and 3,900 gold.
+- A truthful combat matrix for levels 30–100 must cover every level, all eight professions, solo and parties of 2/3, paid stat builds, gear availability, enhancements/buffs, HP, rounds, incoming damage, win/loss and economy. Milestone-only snapshots are insufficient.
+- Exact TTK/win rates and late boss values remain blocked: no real monsters/encounter fixtures/dungeons exist above level 30; later-city income and affordability are not established. The eight zones/four dungeons in §22.20 remain design proposals, not runtime data.
+- Documentation only. No runtime, JSON, catalog, item IDs/prices, rewards, saves or player data changed. PR #35 remains open; main unchanged.
+- Next: create grounded player fixtures and city economy budgets, then design and test actual 30–49 encounters against the existing legacy combat plans before assigning later boss stats.
