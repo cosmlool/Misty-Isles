@@ -2575,3 +2575,64 @@ Encounter не принимается, если выполняется хотя 
 **Критерий повышенной сложности:** неподготовленный персонаж не должен безопасно фармить весь пул; подготовленный персонаж должен иметь контрмеры и реальный путь победы; редкий/элитный/босс должны добавлять новые решения, а не только больше HP. Соло остаётся возможным, группа получает синергию, но не бесплатную победу.
 
 Граница этапа: определены роли и совместимость с текущими механиками для 30–39. Не назначены HP/attack/defense/speed, частоты, XP/gold, drop chances или проценты побед; не добавлены монстры, зоны, боссы или dungeon в JSON/runtime; не менялись предметы, экономика, ID, saves и формулы.
+
+
+## 22.25. Подтверждённая совместимость legacy PvE и блокирующее правило HP (2026-11-18)
+
+Этот раздел уточняет §22.21 и §22.24 по фактическим production-вызовам в `server/src/index.ts`, pure combat plans и существующим тестам. Он не меняет боевые формулы.
+
+### Что действительно подключено в expedition и dungeon
+
+Production handlers строят player stats через `resolvePlayerMonsterStats`, затем передают в aggregate plans:
+- базовые итоговые `attack` и `defense` (включая существующий расчёт атрибутов, оружия, брони и enhancement);
+- `accuracyBonus` и `evasionBonus`;
+- входящий множитель от profession-specific passive;
+- сопротивление монстра, weakness multiplier, monster hit/evasion multiplier;
+- для монстра — attack/defense multiplier и условный ally bonus;
+- Knight presence даёт группе фиксированный guard 8%.
+
+Подтверждённые legacy passive channels:
+- `allResistance`, физическое/магическое сопротивление и `professionResistance`;
+- `evasion`;
+- `attackMultiplier`, `defenseMultiplier`, `attackWhenAllies`, `defenseWhenAllies`;
+- `attackVsProfession` и `damageVsProfession` как incoming-damage modifiers;
+- healing reduction применяется к послебоевому lifesteal/лечению Баффера.
+Weakness parser распознаёт профессию и тип fire, но legacy weakness multiplier применяет только profession weakness. Fire weakness в aggregate production path не даёт бонуса. Для resistance legacy трактует Боевого мага как magic, остальные профессии как physical; отдельного damage-type выбора для каждого игрока в этих handlers нет.
+
+Важно: `allies` — поле самого монстра. Бонус за союзников включается только при `monster.allies > 0`; он не включается автоматически из размера группы игроков. Групповой размер отдельно масштабирует HP экспедиционного монстра на ×(1 + 0.55×(partySize−1)) и dungeon power на ×(1 + 0.45×(partySize−1)).
+
+### Реальные пределы aggregate plans
+
+- Expedition: урон группы считается по итоговому attack, сопротивлению/weakness/hit; раунды — ceil(groupHP / totalDps), победа максимум за 8 раундов. Входящий урон считается из monsterAttack×0.20 − playerDefense×0.12, умножается на rounds и входящие модификаторы; минимум 1.
+- Dungeon: раунды — ceil(scaledPower×1.35 / (total outgoing attack + 0.65×sum defense)), победа максимум за 3 раунда. Входящий урон считается из bossAttack×0.14 − playerDefense×0.10, с guard/profession/hit modifiers; минимум 1.
+- Monster speed не управляет порядком ходов в этих aggregate plans.
+- Первый удар, пороги HP, усиление после раунда/критического удара, poison, периодическое лечение монстра, снижение скорости, crit damage и прочие round/state-dependent passive effects не участвуют в aggregate расчёте. Их наличие в typed passive registry не означает production support.
+- Typed crit/damage-type/boss-damage/control-resistance/attack-speed и прочие combat modifiers не передаются целиком в aggregate plans. При этом точность, уклонение, healingBonus и lifestealBonus явно извлекаются и используются в соответствующих legacy hit/recovery каналах; не называть их полностью отключёнными.
+- `resolveMonsterBattle` — отдельный раундовый движок с событиями и maxRounds, но expedition/dungeon handlers, проверенные в этом аудите, вызывают `calculateExpeditionCombatPlan` и `calculateDungeonCombatPlan`, а не этот движок.
+
+### Проверенная тестовая база и её пробел
+
+Существуют:
+- unit tests для legacy passive parsing/resistance/weakness/accuracy/ally/profession multipliers;
+- deterministic tests для expedition aggregate math, включая соло/дуо/трио, разные participant multipliers и 8-round cap;
+- dungeon math tests для соло/дуо/трио, входящего урона и 3-round cap;
+- typed-engine matrix из 72 сценариев (8 профессий × 3 размера группы × 3 искусственных encounter profiles).
+
+72 typed-engine сценария — не доказательство баланса production legacy PvE: они используют синтетические параметры, а не реальные level 30–39 player fixtures и текущие production handlers. Нужна отдельная legacy matrix на каждый уровень 30–39, каждую из восьми профессий, соло/дуо/трио, реальные доступные оплаченные билды и реальные equipment requirements. Группы должны включать смешанные профессии, а не только копии одного класса.
+
+### Блокирующее несоответствие: игрок не опускается ниже 1 HP
+
+Текущие outcome handlers содержат `Math.max(1, health - incomingDamage)`:
+- expedition loss path в `server/src/index.ts`;
+- `prepareDungeonMemberHealthOutcome` в `server/src/dungeonMemberHealthOutcome.ts`.
+
+Его unit test прямо фиксирует результат 1 HP при lethal incoming damage. Это противоречит зафиксированному продуктовому правилу §22.23: игрок умирает при 0 HP; правило «босс умирает при 0 HP» отдельно сохраняется. Поэтому результаты текущего aggregate plan нельзя трактовать как проверку реальной смерти/поражения персонажа. До балансировки нужно отдельно проверить весь lifecycle смерти/воскрешения/сохранения и согласовать исправление этого health floor с существующими системами восстановления. В этом этапе код не меняется, чтобы не сломать persistence, revival и quest flows без отдельного regression audit.
+
+### Следующий технический шаг
+
+1. Отдельно проверить и спроектировать исправление lethal HP outcome (expedition + dungeon + recovery/respawn/persistence tests).
+2. Создать настоящую legacy PvE fixture matrix 30–39 из расчёта персонажа и каталога доступных предметов, не выдавая бесплатную экипировку.
+3. Прогнать смешанные группы 2/3 и сравнить с соло, включая фактические incoming damage, HP после боя, минимум HP, rounds и экономические затраты.
+4. Только после этого утверждать числовые характеристики Соляного берега.
+
+Граница этапа: уточнены production-supported modifiers и найдено несоответствие health floor правилу смерти. Никакие runtime/data/JSON/equipment/reward/ID/save изменения не сделаны.
