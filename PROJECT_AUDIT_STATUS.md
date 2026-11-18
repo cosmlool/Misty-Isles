@@ -3410,3 +3410,15 @@ Quality Gate 43931230374 failed because the new dungeon test file contained a li
 - Rechecked §22.17 A-order attack values: 0–1.25 on early tiers and 0–2.50 at 100 are consistent with body/helmet/cloak stats; offensive gloves are the fourth A purchase. No table correction required.
 - Open questions: whether current old-content repeat loops are acceptable at levels 40–100; whether new high-level zones/dungeons are required; how much daily activity should be assumed; and how much gold should remain available after stat, skill, enhancement and mastery spending. Do not change prices, reward tables, item levels or runtime until these questions are resolved.
 - No runtime, data, catalog, price, ID, reward, combat/XP formula, dungeon, zone, drop, recipe, city handler, save or player record changed.
+
+## 2026-11-18 — full progression roadmap 1–100
+
+- Added `PVE_2_SPEC.md` §22.19 with a complete level/city roadmap from character creation through level 100, measured XP milestone totals, content gaps after level 30, equipment milestones, economy principles and open decisions.
+- Existing catalog baseline retained: common sets 1/4/7/10/14/17/19/20; professional tiers 25/40/55/70/85/100. No new item tiers, item IDs, prices or stat changes were made.
+- Proposed city ranges: racial capital 1–29, Stone Harbor 30–49, Emerald Valley 50–69, Golden Dunes 70–89, Silver Ruins 90–100. City-entry bridges at 30/50/90 remain open; recommendation is a targeted city reward rather than an automatic full set.
+- New PvE is required for levels 30–100. Current Forgotten Lands zones/monsters stop at 30 and current dungeons at level 25 entry. §22.19 defines a design requirement for solo/group routes, boss encounters, dungeons, resources and crafting in each city range.
+- XP formula `floor(100 × level^1.85)` gives 17,335,649 XP to level 100 and 16,793,615 XP from level 30 to 100. Range totals are recorded in §22.19.
+- Verified live recurring rewards: race daily quest base totals 470/480 gold and 315/320 XP by race, with +8×level gold and +5×level XP per quest; daily challenge 180g/90xp; weekly challenge 700g/300xp; daily hunt 300g/180xp. Dungeon victory grants full XP to each member and splits gold by party size.
+- The purported daily-login formula 75+12×level gold / 100+15×level XP was not found in `server/src/index.ts`; exclude it from future models until a real handler/source is confirmed.
+- No runtime, catalog, item prices/levels/IDs, XP/combat formulas, rewards, zones, dungeons, recipes, drops, city/shop/travel handlers, saves or player data changed. Documentation only.
+- Next: produce a per-city content matrix with zone/monster/boss/dungeon levels, encounter rewards, materials/recipes, gear milestones, and solo/group economy simulations before any runtime changes.
