@@ -2636,3 +2636,12 @@ Weakness parser распознаёт профессию и тип fire, но leg
 4. Только после этого утверждать числовые характеристики Соляного берега.
 
 Граница этапа: уточнены production-supported modifiers и найдено несоответствие health floor правилу смерти. Никакие runtime/data/JSON/equipment/reward/ID/save изменения не сделаны.
+
+
+### Уточнение по dungeon-run death/revival scaffolding
+
+В проекте уже существуют отдельные pure/durable модули для dungeon participant status `alive/spectator/revived`, перехода в spectator с HP=0, воскрешения свитком, paired player/run snapshots и shared-WAL recovery tests. Это важная заготовка, но не доказательство активного игрового death flow: в текущем `server/src/index.ts` проверены импорты/вызовы legacy dungeon handler и active-run recovery; вызовов `commitDungeonRunRound`, `markDungeonParticipantDead` или `prepareDungeonRevival` не найдено. Покупка свитка подключена, но сам revive transaction в проверенном index handler не вызывается. Поэтому:
+- durable spectator/revival model существует и имеет unit/WAL tests;
+- active legacy expedition/dungeon outcome всё ещё сохраняет минимум 1 HP;
+- отдельный round-based dungeon runtime пока не подтверждён как запускаемый production gameplay flow;
+- следующий death audit должен проследить UI/client events и все entrypoints, прежде чем решать, подключать существующий round runtime или корректировать legacy outcome.
