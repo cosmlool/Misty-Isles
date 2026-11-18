@@ -3522,3 +3522,15 @@ Quality Gate 43931230374 failed because the new dungeon test file contained a li
 - Legacy expedition currently has no durable spectator/run lifecycle and resolves aggregate encounters synchronously. It needs a separate safe integration, not just reuse of dungeon-only state.
 - Added PVE_2_SPEC.md §22.28 with ordered implementation slices and safety invariants. No runtime/client/tests/data/rewards/items/saves changed.
 - Next: atomic death transaction + 0HP/spectator round resolver + all-dead terminal handling with unit/WAL tests; then wire dungeon production/revive UI, then adapt legacy expedition.
+
+
+## 2026-11-18 — durable dungeon zero-HP implementation
+
+- Implemented lethal round damage as health=0/status=spectator in dungeonRunState.
+- Replaced aggregate party bossDamageByRound with per-participant outgoing schedules. Damage is simultaneous within a round; once a participant is spectator, their future scheduled damage is excluded. Round validation requires incoming and outgoing schedules for every frozen participant.
+- Manual round snapshots now accept 0 HP and transition to spectator. Last living participant death terminalizes the run as loss even with unresolved planned rounds; repeated death is idempotent.
+- Shared-WAL round commit persists both player HP=0 and spectator run state atomically. Runtime tests cover crash recovery at journal/player/run write boundaries with a lethal participant.
+- Updated tests for lethal round, future damage exclusion, all-dead loss and WAL recovery.
+- Scope limitation: durable foundation only, still no production gameplay caller. Legacy synchronous expedition/dungeon remain at min 1 HP. Manual respawn, regen dead-state guard, live ally revive UI/handler and reconnect integration are not yet implemented.
+- No rewards, enemy data, penalties, respawn details, scroll pricing, player records or main changes.
+- CI run 44295523268 was in progress when this note was authored.
