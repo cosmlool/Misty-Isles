@@ -1664,3 +1664,13 @@ PR #15 остаётся Draft/open и не объединён. Слияние б
 - Follow-up PR #32 adds this guard and updates the audit record, using the same existing test branch `checkpoint/main-only-cleanup-2026-11-17`; current proposed commit before opening PR: `196bcd3fab945ec68d817c0704a618806ebd1890`. Wait for all required checks on its exact final head.
 - Local folder `C:\Users\bodya\Desktop\project\Misty-Isles` remains on the last confirmed `main` SHA `a3e1ecf4a9c3f12486c0768cfba83580a9284005`. Updating it is blocked by GitHub connection refusal in shell and repeated GitHub Desktop window-capture timeout; no local files or game data were changed. After PR #32 CI/merge, retry fetch/pull and verify a clean checkout at the then-current GitHub main SHA.
 - No saves, character data, group rosters, server gameplay source, or balance were changed in PR #31 or this follow-up.
+
+## 2026-11-20 — утверждённая концепция юмора, диалогов и памяти NPC
+
+- По пользовательскому подтверждению создан отдельный предметный журнал `NPC_DIALOGUE_AND_QUEST_DESIGN_DECISIONS.md`.
+- Зафиксированы индивидуальные характеры и речевые стили NPC; современный, частично мемный юмор, органичный фэнтезийному миру; слово «лол» зарезервировано за одним NPC (его личность ещё не выбрана).
+- У каждого NPC должны быть собственные базовые приветствия/фразы, меняющиеся по мере повторных посещений. Эти обычные разговоры не создают квестовых последствий и не влияют на услуги, цены, торговлю или награды.
+- Ветвление ответов и последствия выбора применяются только к обычным побочным/дополнительным квестам и их цепочкам. Гильдийные квесты и основная сюжетная линия исключены.
+- NPC могут помнить только важные поступки игрока, относящиеся к ним; память может влиять на будущие побочные квесты и реплики этого NPC. Глобальная репутация/отношения не вводятся; память сама по себе не закрывает услуги, торговлю или важные возможности.
+- Техническая реализация, формат сохранения, пороги повторных посещений и конкретный NPC со словом «лол» остаются открытыми вопросами. Игровой код и `server/data` этим этапом не изменялись.
+- Сверены существующие `server/data/city_npcs.json`, `README_STAGE20_LIVING_CITY.md`, `README_STAGE24_LIVING_WORLD.md`, `README_STAGE28.md`, `CHANGELOG_STAGE28.md`, `PROJECT_AUDIT_STATUS.md` и `PROJECT_TECHNICAL_PASSPORT.md`. В `city_npcs.json` уже есть 21 NPC с полями характера, биографии и приветствия; новые правила дополняют дизайн, но не переписывают эти данные.
