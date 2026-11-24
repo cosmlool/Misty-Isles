@@ -76,7 +76,6 @@
       "minLevel": 12,
       "maxLevel": 15,
       "description": "Одичавшие жители и заражённые животные вокруг пустых амбаров.",
-      "signatureDrop": "Заражённое зерно",
       "index": 6,
       "unlockAfter": 5,
       "gatekeeperId": "FL-06-10",
@@ -391,7 +390,7 @@
       "drops": [
         {
           "id": "FLDROP-01-10-A",
-          "chance": 1.0
+          "chance": 1
         },
         {
           "id": "FLDROP-01-10-B",
@@ -639,7 +638,7 @@
       "drops": [
         {
           "id": "FLDROP-02-10-A",
-          "chance": 1.0
+          "chance": 1
         },
         {
           "id": "FLDROP-02-10-B",
@@ -887,7 +886,7 @@
       "drops": [
         {
           "id": "FLDROP-03-10-A",
-          "chance": 1.0
+          "chance": 1
         },
         {
           "id": "FLDROP-03-10-B",
@@ -1139,7 +1138,7 @@
       "drops": [
         {
           "id": "FLDROP-04-10-A",
-          "chance": 1.0
+          "chance": 1
         },
         {
           "id": "FLDROP-04-10-B",
@@ -1391,7 +1390,7 @@
       "drops": [
         {
           "id": "FLDROP-05-10-A",
-          "chance": 1.0
+          "chance": 1
         },
         {
           "id": "FLDROP-05-10-B",
@@ -1647,7 +1646,7 @@
       "drops": [
         {
           "id": "FLDROP-06-10-A",
-          "chance": 1.0
+          "chance": 1
         },
         {
           "id": "FLDROP-06-10-B",
@@ -1891,7 +1890,7 @@
       "drops": [
         {
           "id": "FLDROP-07-10-A",
-          "chance": 1.0
+          "chance": 1
         },
         {
           "id": "FLDROP-07-10-B",
@@ -2135,7 +2134,7 @@
       "drops": [
         {
           "id": "FLDROP-08-10-A",
-          "chance": 1.0
+          "chance": 1
         },
         {
           "id": "FLDROP-08-10-B",
@@ -2379,7 +2378,7 @@
       "drops": [
         {
           "id": "FLDROP-09-10-A",
-          "chance": 1.0
+          "chance": 1
         },
         {
           "id": "FLDROP-09-10-B",
@@ -2627,7 +2626,7 @@
       "drops": [
         {
           "id": "FLDROP-10-10-A",
-          "chance": 1.0
+          "chance": 1
         },
         {
           "id": "FLDROP-10-10-B",
