@@ -3287,3 +3287,16 @@ Quality Gate 43931230374 failed because the new dungeon test file contained a li
 - To prevent a repeat of the discovered omission, `tools/qa-audit.mjs` now compares every `server/test/*.test.ts` with the test paths in `server/package.json`; it reports omitted, stale, or duplicate paths as errors. The rule was checked against the live main manifest and test directory: 78 listed / 78 discovered, with no mismatches.
 - The audit guard is on the existing temporary test branch in commit `196bcd3fab945ec68d817c0704a618806ebd1890`; PR #32 must pass its exact-head Quality Gate before merge. No new branch was created.
 - The local game folder could not yet be advanced: shell Git access returned `Failed to connect to github.com:443`; the GitHub Desktop window capture timed out after one refreshed retry. No local project files, saves, characters, rosters, or `server/data` were changed. Retry local sync only when the connected Git client can fetch; verify the resulting SHA before treating it as installed.
+
+
+## 2026-11-25 — аудит готовности ресурсной системы к внедрению
+
+- Базовая ветка аудита: `main` commit `5686d205dab5130e4bea8b90f81109d32c06934a`.
+- Серверный каталог предметов и рецептов сосредоточен в `server/src/index.ts`: 43 старые записи с `kind: 'material'`, 11 статических рецептов плюс динамические рецепты легендарной экипировки.
+- `server/data/forgotten_lands.json` содержит 125 monster-specific drop items для 100 монстров (25 редких); 121 запись имеет шаблонное имя «Материал — [монстр]». Эти ID нельзя автоматически считать новыми универсальными ресурсами.
+- Команда `mine` пока заглушка; наличие полей `mining` и `lastMineAt` в PlayerSchema не означает завершённой системы шахтёра.
+- Существующая очередь ремесла и инвентарь используют ID предметов и сохраняются в данных персонажа. Перед заменой старых материалов обязательны карта ссылок и тесты совместимости инвентарей/очередей.
+- Старая система специализаций `smith/alchemist/relic` и старые NPC-данные расходятся с утверждёнными рабочими гильдиями и размещением NPC. Не переносить их автоматически в новую модель.
+- Новый каталог ресурсов утверждён пользователем; проектирование новых ресурсов остановлено. Не добавлять новые игровые сущности и не назначать отсутствующие цены, уровни, количества, выходы, шансы, длительности и рецепты самостоятельно.
+- Код и игровые данные в рамках этого аудита не менялись. `server/data` не заменялся; тестирование на реальных сохранениях не выполнялось.
+- Следующая задача: инвентаризация старых ID и построение безопасной карты совместимости; затем внедрение утверждённого каталога небольшими проверяемыми этапами через защищённую `main` и временные PR только при необходимости.
