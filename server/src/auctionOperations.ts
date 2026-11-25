@@ -66,7 +66,7 @@ function appendHistory(history: any[], entry: any): any[] {
 
 export function listAuctionItem(input: {
   snapshot: EconomySnapshot; sellerId: string; index: number; expectedItemId?: string;
-  expectedCount?: number; price: number; currency: string; validItemIds: ReadonlySet<string>;
+  expectedCount?: number; price: number; currency: string; validItemIds: ReadonlySet<string>; allowedItemIds?: ReadonlySet<string>;
   itemName: string; now: number; lotId: string;
 }): { snapshot: EconomySnapshot; lot: AuctionLot; fee: number } {
   const next = clone(input.snapshot);
@@ -86,7 +86,7 @@ export function listAuctionItem(input: {
     && inventory.filter(x => x === input.expectedItemId).length !== input.expectedCount) {
     throw new Error('Item quantity changed; listing cancelled.');
   }
-  if (!input.validItemIds.has(itemId)) throw new Error('This item cannot be listed.');
+  if (!input.validItemIds.has(itemId) || !(input.allowedItemIds ?? input.validItemIds).has(itemId)) throw new Error('This item cannot be listed.');
   if (next.auction.filter(x => x.sellerId === input.sellerId).length >= 10) throw new Error('Maximum 10 active lots per player.');
   const fee = Math.max(1, Math.floor(input.price * 0.02));
   const field = input.currency === 'gold' ? 'gold' : 'crystals';
