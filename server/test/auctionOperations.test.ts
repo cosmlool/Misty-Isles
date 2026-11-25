@@ -87,15 +87,15 @@ test('listing removes exactly one item, charges the 2% fee and persists the lot 
   } finally { f.cleanup(); }
 });
 
-test('listing one duplicate does not unequip the remaining owned copy', () => {
+test('listing one duplicate leaves the other inventory copy untouched when the item is not equipped', () => {
   const start = initial();
   const seller = start.players.seller;
   seller.inventory = JSON.stringify(['iron_sword', 'iron_sword', 'herb_material']);
-  seller.equipment = JSON.stringify({ weapon: 'iron_sword', helmet: '', armor: '', gloves: '', boots: '', cloak: '', amulet: '' });
   const listed = listAuctionItem({ snapshot: start, sellerId: 'seller', index: 0, expectedItemId: 'iron_sword',
-    expectedCount: 2, price: 500, currency: 'gold', validItemIds: itemIds, itemName: 'Iron sword', now: 10, lotId: 'lot-duplicate' });
+    expectedCount: 2, price: 500, currency: 'gold', validItemIds: itemIds, allowedItemIds: new Set(['iron_sword']),
+    itemName: 'Iron sword', now: 10, lotId: 'lot-duplicate' });
   assert.deepEqual(JSON.parse(listed.snapshot.players.seller.inventory), ['iron_sword', 'herb_material']);
-  assert.equal(JSON.parse(listed.snapshot.players.seller.equipment).weapon, 'iron_sword');
+  assert.equal(JSON.parse(listed.snapshot.players.seller.equipment).weapon, '');
 });
 
 test('withdrawal returns the item exactly once and does not refund the listing fee', () => {
@@ -110,33 +110,30 @@ test('withdrawal returns the item exactly once and does not refund the listing f
   assert.throws(() => cancelAuctionItem({ snapshot: withdrawn, sellerId: 'seller', lotId: 'lot-1', validItemIds: itemIds, now: 21 }), /not found/);
 });
 
-test('withdrawing a unique pendant lot cannot create a duplicate copy', () => {
+test('withdrawing a legacy unique pendant lot cannot create a duplicate copy', () => {
   const start = initial();
   const seller = start.players.seller;
   seller.inventory = JSON.stringify(['amulet_unique']);
-  seller.equipment = JSON.stringify({ weapon: '', helmet: '', armor: '', gloves: '', boots: '', cloak: '', amulet: 'amulet_unique' });
   const valid = new Set([...itemIds, 'amulet_unique']);
   const unique = new Set(['amulet_unique']);
-  const listed = listAuctionItem({ snapshot: start, sellerId: 'seller', index: 0, expectedItemId: 'amulet_unique',
-    expectedCount: 1, price: 500, currency: 'gold', validItemIds: valid, itemName: 'Unique pendant', now: 10, lotId: 'lot-unique' }).snapshot;
-  listed.players.seller.inventory = JSON.stringify(['amulet_unique']);
-  assert.throws(() => cancelAuctionItem({ snapshot: listed, sellerId: 'seller', lotId: 'lot-unique',
+  start.auction.push({ id: 'lot-unique', itemId: 'amulet_unique', itemName: 'Unique pendant',
+    sellerId: 'seller', sellerName: 'Seller', price: 500, currency: 'gold', createdAt: 10, status: 'active' });
+  assert.throws(() => cancelAuctionItem({ snapshot: start, sellerId: 'seller', lotId: 'lot-unique',
     validItemIds: valid, uniqueItemIds: unique, now: 20 }), /unique item is already owned/);
-  assert.equal(listed.auction.length, 1);
-  assert.deepEqual(JSON.parse(listed.players.seller.inventory), ['amulet_unique']);
+  assert.equal(start.auction.length, 1);
+  assert.deepEqual(JSON.parse(start.players.seller.inventory), ['amulet_unique']);
 });
 
-test('buying a unique pendant is rejected when the buyer already has it equipped', () => {
+test('buying a legacy unique pendant lot is rejected when the buyer already has it equipped', () => {
   const start = initial();
-  start.players.seller.inventory = JSON.stringify(['amulet_unique']);
   start.players.buyer.equipment = JSON.stringify({ weapon: '', helmet: '', armor: '', gloves: '', boots: '', cloak: '', amulet: 'amulet_unique' });
   const valid = new Set([...itemIds, 'amulet_unique']);
-  const listed = listAuctionItem({ snapshot: start, sellerId: 'seller', index: 0, expectedItemId: 'amulet_unique',
-    expectedCount: 1, price: 500, currency: 'gold', validItemIds: valid, itemName: 'Unique pendant', now: 10, lotId: 'lot-unique-buy' }).snapshot;
-  assert.throws(() => buyAuctionItem({ snapshot: listed, buyerId: 'buyer', lotId: 'lot-unique-buy',
+  start.auction.push({ id: 'lot-unique-buy', itemId: 'amulet_unique', itemName: 'Unique pendant',
+    sellerId: 'seller', sellerName: 'Seller', price: 500, currency: 'gold', createdAt: 10, status: 'active' });
+  assert.throws(() => buyAuctionItem({ snapshot: start, buyerId: 'buyer', lotId: 'lot-unique-buy',
     validItemIds: valid, uniqueItemIds: new Set(['amulet_unique']), now: 20 }), /already owned/);
-  assert.equal(listed.auction.length, 1);
-  assert.equal(listed.players.buyer.gold, 2000);
+  assert.equal(start.auction.length, 1);
+  assert.equal(start.players.buyer.gold, 2000);
 });
 
 test('purchase transfers one item and the exact net currency after the 5% gold fee', () => {
