@@ -87,6 +87,7 @@ export function listAuctionItem(input: {
     throw new Error('Item quantity changed; listing cancelled.');
   }
   if (!input.validItemIds.has(itemId) || !(input.allowedItemIds ?? input.validItemIds).has(itemId)) throw new Error('This item cannot be listed.');
+  if (Object.values(equipmentOf(seller)).includes(itemId)) throw new Error('Equipped items cannot be listed.');
   if (next.auction.filter(x => x.sellerId === input.sellerId).length >= 10) throw new Error('Maximum 10 active lots per player.');
   const fee = Math.max(1, Math.floor(input.price * 0.02));
   const field = input.currency === 'gold' ? 'gold' : 'crystals';
