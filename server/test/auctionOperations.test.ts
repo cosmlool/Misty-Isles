@@ -58,6 +58,18 @@ test('new listings reject materials when the allowed auction catalog contains on
   assert.equal(start.auction.length, 0);
 });
 
+test('listing rejects an equipped item without changing inventory or equipment', () => {
+  const start = initial();
+  start.players.seller.equipment = JSON.stringify({ weapon: 'iron_sword', helmet: '', armor: '', gloves: '', boots: '', cloak: '', amulet: '' });
+  assert.throws(() => listAuctionItem({ snapshot: start, sellerId: 'seller', index: 0,
+    expectedItemId: 'iron_sword', expectedCount: 1, price: 100, currency: 'gold',
+    validItemIds: itemIds, allowedItemIds: new Set(['iron_sword']), itemName: 'Iron sword', now: 10, lotId: 'equipped-lot' }),
+    /Equipped items cannot be listed/);
+  assert.deepEqual(JSON.parse(start.players.seller.inventory), ['iron_sword', 'herb_material']);
+  assert.equal(JSON.parse(start.players.seller.equipment).weapon, 'iron_sword');
+  assert.equal(start.auction.length, 0);
+});
+
 test('listing removes exactly one item, charges the 2% fee and persists the lot and history', () => {
   const f = fixture();
   try {
