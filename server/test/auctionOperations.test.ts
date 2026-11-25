@@ -48,6 +48,16 @@ test('listing rejects a lot ID that is already present', () => {
   assert.deepEqual(listed, before);
 });
 
+test('new listings reject materials when the allowed auction catalog contains only equipment', () => {
+  const start = initial();
+  assert.throws(() => listAuctionItem({ snapshot: start, sellerId: 'seller', index: 1,
+    expectedItemId: 'herb_material', expectedCount: 1, price: 100, currency: 'gold',
+    validItemIds: itemIds, allowedItemIds: new Set(['iron_sword']), itemName: 'Herb', now: 10, lotId: 'material-lot' }),
+    /This item cannot be listed/);
+  assert.deepEqual(JSON.parse(start.players.seller.inventory), ['iron_sword', 'herb_material']);
+  assert.equal(start.auction.length, 0);
+});
+
 test('listing removes exactly one item, charges the 2% fee and persists the lot and history', () => {
   const f = fixture();
   try {
