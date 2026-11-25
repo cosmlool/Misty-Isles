@@ -220,16 +220,15 @@ test('solo Forgotten Lands boss dungeon reports remaining daily entries and enfo
     assert.equal(afterDiscard.health, 1_085, 'discarding HP armor must preserve health percentage and reduce the cap');
 
     room.send('auctionSell', { index: 0, itemId: 'ARM-C-5-001', expectedCount: 1, price: 100, currency: 'gold' });
-    await waitFor(() => {
-      const auctionPath = join(dataDir, 'auction.json');
-      if (!existsSync(auctionPath)) return undefined;
-      const lots = readJson(auctionPath);
-      return Array.isArray(lots) && lots.length === 1 ? true : undefined;
-    }, 'listing equipped HP cloak');
+    await waitFor(() => notices.find(message => message.includes('Equipped items cannot be listed.')),
+      'rejecting listing of equipped HP cloak');
     const afterListing = readJson(join(dataDir, 'players.json'))[playerId];
-    assert.equal(JSON.parse(afterListing.equipment).cloak, '');
-    assert.equal(afterListing.health, 1_080, 'listing equipped HP armor must not leave health above the new maximum');
-    assert.equal(afterListing.gold, 1_158, 'listing fee is charged exactly once after three dungeon rewards');
+    assert.equal(JSON.parse(afterListing.equipment).cloak, 'ARM-C-5-001');
+    assert.ok(JSON.parse(afterListing.inventory).includes('ARM-C-5-001'), 'rejected listing must preserve the cloak in inventory');
+    assert.equal(afterListing.health, 1_085, 'rejected listing must preserve the equipped cloak health bonus');
+    assert.equal(afterListing.gold, 1_158, 'rejected listing must not charge a fee');
+    const auctionPath = join(dataDir, 'auction.json');
+    assert.equal(existsSync(auctionPath) ? readJson(auctionPath).length : 0, 0, 'rejected listing must not create a lot');
   } finally {
     await leaveRoomSafely(room);
     await leaveRoomSafely(lossRoom);
