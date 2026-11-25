@@ -3362,3 +3362,50 @@ Quality Gate 43931230374 failed because the new dungeon test file contained a li
 - 11 статических рецептов ссылаются на старые ID `wood_material`, `herb_material`, `rune_shard`, `venom_gland`, `crystal_shard`, `ash_ore`, `abyss_shard`, `relic_fragment`. 40 динамических рецептов легендарной брони также используют два `FLDROP-10-10-...` ID и старые материалы.
 - 125 monster-specific `FLDROP-...` ID — отдельный каталог, не совпадающий с 42 старыми material ID. Все 42 material ID имеют SVG, но это не подтверждает их соответствие новому утверждённому каталогу.
 - Не назначать старым ID новые эквиваленты без таблицы ссылок и проверки инвентарей, очередей, дропов, рецептов, квестов и аукциона.
+
+
+## 2026-11-25 — карта совместимости предметов: первый проход по runtime-хранилищам
+
+### Проверенная база и подсчёт каталога
+
+- Источник — `main` commit `5686d205dab5130e4bea8b90f81109d32c06934a`; код/данные не менялись.
+- Точный проход по строкам массива `ITEMS` в `server/src/index.ts` обнаружил 150 записей: 43 material, 44 weapon, 26 armor, 31 amulet, 5 potion, 1 chest. Это исправляет прежнюю оценку 149/42; она была ошибочной. В число 43 входит выражение `RESURRECTION_SCROLL_ID` (Свиток воскрешения), которое имеет `kind: material` в общем массиве, но по назначению является отдельным специальным предметом, а не сырьём нового каталога. Перед миграцией всё равно нужен машинный подсчёт с разрешением констант и дедупликацией ID.
+- Отдельный `server/data/equipment_catalog.json` — 387 записей, отдельное пространство ID; не объединять его с массивом `ITEMS` только по совпадению названий или типа.
+
+### Формат сохранений и ссылки на ID
+
+| Место | Подтверждённая форма | Риск при изменении ID |
+|---|---|---|
+| `Player.inventory` | JSON-массив строковых ID | предметы становятся неузнаваемыми/неотображаемыми |
+| `Player.equipment` | JSON-объект слотов, значения — ID; слоты weapon, helmet, armor, gloves, boots, cloak, amulet | теряется связь надетого предмета и слота |
+| `Player.craftQueue` | JSON-массив CraftJob; `output`, `materials` хранят ID | очередь может зависнуть; отмена/возврат требует исходных ID |
+| `Player.auctionHistory` | JSON-массив | история перестаёт связываться с новым каталогом |
+| `auction.json` | массив лотов с `itemId` | проверка активных лотов может отказать во всех транзакциях |
+| `auction_history.json` | массив событий с `itemId` | история и публичная проекция могут пропускать старые записи |
+
+Источники подтверждения: `PlayerSchema.ts`, `inventoryOperations.ts`, `craftingQueue.ts`, `auctionOperations.ts`, `auctionPresentation.ts`, `auctionTransactions.ts`.
+
+### Подтверждённая логика зависимостей
+
+- `craftingQueue.ts`: материалы списываются по ID; ID и количество копируются в `job.materials`; output хранится в `job.output`. Получение результата сверяет output с текущим множеством допустимых ID. Если output отсутствует, задание сохраняется для проверки. Возврат материалов при отмене/конфликте опирается на сохранённые ID.
+- `auctionOperations.ts`: активные лоты проверяются по `validItemIds`; у лота и истории есть `itemId`. Текущий handler строит разрешённый набор как `new Set(ITEMS.map(i => i.id))`, поэтому пока пропускает любой предмет из общего старого массива, а не только оружие/броню. Это уже подтверждённое несовпадение с целевым правилом аукциона.
+- `auctionTransactions.ts`: игроки, аукцион и история записываются общей транзакцией с журналом восстановления; изменения миграции должны сохранять атомарность и резервное копирование.
+- `inventoryOperations.ts`: экипировка очищается при удалении последней копии ID; сохранение ID влияет на проверку экипировки.
+- `PlayerSchema.ts`: старые внутренние слоты экипировки включают `amulet`. Не заменять его на `ring` без миграции и обратной совместимости UI/боевых расчётов.
+
+### Первый слой старых material ID
+
+Текущий массив `ITEMS` содержит следующие 43 записи с `kind: material` (первая — вычисляемый `RESURRECTION_SCROLL_ID`): `moon_dust`, `iron_scrap`, `wind_feather`, `glow_mushroom`, `cat_mooncrystal`, `dog_ironmark`, `bird_windfeather`, `rodent_glowspore`, `herb_bundle`, `wood_material`, `herb_material`, `rune_shard`, `venom_gland`, `crystal_shard`, `ash_ore`, `abyss_shard`, `relic_fragment`, `protection_seal`, `mist_bloom`, `rune_heart`, `marsh_amber`, `ash_core`, `sun_pearl`, `storm_feather`, `moon_silver`, `eclipse_lens`, `trophy_mistwood`, `trophy_whisper`, `trophy_ruins`, `trophy_marsh`, `trophy_crystal`, `trophy_frontier`, `trophy_abyss`, `trophy_sanctum`, `trophy_sunken`, `trophy_stormcliffs`, `trophy_embermine`, `trophy_moonfen`, `trophy_eclipse`, `faction_seal_dawn`, `faction_seal_caravan`, `faction_seal_lore`. Дополнительно в этом наборе присутствует `RESURRECTION_SCROLL_ID`, определяемый константой.
+- 11 статических рецептов: `field_potion`, `tempered_sword`, `rune_armor`, `crystal_amulet`, `reinforced_staff`, `guardian_armor`, `deep_potion`, `rune_blade`, `dawn_elixir`, `caravan_blade`, `lore_charm`. Их материалы используют старые ID: `herb_material`, `wood_material`, `venom_gland`, `rune_shard`, `ash_ore`, `crystal_shard`, `abyss_shard`, `relic_fragment`. Рецепты не являются утверждёнными новыми рецептами; пока только инвентаризируются.
+- Цикл ниже статических рецептов удаляет из видимого каталога рецепты, чей output помечен legacy, но динамически добавляет рецепты для каждого легендарного предмета брони. В них использованы `FLDROP-10-10-A`, `FLDROP-10-10-B`, `abyss_shard`, `relic_fragment`, `crystal_shard`, `ash_ore`.
+- 125 уникальных `FLDROP-...` ID из `forgotten_lands.json` — отдельные drop ID, не эквивалентны 43 строкам material в `ITEMS`. Их реальные output ID и runtime-resolver ещё предстоит проследить.
+- Все 43 старые material-записи имеют клиентские SVG по ID/общему набору иконок согласно предыдущей проверке; иконка не доказывает, что предмет останется в новой системе.
+
+### Открытые задачи карты (не считать выполненными)
+
+1. Разрешить константы и получить точный реестр ID массива `ITEMS`; выявить дубли и все `legacy` флаги.
+2. Для каждого из 43 material ID и 125 `FLDROP` ID найти все ссылки в `index.ts`, других server modules, tests, client UI, quests, NPC, drops, shop, faction rewards.
+3. Установить фактический маршрут каждого `FLDROP` ID до добавления в inventory: кто его раскрывает/переименовывает, какие item IDs попадают в сохранение.
+4. Сопоставить все 387 записей `equipment_catalog.json` с runtime `ITEMS`, equip-slot resolver, боевыми расчётами и клиентскими tooltip/icon.
+5. Проверить реальные player save fixtures и миграции, очереди, активные лоты и историю; live `players.json` на сервере не читался и не должен считаться проверенным.
+6. Только после полной карты предложить миграционный план с сохранением старых ID/alias и тестами. Не менять код, баланс, предметы или данные на этом этапе.
