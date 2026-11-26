@@ -3287,3 +3287,13 @@ Quality Gate 43931230374 failed because the new dungeon test file contained a li
 - To prevent a repeat of the discovered omission, `tools/qa-audit.mjs` now compares every `server/test/*.test.ts` with the test paths in `server/package.json`; it reports omitted, stale, or duplicate paths as errors. The rule was checked against the live main manifest and test directory: 78 listed / 78 discovered, with no mismatches.
 - The audit guard is on the existing temporary test branch in commit `196bcd3fab945ec68d817c0704a618806ebd1890`; PR #32 must pass its exact-head Quality Gate before merge. No new branch was created.
 - The local game folder could not yet be advanced: shell Git access returned `Failed to connect to github.com:443`; the GitHub Desktop window capture timed out after one refreshed retry. No local project files, saves, characters, rosters, or `server/data` were changed. Retry local sync only when the connected Git client can fetch; verify the resulting SHA before treating it as installed.
+
+
+### 2026-11-26 — пользователь разрешил самостоятельно назначать числовые параметры внедрения
+
+- Новое прямое указание пользователя: если для реализации требуются числовые параметры, ассистент назначает их самостоятельно на своё усмотрение и продолжает внедрение; все принятые значения и изменения обязательно фиксируются в журналах.
+- Это указание supersedes прежние записи «не назначать количества, выходы, длительности, вероятности и цены самостоятельно». Отныне эти числовые параметры можно определять самостоятельно там, где это необходимо для реализации уже утверждённой системы.
+- Разрешение не распространяется на изменение состава закрытого каталога, добавление новых ресурсов/типов заготовок/оружия/профессий, переименование утверждённых сущностей, изменение ранее утверждённых игровых принципов или изобретение незафиксированных системных правил.
+- Внедрение игрового кода ведётся в отдельной ветке `feature/resource-catalog-implementation-2026-11-26`, созданной от `main` commit `5686d205dab5130e4bea8b90f81109d32c06934a`. Документационный PR #38 не смешивается с игровым кодом и не объединяется.
+- Первый внедряемый блок — металлургическая цепочка, поскольку её структура определена: медная и железная руды; медные и железные слитки; сталь как сплав железной основы с древесным углём; четыре универсальные заготовки из соответствующих слитков. Две редкие металлические позиции пока без утверждённых названий и источников, поэтому в код не добавляются до конкретизации каталога.
+- На момент записи числовые значения ещё не назначены и код не изменён. Каждый следующий завершённый этап должен содержать в этой записи фактические числа, изменённые файлы и результаты тестов.
