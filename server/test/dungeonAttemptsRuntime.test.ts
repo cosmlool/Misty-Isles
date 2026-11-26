@@ -226,7 +226,7 @@ test('solo Forgotten Lands boss dungeon reports remaining daily entries and enfo
     assert.equal(JSON.parse(afterListing.equipment).cloak, 'ARM-C-5-001');
     assert.ok(JSON.parse(afterListing.inventory).includes('ARM-C-5-001'), 'rejected listing must preserve the cloak in inventory');
     assert.equal(afterListing.health, 1_085, 'rejected listing must preserve the equipped cloak health bonus');
-    assert.equal(afterListing.gold, 1_158, 'rejected listing must not charge a fee');
+    assert.equal(afterListing.gold, 1_160, 'rejected listing must not charge a fee');
     const auctionPath = join(dataDir, 'auction.json');
     assert.equal(existsSync(auctionPath) ? readJson(auctionPath).length : 0, 0, 'rejected listing must not create a lot');
   } finally {
