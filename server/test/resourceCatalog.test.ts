@@ -138,3 +138,24 @@ test('metal rods use one matching ingot, produce one rod, and follow metal progr
     assert.equal(recipe.workGuild, 'blacksmith');
   }
 });
+
+
+test('metal wires use one matching ingot, produce two wires, and follow metal progression times', () => {
+  const expected = [
+    ['copper', 1, 120],
+    ['iron', 10, 138],
+    ['steel', 20, 158],
+    ['deep_silver', 40, 198],
+    ['astralite', 60, 238],
+  ] as const;
+  for (const [metal, level, seconds] of expected) {
+    const recipe = RESOURCE_RECIPES.find(item => item.id === 'forge_' + metal + '_wire');
+    assert.ok(recipe, 'missing wire recipe for ' + metal);
+    assert.deepEqual(recipe.materials, { ['ingot_' + metal]: 1 });
+    assert.equal(recipe.output, 'metal_' + metal + '_wire');
+    assert.equal(recipe.count, 2);
+    assert.equal(recipe.level, level);
+    assert.equal(recipe.seconds, seconds);
+    assert.equal(recipe.workGuild, 'blacksmith');
+  }
+});
