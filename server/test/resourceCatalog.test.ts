@@ -257,3 +257,62 @@ test('textile recipes converge both approved raw materials into one thread and o
     assert.equal(recipe.workGuild, 'blacksmith');
   }
 });
+
+
+test('bone and beast catalog contains only the approved bone, claw and fang materials', () => {
+  const expected = [
+    ['bone', 'Кость', 'raw'],
+    ['bone_blank', 'Костяная заготовка', 'processed'],
+    ['bone_plate', 'Костяная пластина', 'blank'],
+    ['bone_spike', 'Костяной шип', 'blank'],
+    ['bone_fragment', 'Костяной фрагмент', 'blank'],
+    ['claw', 'Коготь', 'raw'],
+    ['processed_claw', 'Обработанный коготь', 'processed'],
+    ['claw_element', 'Когтевой элемент', 'blank'],
+    ['claw_hook', 'Когтевой крюк', 'blank'],
+    ['fang', 'Клык', 'raw'],
+    ['sharpened_fang', 'Заточенный клык', 'processed'],
+    ['fang_tip', 'Клыковый наконечник', 'blank'],
+    ['fang_inlay', 'Клыковая вставка', 'blank'],
+  ] as const;
+  const beastItems = RESOURCE_ITEMS.filter(item => item.resourceGroup === 'beast');
+  assert.equal(beastItems.length, expected.length);
+  for (const [id, name, form] of expected) {
+    const item = beastItems.find(entry => entry.id === id);
+    assert.ok(item, 'missing ' + id);
+    assert.equal(item.name, name);
+    assert.equal(item.resourceForm, form);
+    assert.equal(item.level, 1);
+    assert.equal(item.price, 0);
+  }
+});
+
+test('bone, claw and fang recipes follow only the approved material chains', () => {
+  const expected = [
+    ['process_bone_blank', { bone: 3 }, 'bone_blank', 1, 60],
+    ['shape_bone_plate', { bone_blank: 1 }, 'bone_plate', 1, 60],
+    ['shape_bone_spike', { bone_blank: 1 }, 'bone_spike', 2, 60],
+    ['prepare_bone_fragment', { bone_blank: 1 }, 'bone_fragment', 2, 45],
+    ['process_claw', { claw: 3 }, 'processed_claw', 1, 90],
+    ['shape_claw_element', { processed_claw: 1 }, 'claw_element', 1, 60],
+    ['shape_claw_hook', { processed_claw: 1 }, 'claw_hook', 1, 90],
+    ['sharpen_fang', { fang: 2 }, 'sharpened_fang', 1, 60],
+    ['shape_fang_tip', { sharpened_fang: 1 }, 'fang_tip', 1, 60],
+    ['prepare_fang_inlay', { sharpened_fang: 1 }, 'fang_inlay', 2, 90],
+  ] as const;
+  for (const [id, materials, output, count, seconds] of expected) {
+    const recipe = RESOURCE_RECIPES.find(entry => entry.id === id);
+    assert.ok(recipe, 'missing ' + id);
+    assert.deepEqual(recipe.materials, materials);
+    assert.equal(recipe.output, output);
+    assert.equal(recipe.count, count);
+    assert.equal(recipe.level, 1);
+    assert.equal(recipe.seconds, seconds);
+    assert.equal(recipe.workGuild, 'blacksmith');
+  }
+  assert.equal(RESOURCE_RECIPES.filter(entry => [
+    'bone_blank', 'bone_plate', 'bone_spike', 'bone_fragment',
+    'processed_claw', 'claw_element', 'claw_hook',
+    'sharpened_fang', 'fang_tip', 'fang_inlay',
+  ].includes(entry.output)).length, 10);
+});
