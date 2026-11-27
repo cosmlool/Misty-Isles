@@ -147,6 +147,10 @@ export const RESOURCE_ITEMS: any[] = [
   { id: 'sharpened_fang', name: 'Заточенный клык', kind: 'material', price: 0, level: 1, description: 'Общая обработанная основа для изготовления клыковых деталей.', resource: true, resourceGroup: 'beast', resourceForm: 'processed' },
   { id: 'fang_tip', name: 'Клыковый наконечник', kind: 'material', price: 0, level: 1, description: 'Универсальный наконечник, изготовленный из заточенного клыка.', resource: true, resourceGroup: 'beast', resourceForm: 'blank' },
   { id: 'fang_inlay', name: 'Клыковая вставка', kind: 'material', price: 0, level: 1, description: 'Универсальная вставка, изготовленная из заточенного клыка.', resource: true, resourceGroup: 'beast', resourceForm: 'blank' },
+  { id: 'reinforced_fastening', name: 'Усиленное крепление', kind: 'material', price: 0, level: 1, description: 'Универсальный комбинированный компонент из металлической проволоки и кожаной полосы.', resource: true, resourceGroup: 'combined', resourceForm: 'component' },
+  { id: 'reinforced_fabric', name: 'Армированная ткань', kind: 'material', price: 0, level: 1, description: 'Универсальный текстильный компонент, усиленный металлической проволокой.', resource: true, resourceGroup: 'combined', resourceForm: 'component' },
+  { id: 'bone_overlay', name: 'Костяная накладка', kind: 'material', price: 0, level: 1, description: 'Универсальная защитная накладка из костяной пластины и кожаной заготовки.', resource: true, resourceGroup: 'combined', resourceForm: 'component' },
+  { id: 'reinforced_metal_node', name: 'Усиленный металлический узел', kind: 'material', price: 0, level: 1, description: 'Универсальный силовой узел из металлического прутка, пластины и проволоки одного металла.', resource: true, resourceGroup: 'combined', resourceForm: 'component' },
   ...METALS.flatMap((metal: any) => [
     ...(metal.oreId ? [{ id: metal.oreId, name: metal.ore, kind: 'material', price: 0, level: metal.level, description: metal.id === 'deep_silver' ? 'Редкая руда из глубоких природных месторождений.' : 'Рудное сырьё для металлургического производства.', resource: true, resourceGroup: 'metal', metal: metal.id, resourceForm: 'ore' }] : []),
     { id: metal.ingotId, name: metal.ingot, kind: 'material', price: 0, level: metal.level, description: 'Металлический слиток для непосредственного изготовления четырёх универсальных металлических заготовок.', resource: true, resourceGroup: 'metal', metal: metal.id, resourceForm: 'ingot' },
@@ -183,6 +187,56 @@ export const RESOURCE_RECIPES: ResourceRecipe[] = [
   { id: 'sharpen_fang', name: 'Заточка клыка', level: 1, seconds: 60, output: 'sharpened_fang', count: 1, materials: { fang: 2 }, description: 'Подготовка клыка в универсальный заточенный материал.', workGuild: 'blacksmith' },
   { id: 'shape_fang_tip', name: 'Изготовление клыкового наконечника', level: 1, seconds: 60, output: 'fang_tip', count: 1, materials: { sharpened_fang: 1 }, description: 'Формование заточенного клыка в клыковый наконечник.', workGuild: 'blacksmith' },
   { id: 'prepare_fang_inlay', name: 'Подготовка клыковой вставки', level: 1, seconds: 90, output: 'fang_inlay', count: 2, materials: { sharpened_fang: 1 }, description: 'Разделение подготовленного клыка на две небольшие вставки.', workGuild: 'blacksmith' },
+  ...METALS.flatMap((metal: any) => [
+    {
+      id: 'make_reinforced_fastening_' + metal.id,
+      name: 'Изготовление усиленного крепления (' + metal.adj.toLowerCase() + ' проволока)',
+      level: metal.level,
+      seconds: 90 + Math.max(0, metal.level - 1) * 2,
+      output: 'reinforced_fastening',
+      count: 1,
+      materials: { ['metal_' + metal.id + '_wire']: 1, leather_strip: 1 },
+      description: 'Соединение кожаной полосы металлической проволокой соответствующего металла.',
+      workGuild: 'blacksmith' as const
+    },
+    {
+      id: 'make_reinforced_fabric_' + metal.id,
+      name: 'Изготовление армированной ткани (' + metal.adj.toLowerCase() + ' проволока)',
+      level: metal.level,
+      seconds: 120 + Math.max(0, metal.level - 1) * 2,
+      output: 'reinforced_fabric',
+      count: 1,
+      materials: { fabric: 1, ['metal_' + metal.id + '_wire']: 1 },
+      description: 'Усиление общей ткани металлической проволокой соответствующего металла.',
+      workGuild: 'blacksmith' as const
+    },
+    {
+      id: 'make_reinforced_metal_node_' + metal.id,
+      name: 'Изготовление усиленного металлического узла (' + metal.adj.toLowerCase() + ' металл)',
+      level: metal.level,
+      seconds: 150 + Math.max(0, metal.level - 1) * 2,
+      output: 'reinforced_metal_node',
+      count: 1,
+      materials: {
+        ['metal_' + metal.id + '_rod']: 1,
+        ['metal_' + metal.id + '_plate']: 1,
+        ['metal_' + metal.id + '_wire']: 1
+      },
+      description: 'Сборка силового узла из прутка, пластины и проволоки одного металла.',
+      workGuild: 'blacksmith' as const
+    }
+  ]),
+  {
+    id: 'make_bone_overlay',
+    name: 'Изготовление костяной накладки',
+    level: 1,
+    seconds: 90,
+    output: 'bone_overlay',
+    count: 1,
+    materials: { bone_plate: 1, leather_blank: 1 },
+    description: 'Соединение костяной пластины с универсальной кожаной заготовкой.',
+    workGuild: 'blacksmith'
+  },
   ...METALS.flatMap((metal: any) => BLANK_TYPES.map((blank: any) => ({
     id: 'forge_' + metal.id + '_' + blank.id,
     name: 'Изготовление: ' + metal.adj.toLowerCase() + ' ' + blank.suffix,
