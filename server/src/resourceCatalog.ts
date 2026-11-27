@@ -125,6 +125,10 @@ export const RESOURCE_ITEMS: any[] = [
   {"id":"wood_rare","name":"Редкая древесина","kind":"material","price":0,"level":40,"description":"Редкая древесина высокой прогрессии для сложных изделий.","resource":true,"resourceGroup":"wood","quality":"rare"},
   {"id":"wood_resin","name":"Древесная смола","kind":"material","price":0,"level":1,"description":"Универсальный вспомогательный материал для деревянных и сложных производственных рецептов.","resource":true,"resourceGroup":"organic"},
   {"id":"roots","name":"Корни","kind":"material","price":0,"level":1,"description":"Общий вспомогательный органический материал для подходящих производственных рецептов.","resource":true,"resourceGroup":"organic"},
+  { id: 'plant_fiber', name: 'Растительное волокно', kind: 'material', price: 0, level: 1, description: 'Исходное растительное сырьё для производства общей нити.', resource: true, resourceGroup: 'textile', resourceForm: 'raw' },
+  { id: 'wool', name: 'Шерсть', kind: 'material', price: 0, level: 1, description: 'Исходное волокнистое сырьё животного происхождения для производства общей нити.', resource: true, resourceGroup: 'textile', resourceForm: 'raw' },
+  { id: 'thread', name: 'Нить', kind: 'material', price: 0, level: 1, description: 'Общий текстильный полуфабрикат, производимый из растительного волокна или шерсти.', resource: true, resourceGroup: 'textile', resourceForm: 'processed' },
+  { id: 'fabric', name: 'Ткань', kind: 'material', price: 0, level: 1, description: 'Общий текстильный материал, производимый из нити.', resource: true, resourceGroup: 'textile', resourceForm: 'processed' },
   ...METALS.flatMap((metal: any) => [
     ...(metal.oreId ? [{ id: metal.oreId, name: metal.ore, kind: 'material', price: 0, level: metal.level, description: metal.id === 'deep_silver' ? 'Редкая руда из глубоких природных месторождений.' : 'Рудное сырьё для металлургического производства.', resource: true, resourceGroup: 'metal', metal: metal.id, resourceForm: 'ore' }] : []),
     { id: metal.ingotId, name: metal.ingot, kind: 'material', price: 0, level: metal.level, description: 'Металлический слиток для непосредственного изготовления четырёх универсальных металлических заготовок.', resource: true, resourceGroup: 'metal', metal: metal.id, resourceForm: 'ingot' },
@@ -144,6 +148,9 @@ export const RESOURCE_RECIPES: ResourceRecipe[] = [
   { id: 'process_granite_blank', name: 'Обработка гранитной заготовки', level: 20, seconds: 120, output: 'granite_blank', count: 1, materials: { granite: 4 }, description: 'Обработка гранита в прочную заготовку для тяжёлых конструктивных деталей.', workGuild: 'blacksmith' },
   { id: 'process_obsidian_blank', name: 'Обработка обсидиановой заготовки', level: 40, seconds: 180, output: 'obsidian_blank', count: 1, materials: { obsidian: 3 }, description: 'Обработка обсидиана в заготовку для острых элементов и специальных вставок.', workGuild: 'blacksmith' },
   { id: 'process_ceramic_blank', name: 'Формование керамической заготовки', level: 1, seconds: 90, output: 'ceramic_blank', count: 1, materials: { clay: 4 }, description: 'Формование глины в керамическую заготовку для производственных компонентов.', workGuild: 'blacksmith' },
+  { id: 'spin_plant_fiber_thread', name: 'Прядение растительного волокна', level: 1, seconds: 60, output: 'thread', count: 1, materials: { plant_fiber: 3 }, description: 'Получение общей нити из растительного волокна.', workGuild: 'blacksmith' },
+  { id: 'spin_wool_thread', name: 'Прядение шерсти', level: 1, seconds: 60, output: 'thread', count: 1, materials: { wool: 3 }, description: 'Получение общей нити из шерсти.', workGuild: 'blacksmith' },
+  { id: 'weave_fabric', name: 'Ткачество ткани', level: 1, seconds: 90, output: 'fabric', count: 1, materials: { thread: 3 }, description: 'Производство общего типа ткани из нити.', workGuild: 'blacksmith' },
   ...METALS.flatMap((metal: any) => BLANK_TYPES.map((blank: any) => ({
     id: 'forge_' + metal.id + '_' + blank.id,
     name: 'Изготовление: ' + metal.adj.toLowerCase() + ' ' + blank.suffix,
