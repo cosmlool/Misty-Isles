@@ -144,7 +144,7 @@ function renderNow(){
   const cityRace=RACES.find(r=>r.city===p.city)?.name||'';
   const wanderers=cityNpcs.filter((n:AnyObj)=>n.city==='wandering');const dayIndex=Math.floor(Date.now()/86400000);const localNpcs=cityNpcs.filter((n:AnyObj)=>n.city===p.city||n.city==='wandering'&&neutralCities[(dayIndex+(wanderers.findIndex((w:AnyObj)=>w.id===n.id))%neutralCities.length)%neutralCities.length]===p.city);const selectedNpc=localNpcs.find((n:AnyObj)=>n.id===cityNpcOpen);
   const cityArt=({Кот:'/assets/locations/capital-cats.webp',Собака:'/assets/locations/capital-dogs.webp',Птица:'/assets/locations/capital-birds.webp',Грызун:'/assets/locations/capital-rodents.webp'} as AnyObj)[p.race]||'/assets/locations/coast.webp';
-  const miningJob=readObject(p.quests).miningJob;
+  const miningJob=parse(p.quests,{}).miningJob;
   const miningEndsAt=Number(miningJob?.endsAt||0);
   const miningRemaining=Math.max(0,Math.ceil((miningEndsAt-Date.now())/1000));
   const miningAction=p.workGuild==='miner'
