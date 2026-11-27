@@ -115,7 +115,7 @@ test('server preserves race equipment rules, migrates Warrior to Knight and enab
       ...Object.fromEntries(professionRuntimeProfiles.map(profile => [profile.playerId, {
         id: profile.playerId, name: profile.profession + ' Runtime Tester', race: profile.race,
         city: ({ 'Кот': 'Сумеречный приют', 'Собака': 'Крепость стаи', 'Птица': 'Высокое гнездо', 'Грызун': 'Подземный рынок' } as Record<string, string>)[profile.race],
-        profession: '', level: 30, gold: 100000, inventory: '[]',
+        profession: '', level: 40, gold: 100000, inventory: '[]',
         equipment: JSON.stringify({ weapon: '', armor: '', helmet: '', gloves: '', boots: '', cloak: '', amulet: '' }),
         quests: '{}',
       }])),
