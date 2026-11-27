@@ -182,6 +182,46 @@ test('metal sheets use three matching ingots, produce one sheet, and follow meta
 });
 
 
+test('leather catalog contains exactly the two approved hides and three shared processed materials', () => {
+  const expected = [
+    ['hide', 'Шкура', 'raw', 1],
+    ['rough_hide', 'Грубая шкура', 'raw', 20],
+    ['processed_leather', 'Обработанная кожа', 'processed', 1],
+    ['leather_strip', 'Кожаная полоса', 'blank', 1],
+    ['leather_blank', 'Кожаная заготовка', 'blank', 1],
+  ] as const;
+  for (const [id, name, form, level] of expected) {
+    const item = RESOURCE_ITEMS.find(entry => entry.id === id);
+    assert.ok(item, 'missing ' + id);
+    assert.equal(item.name, name);
+    assert.equal(item.resourceGroup, 'leather');
+    assert.equal(item.resourceForm, form);
+    assert.equal(item.level, level);
+    assert.equal(item.price, 0);
+  }
+  assert.equal(RESOURCE_ITEMS.filter(item => item.resourceGroup === 'leather').length, 5);
+});
+
+test('both hide types converge into one processed leather and only the two approved leather components', () => {
+  const expected = [
+    ['tan_hide', { hide: 3 }, 'processed_leather', 1, 1, 90],
+    ['tan_rough_hide', { rough_hide: 3 }, 'processed_leather', 1, 20, 150],
+    ['cut_leather_strips', { processed_leather: 1 }, 'leather_strip', 2, 1, 60],
+    ['prepare_leather_blank', { processed_leather: 2 }, 'leather_blank', 1, 1, 90],
+  ] as const;
+  for (const [id, materials, output, count, level, seconds] of expected) {
+    const recipe = RESOURCE_RECIPES.find(entry => entry.id === id);
+    assert.ok(recipe, 'missing ' + id);
+    assert.deepEqual(recipe.materials, materials);
+    assert.equal(recipe.output, output);
+    assert.equal(recipe.count, count);
+    assert.equal(recipe.level, level);
+    assert.equal(recipe.seconds, seconds);
+    assert.equal(recipe.workGuild, 'blacksmith');
+  }
+  assert.equal(RESOURCE_RECIPES.filter(entry => entry.output === 'processed_leather').length, 2);
+});
+
 test('textile catalog contains only the approved fiber, wool, thread and fabric materials', () => {
   const expected = [
     ['plant_fiber', 'Растительное волокно', 'raw'],
