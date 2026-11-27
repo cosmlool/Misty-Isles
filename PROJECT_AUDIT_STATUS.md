@@ -3682,3 +3682,16 @@ Quality Gate 43931230374 failed because the new dungeon test file contained a li
 - Старые legacy-правила 1–3 кристалла, золото за цикл и cooldown 30/15 минут не переносить.
 - Перед изменениями PR #39 открыт, Draft, merged=false, base `main`; HEAD `1b6fe931a54d9226ff163e85d6f0f32c1e4c180f`. Quality Gate run `45924296590` — success (4/4); Server checks run `45924296589` — success (1/1).
 - Реализация ограничена persisted job в `quests`, длительностью 5 минут с абсолютным `endsAt` (время продолжает идти offline), блокировкой других state-changing действий до завершения, начислением 1 кристалла + подтверждённый PEN-011 bonus chance, сохранением лимита 50 000 и сгоранием overflow, клиентским таймером и тестами. Не менять `main` и runtime-сохранения.
+
+
+## 2026-11-27 — реализация и проверка цикла Шахтёра
+
+- Реализован durable mining lifecycle на PR #39: `miningJob` хранится в уже сохраняемом `quests` JSON, `endsAt = startedAt + 300000`; серверный абсолютный timestamp продолжает идти после выхода и перезапуска. Новых полей `PlayerSchema` не добавлено.
+- Запуск разрешён только `workGuild='miner'` с 20 уровня. Сервер запрещает параллельный запуск, старт во время активной экспедиции/подземелья и любые state-changing действия до завершения цикла. Read-only запросы остаются доступны; stateful `pvpList` заблокирован. Групповые поиск/переход/подземелье отклоняются, если кто-либо из участников сейчас добывает.
+- Settlement: базовый 1 кристалл; экипированный `PEN-011` добавляет шанс ещё 1 кристалла через существующий `pendantEffectValue` (0,1% × уровень 1–99; 20% на 100). Никакие другие общие loot-параметры или неформализованные эффекты не трактуются как шахтёрские бонусы.
+- Используется `creditCrystals` с cap 50 000 и сгоранием overflow. `p.mining` увеличивается на завершённый цикл; задача удаляется в том же сохраняемом снимке, поэтому повторный claim не начисляет награду повторно. Выносливость не меняется.
+- Клиентская городская панель отображает таймер, состояние готовности и кнопку получения. По истечении offline job фиксируется при следующем игровом сообщении; отдельный scheduler или runtime-файл не создавался.
+- Добавлены helper и 5 unit tests: `server/src/miningOperations.ts`, `server/test/miningOperations.test.ts`; test script обновлён. Проверены тесты и TypeScript build через CI.
+- Кодовые коммиты: `e689a9cc9be6566a123c2dea1acf87290e6c9fca`, `8d81a7dc9e15af83d75baa3494dbd3410553e015`, `501ad49b869e2fe68df82ad52de5a2acbc76194d`.
+- На code HEAD `501ad49b869e2fe68df82ad52de5a2acbc76194d`: Quality Gate `45925377532` success, 4/4 jobs; Server checks `45925382546` success, 1/1 job. Полный Quality Gate включал server tests/build, client build, Playwright smoke tests и data/docs audit.
+- `main` и реальные сохранения не трогались; PR #39 остаётся открытым Draft и не объединённым. После обновления журналов требуется заново дождаться CI на новом HEAD.
