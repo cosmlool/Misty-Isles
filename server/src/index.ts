@@ -66,7 +66,7 @@ const PLAYER_GROUP = new Map<string,string>();
 const GROUP_INVITES = new Map<string,string>();
 const GROUP_INVITE_EXPIRES = new Map<string,number>();
 const HUNT_GROUP_INVITE_TTL_MS = 5 * 60 * 1000;
-const MINING_READ_ONLY_MESSAGES = new Set(['huntGroupList','expeditionState','combatHistory','getCatalog','dungeonList','auctionList','auctionHistory','marketHistory','clanList','clanQuests','clanTerritories','clanWarList','pvpList','craftQueue']);
+const MINING_READ_ONLY_MESSAGES = new Set(['huntGroupList','expeditionState','combatHistory','getCatalog','dungeonList','auctionList','auctionHistory','marketHistory','clanList','clanQuests','clanTerritories','clanWarList','craftQueue']);
 const FRIEND_REQUESTS = new Map<string,Set<string>>();
 const ADMIN_PLAYER_IDS = parseAdminPlayerIds(process.env.MISTY_ADMIN_PLAYER_IDS);
 // Administrative commands are disabled unless the server operator explicitly allowlists player IDs.
