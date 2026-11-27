@@ -42,7 +42,6 @@ import { prepareDungeonMemberQuestSettlement } from './dungeonMemberQuestSettlem
 import { prepareDungeonMemberHealthOutcome } from './dungeonMemberHealthOutcome.js';
 import { buyAuctionItem, cancelAuctionItem, listAuctionItem } from './auctionOperations.js';
 import { cancelCraftJob, claimCraftJob, startCraftJob } from './craftingQueue.js';
-import { calculateClanWarDamage, clanWarCooldownRemaining, disbandClanState, recordClanWarDamage, settleExpiredClanWars } from './clanWarOperations.js';
 import { calculatePvpGoldTransfer, resolvePvpOutcome, isPvpTargetOffered, pvpCooldownRemaining, pvpImmunityRemaining, selectPvpOpponents, PVP_ATTACK_COOLDOWN_MS, PVP_IMMUNITY_MS, readPvpState as readPvpStateSafe } from './pvpOperations.js';
 import { resetWeeklyHuntProgress, utcIsoWeekKey } from './calendarOperations.js';
 import { checkExpeditionTravelConsistency, checkExpeditionTravelReadiness, checkExpeditionTravelStartReadiness, canInviteToHuntGroup, countHuntGroupInvites, expireHuntGroupInvites, invalidateHuntGroupInvites, isHuntGroupLevelRangeValid } from './expeditionOperations.js';
@@ -66,7 +65,7 @@ const PLAYER_GROUP = new Map<string,string>();
 const GROUP_INVITES = new Map<string,string>();
 const GROUP_INVITE_EXPIRES = new Map<string,number>();
 const HUNT_GROUP_INVITE_TTL_MS = 5 * 60 * 1000;
-const MINING_READ_ONLY_MESSAGES = new Set(['huntGroupList','expeditionState','combatHistory','getCatalog','dungeonList','auctionList','auctionHistory','marketHistory','clanList','clanQuests','clanTerritories','clanWarList','craftQueue']);
+const MINING_READ_ONLY_MESSAGES = new Set(['huntGroupList','expeditionState','combatHistory','getCatalog','dungeonList','auctionList','auctionHistory','marketHistory','clanList','clanQuests','clanTerritories','craftQueue']);
 const FRIEND_REQUESTS = new Map<string,Set<string>>();
 const ADMIN_PLAYER_IDS = parseAdminPlayerIds(process.env.MISTY_ADMIN_PLAYER_IDS);
 // Administrative commands are disabled unless the server operator explicitly allowlists player IDs.
@@ -938,7 +937,7 @@ class GameRoom extends Room<RoomState> {
     });
     this.onAuthenticatedMessage('clanLeave',(c)=>{
       if(!this.requireCharacter(c))return;
-      const result=transactClanMutation(this.playerId,({p,clans,wars,territories})=>{
+      const result=transactClanMutation(this.playerId,({p,clans,territories})=>{
         const membershipClanId=resolvePlayerClanForLeave(clans,String(p.clan||''),this.playerId);
         if(!membershipClanId)return {error:'Ты не состоишь в клане.'};
         const clan=clans[membershipClanId];
@@ -949,25 +948,19 @@ class GameRoom extends Room<RoomState> {
         clan.members=(Array.isArray(clan.members)?clan.members:[]).filter((member:any)=>member.id!==this.playerId);
         p.clan='';
         if(!clan.members.length){
-          const now=Date.now();
-          ensureAllClanQuests(clans);
-          const settled=settleExpiredClanWars(wars,clans,now);
-          const disbanded=disbandClanState(settled.clans,settled.wars,territories,clan.id,now);
-          for(const id of Object.keys(clans))delete clans[id];
-          Object.assign(clans,disbanded.clans);
-          wars.splice(0,wars.length,...disbanded.wars);
-          territories.splice(0,territories.length,...disbanded.territories);
+          delete clans[clan.id];
+          for(const territory of territories){
+            if(territory.owner===clan.id)Object.assign(territory,{owner:'',ownerName:'',capturedAt:0,defense:0});
+          }
           return {kind:'disbanded'};
         }
         return {kind:'left'};
       });
       if(typeof result.error==='string')return this.notice(c,result.error);
-      const clans=loadClans(),wars=loadWars(),territories=loadTerritories();
+      const clans=loadClans(),territories=loadTerritories();
       if(result.kind==='disbanded'){
         const clanPayload=broadcastClanOverview(clans);
-        const warPayload=broadcastClanWarList(wars,clans);
         c.send('clanList',clanPayload);
-        c.send('clanWarList',warPayload);
         broadcastClanTerritories(clans,territories);c.send('clanTerritories',{territories});
       }else if(result.kind==='left'){
         const clanPayload=broadcastClanOverview(clans);
@@ -1150,117 +1143,6 @@ class GameRoom extends Room<RoomState> {
       const clans=loadClans();broadcastClanOverview(clans);broadcastClanQuests(clans);
       this.notice(c,`Клан занял ${result.rank||'—'} место и получил ${result.reward} золота в казну.`);
     });
-    this.onAuthenticatedMessage('clanWarList',(c)=>{
-      const changed=transactClanStateMutation(({clans,wars})=>{
-        const questsChanged=ensureAllClanQuests(clans);
-        const settled=settleExpiredClanWars(wars,clans,Date.now());
-        for(const id of Object.keys(clans))delete clans[id];
-        Object.assign(clans,settled.clans);
-        wars.splice(0,wars.length,...settled.wars);
-        return settled.changed||questsChanged;
-      },changed=>changed);
-      const clans=loadClans(),currentWars=loadWars();
-      if(changed){broadcastClanOverview(clans);broadcastClanQuests(clans);}
-      const payload=broadcastClanWarList(currentWars,clans);
-      c.send('clanWarList',payload);
-    });
-    this.onAuthenticatedMessage('clanWarChallenge',(c,d:any)=>{
-      if(!this.requireCharacter(c))return;
-      const result=transactClanMutation(this.playerId,({p,clans,wars})=>{
-        const membershipClanId=findPlayerClanMembership(clans,this.playerId);
-        if(!membershipClanId)return {error:'Сначала вступи в клан.'};
-        const own=clans[membershipClanId],target=clans[String(d?.clanId||'')];
-        if(!own||!target||own.id===target.id)return {error:'Выбери другой существующий клан.'};
-        if(!isClanMember(own,this.playerId))return {error:'Персонаж не состоит в этом клане.'};
-        if(own.leader!==this.playerId)return {error:'Объявить войну может только лидер клана.'};
-
-        const now=Date.now();
-        const questsChanged=ensureAllClanQuests(clans);
-        const settled=settleExpiredClanWars(wars,clans,now);
-        const refresh=settled.changed||questsChanged;
-        for(const id of Object.keys(clans))delete clans[id];
-        Object.assign(clans,settled.clans);
-        wars.splice(0,wars.length,...settled.wars);
-        if(wars.some((war:any)=>war.status==='active'&&(war.a===own.id||war.b===own.id||war.a===target.id||war.b===target.id))){
-          return {error:'Один из кланов уже участвует в активной войне.',refresh};
-        }
-        wars.push({
-          id:`war_${now}_${rand(100,999)}`,
-          a:own.id,b:target.id,aName:own.name,bName:target.name,
-          aDamage:0,bDamage:0,lastAttackAtByPlayer:{},status:'active',
-          createdAt:now,endsAt:now+24*60*60*1000,
-        });
-        return {targetName:target.name,refresh};
-      });
-      const clans=loadClans(),wars=loadWars();
-      if('refresh' in result&&result.refresh){broadcastClanOverview(clans);broadcastClanQuests(clans);}
-      if(typeof result.error==='string')return this.notice(c,result.error);
-      const payload=broadcastClanWarList(wars,clans);
-      c.send('clanWarList',payload);
-      this.notice(c,`Клану «${result.targetName}» объявлена война на 24 часа.`);
-    });
-    this.onAuthenticatedMessage('clanWarAttack',(c,d:any)=>{
-      if(!this.requireCharacter(c))return;
-      const result=transactClanMutation(this.playerId,({p,clans,wars})=>{
-        const membershipClanId=findPlayerClanMembership(clans,this.playerId);
-        if(!membershipClanId)return {error:'Сначала вступи в клан.'};
-        const clan=clans[membershipClanId];
-        if(!clan||!Array.isArray(clan.members)||!clan.members.some((member:any)=>member?.id===this.playerId)){
-          return {error:'Персонаж не состоит в этом клане.'};
-        }
-        const selectedId=String(d?.id||'');
-        const selected=wars.find((war:any)=>war.id===selectedId&&(war.a===clan.id||war.b===clan.id));
-        if(!selected)return {error:'Активная война не найдена.'};
-        const questsChanged=ensureAllClanQuests(clans);
-        const now=Date.now();
-        const settled=settleExpiredClanWars(wars,clans,now);
-        const refresh=settled.changed||questsChanged;
-        for(const id of Object.keys(clans))delete clans[id];
-        Object.assign(clans,settled.clans);
-        wars.splice(0,wars.length,...settled.wars);
-        const war=wars.find((entry:any)=>entry.id===selectedId);
-        if(!war||war.status!=='active'){
-          const winner=war?.winnerId?String(war.winnerId===war.a?war.aName:war.bName):'ничья';
-          return {error:`Война завершена. Итог: ${winner}.`,refresh};
-        }
-        const remaining=clanWarCooldownRemaining(war,this.playerId,now);
-        if(remaining>0)return {error:`Следующая атака через ${Math.ceil(remaining/1000)} сек.`,refresh};
-        const enemyId=war.a===clan.id?war.b:war.a;
-        const enemy=clans[enemyId];
-        if(!enemy)return {error:'Клан-соперник не найден.',refresh};
-
-        // Clan wars use an abstract damage score, not a full arena duel. Attacker
-        // character power and clan barracks are compared with the enemy clan baseline.
-        const eq=readObject(p.equipment);
-        const weapon=ITEMS.find(item=>item.id===eq.weapon),armor=ITEMS.find(item=>item.id===eq.armor);
-        const equipmentUpgrades=readObject(p.equipmentEnhancements);
-        const weaponLevel=Number(equipmentUpgrades[`weapon:${eq.weapon}`]||0);
-        const armorLevel=Number(equipmentUpgrades[`armor:${eq.armor}`]||0);
-        const ownProps=readObject(p.collections).equipmentProperties||{};
-        const ownSets=EQUIPMENT_SETS.filter((set:any)=>set.items.filter((id:string)=>[eq.weapon,eq.armor,eq.amulet].includes(id)).length>=2);
-        const ownMagic=p.profession==='Боевой маг';
-        const ownAgile=['Ассасин','Ассасин птицы','Лучник','Вампир'].includes(normalizeProfession(p.profession));
-        const attack=(p.strength*(ownMagic?.35:1.25)+p.dexterity*(ownAgile?.65:.35)+p.intelligence*(ownMagic?.85:.2)+(weapon?.attack||0)*(1+weaponLevel*.04))*(1+(ownProps[eq.weapon]?.effect==='attack'?ownProps[eq.weapon].value:0))*(ownSets.some((set:any)=>set.effect==='attack')?1.08:1)*(p.profession==='Боевой маг'?1.05:1)*(1+activeBuffValue(p,'attack',now))+rand(0,10);
-        const defense=(p.defense+p.vitality*.45+(armor?.defense||0)*(1+armorLevel*.04))*(1+(ownProps[eq.armor]?.effect==='defense'?ownProps[eq.armor].value:0))*(ownSets.some((set:any)=>set.effect==='defense')?1.08:1)*(normalizeProfession(p.profession)==='Рыцарь'?1.10:p.profession==='Баффер'?1.06:1)*(1+activeBuffValue(p,'defense',now));
-        const critBonus=(ownProps[eq.weapon]?.effect==='crit'?ownProps[eq.weapon].value:0)+(ownProps[eq.armor]?.effect==='crit'?ownProps[eq.armor].value:0)+(ownSets.some((set:any)=>set.effect==='crit')?.06:0)+((p.profession==='Ассасин'||p.profession==='Ассасин птицы')?.07:p.profession==='Лучник'?.03:0)+activeBuffValue(p,'crit',now);
-        const upgrades=clan.upgrades||{};
-        const barracks=Math.max(0,Number(upgrades.barracks)||0);
-        const arenaCombatPower=(attack*(1+critBonus)+defense*.4+rand(0,20))*(1+barracks*.02);
-        const enemyPower=Number(enemy.level||1)*4+(Array.isArray(enemy.members)?enemy.members.length:1)*3+rand(0,30);
-        const damage=calculateClanWarDamage(arenaCombatPower,enemyPower);
-        const updated=recordClanWarDamage(war,clan.id,this.playerId,damage,now);
-        const index=wars.findIndex((entry:any)=>entry.id===war.id);
-        wars[index]=updated;
-        p.battles=Number(p.battles||0)+1;
-        return {damage,updated,refresh};
-      });
-      const clans=loadClans(),wars=loadWars();
-      if('refresh' in result&&result.refresh){broadcastClanOverview(clans);broadcastClanQuests(clans);}
-      if(typeof result.error==='string')return this.notice(c,result.error);
-      const payload=broadcastClanWarList(wars,clans);
-      this.notice(c,`Атака нанесла ${result.damage} урона. Суммарный урон: ${result.updated.aName||result.updated.a} — ${result.updated.aDamage||0}, ${result.updated.bName||result.updated.b} — ${result.updated.bDamage||0}. Следующая атака через 1 сек.`);
-      c.send('clanWarList',payload);
-    });
     this.onAuthenticatedMessage('pvpList',(c)=>{if(!this.requireCharacter(c))return;
       let response:any;
       try{
@@ -1442,7 +1324,7 @@ function transactClanMutation<T>(playerId:string,prepare:(state:{p:Player;clans:
   catch(error){reconcileOnlinePlayersAfterPersistenceFailure();throw error;}
 }
 function ensureAllClanQuests(clans:Record<string,any>):boolean{const before=JSON.stringify(clans);for(const clan of Object.values(clans))ensureClanQuests(clan);return JSON.stringify(clans)!==before;}
-function ensureClanQuests(clan:any):any[]{const day=Math.floor(Date.now()/(24*60*60*1000));if(!clan.questDay||clan.questDay!==day){clan.questDay=day;clan.questProgress={donate:0,raid:0,war:0,territory:0};clan.quests=[{id:'donate',name:'Общая казна',desc:'Внесите вместе 2 000 золота в казну клана',goal:2000,progress:0,claimed:false},{id:'raid',name:'Экспедиция гильдии',desc:'Успешно завершите 2 клановых похода',goal:2,progress:0,claimed:false},{id:'war',name:'Защитники знамени',desc:'Выиграйте 3 клановые войны',goal:3,progress:0,claimed:false},{id:'territory',name:'Расширение владений',desc:'Захватите 1 новую территорию',goal:1,progress:0,claimed:false}];}const progress=clan.questProgress||{};for(const q of clan.quests||[]){q.progress=Math.min(q.goal,Number(progress[q.id]||0));}return clan.quests||[];}
+function ensureClanQuests(clan:any):any[]{const day=Math.floor(Date.now()/(24*60*60*1000));if(!clan.questDay||clan.questDay!==day){clan.questDay=day;clan.questProgress={donate:0,raid:0,territory:0};clan.quests=[{id:'donate',name:'Общая казна',desc:'Внесите вместе 2 000 золота в казну клана',goal:2000,progress:0,claimed:false},{id:'raid',name:'Экспедиция гильдии',desc:'Успешно завершите 2 клановых похода',goal:2,progress:0,claimed:false},{id:'territory',name:'Расширение владений',desc:'Захватите 1 новую территорию',goal:1,progress:0,claimed:false}];}const progress=clan.questProgress||{};for(const q of clan.quests||[]){q.progress=Math.min(q.goal,Number(progress[q.id]||0));}return clan.quests||[];}
 function clanSeasonBoard(clans:Record<string,any>,limit=10):any[]{return Object.values(clans).map((x:any)=>({id:x.id,name:x.name,level:x.level||1,seasonPoints:Number(x.seasonPoints||0),territories:loadTerritories().filter((t:any)=>t.owner===x.id).length})).sort((a:any,b:any)=>b.seasonPoints-a.seasonPoints||b.territories-a.territories).slice(0,limit);}
 function loadAuction():any[]{const list=readPersistentJson<any[]>(AUCTION_FILE,[],value=>Array.isArray(value)&&value.every(isPlainObject));return list.map((x:any)=>({...x,status:x.status||'active'}));}
 function loadAuctionHistory():any[]{return readPersistentJson<any[]>(AUCTION_HISTORY_FILE,[],value=>Array.isArray(value)&&value.every(isPlainObject));}
@@ -1492,20 +1374,6 @@ function broadcastClanTerritories(clans:Record<string,any>,territories:any[]=loa
   }
   return payload;
 }
-function broadcastClanWarList(wars:any[],clans:Record<string,any>){
-  const payload={wars:wars.filter((war:any)=>war.status==='active')};
-  const sent=new Set<string>();
-  for(const clan of Object.values(clans)){
-    for(const member of Array.isArray(clan.members)?clan.members:[]){
-      const id=String(member?.id||'');
-      if(!id||sent.has(id))continue;
-      sent.add(id);
-      ONLINE_CLIENTS.get(id)?.send('clanWarList',payload);
-    }
-  }
-  return payload;
-}
-
 function applySaved(p:Player,s:any){applyPlayerSave(p as any,s);p.level=Math.max(1,Math.floor(Number(p.level)||1));p.experienceToNext=xpNeed(p.level);}
 
 
