@@ -454,8 +454,8 @@ test('wood processing preserves quality through one universal blank and one univ
   assert.equal(RESOURCE_RECIPES.filter(entry => entry.output.startsWith('wood_handle_')).length, 3);
 });
 
-test('wood resin and roots remain shared organic resources without processing chains', () => {
-  for (const [id, name] of [['wood_resin', 'Древесная смола'], ['roots', 'Корни']] as const) {
+test('leaves, roots and wood resin remain shared organic raw resources without processing chains', () => {
+  for (const [id, name] of [['wood_resin', 'Древесная смола'], ['roots', 'Корни'], ['leaves', 'Листья']] as const) {
     const item = RESOURCE_ITEMS.find(entry => entry.id === id);
     assert.ok(item, 'missing ' + id);
     assert.equal(item.name, name);
@@ -463,6 +463,7 @@ test('wood resin and roots remain shared organic resources without processing ch
     assert.equal(item.level, 1);
     assert.equal(item.price, 0);
   }
-  assert.equal(RESOURCE_RECIPES.some(entry => ['wood_resin', 'roots'].includes(entry.output)), false);
+  assert.equal(RESOURCE_ITEMS.find(entry => entry.id === 'leaves')?.resourceForm, 'raw');
+  assert.equal(RESOURCE_RECIPES.some(entry => ['wood_resin', 'roots', 'leaves'].includes(entry.output)), false);
 });
 
