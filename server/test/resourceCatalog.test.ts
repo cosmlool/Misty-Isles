@@ -117,3 +117,24 @@ test('metal plates use two matching ingots, produce one plate, and never consume
     assert.ok(!Object.keys(recipe.materials).some(id => id.includes('crystal')));
   }
 });
+
+
+test('metal rods use one matching ingot, produce one rod, and follow metal progression times', () => {
+  const expected = [
+    ['copper', 1, 60],
+    ['iron', 10, 78],
+    ['steel', 20, 98],
+    ['deep_silver', 40, 138],
+    ['astralite', 60, 178],
+  ] as const;
+  for (const [metal, level, seconds] of expected) {
+    const recipe = RESOURCE_RECIPES.find(item => item.id === 'forge_' + metal + '_rod');
+    assert.ok(recipe, 'missing rod recipe for ' + metal);
+    assert.deepEqual(recipe.materials, { ['ingot_' + metal]: 1 });
+    assert.equal(recipe.output, 'metal_' + metal + '_rod');
+    assert.equal(recipe.count, 1);
+    assert.equal(recipe.level, level);
+    assert.equal(recipe.seconds, seconds);
+    assert.equal(recipe.workGuild, 'blacksmith');
+  }
+});
