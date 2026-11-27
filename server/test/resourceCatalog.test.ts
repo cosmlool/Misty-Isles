@@ -403,3 +403,66 @@ test('reinforced metal node uses three blanks of the same metal grade', () => {
   assert.equal(RESOURCE_RECIPES.filter(entry => entry.output === 'reinforced_metal_node').length, 5);
 });
 
+test('wood catalog keeps three source qualities and one shared blank/handle type', () => {
+  const expected = [
+    ['wood_common', 'Обычная древесина', 'common', 'raw', 1],
+    ['wood_strong', 'Прочная древесина', 'strong', 'raw', 20],
+    ['wood_rare', 'Редкая древесина', 'rare', 'raw', 40],
+    ['wood_blank_common', 'Деревянная заготовка', 'common', 'blank', 1],
+    ['wood_blank_strong', 'Деревянная заготовка', 'strong', 'blank', 20],
+    ['wood_blank_rare', 'Деревянная заготовка', 'rare', 'blank', 40],
+    ['wood_handle_common', 'Деревянная рукоять', 'common', 'component', 1],
+    ['wood_handle_strong', 'Деревянная рукоять', 'strong', 'component', 20],
+    ['wood_handle_rare', 'Деревянная рукоять', 'rare', 'component', 40],
+  ] as const;
+  const woodItems = RESOURCE_ITEMS.filter(item => item.resourceGroup === 'wood');
+  assert.equal(woodItems.length, expected.length);
+  for (const [id, name, quality, form, level] of expected) {
+    const item = woodItems.find(entry => entry.id === id);
+    assert.ok(item, 'missing ' + id);
+    assert.equal(item.name, name);
+    assert.equal(item.quality, quality);
+    if (form === 'raw') assert.equal(item.resourceForm, undefined);
+    else assert.equal(item.resourceForm, form);
+    assert.equal(item.level, level);
+    assert.equal(item.price, 0);
+  }
+  assert.equal(RESOURCE_ITEMS.filter(item => item.name === 'Деревянная заготовка').length, 3);
+  assert.equal(RESOURCE_ITEMS.filter(item => item.name === 'Деревянная рукоять').length, 3);
+});
+
+test('wood processing preserves quality through one universal blank and one universal handle', () => {
+  const expected = [
+    ['process_wood_blank_common', { wood_common: 3 }, 'wood_blank_common', 1, 60],
+    ['process_wood_blank_strong', { wood_strong: 3 }, 'wood_blank_strong', 20, 120],
+    ['process_wood_blank_rare', { wood_rare: 3 }, 'wood_blank_rare', 40, 180],
+    ['make_wood_handle_common', { wood_blank_common: 1 }, 'wood_handle_common', 1, 60],
+    ['make_wood_handle_strong', { wood_blank_strong: 1 }, 'wood_handle_strong', 20, 90],
+    ['make_wood_handle_rare', { wood_blank_rare: 1 }, 'wood_handle_rare', 40, 120],
+  ] as const;
+  for (const [id, materials, output, level, seconds] of expected) {
+    const recipe = RESOURCE_RECIPES.find(entry => entry.id === id);
+    assert.ok(recipe, 'missing ' + id);
+    assert.deepEqual(recipe.materials, materials);
+    assert.equal(recipe.output, output);
+    assert.equal(recipe.count, 1);
+    assert.equal(recipe.level, level);
+    assert.equal(recipe.seconds, seconds);
+    assert.equal(recipe.workGuild, 'blacksmith');
+  }
+  assert.equal(RESOURCE_RECIPES.filter(entry => entry.output.startsWith('wood_blank_')).length, 3);
+  assert.equal(RESOURCE_RECIPES.filter(entry => entry.output.startsWith('wood_handle_')).length, 3);
+});
+
+test('wood resin and roots remain shared organic resources without processing chains', () => {
+  for (const [id, name] of [['wood_resin', 'Древесная смола'], ['roots', 'Корни']] as const) {
+    const item = RESOURCE_ITEMS.find(entry => entry.id === id);
+    assert.ok(item, 'missing ' + id);
+    assert.equal(item.name, name);
+    assert.equal(item.resourceGroup, 'organic');
+    assert.equal(item.level, 1);
+    assert.equal(item.price, 0);
+  }
+  assert.equal(RESOURCE_RECIPES.some(entry => ['wood_resin', 'roots'].includes(entry.output)), false);
+});
+
