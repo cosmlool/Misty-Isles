@@ -180,3 +180,40 @@ test('metal sheets use three matching ingots, produce one sheet, and follow meta
     assert.equal(recipe.workGuild, 'blacksmith');
   }
 });
+
+
+test('textile catalog contains only the approved fiber, wool, thread and fabric materials', () => {
+  const expected = [
+    ['plant_fiber', 'Растительное волокно', 'raw'],
+    ['wool', 'Шерсть', 'raw'],
+    ['thread', 'Нить', 'processed'],
+    ['fabric', 'Ткань', 'processed'],
+  ] as const;
+  for (const [id, name, form] of expected) {
+    const item = RESOURCE_ITEMS.find(entry => entry.id === id);
+    assert.ok(item, 'missing ' + id);
+    assert.equal(item.name, name);
+    assert.equal(item.resourceGroup, 'textile');
+    assert.equal(item.resourceForm, form);
+    assert.equal(item.price, 0);
+  }
+  assert.equal(RESOURCE_ITEMS.filter(item => item.resourceGroup === 'textile').length, 4);
+});
+
+test('textile recipes converge both approved raw materials into one thread and one fabric type', () => {
+  const expected = [
+    ['spin_plant_fiber_thread', { plant_fiber: 3 }, 'thread', 1, 60],
+    ['spin_wool_thread', { wool: 3 }, 'thread', 1, 60],
+    ['weave_fabric', { thread: 3 }, 'fabric', 1, 90],
+  ] as const;
+  for (const [id, materials, output, count, seconds] of expected) {
+    const recipe = RESOURCE_RECIPES.find(entry => entry.id === id);
+    assert.ok(recipe, 'missing ' + id);
+    assert.deepEqual(recipe.materials, materials);
+    assert.equal(recipe.output, output);
+    assert.equal(recipe.count, count);
+    assert.equal(recipe.level, 1);
+    assert.equal(recipe.seconds, seconds);
+    assert.equal(recipe.workGuild, 'blacksmith');
+  }
+});
