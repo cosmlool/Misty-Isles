@@ -316,3 +316,90 @@ test('bone, claw and fang recipes follow only the approved material chains', () 
     'sharpened_fang', 'fang_tip', 'fang_inlay',
   ].includes(entry.output)).length, 10);
 });
+
+test('combined resource catalog contains exactly the four approved universal components', () => {
+  const expected = [
+    ['reinforced_fastening', 'Усиленное крепление'],
+    ['reinforced_fabric', 'Армированная ткань'],
+    ['bone_overlay', 'Костяная накладка'],
+    ['reinforced_metal_node', 'Усиленный металлический узел'],
+  ] as const;
+  const combinedItems = RESOURCE_ITEMS.filter(item => item.resourceGroup === 'combined');
+  assert.equal(combinedItems.length, expected.length);
+  for (const [id, name] of expected) {
+    const item = combinedItems.find(entry => entry.id === id);
+    assert.ok(item, 'missing ' + id);
+    assert.equal(item.name, name);
+    assert.equal(item.resourceForm, 'component');
+    assert.equal(item.level, 1);
+    assert.equal(item.price, 0);
+  }
+});
+
+test('reinforced fastening and fabric recipes support all five existing metal grades', () => {
+  const metals = [
+    ['copper', 1, 90, 120],
+    ['iron', 10, 108, 138],
+    ['steel', 20, 128, 158],
+    ['deep_silver', 40, 168, 198],
+    ['astralite', 60, 208, 238],
+  ] as const;
+  for (const [metal, level, fasteningSeconds, fabricSeconds] of metals) {
+    const fastening = RESOURCE_RECIPES.find(entry => entry.id === 'make_reinforced_fastening_' + metal);
+    assert.ok(fastening, 'missing reinforced fastening recipe for ' + metal);
+    assert.deepEqual(fastening.materials, { ['metal_' + metal + '_wire']: 1, leather_strip: 1 });
+    assert.equal(fastening.output, 'reinforced_fastening');
+    assert.equal(fastening.count, 1);
+    assert.equal(fastening.level, level);
+    assert.equal(fastening.seconds, fasteningSeconds);
+    assert.equal(fastening.workGuild, 'blacksmith');
+
+    const fabric = RESOURCE_RECIPES.find(entry => entry.id === 'make_reinforced_fabric_' + metal);
+    assert.ok(fabric, 'missing reinforced fabric recipe for ' + metal);
+    assert.deepEqual(fabric.materials, { fabric: 1, ['metal_' + metal + '_wire']: 1 });
+    assert.equal(fabric.output, 'reinforced_fabric');
+    assert.equal(fabric.count, 1);
+    assert.equal(fabric.level, level);
+    assert.equal(fabric.seconds, fabricSeconds);
+    assert.equal(fabric.workGuild, 'blacksmith');
+  }
+  assert.equal(RESOURCE_RECIPES.filter(entry => entry.output === 'reinforced_fastening').length, 5);
+  assert.equal(RESOURCE_RECIPES.filter(entry => entry.output === 'reinforced_fabric').length, 5);
+});
+
+test('bone overlay uses only the approved bone plate and leather blank', () => {
+  const recipe = RESOURCE_RECIPES.find(entry => entry.id === 'make_bone_overlay');
+  assert.ok(recipe);
+  assert.deepEqual(recipe.materials, { bone_plate: 1, leather_blank: 1 });
+  assert.equal(recipe.output, 'bone_overlay');
+  assert.equal(recipe.count, 1);
+  assert.equal(recipe.level, 1);
+  assert.equal(recipe.seconds, 90);
+  assert.equal(recipe.workGuild, 'blacksmith');
+});
+
+test('reinforced metal node uses three blanks of the same metal grade', () => {
+  const metals = [
+    ['copper', 1, 150],
+    ['iron', 10, 168],
+    ['steel', 20, 188],
+    ['deep_silver', 40, 228],
+    ['astralite', 60, 268],
+  ] as const;
+  for (const [metal, level, seconds] of metals) {
+    const recipe = RESOURCE_RECIPES.find(entry => entry.id === 'make_reinforced_metal_node_' + metal);
+    assert.ok(recipe, 'missing reinforced metal node recipe for ' + metal);
+    assert.deepEqual(recipe.materials, {
+      ['metal_' + metal + '_rod']: 1,
+      ['metal_' + metal + '_plate']: 1,
+      ['metal_' + metal + '_wire']: 1,
+    });
+    assert.equal(recipe.output, 'reinforced_metal_node');
+    assert.equal(recipe.count, 1);
+    assert.equal(recipe.level, level);
+    assert.equal(recipe.seconds, seconds);
+    assert.equal(recipe.workGuild, 'blacksmith');
+  }
+  assert.equal(RESOURCE_RECIPES.filter(entry => entry.output === 'reinforced_metal_node').length, 5);
+});
+
