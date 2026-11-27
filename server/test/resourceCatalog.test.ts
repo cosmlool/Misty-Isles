@@ -51,3 +51,47 @@ test('resource recipes only consume catalog resources and produce catalog resour
     assert.ok(Number.isSafeInteger(recipe.count) && recipe.count >= 1);
   }
 });
+
+test('mineral catalog contains only the four approved raw materials and their approved blanks', () => {
+  const expected = [
+    ['stone', 'Камень', 'stone_blank', 'Каменная заготовка', 1],
+    ['granite', 'Гранит', 'granite_blank', 'Гранитная заготовка', 20],
+    ['obsidian', 'Обсидиан', 'obsidian_blank', 'Обсидиановая заготовка', 40],
+    ['clay', 'Глина', 'ceramic_blank', 'Керамическая заготовка', 1],
+  ] as const;
+  for (const [rawId, rawName, blankId, blankName, level] of expected) {
+    const raw = RESOURCE_ITEMS.find(item => item.id === rawId);
+    const blank = RESOURCE_ITEMS.find(item => item.id === blankId);
+    assert.ok(raw, 'missing ' + rawId);
+    assert.ok(blank, 'missing ' + blankId);
+    assert.equal(raw.name, rawName);
+    assert.equal(blank.name, blankName);
+    assert.equal(raw.resourceGroup, 'mineral');
+    assert.equal(blank.resourceGroup, 'mineral');
+    assert.equal(raw.resourceForm, 'raw');
+    assert.equal(blank.resourceForm, 'blank');
+    assert.equal(raw.level, level);
+    assert.equal(blank.level, level);
+    assert.equal(raw.price, 0);
+    assert.equal(blank.price, 0);
+  }
+});
+
+test('mineral processing recipes use the approved raw-to-blank pairs', () => {
+  const expected = [
+    ['process_stone_blank', 'stone', 'stone_blank', 3, 1, 60, 1],
+    ['process_granite_blank', 'granite', 'granite_blank', 4, 1, 120, 20],
+    ['process_obsidian_blank', 'obsidian', 'obsidian_blank', 3, 1, 180, 40],
+    ['process_ceramic_blank', 'clay', 'ceramic_blank', 4, 1, 90, 1],
+  ] as const;
+  for (const [id, input, output, quantity, count, seconds, level] of expected) {
+    const recipe = RESOURCE_RECIPES.find(item => item.id === id);
+    assert.ok(recipe, 'missing ' + id);
+    assert.deepEqual(recipe.materials, { [input]: quantity });
+    assert.equal(recipe.output, output);
+    assert.equal(recipe.count, count);
+    assert.equal(recipe.seconds, seconds);
+    assert.equal(recipe.level, level);
+    assert.equal(recipe.workGuild, 'blacksmith');
+  }
+});
