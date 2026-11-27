@@ -159,3 +159,24 @@ test('metal wires use one matching ingot, produce two wires, and follow metal pr
     assert.equal(recipe.workGuild, 'blacksmith');
   }
 });
+
+
+test('metal sheets use three matching ingots, produce one sheet, and follow metal progression times', () => {
+  const expected = [
+    ['copper', 1, 150],
+    ['iron', 10, 168],
+    ['steel', 20, 188],
+    ['deep_silver', 40, 228],
+    ['astralite', 60, 268],
+  ] as const;
+  for (const [metal, level, seconds] of expected) {
+    const recipe = RESOURCE_RECIPES.find(item => item.id === 'forge_' + metal + '_sheet');
+    assert.ok(recipe, 'missing sheet recipe for ' + metal);
+    assert.deepEqual(recipe.materials, { ['ingot_' + metal]: 3 });
+    assert.equal(recipe.output, 'metal_' + metal + '_sheet');
+    assert.equal(recipe.count, 1);
+    assert.equal(recipe.level, level);
+    assert.equal(recipe.seconds, seconds);
+    assert.equal(recipe.workGuild, 'blacksmith');
+  }
+});
