@@ -281,10 +281,11 @@ test('clan war attacks enforce per-player cooldown and accumulate real damage', 
       createdAt: Date.now() - 90_000_000, endsAt: 0,
     });
     writeFileSync(join(dataDir, 'clan_wars.json'), JSON.stringify(staleWars, null, 2));
-    const priorChallengeNoticeCount = noticesA.filter(text => text.includes('объявлена война на 24 часа')).length;
+    const priorWarListCount = warListsA.length;
     roomA.send('clanWarChallenge', { clanId: 'clan-b' });
-    await waitFor(() => noticesA.filter(text => text.includes('объявлена война на 24 часа')).length > priorChallengeNoticeCount,
-      'new challenge after stale war expiry');
+    await waitFor(() => warListsA.slice(priorWarListCount).some(payload =>
+      payload.wars?.some((war: any) => war.id !== 'war-expired-stale' && war.status === 'active')),
+    'new challenge broadcast after stale war expiry');
     const afterNewChallenge = readJson(join(dataDir, 'clan_wars.json'));
     assert.equal(afterNewChallenge.find((war:any) => war.id === 'war-expired-stale').status, 'finished');
     assert.equal(afterNewChallenge.find((war:any) => war.id === 'war-expired-stale').winnerId, '');
