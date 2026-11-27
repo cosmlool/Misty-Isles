@@ -245,7 +245,7 @@ test('clan war attacks enforce per-player cooldown and accumulate real damage', 
 
     // Finish the war and ensure both teams receive the final clan treasury and season standings.
     writeFileSync(join(dataDir, 'clan_wars.json'), JSON.stringify([{
-      ...afterSecond, aDamage: 1_000, bDamage: 1, endsAt: Date.now() - 1,
+      ...afterSecond, aDamage: 1_000, bDamage: 1, endsAt: 0,
     }], null, 2));
     const staleClanQuest = readJson(join(dataDir, 'clans.json'));
     staleClanQuest['clan-a'].questDay = yesterday;
@@ -278,7 +278,7 @@ test('clan war attacks enforce per-player cooldown and accumulate real damage', 
     staleWars.push({
       id: 'war-expired-stale', a: 'clan-a', b: 'clan-b', aName: 'Клан А', bName: 'Клан Б',
       aDamage: 0, bDamage: 0, lastAttackAtByPlayer: {}, status: 'active',
-      createdAt: Date.now() - 90_000_000, endsAt: Date.now() - 1,
+      createdAt: Date.now() - 90_000_000, endsAt: 0,
     });
     writeFileSync(join(dataDir, 'clan_wars.json'), JSON.stringify(staleWars, null, 2));
     const priorChallengeNoticeCount = noticesA.filter(text => text.includes('объявлена война на 24 часа')).length;
@@ -295,7 +295,7 @@ test('clan war attacks enforce per-player cooldown and accumulate real damage', 
     warsBeforeFinalLeave.push({
       id: 'war-expired-enemy-winner', a: 'clan-a', b: 'clan-b', aName: 'Клан А', bName: 'Клан Б',
       aDamage: 10, bDamage: 100, lastAttackAtByPlayer: {}, status: 'active',
-      createdAt: Date.now() - 90_000_000, endsAt: Date.now() - 1,
+      createdAt: Date.now() - 90_000_000, endsAt: 0,
     });
     writeFileSync(join(dataDir, 'clan_wars.json'), JSON.stringify(warsBeforeFinalLeave, null, 2));
 
