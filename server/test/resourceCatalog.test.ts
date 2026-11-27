@@ -95,3 +95,25 @@ test('mineral processing recipes use the approved raw-to-blank pairs', () => {
     assert.equal(recipe.workGuild, 'blacksmith');
   }
 });
+
+
+test('metal plates use two matching ingots, produce one plate, and never consume crystals', () => {
+  const expected = [
+    ['copper', 1, 90],
+    ['iron', 10, 108],
+    ['steel', 20, 128],
+    ['deep_silver', 40, 168],
+    ['astralite', 60, 208],
+  ] as const;
+  for (const [metal, level, seconds] of expected) {
+    const recipe = RESOURCE_RECIPES.find(item => item.id === 'forge_' + metal + '_plate');
+    assert.ok(recipe, 'missing plate recipe for ' + metal);
+    assert.deepEqual(recipe.materials, { ['ingot_' + metal]: 2 });
+    assert.equal(recipe.output, 'metal_' + metal + '_plate');
+    assert.equal(recipe.count, 1);
+    assert.equal(recipe.level, level);
+    assert.equal(recipe.seconds, seconds);
+    assert.equal(recipe.workGuild, 'blacksmith');
+    assert.ok(!Object.keys(recipe.materials).some(id => id.includes('crystal')));
+  }
+});
