@@ -3,6 +3,7 @@ import test from 'node:test';
 import { createPreparedDungeonEncounter } from '../src/dungeonEncounterPreparation.js';
 import { prepareDungeonRunExecution } from '../src/dungeonRunExecutionPreparation.js';
 import { createDungeonRunRecord, resolveNextDungeonRunRound, validateDungeonRunStore } from '../src/dungeonRunState.js';
+import { prepareDungeonRunStart } from '../src/dungeonRunStartTransaction.js';
 
 function runStore() {
   const run = createDungeonRunRecord({
@@ -100,4 +101,26 @@ test('execution preparation rejects entry HP mismatch and terminal or missing ru
   assert.throws(() => prepareDungeonRunExecution({
     runId: 'missing', runs: runStore(), encounter: encounter(),
   }), /missing dungeon run/);
+});
+
+test('prepared execution can enter the existing atomic attempt-charge preparation unchanged', () => {
+  const execution = prepareDungeonRunExecution({
+    runId: 'run_execution', runs: runStore(), encounter: encounter(),
+  });
+  const start = prepareDungeonRunStart({
+    run: execution.run,
+    runs: {},
+    day: '2026-11-28',
+    players: {
+      p1: { id: 'p1', health: 100, maxHealth: 120, quests: JSON.stringify({ dungeonRuns: 0 }), battles: 4 },
+      p2: { id: 'p2', health: 90, maxHealth: 110, quests: JSON.stringify({ dungeonRuns: 1 }), battles: 7 },
+    },
+  });
+  assert.equal(start.alreadyStarted, false);
+  assert.equal(start.run.roundPlan?.totalRounds, 2);
+  assert.equal(start.run.preparedEncounter?.requestId, 'request_execution');
+  assert.equal(JSON.parse(start.players.p1.quests).dungeonRuns, 1);
+  assert.equal(JSON.parse(start.players.p2.quests).dungeonRuns, 2);
+  assert.equal(start.players.p1.battles, 5);
+  assert.equal(start.players.p2.battles, 8);
 });
