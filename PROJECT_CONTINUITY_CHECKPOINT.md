@@ -3562,3 +3562,21 @@ PR #15 остаётся Draft/open и не объединён. Слияние б
 - Перед этой финальной записью GitHub подтвердил HEAD `9dcb56f245af719aefd45d3efb9aae8df008aae8`; PR #39 остаётся open/Draft/not merged.
 - Эта запись — последний commit этапа; его commit SHA является окончательным HEAD после обновления checkpoint.
 - CI для нового runtime capture не запускался ассистентом. Пользователь сообщил об успехе только на предшествующем HEAD `a62248f`; ожидается проверка текущего кода пользователем.
+
+
+## 2026-11-28 — атомарный live dungeon settlement подключён
+
+- Пользователь сообщил, что CI прошёл на HEAD `8149085e889d00055542fffa0dc64b3b5ec91cfc`. Это подтверждение относится к предыдущему этапу live shadow capture, не к новым изменениям ниже.
+- Текущая рабочая ветка: `feature/resource-catalog-implementation-2026-11-26`.
+- На текущем этапе production `runExpeditionDungeon()` переведён с legacy one-shot persistence на атомарный settlement: immutable encounter + terminal run + полные player snapshots + pending result outbox фиксируются одним shared-WAL transaction.
+- Новый `server/src/dungeonLegacySettlementCommitRuntime.ts` объединяет attach/finalization без промежуточного durable start. Терминальный run envelope не публикуется как active run.
+- `dungeonPreparedEncounterFinalizationRuntime.ts` теперь сохраняет полный player store и переопределяет только участников frozen snapshots, не теряя неучаствующих персонажей.
+- Live handler применяет один и тот же commit для win/loss; существующие attempt counters, battle counters, HP, награды, inventory, quests, reports и request replay входят в prepared participant snapshots.
+- Outbox events записываются pending в том же WAL commit; send/ACK выполняются после commit. Существующие event IDs/replay/dedup сохраняются.
+- При ошибке подготовки до WAL live Player откатывается. При WAL failure recovery остаётся единственным источником истины; при незавершённом journal дальнейшие записи блокируются.
+- Добавлен `server/test/dungeonLegacySettlementCommitRuntime.test.ts`: единый commit трёх файлов, сохранение неучаствующего игрока, terminal run/outbox, idempotent retry, crash recovery и отказ на stale recovery. Runtime group/solo tests дополнены проверкой durable win/loss records. Тест добавлен в package script.
+- Статически сверены source и тесты; ассистент не запускал тесты и CI.
+- Формулы боя, RNG, loot, healing, XP/gold, лимиты/списание попыток, client protocol и dungeon data не менялись.
+- **Текущий HEAD после кода и тестов:** `6b085bad314f2b8b404aec7205a26861e707de66` перед обновлением журналов; после их commit подтвердить новый HEAD.
+- PR #39 остаётся open/Draft/not merged. `main` не менялась.
+- **Следующий шаг:** пользователь проверяет CI на окончательном HEAD после журналов. После успешной проверки перейти к durable active-run entry + per-round commit/recovery. Не смешивать этот этап с новым catacomb content или изменением формул.

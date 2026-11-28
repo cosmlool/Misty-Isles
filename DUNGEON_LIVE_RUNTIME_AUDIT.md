@@ -76,3 +76,44 @@ No combat formula, RNG call order, loot roll/allocation, healing, XP/gold amount
 Static GitHub source review confirms both live branches call the adapter before persistence and both runtime suites set strict mode. Tests and CI were not run by the assistant. The user must check CI on the current HEAD.
 
 Next: after the user confirms CI for this HEAD, review the strict runtime results. If green, the next bounded stage is a transactional durable commit design that replaces the legacy one-shot persistence atomically (not a partial durable start). Keep multi-step catacomb rooms and new combat rules out of that transition.
+
+
+## 2026-11-28 — атомарное подключение live settlement к shared WAL
+
+Пользователь подтвердил CI как прошедший на предыдущем HEAD `8149085e889d00055542fffa0dc64b3b5ec91cfc` (этап live shadow capture). Изменения этого этапа сделаны уже после указанной проверки; новый HEAD ожидает отдельной проверки пользователя.
+
+### Production integration
+
+- `runExpeditionDungeon()` больше не использует shadow-only capture. Для победы и поражения он формирует immutable `PreparedDungeonEncounter` из фактических уже рассчитанных результатов legacy handler.
+- До фиксации сохраняются фактические ordered participant IDs, request binding, исходные и конечные HP, индивидуальные XP/gold, loot IDs и получатели, точные reports/result texts, полные нормализованные Player snapshots и outbox events.
+- Создаётся terminal run envelope с реальным временем начала, лидером, группой, roster и boss identity. Он не публикуется как active run.
+- Новый `commitPreparedLegacyDungeonSettlement()` в рамках **одной** `sharedStateRuntime.transactWithRecovery()` транзакции:
+  1. проверяет/прикрепляет immutable encounter к run envelope;
+  2. строит terminal outcome только из committed prepared encounter;
+  3. объединяет frozen snapshots участников с полным player store, сохраняя всех неучаствующих персонажей;
+  4. записывает `players.json`, terminal `dungeon_runs.json` и pending `dungeon_outbox.json` одним shared-WAL commit.
+- Дневная попытка, уже учтённая существующим legacy settlement, попадает в тот же финальный Player snapshot и фиксируется вместе с наградами, HP, terminal run и outbox. Отдельный durable start и промежуточный active-run commit не добавлялись.
+- Outbox delivery и ACK остаются после durable commit. Если отправка/ACK прервётся, pending event остаётся доступен для повторной доставки; event IDs и клиентская дедупликация сохранены.
+- Повторная финализация того же prepared snapshot идемпотентна. Другой snapshot для уже terminal run отклоняется. WAL recovery восстанавливает все три целевых файла из одного журнала.
+- При ошибке до создания WAL live Player возвращается к durable snapshot/rollback snapshot. При незавершённом WAL сервер не публикует несогласованное состояние и блокирует последующие записи до recovery.
+- Полные snapshots участников нормализуются до capture; финализация не перезаписывает их более старыми значениями. Остальные online/saved игроки сохраняются в общем players store.
+
+### Tests and files
+
+- Новый `server/src/dungeonLegacySettlementCommitRuntime.ts` — composition layer для atomic commit.
+- `server/src/dungeonPreparedEncounterFinalizationRuntime.ts` принимает полный player store и поверх него накладывает frozen participant snapshots.
+- Новый `server/test/dungeonLegacySettlementCommitRuntime.test.ts` проверяет один commit с тремя WAL targets, сохранение постороннего игрока, terminal outcome, outbox, повторную идемпотентность и recovery после прерывания target write.
+- `groupDungeonRuntime.test.ts` теперь проверяет terminal durable runs и outbox для group win/loss; `dungeonAttemptsRuntime.test.ts` — terminal records для solo win/loss. Удалён прежний strict-capture env flag: capture теперь является обязательной частью production persistence, а не fail-open shadow side effect.
+- Новый тест добавлен в `server/package.json`.
+- Ошибки capture/подготовки до commit откатывают live Player snapshots; commit failure использует WAL recovery и сверку с durable player store.
+- Статически перечитаны production handler, settlement adapter, commit/finalization helpers, shared WAL, run validator, outbox delivery, runtime suites и новый WAL test. Это source review, не запуск тестов.
+
+### Границы этапа
+
+- Не менялись combat formulas, RNG call order, loot rolls/recipients, healing, XP/gold modifiers, attempt limit/charging rules, reports, request IDs, client protocol или dungeon content.
+- Это атомарная фиксация уже рассчитанного legacy single-boss encounter. Она **не** означает, что active run уже сохраняется между раундами, что игрок может возобновить бой после рестарта, или что реализованы spectator/AFK/resurrection и новые многоступенчатые комнаты.
+- CI и тесты после предыдущего подтверждённого пользователем HEAD `8149085` ассистентом не запускались. Текущий код ожидает пользовательскую CI-проверку.
+
+### Следующий шаг
+
+После CI на текущем HEAD продолжить полноценный resumable lifecycle: атомарный вход/списание попытки и durable active run, затем сохранение каждого разрешённого раунда и восстановление после рестарта. Сохранить текущие combat/reward semantics; не добавлять новые комнаты/roster монстров в рамках этого технического этапа.

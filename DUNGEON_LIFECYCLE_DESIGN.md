@@ -313,3 +313,10 @@ The subsequent Quality Gate 43936898345 showed that the earlier newline correcti
 
 Append the wave runtime integration contract and current implementation boundaries. See `DUNGEON_WAVE_RUNTIME_CONTRACT.md` for required state, invariants, unresolved gameplay decisions, and staged wiring sequence. Verified that the current config/legacy adapter are pure schema boundaries; production still executes one synchronous `bossId` encounter and the durable run types still store one boss and one aggregate result. No live combat behavior changed.
 
+
+
+## 2026-11-28 — статус atomic settlement implementation
+
+The legacy single-boss live handler now persists its already-calculated terminal settlement atomically: complete player snapshots, a terminal dungeon run envelope, and pending result outbox events share one WAL transaction. The envelope is not exposed as an active run, and this does not implement resumable active encounters.
+
+Still outstanding: atomic durable entry/attempt charging, per-round progress commits, active-run restart resume, spectator/death transitions, resurrection commands, leader AFK timeout/disband, and the future multi-step catacomb room content. Existing combat and reward formulas remain unchanged by the settlement integration.

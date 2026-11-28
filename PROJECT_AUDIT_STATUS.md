@@ -4355,3 +4355,17 @@ Quality Gate 43931230374 failed because the new dungeon test file contained a li
 - HEAD перед финальной записью checkpoint подтверждён: `faf96b0f387e10658e24e7ae7006174f9d42dc46`.
 - PR #39 открыт, Draft, не объединён.
 - CI для этого HEAD пользователем ещё не подтверждён.
+
+
+## 2026-11-28 — атомарный production settlement катакомб
+
+- На подтверждённом пользователем CI HEAD `8149085` прошёл предыдущий live-capture этап. Текущие атомарные изменения новее и ещё не проверены пользователем.
+- Реальный win/loss handler теперь готовит immutable settlement и вызывает один WAL transaction, который сохраняет полный players store, terminal dungeon run и pending outbox events.
+- Prepared snapshot прикрепляется к in-memory run envelope и финализируется внутри того же transaction callback. Никакого отдельного durable start/attempt commit нет; нет окна, в котором попытка уже списана, а результат ещё не зафиксирован.
+- Frozen snapshots участников приоритетны над live objects; полный player store сохраняет других персонажей. Нормализация участника выполняется до capture.
+- Ошибка до commit откатывает участникам live Player snapshots. При crash/restart shared WAL восстанавливает все target files; pending outbox повторно доставляется с прежним event ID.
+- Проверены статически: production handler, run/encounter validators, commit/finalization helpers, shared WAL/recovery, outbox delivery, group/solo runtime tests, новый settlement WAL test и package script.
+- Runtime tests расширены проверками terminal win/loss records и event records. Новый helper test проверяет единый transaction, сохранение unrelated player, idempotency и interrupted-write recovery.
+- Не менялись combat/reward formulas, RNG, loot, healing, attempt rules, client protocol, dungeon data. Не реализованы active-run resume/per-round progression, spectator, AFK, resurrection runtime и multi-step rooms.
+- Ассистент не запускал тесты или CI. Текущий код ждёт пользовательской CI-проверки.
+- Следующий этап после CI: интеграция durable active-run entry, per-round commit и restart resume с сохранением legacy combat semantics.
