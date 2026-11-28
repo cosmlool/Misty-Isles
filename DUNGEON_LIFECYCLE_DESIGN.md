@@ -329,3 +329,15 @@ Still outstanding: atomic durable entry/attempt charging, per-round progress com
 - Tests cover plan conservation, JSON recovery after a committed round, preservation of frozen terminal snapshots, idempotent preparation, conflicting/stale snapshots, terminal/missing runs, and compatibility with the existing atomic attempt-charge preparation.
 - This remains a pure preparation layer. Production `runExpeditionDungeon()` is not yet wired to active entry or round actions; no active run is exposed to clients by this commit.
 - Next: use this prepared execution as the input to one atomic entry transaction that charges attempts/battle counters and writes the active run together. Then add authenticated round-advance/resume actions and atomic per-round player/run commits before replacing the one-shot handler. Do not retain parallel legacy combat execution after the new path is enabled.
+
+
+## 2026-11-28 — атомарный WAL commit подготовленного активного забега
+
+- CI подтверждён пользователем как успешный на предыдущем HEAD `6c4461c369a4564528c864efce0a993643040ffe`: оба workflow завершились с `success`. Изменения этого этапа новее и ожидают отдельной проверки.
+- Расширен `server/src/dungeonRunStartRuntime.ts`: если передан уже рассчитанный immutable `PreparedDungeonEncounter`, runtime сначала готовит списание дневных попыток и счётчиков боёв через `prepareDungeonRunStart()`, затем прикрепляет encounter и детерминированный round plan через `prepareDungeonRunExecution()`. Обе части попадают в один `transactWithRecovery()` и один shared-WAL commit файлов `players.json` + `dungeon_runs.json`.
+- В активный run сохраняются замороженный roster, полный prepared encounter, round plan и курсор следующего раунда. В player snapshots сохраняются дневная попытка и battle counter; HP и награды будущих раундов не применяются при входе.
+- Повтор того же request/run и того же prepared snapshot идемпотентен и не списывает попытку повторно. Конфликтующий prepared snapshot отклоняется. Если recovery обнаружил WAL replay, устаревшие входные snapshots отклоняются до записи.
+- Добавлен `server/test/dungeonRunStartExecutionRuntime.test.ts`: атомарное сохранение encounter/round plan/attempt/battle counters, сохранение исходного HP при входе, idempotent retry, конфликт snapshot и recovery после прерывания записи players target. Тест зарегистрирован в `server/package.json`.
+- Статически перечитаны runtime, новый test, package script и существующие WAL/start helpers после записи. Ассистент не запускал тесты и CI.
+- Важная граница: production `runExpeditionDungeon()` пока не вызывает этот prepared-entry runtime; live handler остаётся синхронным legacy one-shot и сразу завершает encounter. Этот этап готовит и проверяет атомарную транзакцию, но ещё не включает player-facing resumable run.
+- Следующий этап: заменить production one-shot entry на подготовленный active-run commit; добавить authenticated resume/advance action и атомарное сохранение каждого раунда через `commitDungeonRunRound()`. Финальные rewards/player snapshots/outbox должны применяться только на terminal commit. Не сохранять старый one-shot runtime как параллельный fallback.
