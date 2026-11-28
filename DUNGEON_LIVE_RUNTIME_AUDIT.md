@@ -38,3 +38,20 @@ HEAD до документационных изменений: `9de20f4009789200
 ## Изменения этого аудита
 
 Только документация. Не менялись production code, encounter JSON, dungeon content, combat formulas, RNG, rewards, drops, player saves, client protocol или PR state. Пользователь сообщил, что CI прошёл; workflow самостоятельно не запускались.
+
+
+## Pure legacy settlement adapter — 2026-11-28
+
+Added `server/src/dungeonLegacySettlementAdapter.ts` as a pure mapping boundary from the already-calculated legacy result into `PreparedDungeonEncounter`.
+
+- The adapter accepts the frozen ordered roster, existing combat result, already-rolled drop IDs and recipients, each participant's post-healing HP, already-calculated personalized XP/gold, exact report/result text, complete `Player.toJSON()` snapshot, and exact legacy request/outbox event.
+- It does not call combat math, RNG, healing, reward calculation, clocks, persistence, or network sends.
+- It verifies roster order; player snapshot ID/HP; the saved `dungeonLastRequest` identity, report, text and binding; and the outbox event ID/run ID/recipient/message/payload. It then delegates immutable snapshot validation and freezing to `createPreparedDungeonEncounter()`.
+- `PreparedDungeonEncounter` now optionally retains the exact per-participant outbox events. The field is optional so previously persisted version-1 prepared snapshots remain readable; when supplied, it is strictly validated against the frozen roster, reports, result text and request ID.
+- Regression fixtures cover all four legacy outcome/party combinations: solo win, group win, solo loss and group loss. Assertions cover individualized XP/gold, post-healing/clamped HP, exact drop recipients, full player snapshots, request replay binding, outbox payload, immutability and input non-mutation.
+
+### Deliberate limit
+
+The adapter is not yet called from production `runExpeditionDungeon()`, and no WAL transaction or live behavior was changed. The new tests validate the adapter contract with explicit legacy-shaped fixtures; they are not yet a golden comparison captured from a live runtime execution. The next safe step is a narrow, side-effect-free capture at the existing handler's settlement point plus parity assertions against its actual pre-persistence Player snapshots and events. Only after that proof should the live handler be switched to durable start/encounter commit/finalization.
+
+No combat formulas, RNG call order, loot selection, reward modifiers, healing, attempt charging, request replay behavior, client protocol or player persistence timing changed. CI/tests were not run by the assistant; the user checks CI.
