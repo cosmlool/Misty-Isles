@@ -4339,3 +4339,12 @@ Quality Gate 43931230374 failed because the new dungeon test file contained a li
 - Разрешение отражено в `AI_WORK_RULES.md` и checkpoint. Не требуется повторно спрашивать разрешение на обоснованные необходимые изменения.
 - Не добавлять несвязанные функции и не отменять утверждённые решения без причины. Каждое изменение должно иметь основание и запись в журналах.
 - По-прежнему нельзя напрямую менять защищённую `main`, объединять PR или deploy без отдельного разрешения; CI/workflows самостоятельно не запускать.
+
+
+## 2026-11-28 — итоговая сверка live settlement capture
+
+- Финальный HEAD после документации и записи разрешения: `f19c088b5d89f6e0ffc76f19e76e1f828a627ea8`.
+- PR #39 остаётся open/Draft/not merged на рабочей ветке `feature/resource-catalog-implementation-2026-11-26`.
+- GitHub повторно подтверждает изменения production handler, strict solo/group runtime tests, adapter integration test, AI work rules и предметные журналы.
+- CI по текущему HEAD не запускался и не подтверждён пользователем. Предыдущий пользовательский результат CI относился к HEAD `a62248f`.
+- Следующий шаг — ожидать CI пользователя на текущем HEAD; затем при успехе переходить к атомарному durable settlement commit.
