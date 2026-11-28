@@ -14,7 +14,7 @@ export const ARMOR_RECIPES = [
       "leather_strip": 1
     },
     "workGuild": "blacksmith",
-    "description": "Изготовление Капюшон туманного плетения соответствующей ступени I."
+    "description": "Изготовление модели «Капюшон туманного плетения» соответствующей ступени."
   },
   {
     "id": "craft_armor_fabric_hood_ii",
@@ -29,7 +29,7 @@ export const ARMOR_RECIPES = [
       "leather_strip": 2
     },
     "workGuild": "blacksmith",
-    "description": "Изготовление Капюшон туманного плетения соответствующей ступени II."
+    "description": "Изготовление модели «Капюшон туманного плетения» соответствующей ступени."
   },
   {
     "id": "craft_armor_fabric_hood_iii",
@@ -44,7 +44,7 @@ export const ARMOR_RECIPES = [
       "leather_strip": 3
     },
     "workGuild": "blacksmith",
-    "description": "Изготовление Капюшон туманного плетения соответствующей ступени III."
+    "description": "Изготовление модели «Капюшон туманного плетения» соответствующей ступени."
   },
   {
     "id": "craft_armor_fabric_hood_iv",
@@ -59,7 +59,7 @@ export const ARMOR_RECIPES = [
       "leather_strip": 4
     },
     "workGuild": "blacksmith",
-    "description": "Изготовление Капюшон туманного плетения соответствующей ступени IV."
+    "description": "Изготовление модели «Капюшон туманного плетения» соответствующей ступени."
   },
   {
     "id": "craft_armor_fabric_hood_v",
@@ -74,7 +74,7 @@ export const ARMOR_RECIPES = [
       "leather_strip": 5
     },
     "workGuild": "blacksmith",
-    "description": "Изготовление Капюшон туманного плетения соответствующей ступени V."
+    "description": "Изготовление модели «Капюшон туманного плетения» соответствующей ступени."
   },
   {
     "id": "craft_armor_fabric_hood_vi",
@@ -89,7 +89,7 @@ export const ARMOR_RECIPES = [
       "leather_strip": 6
     },
     "workGuild": "blacksmith",
-    "description": "Изготовление Капюшон туманного плетения соответствующей ступени VI."
+    "description": "Изготовление модели «Капюшон туманного плетения» соответствующей ступени."
   },
   {
     "id": "craft_armor_fabric_jacket_i",
@@ -104,7 +104,7 @@ export const ARMOR_RECIPES = [
       "leather_strip": 3
     },
     "workGuild": "blacksmith",
-    "description": "Изготовление Куртка тихого ветра соответствующей ступени I."
+    "description": "Изготовление модели «Куртка тихого ветра» соответствующей ступени."
   },
   {
     "id": "craft_armor_fabric_jacket_ii",
@@ -119,7 +119,7 @@ export const ARMOR_RECIPES = [
       "leather_strip": 6
     },
     "workGuild": "blacksmith",
-    "description": "Изготовление Куртка тихого ветра соответствующей ступени II."
+    "description": "Изготовление модели «Куртка тихого ветра» соответствующей ступени."
   },
   {
     "id": "craft_armor_fabric_jacket_iii",
@@ -134,7 +134,7 @@ export const ARMOR_RECIPES = [
       "leather_strip": 9
     },
     "workGuild": "blacksmith",
-    "description": "Изготовление Куртка тихого ветра соответствующей ступени III."
+    "description": "Изготовление модели «Куртка тихого ветра» соответствующей ступени."
   },
   {
     "id": "craft_armor_fabric_jacket_iv",
@@ -149,7 +149,7 @@ export const ARMOR_RECIPES = [
       "leather_strip": 12
     },
     "workGuild": "blacksmith",
-    "description": "Изготовление Куртка тихого ветра соответствующей ступени IV."
+    "description": "Изготовление модели «Куртка тихого ветра» соответствующей ступени."
   },
   {
     "id": "craft_armor_fabric_jacket_v",
@@ -164,7 +164,7 @@ export const ARMOR_RECIPES = [
       "leather_strip": 15
     },
     "workGuild": "blacksmith",
-    "description": "Изготовление Куртка тихого ветра соответствующей ступени V."
+    "description": "Изготовление модели «Куртка тихого ветра» соответствующей ступени."
   },
   {
     "id": "craft_armor_fabric_jacket_vi",
@@ -179,7 +179,7 @@ export const ARMOR_RECIPES = [
       "leather_strip": 18
     },
     "workGuild": "blacksmith",
-    "description": "Изготовление Куртка тихого ветра соответствующей ступени VI."
+    "description": "Изготовление модели «Куртка тихого ветра» соответствующей ступени."
   },
   {
     "id": "craft_armor_fabric_gloves_i",
@@ -194,7 +194,7 @@ export const ARMOR_RECIPES = [
       "leather_strip": 2
     },
     "workGuild": "blacksmith",
-    "description": "Изготовление Перчатки тонкого шва соответствующей ступени I."
+    "description": "Изготовление модели «Перчатки тонкого шва» соответствующей ступени."
   },
   {
     "id": "craft_armor_fabric_gloves_ii",
@@ -209,7 +209,7 @@ export const ARMOR_RECIPES = [
       "leather_strip": 4
     },
     "workGuild": "blacksmith",
-    "description": "Изготовление Перчатки тонкого шва соответствующей ступени II."
+    "description": "Изготовление модели «Перчатки тонкого шва» соответствующей ступени."
   },
   {
     "id": "craft_armor_fabric_gloves_iii",
@@ -224,7 +224,7 @@ export const ARMOR_RECIPES = [
       "leather_strip": 6
     },
     "workGuild": "blacksmith",
-    "description": "Изготовление Перчатки тонкого шва соответствующей ступени III."
+    "description": "Изготовление модели «Перчатки тонкого шва» соответствующей ступени."
   },
   {
     "id": "craft_armor_fabric_gloves_iv",
@@ -239,7 +239,7 @@ export const ARMOR_RECIPES = [
       "leather_strip": 8
     },
     "workGuild": "blacksmith",
-    "description": "Изготовление Перчатки тонкого шва соответствующей ступени IV."
+    "description": "Изготовление модели «Перчатки тонкого шва» соответствующей ступени."
   },
   {
     "id": "craft_armor_fabric_gloves_v",
@@ -254,7 +254,7 @@ export const ARMOR_RECIPES = [
       "leather_strip": 10
     },
     "workGuild": "blacksmith",
-    "description": "Изготовление Перчатки тонкого шва соответствующей ступени V."
+    "description": "Изготовление модели «Перчатки тонкого шва» соответствующей ступени."
   },
   {
     "id": "craft_armor_fabric_gloves_vi",
@@ -269,7 +269,7 @@ export const ARMOR_RECIPES = [
       "leather_strip": 12
     },
     "workGuild": "blacksmith",
-    "description": "Изготовление Перчатки тонкого шва соответствующей ступени VI."
+    "description": "Изготовление модели «Перчатки тонкого шва» соответствующей ступени."
   },
   {
     "id": "craft_armor_fabric_boots_i",
@@ -285,7 +285,7 @@ export const ARMOR_RECIPES = [
       "leather_strip": 2
     },
     "workGuild": "blacksmith",
-    "description": "Изготовление Сапоги мягкого шага соответствующей ступени I."
+    "description": "Изготовление модели «Сапоги мягкого шага» соответствующей ступени."
   },
   {
     "id": "craft_armor_fabric_boots_ii",
@@ -301,7 +301,7 @@ export const ARMOR_RECIPES = [
       "leather_strip": 4
     },
     "workGuild": "blacksmith",
-    "description": "Изготовление Сапоги мягкого шага соответствующей ступени II."
+    "description": "Изготовление модели «Сапоги мягкого шага» соответствующей ступени."
   },
   {
     "id": "craft_armor_fabric_boots_iii",
@@ -317,7 +317,7 @@ export const ARMOR_RECIPES = [
       "leather_strip": 6
     },
     "workGuild": "blacksmith",
-    "description": "Изготовление Сапоги мягкого шага соответствующей ступени III."
+    "description": "Изготовление модели «Сапоги мягкого шага» соответствующей ступени."
   },
   {
     "id": "craft_armor_fabric_boots_iv",
@@ -333,7 +333,7 @@ export const ARMOR_RECIPES = [
       "leather_strip": 8
     },
     "workGuild": "blacksmith",
-    "description": "Изготовление Сапоги мягкого шага соответствующей ступени IV."
+    "description": "Изготовление модели «Сапоги мягкого шага» соответствующей ступени."
   },
   {
     "id": "craft_armor_fabric_boots_v",
@@ -349,7 +349,7 @@ export const ARMOR_RECIPES = [
       "leather_strip": 10
     },
     "workGuild": "blacksmith",
-    "description": "Изготовление Сапоги мягкого шага соответствующей ступени V."
+    "description": "Изготовление модели «Сапоги мягкого шага» соответствующей ступени."
   },
   {
     "id": "craft_armor_fabric_boots_vi",
@@ -365,7 +365,7 @@ export const ARMOR_RECIPES = [
       "leather_strip": 12
     },
     "workGuild": "blacksmith",
-    "description": "Изготовление Сапоги мягкого шага соответствующей ступени VI."
+    "description": "Изготовление модели «Сапоги мягкого шага» соответствующей ступени."
   },
   {
     "id": "craft_armor_leather_helm_i",
@@ -380,7 +380,7 @@ export const ARMOR_RECIPES = [
       "reinforced_fastening": 1
     },
     "workGuild": "blacksmith",
-    "description": "Изготовление Шлем следопыта соответствующей ступени I."
+    "description": "Изготовление модели «Шлем следопыта» соответствующей ступени."
   },
   {
     "id": "craft_armor_leather_helm_ii",
@@ -395,7 +395,7 @@ export const ARMOR_RECIPES = [
       "reinforced_fastening": 2
     },
     "workGuild": "blacksmith",
-    "description": "Изготовление Шлем следопыта соответствующей ступени II."
+    "description": "Изготовление модели «Шлем следопыта» соответствующей ступени."
   },
   {
     "id": "craft_armor_leather_helm_iii",
@@ -410,7 +410,7 @@ export const ARMOR_RECIPES = [
       "reinforced_fastening": 3
     },
     "workGuild": "blacksmith",
-    "description": "Изготовление Шлем следопыта соответствующей ступени III."
+    "description": "Изготовление модели «Шлем следопыта» соответствующей ступени."
   },
   {
     "id": "craft_armor_leather_helm_iv",
@@ -425,7 +425,7 @@ export const ARMOR_RECIPES = [
       "reinforced_fastening": 4
     },
     "workGuild": "blacksmith",
-    "description": "Изготовление Шлем следопыта соответствующей ступени IV."
+    "description": "Изготовление модели «Шлем следопыта» соответствующей ступени."
   },
   {
     "id": "craft_armor_leather_helm_v",
@@ -440,7 +440,7 @@ export const ARMOR_RECIPES = [
       "reinforced_fastening": 5
     },
     "workGuild": "blacksmith",
-    "description": "Изготовление Шлем следопыта соответствующей ступени V."
+    "description": "Изготовление модели «Шлем следопыта» соответствующей ступени."
   },
   {
     "id": "craft_armor_leather_helm_vi",
@@ -455,7 +455,7 @@ export const ARMOR_RECIPES = [
       "reinforced_fastening": 6
     },
     "workGuild": "blacksmith",
-    "description": "Изготовление Шлем следопыта соответствующей ступени VI."
+    "description": "Изготовление модели «Шлем следопыта» соответствующей ступени."
   },
   {
     "id": "craft_armor_leather_chest_i",
@@ -470,7 +470,7 @@ export const ARMOR_RECIPES = [
       "reinforced_fastening": 3
     },
     "workGuild": "blacksmith",
-    "description": "Изготовление Панцирь звериной тропы соответствующей ступени I."
+    "description": "Изготовление модели «Панцирь звериной тропы» соответствующей ступени."
   },
   {
     "id": "craft_armor_leather_chest_ii",
@@ -485,7 +485,7 @@ export const ARMOR_RECIPES = [
       "reinforced_fastening": 6
     },
     "workGuild": "blacksmith",
-    "description": "Изготовление Панцирь звериной тропы соответствующей ступени II."
+    "description": "Изготовление модели «Панцирь звериной тропы» соответствующей ступени."
   },
   {
     "id": "craft_armor_leather_chest_iii",
@@ -500,7 +500,7 @@ export const ARMOR_RECIPES = [
       "reinforced_fastening": 9
     },
     "workGuild": "blacksmith",
-    "description": "Изготовление Панцирь звериной тропы соответствующей ступени III."
+    "description": "Изготовление модели «Панцирь звериной тропы» соответствующей ступени."
   },
   {
     "id": "craft_armor_leather_chest_iv",
@@ -515,7 +515,7 @@ export const ARMOR_RECIPES = [
       "reinforced_fastening": 12
     },
     "workGuild": "blacksmith",
-    "description": "Изготовление Панцирь звериной тропы соответствующей ступени IV."
+    "description": "Изготовление модели «Панцирь звериной тропы» соответствующей ступени."
   },
   {
     "id": "craft_armor_leather_chest_v",
@@ -530,7 +530,7 @@ export const ARMOR_RECIPES = [
       "reinforced_fastening": 15
     },
     "workGuild": "blacksmith",
-    "description": "Изготовление Панцирь звериной тропы соответствующей ступени V."
+    "description": "Изготовление модели «Панцирь звериной тропы» соответствующей ступени."
   },
   {
     "id": "craft_armor_leather_chest_vi",
@@ -545,7 +545,7 @@ export const ARMOR_RECIPES = [
       "reinforced_fastening": 18
     },
     "workGuild": "blacksmith",
-    "description": "Изготовление Панцирь звериной тропы соответствующей ступени VI."
+    "description": "Изготовление модели «Панцирь звериной тропы» соответствующей ступени."
   },
   {
     "id": "craft_armor_leather_bracers_i",
@@ -560,7 +560,7 @@ export const ARMOR_RECIPES = [
       "leather_strip": 2
     },
     "workGuild": "blacksmith",
-    "description": "Изготовление Наручи ловкого хвата соответствующей ступени I."
+    "description": "Изготовление модели «Наручи ловкого хвата» соответствующей ступени."
   },
   {
     "id": "craft_armor_leather_bracers_ii",
@@ -575,7 +575,7 @@ export const ARMOR_RECIPES = [
       "leather_strip": 4
     },
     "workGuild": "blacksmith",
-    "description": "Изготовление Наручи ловкого хвата соответствующей ступени II."
+    "description": "Изготовление модели «Наручи ловкого хвата» соответствующей ступени."
   },
   {
     "id": "craft_armor_leather_bracers_iii",
@@ -590,7 +590,7 @@ export const ARMOR_RECIPES = [
       "leather_strip": 6
     },
     "workGuild": "blacksmith",
-    "description": "Изготовление Наручи ловкого хвата соответствующей ступени III."
+    "description": "Изготовление модели «Наручи ловкого хвата» соответствующей ступени."
   },
   {
     "id": "craft_armor_leather_bracers_iv",
@@ -605,7 +605,7 @@ export const ARMOR_RECIPES = [
       "leather_strip": 8
     },
     "workGuild": "blacksmith",
-    "description": "Изготовление Наручи ловкого хвата соответствующей ступени IV."
+    "description": "Изготовление модели «Наручи ловкого хвата» соответствующей ступени."
   },
   {
     "id": "craft_armor_leather_bracers_v",
@@ -620,7 +620,7 @@ export const ARMOR_RECIPES = [
       "leather_strip": 10
     },
     "workGuild": "blacksmith",
-    "description": "Изготовление Наручи ловкого хвата соответствующей ступени V."
+    "description": "Изготовление модели «Наручи ловкого хвата» соответствующей ступени."
   },
   {
     "id": "craft_armor_leather_bracers_vi",
@@ -635,7 +635,7 @@ export const ARMOR_RECIPES = [
       "leather_strip": 12
     },
     "workGuild": "blacksmith",
-    "description": "Изготовление Наручи ловкого хвата соответствующей ступени VI."
+    "description": "Изготовление модели «Наручи ловкого хвата» соответствующей ступени."
   },
   {
     "id": "craft_armor_leather_boots_i",
@@ -651,7 +651,7 @@ export const ARMOR_RECIPES = [
       "reinforced_fastening": 2
     },
     "workGuild": "blacksmith",
-    "description": "Изготовление Сапоги крепкой поступи соответствующей ступени I."
+    "description": "Изготовление модели «Сапоги крепкой поступи» соответствующей ступени."
   },
   {
     "id": "craft_armor_leather_boots_ii",
@@ -667,7 +667,7 @@ export const ARMOR_RECIPES = [
       "reinforced_fastening": 4
     },
     "workGuild": "blacksmith",
-    "description": "Изготовление Сапоги крепкой поступи соответствующей ступени II."
+    "description": "Изготовление модели «Сапоги крепкой поступи» соответствующей ступени."
   },
   {
     "id": "craft_armor_leather_boots_iii",
@@ -683,7 +683,7 @@ export const ARMOR_RECIPES = [
       "reinforced_fastening": 6
     },
     "workGuild": "blacksmith",
-    "description": "Изготовление Сапоги крепкой поступи соответствующей ступени III."
+    "description": "Изготовление модели «Сапоги крепкой поступи» соответствующей ступени."
   },
   {
     "id": "craft_armor_leather_boots_iv",
@@ -699,7 +699,7 @@ export const ARMOR_RECIPES = [
       "reinforced_fastening": 8
     },
     "workGuild": "blacksmith",
-    "description": "Изготовление Сапоги крепкой поступи соответствующей ступени IV."
+    "description": "Изготовление модели «Сапоги крепкой поступи» соответствующей ступени."
   },
   {
     "id": "craft_armor_leather_boots_v",
@@ -715,7 +715,7 @@ export const ARMOR_RECIPES = [
       "reinforced_fastening": 10
     },
     "workGuild": "blacksmith",
-    "description": "Изготовление Сапоги крепкой поступи соответствующей ступени V."
+    "description": "Изготовление модели «Сапоги крепкой поступи» соответствующей ступени."
   },
   {
     "id": "craft_armor_leather_boots_vi",
@@ -731,7 +731,7 @@ export const ARMOR_RECIPES = [
       "reinforced_fastening": 12
     },
     "workGuild": "blacksmith",
-    "description": "Изготовление Сапоги крепкой поступи соответствующей ступени VI."
+    "description": "Изготовление модели «Сапоги крепкой поступи» соответствующей ступени."
   },
   {
     "id": "craft_armor_metal_helm_i",
@@ -747,7 +747,7 @@ export const ARMOR_RECIPES = [
       "fabric": 1
     },
     "workGuild": "blacksmith",
-    "description": "Изготовление Шлем стража рубежа соответствующей ступени I."
+    "description": "Изготовление модели «Шлем стража рубежа» соответствующей ступени."
   },
   {
     "id": "craft_armor_metal_helm_ii",
@@ -763,7 +763,7 @@ export const ARMOR_RECIPES = [
       "fabric": 2
     },
     "workGuild": "blacksmith",
-    "description": "Изготовление Шлем стража рубежа соответствующей ступени II."
+    "description": "Изготовление модели «Шлем стража рубежа» соответствующей ступени."
   },
   {
     "id": "craft_armor_metal_helm_iii",
@@ -779,7 +779,7 @@ export const ARMOR_RECIPES = [
       "fabric": 3
     },
     "workGuild": "blacksmith",
-    "description": "Изготовление Шлем стража рубежа соответствующей ступени III."
+    "description": "Изготовление модели «Шлем стража рубежа» соответствующей ступени."
   },
   {
     "id": "craft_armor_metal_helm_iv",
@@ -795,7 +795,7 @@ export const ARMOR_RECIPES = [
       "fabric": 4
     },
     "workGuild": "blacksmith",
-    "description": "Изготовление Шлем стража рубежа соответствующей ступени IV."
+    "description": "Изготовление модели «Шлем стража рубежа» соответствующей ступени."
   },
   {
     "id": "craft_armor_metal_helm_v",
@@ -811,7 +811,7 @@ export const ARMOR_RECIPES = [
       "fabric": 5
     },
     "workGuild": "blacksmith",
-    "description": "Изготовление Шлем стража рубежа соответствующей ступени V."
+    "description": "Изготовление модели «Шлем стража рубежа» соответствующей ступени."
   },
   {
     "id": "craft_armor_metal_helm_vi",
@@ -827,7 +827,7 @@ export const ARMOR_RECIPES = [
       "fabric": 6
     },
     "workGuild": "blacksmith",
-    "description": "Изготовление Шлем стража рубежа соответствующей ступени VI."
+    "description": "Изготовление модели «Шлем стража рубежа» соответствующей ступени."
   },
   {
     "id": "craft_armor_metal_cuirass_i",
@@ -843,7 +843,7 @@ export const ARMOR_RECIPES = [
       "fabric": 2
     },
     "workGuild": "blacksmith",
-    "description": "Изготовление Кираса каменного дозора соответствующей ступени I."
+    "description": "Изготовление модели «Кираса каменного дозора» соответствующей ступени."
   },
   {
     "id": "craft_armor_metal_cuirass_ii",
@@ -859,7 +859,7 @@ export const ARMOR_RECIPES = [
       "fabric": 4
     },
     "workGuild": "blacksmith",
-    "description": "Изготовление Кираса каменного дозора соответствующей ступени II."
+    "description": "Изготовление модели «Кираса каменного дозора» соответствующей ступени."
   },
   {
     "id": "craft_armor_metal_cuirass_iii",
@@ -875,7 +875,7 @@ export const ARMOR_RECIPES = [
       "fabric": 6
     },
     "workGuild": "blacksmith",
-    "description": "Изготовление Кираса каменного дозора соответствующей ступени III."
+    "description": "Изготовление модели «Кираса каменного дозора» соответствующей ступени."
   },
   {
     "id": "craft_armor_metal_cuirass_iv",
@@ -891,7 +891,7 @@ export const ARMOR_RECIPES = [
       "fabric": 8
     },
     "workGuild": "blacksmith",
-    "description": "Изготовление Кираса каменного дозора соответствующей ступени IV."
+    "description": "Изготовление модели «Кираса каменного дозора» соответствующей ступени."
   },
   {
     "id": "craft_armor_metal_cuirass_v",
@@ -907,7 +907,7 @@ export const ARMOR_RECIPES = [
       "fabric": 10
     },
     "workGuild": "blacksmith",
-    "description": "Изготовление Кираса каменного дозора соответствующей ступени V."
+    "description": "Изготовление модели «Кираса каменного дозора» соответствующей ступени."
   },
   {
     "id": "craft_armor_metal_cuirass_vi",
@@ -923,7 +923,7 @@ export const ARMOR_RECIPES = [
       "fabric": 12
     },
     "workGuild": "blacksmith",
-    "description": "Изготовление Кираса каменного дозора соответствующей ступени VI."
+    "description": "Изготовление модели «Кираса каменного дозора» соответствующей ступени."
   },
   {
     "id": "craft_armor_metal_gauntlets_i",
@@ -939,7 +939,7 @@ export const ARMOR_RECIPES = [
       "fabric": 1
     },
     "workGuild": "blacksmith",
-    "description": "Изготовление Рукавицы железного караула соответствующей ступени I."
+    "description": "Изготовление модели «Рукавицы железного караула» соответствующей ступени."
   },
   {
     "id": "craft_armor_metal_gauntlets_ii",
@@ -955,7 +955,7 @@ export const ARMOR_RECIPES = [
       "fabric": 2
     },
     "workGuild": "blacksmith",
-    "description": "Изготовление Рукавицы железного караула соответствующей ступени II."
+    "description": "Изготовление модели «Рукавицы железного караула» соответствующей ступени."
   },
   {
     "id": "craft_armor_metal_gauntlets_iii",
@@ -971,7 +971,7 @@ export const ARMOR_RECIPES = [
       "fabric": 3
     },
     "workGuild": "blacksmith",
-    "description": "Изготовление Рукавицы железного караула соответствующей ступени III."
+    "description": "Изготовление модели «Рукавицы железного караула» соответствующей ступени."
   },
   {
     "id": "craft_armor_metal_gauntlets_iv",
@@ -987,7 +987,7 @@ export const ARMOR_RECIPES = [
       "fabric": 4
     },
     "workGuild": "blacksmith",
-    "description": "Изготовление Рукавицы железного караула соответствующей ступени IV."
+    "description": "Изготовление модели «Рукавицы железного караула» соответствующей ступени."
   },
   {
     "id": "craft_armor_metal_gauntlets_v",
@@ -1003,7 +1003,7 @@ export const ARMOR_RECIPES = [
       "fabric": 5
     },
     "workGuild": "blacksmith",
-    "description": "Изготовление Рукавицы железного караула соответствующей ступени V."
+    "description": "Изготовление модели «Рукавицы железного караула» соответствующей ступени."
   },
   {
     "id": "craft_armor_metal_gauntlets_vi",
@@ -1019,7 +1019,7 @@ export const ARMOR_RECIPES = [
       "fabric": 6
     },
     "workGuild": "blacksmith",
-    "description": "Изготовление Рукавицы железного караула соответствующей ступени VI."
+    "description": "Изготовление модели «Рукавицы железного караула» соответствующей ступени."
   },
   {
     "id": "craft_armor_metal_boots_i",
@@ -1036,7 +1036,7 @@ export const ARMOR_RECIPES = [
       "reinforced_fastening": 2
     },
     "workGuild": "blacksmith",
-    "description": "Изготовление Сапоги бастионного шага соответствующей ступени I."
+    "description": "Изготовление модели «Сапоги бастионного шага» соответствующей ступени."
   },
   {
     "id": "craft_armor_metal_boots_ii",
@@ -1053,7 +1053,7 @@ export const ARMOR_RECIPES = [
       "reinforced_fastening": 4
     },
     "workGuild": "blacksmith",
-    "description": "Изготовление Сапоги бастионного шага соответствующей ступени II."
+    "description": "Изготовление модели «Сапоги бастионного шага» соответствующей ступени."
   },
   {
     "id": "craft_armor_metal_boots_iii",
@@ -1070,7 +1070,7 @@ export const ARMOR_RECIPES = [
       "reinforced_fastening": 6
     },
     "workGuild": "blacksmith",
-    "description": "Изготовление Сапоги бастионного шага соответствующей ступени III."
+    "description": "Изготовление модели «Сапоги бастионного шага» соответствующей ступени."
   },
   {
     "id": "craft_armor_metal_boots_iv",
@@ -1087,7 +1087,7 @@ export const ARMOR_RECIPES = [
       "reinforced_fastening": 8
     },
     "workGuild": "blacksmith",
-    "description": "Изготовление Сапоги бастионного шага соответствующей ступени IV."
+    "description": "Изготовление модели «Сапоги бастионного шага» соответствующей ступени."
   },
   {
     "id": "craft_armor_metal_boots_v",
@@ -1104,7 +1104,7 @@ export const ARMOR_RECIPES = [
       "reinforced_fastening": 10
     },
     "workGuild": "blacksmith",
-    "description": "Изготовление Сапоги бастионного шага соответствующей ступени V."
+    "description": "Изготовление модели «Сапоги бастионного шага» соответствующей ступени."
   },
   {
     "id": "craft_armor_metal_boots_vi",
@@ -1121,7 +1121,7 @@ export const ARMOR_RECIPES = [
       "reinforced_fastening": 12
     },
     "workGuild": "blacksmith",
-    "description": "Изготовление Сапоги бастионного шага соответствующей ступени VI."
+    "description": "Изготовление модели «Сапоги бастионного шага» соответствующей ступени."
   },
   {
     "id": "craft_armor_shared_travel_cloak_i",
@@ -1138,7 +1138,7 @@ export const ARMOR_RECIPES = [
       "reinforced_fastening": 1
     },
     "workGuild": "blacksmith",
-    "description": "Изготовление Плащ дорожного покрова соответствующей ступени I."
+    "description": "Изготовление модели «Плащ дорожного покрова» соответствующей ступени."
   },
   {
     "id": "craft_armor_shared_travel_cloak_ii",
@@ -1155,7 +1155,7 @@ export const ARMOR_RECIPES = [
       "reinforced_fastening": 2
     },
     "workGuild": "blacksmith",
-    "description": "Изготовление Плащ дорожного покрова соответствующей ступени II."
+    "description": "Изготовление модели «Плащ дорожного покрова» соответствующей ступени."
   },
   {
     "id": "craft_armor_shared_travel_cloak_iii",
@@ -1172,7 +1172,7 @@ export const ARMOR_RECIPES = [
       "reinforced_fastening": 3
     },
     "workGuild": "blacksmith",
-    "description": "Изготовление Плащ дорожного покрова соответствующей ступени III."
+    "description": "Изготовление модели «Плащ дорожного покрова» соответствующей ступени."
   },
   {
     "id": "craft_armor_shared_travel_cloak_iv",
@@ -1189,7 +1189,7 @@ export const ARMOR_RECIPES = [
       "reinforced_fastening": 4
     },
     "workGuild": "blacksmith",
-    "description": "Изготовление Плащ дорожного покрова соответствующей ступени IV."
+    "description": "Изготовление модели «Плащ дорожного покрова» соответствующей ступени."
   },
   {
     "id": "craft_armor_shared_travel_cloak_v",
@@ -1206,7 +1206,7 @@ export const ARMOR_RECIPES = [
       "reinforced_fastening": 5
     },
     "workGuild": "blacksmith",
-    "description": "Изготовление Плащ дорожного покрова соответствующей ступени V."
+    "description": "Изготовление модели «Плащ дорожного покрова» соответствующей ступени."
   },
   {
     "id": "craft_armor_shared_travel_cloak_vi",
@@ -1223,6 +1223,6 @@ export const ARMOR_RECIPES = [
       "reinforced_fastening": 6
     },
     "workGuild": "blacksmith",
-    "description": "Изготовление Плащ дорожного покрова соответствующей ступени VI."
+    "description": "Изготовление модели «Плащ дорожного покрова» соответствующей ступени."
   }
 ];
