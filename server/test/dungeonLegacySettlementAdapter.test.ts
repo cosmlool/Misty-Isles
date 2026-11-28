@@ -2,6 +2,7 @@ import assert from 'node:assert/strict';
 import test from 'node:test';
 import { prepareLegacyDungeonSettlement } from '../src/dungeonLegacySettlementAdapter.js';
 import { validatePreparedDungeonEncounter } from '../src/dungeonEncounterPreparation.js';
+import { prepareDungeonMemberQuestSettlement } from '../src/dungeonMemberQuestSettlement.js';
 
 const requestId = 'request_123456';
 const runId = `legacy_${requestId}`;
@@ -172,6 +173,61 @@ test('adapts a group loss without introducing rewards or loot', () => {
   assert.equal(prepared.participants.p1.xp, 0);
   assert.equal(prepared.participants.p2.gold, 0);
   assert.deepEqual(prepared.outboxEvents?.map(event => event.playerId), ['p1', 'p2']);
+});
+
+test('accepts the exact request history and outbox event produced by the live legacy settlement helper', () => {
+  const report = { result: 'win', damage: 120, hpBefore: 100, hpAfter: 94, rewards: { xp: 250, gold: 80, loot: 'dungeon_resource' } };
+  const text = 'Dungeon cleared. 250 XP, 80 gold.';
+  const soloBinding = { dungeonId: 'dungeon_40', groupId: '', leaderId: 'p1', participantIds: ['p1'] };
+  const settlement = prepareDungeonMemberQuestSettlement({
+    quests: { dungeonRuns: 1 },
+    now: 1_800_000_000_000,
+    activity: {
+      type: 'dungeon', outcome: 'win', title: 'Dungeon cleared',
+      place: 'Test dungeon', enemy: 'Test boss', gold: 80, xp: 250, detail: 'Legacy helper integration fixture',
+    },
+    report,
+    requestId,
+    playerId: 'p1',
+    text,
+    binding: soloBinding,
+  });
+  const playerSnapshot = {
+    id: 'p1',
+    health: 94,
+    gold: 580,
+    inventory: '["dungeon_resource"]',
+    quests: JSON.stringify(settlement.quests),
+  };
+
+  const prepared = prepareLegacyDungeonSettlement({
+    runId,
+    requestId,
+    dungeonId: 'dungeon_40',
+    bossId: 'boss_40',
+    preparedAt: 1_800_000_000_000,
+    participantIds: ['p1'],
+    combat: { rounds: 1, incoming: [6], win: true, damageByParticipant: [120] },
+    drops: [{ itemId: 'dungeon_resource', recipientId: 'p1' }],
+    players: [{
+      playerId: 'p1',
+      hpBefore: 100,
+      hpAfter: 94,
+      incomingDamage: 6,
+      outgoingDamage: 120,
+      xp: 250,
+      gold: 80,
+      lootIds: ['dungeon_resource'],
+      report,
+      resultText: text,
+      playerSnapshot,
+      outboxEvent: settlement.event,
+    }],
+  });
+
+  assert.deepEqual(prepared.outboxEvents?.[0], settlement.event);
+  assert.deepEqual(prepared.playerSnapshots.p1, playerSnapshot);
+  assert.deepEqual(JSON.parse(String(prepared.playerSnapshots.p1.quests)), settlement.quests);
 });
 
 test('rejects roster order drift and mismatched request/outbox payloads', () => {
