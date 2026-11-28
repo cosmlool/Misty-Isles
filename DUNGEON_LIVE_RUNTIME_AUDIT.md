@@ -194,3 +194,13 @@ Next: after the user confirms CI for this HEAD, review the strict runtime result
 - Причина: тест ожидал `bossDamageByRound: [25, 25]`, но prepared encounter задаёт суммарный урон участников по боссу `50 + 40 = 90`; корректное равномерное целочисленное распределение на два раунда — `[45, 45]`. Production-код верен; исправлены только два одинаковых ошибочных ожидания (обычный commit и WAL recovery test).
 - Исправление: `8984cd98b3b111d692b4968231a2649936dc31b9`.
 - Ассистент не запускает CI/тесты. Нужно дождаться проверки пользователем на актуальном HEAD, не считать CI пройденным заранее.
+
+
+## 2026-11-28 — live handler boundary после подтверждённого CI
+
+- CI на PR #39 HEAD `a2eff43f4d9b0ec6fa454c166726cbc589ce28ad` подтверждён: Server checks run `46175433765` и Misty Isles Quality Gate run `46175433755` — оба success.
+- Текущий `Room.runExpeditionDungeon()` в `server/src/index.ts` всё ещё рассчитывает один полный boss encounter синхронно и сразу завершает его. До создания prepared settlement он мутирует Player objects, списывает попытки, применяет HP/XP/gold/loot, квесты и отчёты. После этого сохраняет terminal run/player/outbox через atomic settlement commit.
+- Наличие `commitDungeonRunStart()`, `commitDungeonRunRound()`, `resolveDungeonRequestRecovery()` и finalization helpers само по себе не означает resumable live flow: текущий handler их не вызывает.
+- Безопасный порядок интеграции: (1) вынести полную encounter calculation в detached preparation без изменения legacy formulas/RNG order; (2) зафиксировать immutable prepared encounter; (3) атомарно сохранить entry attempt/counters + active run + player snapshots; (4) добавить authenticated resume/advance и round commit; (5) terminal-only finalization для rewards/outbox; (6) удалить one-shot runtime вместо параллельного fallback.
+- Не выполнять прямое start commit перед существующим side-effecting handler: это создаёт окно двойного списания/несогласованного run.
+- Этот этап — source audit и журналирование; production code не менялся. Ассистент не запускал тесты/CI.
