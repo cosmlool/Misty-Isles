@@ -98,7 +98,7 @@ test('legacy settlement writes complete players, terminal run and result outbox 
   assert.deepEqual(memory.saved.players.p1, encounter.playerSnapshots.p1);
   assert.deepEqual(memory.saved.players.p2, encounter.playerSnapshots.p2);
   assert.deepEqual(memory.saved.players.p3, players.p3);
-  assert.equal(memory.saved.dungeonOutbox[encounter.outboxEvents?.[0].eventId].status, 'pending');
+  assert.equal(memory.saved.dungeonOutbox[encounter.outboxEvents![0].eventId].status, 'pending');
 });
 
 test('same committed legacy settlement is idempotent and does not write twice', () => {
