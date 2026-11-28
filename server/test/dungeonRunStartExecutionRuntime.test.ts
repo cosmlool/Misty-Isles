@@ -150,3 +150,49 @@ test('retrying a prepared entry is idempotent and a conflicting prepared encount
     rmSync(dataDir, { recursive: true, force: true });
   }
 });
+
+
+test('WAL recovery restores the prepared execution plan and attempt charges as one entry', () => {
+  const dataDir = mkdtempSync(join(tmpdir(), 'misty-prepared-dungeon-start-wal-'));
+  const files = {
+    players: join(dataDir, 'players.json'),
+    dungeonRuns: join(dataDir, 'dungeon_runs.json'),
+  };
+  try {
+    const store = createSharedStateTransactionStore({
+      dataDir,
+      files,
+      testHooks: {
+        afterTargetWrite(key) {
+          if (key === 'players') throw new Error('simulated prepared-entry crash');
+        },
+      },
+    });
+    const runtime = createSharedStateRuntime({
+      shared: store,
+      auction: { recover: () => false },
+      clans: { recover: () => false },
+    });
+    const { run, encounter, players } = fixture();
+    assert.throws(() => commitDungeonRunStart({
+      runtime, run, encounter, players, runs: {}, day: '2026-11-28',
+    }), /simulated prepared-entry crash/);
+    assert.equal(store.hasPending(), true);
+
+    const restarted = createSharedStateTransactionStore({ dataDir, files });
+    assert.equal(restarted.recover(), true);
+    const savedPlayers = readJson(files.players);
+    const savedRuns = readJson(files.dungeonRuns);
+    const savedRun = savedRuns[run.runId];
+    assert.equal(JSON.parse(savedPlayers.p1.quests).dungeonRuns, 2);
+    assert.equal(JSON.parse(savedPlayers.p2.quests).dungeonRuns, 3);
+    assert.equal(savedPlayers.p1.battles, 4);
+    assert.equal(savedPlayers.p2.battles, 8);
+    assert.deepEqual(savedRun.preparedEncounter, encounter);
+    assert.equal(savedRun.roundPlan.nextRoundIndex, 0);
+    assert.deepEqual(savedRun.roundPlan.bossDamageByRound, [25, 25]);
+    assert.equal(restarted.hasPending(), false);
+  } finally {
+    rmSync(dataDir, { recursive: true, force: true });
+  }
+});
