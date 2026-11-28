@@ -4348,3 +4348,10 @@ Quality Gate 43931230374 failed because the new dungeon test file contained a li
 - GitHub повторно подтверждает изменения production handler, strict solo/group runtime tests, adapter integration test, AI work rules и предметные журналы.
 - CI по текущему HEAD не запускался и не подтверждён пользователем. Предыдущий пользовательский результат CI относился к HEAD `a62248f`.
 - Следующий шаг — ожидать CI пользователя на текущем HEAD; затем при успехе переходить к атомарному durable settlement commit.
+
+
+### Final ref refresh after journal commits
+
+- HEAD перед финальной записью checkpoint подтверждён: `faf96b0f387e10658e24e7ae7006174f9d42dc46`.
+- PR #39 открыт, Draft, не объединён.
+- CI для этого HEAD пользователем ещё не подтверждён.
