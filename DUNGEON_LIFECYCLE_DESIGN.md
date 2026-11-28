@@ -341,3 +341,22 @@ Still outstanding: atomic durable entry/attempt charging, per-round progress com
 - Статически перечитаны runtime, новый test, package script и существующие WAL/start helpers после записи. Ассистент не запускал тесты и CI.
 - Важная граница: production `runExpeditionDungeon()` пока не вызывает этот prepared-entry runtime; live handler остаётся синхронным legacy one-shot и сразу завершает encounter. Этот этап готовит и проверяет атомарную транзакцию, но ещё не включает player-facing resumable run.
 - Следующий этап: заменить production one-shot entry на подготовленный active-run commit; добавить authenticated resume/advance action и атомарное сохранение каждого раунда через `commitDungeonRunRound()`. Финальные rewards/player snapshots/outbox должны применяться только на terminal commit. Не сохранять старый one-shot runtime как параллельный fallback.
+
+
+## 2026-11-28 — live resumable integration: обязательная preparation boundary
+
+The exact current production boundary was rechecked after CI passed on PR #39 HEAD `a2eff43f4d9b0ec6fa454c166726cbc589ce28ad` (Server checks run `46175433765` and Quality Gate run `46175433755`, both success).
+
+The current `Room.runExpeditionDungeon()` is still a synchronous one-shot path. It mutates live Player instances while resolving the encounter, charges daily attempts, applies HP and rewards, allocates loot, updates quest/history/report/outbox data, and only then creates a prepared terminal settlement and commits it atomically. The prepared active-run start and round runtimes are not called by this handler.
+
+Do not insert an active-run start transaction in front of this handler: the handler already performs mutations and random rolls, so a retry or crash between start and settlement can double-charge attempts or leave a durable active run without matching settlement.
+
+Required next implementation slice:
+1. Extract the complete encounter preparation to operate on detached Player snapshots. It must not mutate ONLINE_PLAYERS or persist state.
+2. Preserve exact combat formulas, RNG call order, loot roll/recipient allocation order, XP/gold/healing calculations, counters, activity timestamps, reports, quest updates and outbox payloads. No balance changes.
+3. Produce one immutable PreparedDungeonEncounter containing all terminal settlement snapshots and random outcomes before the entry transaction.
+4. Commit daily attempt/battle counters, active run, prepared encounter and player snapshots together through the shared WAL.
+5. Add authenticated resume/advance actions and per-round commits. Only terminal finalization applies prepared rewards/player snapshots and queues result outbox events.
+6. Remove the old one-shot path when the new flow is complete; do not retain parallel legacy combat fallback.
+
+This is an integration safety boundary, not a claim that resumable gameplay is already live.
