@@ -4445,3 +4445,13 @@ Quality Gate 43931230374 failed because the new dungeon test file contained a li
 - Причина: тест ожидал `bossDamageByRound: [25, 25]`, но prepared encounter задаёт суммарный урон участников по боссу `50 + 40 = 90`; корректное равномерное целочисленное распределение на два раунда — `[45, 45]`. Production-код верен; исправлены только два одинаковых ошибочных ожидания (обычный commit и WAL recovery test).
 - Исправление: `8984cd98b3b111d692b4968231a2649936dc31b9`.
 - Ассистент не запускает CI/тесты. Нужно дождаться проверки пользователем на актуальном HEAD, не считать CI пройденным заранее.
+
+
+## 2026-11-28 — CI green и уточнение безопасной live integration boundary
+
+- Пользователь сообщил «CI прошёл». GitHub подтвердил оба workflow на PR #39 HEAD `a2eff43f4d9b0ec6fa454c166726cbc589ce28ad`: Server checks run `46175433765` и Misty Isles Quality Gate run `46175433755`, оба success.
+- Live handler audit: `Room.runExpeditionDungeon()` всё ещё синхронный one-shot. Он мутирует online Player snapshots во время расчёта, списывает попытки, раздаёт награды/loot, формирует quest/report/outbox и затем вызывает terminal persistence. Подготовленные entry/round helpers в production handler не подключены.
+- Поэтому прямое добавление WAL start до текущего расчёта небезопасно: повтор запроса/падение между транзакциями может списать попытки дважды или оставить активный run без согласованного settlement.
+- Следующая подзадача — detached encounter preparation: сохранить legacy формулы, RNG call order и распределение ресурсов/наград, но рассчитывать на копиях игроков без live mutation; получить complete immutable PreparedDungeonEncounter. После regression/golden tests подключить единый WAL entry commit, затем authenticated resume/advance и per-round commit. Finalization/outbox — только terminal path.
+- Никаких production code changes в этом audit-only шаге. Тесты и CI ассистентом не запускались.
+- PR #39 остаётся Draft/open/not merged; main не менялся.
