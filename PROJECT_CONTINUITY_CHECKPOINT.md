@@ -3653,3 +3653,11 @@ PR #15 остаётся Draft/open и не объединён. Слияние б
 - Workflows were observed in progress on `ca5f97a`; do not treat them as green for this stage. The final journal commit will create a new HEAD and must be checked by the user.
 - Assistant did not run tests or CI. Static GitHub reread confirmed the corrected WAL test uses the transaction store's actual journal-file contract and that the new suite is registered.
 - Next: after user CI confirmation, wire the prepared-entry commit into the production dungeon handler and add authenticated round advancement/recovery. The existing production handler is still one-shot; no player-facing resumable runtime is claimed.
+
+
+### CI correction — 2026-11-28
+
+- Пользователь сообщил о провале CI на HEAD `08f5f899f5ba0115da8ca1d5af163e3b9441372c`. Оба workflow падали только на двух assertions в новом `dungeonRunStartExecutionRuntime.test.ts`; остальные 545 из 547 server tests прошли, client/browser/docs checks были успешны.
+- Причина: тест ожидал `bossDamageByRound: [25, 25]`, но prepared encounter задаёт суммарный урон участников по боссу `50 + 40 = 90`; корректное равномерное целочисленное распределение на два раунда — `[45, 45]`. Production-код верен; исправлены только два одинаковых ошибочных ожидания (обычный commit и WAL recovery test).
+- Исправление: `8984cd98b3b111d692b4968231a2649936dc31b9`.
+- Ассистент не запускает CI/тесты. Нужно дождаться проверки пользователем на актуальном HEAD, не считать CI пройденным заранее.
