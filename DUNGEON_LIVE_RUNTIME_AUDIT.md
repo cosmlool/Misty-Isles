@@ -125,3 +125,14 @@ Next: after the user confirms CI for this HEAD, review the strict runtime result
 - PR #39 остаётся open, Draft, not merged; base `main`; рабочая ветка `feature/resource-catalog-implementation-2026-11-26`.
 - Пользовательский CI pass был подтверждён для предыдущего HEAD `8149085e889d00055542fffa0dc64b3b5ec91cfc`. На финальном HEAD `fa75ccf` CI ещё ожидается.
 - Ассистент не запускал тесты, CI или workflows. Source review и повторное чтение журналов выполнены; тестовые результаты не заявляются.
+
+## 2026-11-28 — исправлены причины падения CI в durable dungeon settlement
+
+- Пользователь сообщил, что CI не прошёл. Изучены оба workflow PR #39 на проверенном GitHub merge commit `67001ffb3d9b3d2b8e98796de8c9c4a174a34643` (head `6799be24af8e965bf7d80cf8e7274568aeb35c09`): Quality Gate и Server checks падали на одном наборе серверных тестов; 533 из 539 прошли.
+- Две runtime-проверки (solo и group dungeon) завершались тайм-аутом до отправки результата. Причина — durable run envelope отклонял корректный текущий HP персонажа, когда он был выше вычисленного effectiveMaxHealth (в legacy saves/test fixtures такое превышение реально присутствует). При создании snapshot run теперь верхняя граница maxHealth равна `Math.max(effectiveMaxHealth(player), hpBefore)`; фактический HP не обрезается, боевой расчёт/лечение/награды не меняются.
+- Три проверки `dungeonLegacySettlementCommitRuntime.test.ts` передавали пустой `runs` store, хотя контракт atomic commit требует заранее созданный run envelope. Все четыре fixture calls теперь передают свой корректный `{ [run.runId]: run }`, включая сценарий stale recovery (где проверка recovery по-прежнему должна срабатывать первой).
+- Проверка `playerPersistenceWriters.test.ts` ожидала устаревшую сигнатуру legacy persistence. Обновлено ожидание на фактический вызов атомарного commit с `preparedEncounter`, `durableRun` и rollback snapshots.
+- Изменены: `server/src/index.ts`, `server/test/dungeonLegacySettlementCommitRuntime.test.ts`, `server/test/playerPersistenceWriters.test.ts`.
+- Статически перечитаны обновлённые файлы после записи. Ассистент не запускал тесты и не запускал/перезапускал CI; исправления ожидают пользовательской проверки.
+- Workflow build был пропущен вследствие раннего падения server test step; успешная сборка нового HEAD не заявляется.
+- Следующий шаг: пользователь проверяет CI на новом HEAD. Не объединять PR #39; после успешной проверки продолжить следующий записанный этап durable active-run entry/per-round commit/recovery.
