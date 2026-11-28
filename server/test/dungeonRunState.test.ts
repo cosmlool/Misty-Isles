@@ -255,7 +255,7 @@ test('startup recovery rejects prepared encounter snapshots detached from durabl
     combat: { rounds: 1, incoming: [1, 1], win: true, damageByParticipant: [10, 10] },
     drops: [],
     participants: {
-      p1: { playerId: 'p1', hpBefore: 99, hpAfter: 98, incomingDamage: 1, outgoingDamage: 10, xp: 1, gold: 1, lootIds: [], report: {}, resultText: 'Win' },
+      p1: { playerId: 'p1', hpBefore: 121, hpAfter: 98, incomingDamage: 1, outgoingDamage: 10, xp: 1, gold: 1, lootIds: [], report: {}, resultText: 'Win' },
       p2: { playerId: 'p2', hpBefore: 90, hpAfter: 89, incomingDamage: 1, outgoingDamage: 10, xp: 1, gold: 1, lootIds: [], report: {}, resultText: 'Win' },
     },
     playerSnapshots: { p1: { id: 'p1', health: 98 }, p2: { id: 'p2', health: 89 } },

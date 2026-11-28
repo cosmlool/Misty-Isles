@@ -212,6 +212,10 @@ test('solo Forgotten Lands boss dungeon reports remaining daily entries and enfo
     assert.equal(JSON.parse(lossSaved.quests).dungeonRuns, 1, 'failed attempt must consume one daily entry');
     assert.equal(lossSaved.battles, 1, 'a failed solo dungeon attempt must also count as a battle');
     assert.equal(lossSaved.health, loss.report.hpAfter, 'failed attempt health must be persisted');
+    const soloRuns = JSON.parse(readFileSync(join(dataDir, 'dungeon_runs.json'), 'utf8'));
+    assert.equal(soloRuns.legacy_solo_dungeon_attempt_1.terminalResult.outcome, 'win');
+    assert.equal(soloRuns.legacy_solo_dungeon_loss_001.terminalResult.outcome, 'loss');
+    assert.deepEqual(soloRuns.legacy_solo_dungeon_attempt_1.preparedEncounter.participantIds, [playerId]);
 
     room.send('discardItem', { index: 0, itemId: 'ARM-C-1-001', expectedCount: 1 });
     await waitFor(() => notices.find(message => message.includes('удалён из инвентаря')), 'discarding equipped HP armor');

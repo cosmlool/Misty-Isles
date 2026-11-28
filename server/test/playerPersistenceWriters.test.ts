@@ -34,8 +34,8 @@ test('player persistence failures reconcile live state with the last durable sna
   assert.match(source, /catch\(error\)\{reconcileOnlinePlayersAfterPersistenceFailure\(\);throw error;\}/);
   assert.match(source, /function persistDungeonResultPlayers[\s\S]*?rollbackSnapshots/);
   assert.match(source, /const rollbackSnapshots=players\.map\(player=>player!\.toJSON\(\)\)/);
-  assert.equal((source.match(/persistDungeonResultPlayers\(players as Player\[\],dungeonResultEvents,rollbackSnapshots\)/g) || []).length, 2);
-  assert.match(source, /if\(journalPending\)[\s\S]*?reconcileOnlinePlayersAfterPersistenceFailure\(\)[\s\S]*?else\{[\s\S]*?applyPlayerSave\(players\[i\] as any,rollbackSnapshots\[i\]\)/);
+  assert.equal((source.match(/persistDungeonResultPlayers\(players as Player\[\],preparedEncounter,durableRun,rollbackSnapshots\)/g) || []).length, 2);
+  assert.match(source, /if\(journalPending\)[\s\S]*?reconcileOnlinePlayersAfterPersistenceFailure\(\);[\s\S]*?if\(existsSync\(sharedStateTransactions\.journalFile\)\)throw error;[\s\S]*?const durablePlayers=loadPlayers\(\);[\s\S]*?applyPlayerSave\(players\[i\] as any,saved\|\|rollbackSnapshots\[i\]\)/);
   assert.match(source, /function transactClanMutation[\s\S]*?catch\(error\)\{reconcileOnlinePlayersAfterPersistenceFailure\(\);throw error;\}/);
 });
 

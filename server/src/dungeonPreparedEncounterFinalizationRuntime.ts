@@ -28,6 +28,8 @@ export function prepareCommittedDungeonEncounterFinalization(input: {
   now: number;
   outbox?: DungeonResultOutbox;
   events?: Parameters<typeof prepareDungeonRunFinalization>[0]['events'];
+  /** Complete player store; frozen encounter snapshots override its participants. */
+  players?: Record<string, Record<string, unknown>>;
 }): PreparedEncounterFinalization {
   if (!input.runId || !Number.isFinite(input.now)) {
     throw new Error('Invalid committed encounter finalization request.');
@@ -45,7 +47,7 @@ export function prepareCommittedDungeonEncounterFinalization(input: {
     expectedRoundIndex: current.roundIndex,
     expectedUpdatedAt: current.updatedAt,
     outcome,
-    players: encounter.playerSnapshots,
+    players: { ...(input.players || {}), ...encounter.playerSnapshots },
     runs,
     now: input.now,
     outbox: input.outbox,

@@ -313,3 +313,50 @@ The subsequent Quality Gate 43936898345 showed that the earlier newline correcti
 
 Append the wave runtime integration contract and current implementation boundaries. See `DUNGEON_WAVE_RUNTIME_CONTRACT.md` for required state, invariants, unresolved gameplay decisions, and staged wiring sequence. Verified that the current config/legacy adapter are pure schema boundaries; production still executes one synchronous `bossId` encounter and the durable run types still store one boss and one aggregate result. No live combat behavior changed.
 
+
+
+## 2026-11-28 — статус atomic settlement implementation
+
+The legacy single-boss live handler now persists its already-calculated terminal settlement atomically: complete player snapshots, a terminal dungeon run envelope, and pending result outbox events share one WAL transaction. The envelope is not exposed as an active run, and this does not implement resumable active encounters.
+
+Still outstanding: atomic durable entry/attempt charging, per-round progress commits, active-run restart resume, spectator/death transitions, resurrection commands, leader AFK timeout/disband, and the future multi-step catacomb room content. Existing combat and reward formulas remain unchanged by the settlement integration.
+## 2026-11-28 — immutable resumable execution preparation
+
+- Added `server/src/dungeonRunExecutionPreparation.ts` as a pure boundary that binds the already-calculated immutable `PreparedDungeonEncounter` to an active run and derives a deterministic per-round schedule from its frozen combat result.
+- The round schedule preserves the exact aggregate outgoing damage and each participant's incoming damage using cumulative integer splits; it does not rerun combat math, RNG, healing, reward calculation, or loot allocation.
+- The prepared terminal player snapshots, reports, request bindings, drop recipients, and outbox payload remain frozen while the run's current participant HP and round cursor advance.
+- Corrected run-store validation: prepared `hpBefore` is the immutable entry HP, not the participant's mutable current HP after later rounds. Validation now checks entry/final HP against the participant's frozen maximum and continues to validate snapshot ownership. The attachment boundary still checks that `hpBefore` exactly matches the current entry HP when the preparation is first attached.
+- Tests cover plan conservation, JSON recovery after a committed round, preservation of frozen terminal snapshots, idempotent preparation, conflicting/stale snapshots, terminal/missing runs, and compatibility with the existing atomic attempt-charge preparation.
+- This remains a pure preparation layer. Production `runExpeditionDungeon()` is not yet wired to active entry or round actions; no active run is exposed to clients by this commit.
+- Next: use this prepared execution as the input to one atomic entry transaction that charges attempts/battle counters and writes the active run together. Then add authenticated round-advance/resume actions and atomic per-round player/run commits before replacing the one-shot handler. Do not retain parallel legacy combat execution after the new path is enabled.
+
+
+## 2026-11-28 — атомарный WAL commit подготовленного активного забега
+
+- CI подтверждён пользователем как успешный на предыдущем HEAD `6c4461c369a4564528c864efce0a993643040ffe`: оба workflow завершились с `success`. Изменения этого этапа новее и ожидают отдельной проверки.
+- Расширен `server/src/dungeonRunStartRuntime.ts`: если передан уже рассчитанный immutable `PreparedDungeonEncounter`, runtime сначала готовит списание дневных попыток и счётчиков боёв через `prepareDungeonRunStart()`, затем прикрепляет encounter и детерминированный round plan через `prepareDungeonRunExecution()`. Обе части попадают в один `transactWithRecovery()` и один shared-WAL commit файлов `players.json` + `dungeon_runs.json`.
+- В активный run сохраняются замороженный roster, полный prepared encounter, round plan и курсор следующего раунда. В player snapshots сохраняются дневная попытка и battle counter; HP и награды будущих раундов не применяются при входе.
+- Повтор того же request/run и того же prepared snapshot идемпотентен и не списывает попытку повторно. Конфликтующий prepared snapshot отклоняется. Если recovery обнаружил WAL replay, устаревшие входные snapshots отклоняются до записи.
+- Добавлен `server/test/dungeonRunStartExecutionRuntime.test.ts`: атомарное сохранение encounter/round plan/attempt/battle counters, сохранение исходного HP при входе, idempotent retry, конфликт snapshot и recovery после прерывания записи players target. Тест зарегистрирован в `server/package.json`.
+- Статически перечитаны runtime, новый test, package script и существующие WAL/start helpers после записи. Ассистент не запускал тесты и CI.
+- Важная граница: production `runExpeditionDungeon()` пока не вызывает этот prepared-entry runtime; live handler остаётся синхронным legacy one-shot и сразу завершает encounter. Этот этап готовит и проверяет атомарную транзакцию, но ещё не включает player-facing resumable run.
+- Следующий этап: заменить production one-shot entry на подготовленный active-run commit; добавить authenticated resume/advance action и атомарное сохранение каждого раунда через `commitDungeonRunRound()`. Финальные rewards/player snapshots/outbox должны применяться только на terminal commit. Не сохранять старый one-shot runtime как параллельный fallback.
+
+
+## 2026-11-28 — live resumable integration: обязательная preparation boundary
+
+The exact current production boundary was rechecked after CI passed on PR #39 HEAD `a2eff43f4d9b0ec6fa454c166726cbc589ce28ad` (Server checks run `46175433765` and Quality Gate run `46175433755`, both success).
+
+The current `Room.runExpeditionDungeon()` is still a synchronous one-shot path. It mutates live Player instances while resolving the encounter, charges daily attempts, applies HP and rewards, allocates loot, updates quest/history/report/outbox data, and only then creates a prepared terminal settlement and commits it atomically. The prepared active-run start and round runtimes are not called by this handler.
+
+Do not insert an active-run start transaction in front of this handler: the handler already performs mutations and random rolls, so a retry or crash between start and settlement can double-charge attempts or leave a durable active run without matching settlement.
+
+Required next implementation slice:
+1. Extract the complete encounter preparation to operate on detached Player snapshots. It must not mutate ONLINE_PLAYERS or persist state.
+2. Preserve exact combat formulas, RNG call order, loot roll/recipient allocation order, XP/gold/healing calculations, counters, activity timestamps, reports, quest updates and outbox payloads. No balance changes.
+3. Produce one immutable PreparedDungeonEncounter containing all terminal settlement snapshots and random outcomes before the entry transaction.
+4. Commit daily attempt/battle counters, active run, prepared encounter and player snapshots together through the shared WAL.
+5. Add authenticated resume/advance actions and per-round commits. Only terminal finalization applies prepared rewards/player snapshots and queues result outbox events.
+6. Remove the old one-shot path when the new flow is complete; do not retain parallel legacy combat fallback.
+
+This is an integration safety boundary, not a claim that resumable gameplay is already live.

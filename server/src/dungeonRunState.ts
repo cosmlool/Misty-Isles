@@ -132,7 +132,8 @@ export function validateDungeonRunStore(value: unknown): DungeonRunStore {
         JSON.stringify(prepared.participantIds) !== JSON.stringify(raw.participantIds) ||
         prepared.preparedAt < raw.startedAt ||
         raw.participantIds.some((id: string) =>
-          prepared.participants[id].hpBefore !== raw.participants[id].health ||
+          prepared.participants[id].hpBefore > raw.participants[id].maxHealth ||
+          prepared.participants[id].hpAfter > raw.participants[id].maxHealth ||
           (prepared.playerSnapshots[id].id !== undefined && prepared.playerSnapshots[id].id !== id))) {
         throw new Error(`dungeon_runs.json contains a prepared encounter that does not match run ${key}.`);
       }

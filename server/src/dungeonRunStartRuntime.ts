@@ -5,6 +5,8 @@ import {
   type PreparedDungeonRunStart,
 } from './dungeonRunStartTransaction.js';
 import type { DungeonRunRecord, DungeonRunStore } from './dungeonRunState.js';
+import { prepareDungeonRunExecution } from './dungeonRunExecutionPreparation.js';
+import type { PreparedDungeonEncounter } from './dungeonEncounterPreparation.js';
 
 type DungeonEntryRuntime = {
   transactWithRecovery<T>(prepare: (recovery: { recovered: boolean; playersRecovered: boolean }) => {
@@ -27,6 +29,7 @@ export function commitDungeonRunStart(input: {
   runs: DungeonRunStore;
   day: string;
   dailyLimit?: number;
+  encounter?: PreparedDungeonEncounter;
 }): PreparedDungeonRunStart {
   return input.runtime.transactWithRecovery(recovery => {
     if (recovery.recovered) {
@@ -39,10 +42,23 @@ export function commitDungeonRunStart(input: {
       day: input.day,
       dailyLimit: input.dailyLimit,
     });
+    if (!input.encounter) {
+      return {
+        files: { players: prepared.players, dungeonRuns: prepared.runs },
+        result: prepared,
+        skipWrite: prepared.alreadyStarted,
+      };
+    }
+    const execution = prepareDungeonRunExecution({
+      runId: prepared.run.runId,
+      runs: prepared.runs,
+      encounter: input.encounter,
+    });
+    const committed = { ...prepared, run: execution.run, runs: execution.runs };
     return {
-      files: { players: prepared.players, dungeonRuns: prepared.runs },
-      result: prepared,
-      skipWrite: prepared.alreadyStarted,
+      files: { players: committed.players, dungeonRuns: committed.runs },
+      result: committed,
+      skipWrite: prepared.alreadyStarted && execution.alreadyPrepared,
     };
   });
 }

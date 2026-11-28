@@ -24,6 +24,7 @@ export class Player extends Schema {
   @type('string') craftQueue = '[]';
   @type('string') guildSkills = '{}';
   @type('string') craftingSpecialty = '';
+  @type('string') workGuild = '';
   @type('string') auctionHistory = '[]';
   @type('number') goldSpent = 0;
   @type('number') itemsCrafted = 0;
