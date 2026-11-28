@@ -4426,3 +4426,14 @@ Quality Gate 43931230374 failed because the new dungeon test file contained a li
 - Статически перечитаны runtime, новый test, package script и существующие WAL/start helpers после записи. Ассистент не запускал тесты и CI.
 - Важная граница: production `runExpeditionDungeon()` пока не вызывает этот prepared-entry runtime; live handler остаётся синхронным legacy one-shot и сразу завершает encounter. Этот этап готовит и проверяет атомарную транзакцию, но ещё не включает player-facing resumable run.
 - Следующий этап: заменить production one-shot entry на подготовленный active-run commit; добавить authenticated resume/advance action и атомарное сохранение каждого раунда через `commitDungeonRunRound()`. Финальные rewards/player snapshots/outbox должны применяться только на terminal commit. Не сохранять старый one-shot runtime как параллельный fallback.
+
+
+### Final ref refresh — prepared dungeon entry stage, 2026-11-28
+
+- Runtime commit: `ae5a38a9d80ac55c481c9202dd15baf937b7f0ca`.
+- Test commit: `b8b1cd017af3b958a492bdcf631f1c2379fe900c`; test registration: `30cfaa9d0d66461dd7b1e023d7a144ea4709c5e0`; WAL recovery assertion correction: `ca5f97a98a6e89128def228bf34ee95ac2079445`.
+- Journal commits: lifecycle design `6904a2d9d808c38068c0a01ebf3947a5acf2fb45`, runtime audit `8c4cdbec839cca796c5fd73c22c1fb67d2877914`, audit status `4613d26464649227245041ce40057368edd6c2c9`, checkpoint `633137281d1f30c4f246351adb06cb4aebf74d1a`.
+- Final source/test HEAD before this ref-refresh note: `ca5f97a98a6e89128def228bf34ee95ac2079445`. PR #39 remains open/Draft/not merged, base `main`.
+- Workflows were observed in progress on `ca5f97a`; do not treat them as green for this stage. The final journal commit will create a new HEAD and must be checked by the user.
+- Assistant did not run tests or CI. Static GitHub reread confirmed the corrected WAL test uses the transaction store's actual journal-file contract and that the new suite is registered.
+- Next: after user CI confirmation, wire the prepared-entry commit into the production dungeon handler and add authenticated round advancement/recovery. The existing production handler is still one-shot; no player-facing resumable runtime is claimed.
