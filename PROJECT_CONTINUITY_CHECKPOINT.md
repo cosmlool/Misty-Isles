@@ -3508,3 +3508,17 @@ PR #15 остаётся Draft/open и не объединён. Слияние б
 - Новые ступени/roster катакомб не создавать из старых `rooms` или четырёх legacy boss entries. Не смешивать будущую многоступенчатую конфигурацию с первым переходом durable single-encounter lifecycle.
 - Изменена только документация; код, данные, баланс, сохранения и клиент не менялись.
 - Следующая точка работы: реализовать и проверить pure legacy-settlement adapter/parity boundary; после отдельного CI подтверждения переключать production handler на WAL lifecycle. CI проверяет пользователь.
+
+
+## 2026-11-28 — pure adapter legacy settlement катакомб
+
+- Пользователь сообщил, что предыдущий CI прошёл. Это относится к HEAD до текущего этапа; workflow не запускались ассистентом.
+- Перед изменениями повторно прочитаны `AI_WORK_RULES.md`, checkpoint, audit status, `DUNGEON_LIVE_RUNTIME_AUDIT.md`, `DUNGEON_LIFECYCLE_DESIGN.md`, production handler и связанные durable helpers/tests. Рабочая ветка — `feature/resource-catalog-implementation-2026-11-26`; PR #39 остаётся open/Draft/not merged.
+- Добавлен `server/src/dungeonLegacySettlementAdapter.ts`: чистое преобразование уже рассчитанных legacy settlement значений в `PreparedDungeonEncounter`. Adapter не считает бой/награды, не бросает RNG, не лечит, не пишет сохранения и не отправляет сообщения.
+- Адаптер требует совпадения порядка участников с frozen roster, точного Player snapshot ID/HP, последней записи dungeon request (request ID/report/text/binding) и соответствующего outbox event (event ID/run ID/recipient/message type/payload).
+- `PreparedDungeonEncounter` дополнен необязательным `outboxEvents` с точной копией событий результата. Поле необязательное, чтобы не ломать чтение ранее сохранённых version-1 snapshots; при наличии строго проверяется на roster/request/report/text и затем глубоко замораживается.
+- Добавлены `server/test/dungeonLegacySettlementAdapter.test.ts` и регистрация в server test script. Тестовые сценарии: solo win, group win, solo loss, group loss; персональные XP/gold; HP после healing/clamp; точные loot recipients; полные player snapshots; request replay binding; outbox payload; immutable output и отсутствие мутации входа.
+- Коммиты текущего этапа: `e508c04` adapter; `f05413b` prepared outbox snapshot; `5f89011` adapter tests; `302ccb2` test script; `e487612`, `d986b85`, `a1e4708` validation hardening; `0f22ed8`, `5fa7728` test coverage; `07f2222` dungeon audit.
+- Важно: production `runExpeditionDungeon()` пока не вызывает новый adapter; WAL/runtime и live behavior не переключались. Fixture tests подтверждают контракт adapter, но ещё не являются golden parity capture реального handler до persistence.
+- Не менялись combat formulas, RNG call order, loot/reward/healing, attempt charging, request replay, client protocol, save timing, dungeon data или death/spectator semantics. CI и тесты не запускались ассистентом.
+- Следующий шаг: сделать узкий side-effect-free capture уже рассчитанного legacy settlement непосредственно перед `persistDungeonResultPlayers()` и проверить паритет с фактическими pre-persistence Player snapshots, report/request/outbox events. Не подключать WAL start/round/finalization до завершения этой проверки и отдельного CI подтверждения.
