@@ -4317,3 +4317,17 @@ Quality Gate 43931230374 failed because the new dungeon test file contained a li
 - После записи повторно прочитаны adapter, prepared encounter validator, тесты, package script и предметный аудит; наличие всех изменений и регистрация теста подтверждены. Статическая сверка типов/связей завершена по исходникам GitHub. Локальные тесты и CI не запускались; успешность сборки/тестов не заявляется.
 - Ограничение: production `runExpeditionDungeon()` пока не вызывает adapter; текущий runtime и момент persistence не изменены. Fixtures доказывают mapping contract, но не заменяют golden parity capture фактического handler.
 - Следующий этап: side-effect-free capture в существующем legacy handler до `persistDungeonResultPlayers()`; сверить фактические snapshots и event payloads с adapter output. После этого отдельно проектировать WAL integration; не включать её сейчас.
+
+
+## 2026-11-28 — live shadow capture legacy settlement подключён
+
+- CI прошёл по сообщению пользователя на предыдущем HEAD `a62248f`; новые изменения ещё не прошли пользовательскую CI-проверку.
+- Production `runExpeditionDungeon()` вызывает `prepareLegacyDungeonSettlement()` непосредственно перед `persistDungeonResultPlayers()` как при победе, так и при поражении.
+- Передаются реальные уже рассчитанные значения: combat plan, ordered roster, rolled/allocated drops, recipient IDs, HP before/after, индивидуальные XP/gold, loot IDs, member report/text, Player.toJSON snapshots и точные request/outbox events.
+- Capture не повторяет RNG, бой, healing, награды, report calculation или распределение loot. Время подготовки берётся из уже записанного `dungeonActivityAt`.
+- Immutable результат пока не сохраняется в WAL и не влияет на существующий legacy persistence. Ошибка capture в normal runtime логируется, legacy save продолжается; strict env `MISTY_DUNGEON_PARITY_STRICT=1` пробрасывает ошибку в runtime tests.
+- Strict режим включён в двух существующих интеграционных наборах: group win/loss с restart/replay и solo win/loss с XP/gold modifiers. Добавлен тест, использующий реальный `prepareDungeonMemberQuestSettlement()` и его outbox event. Все эти suites зарегистрированы в server test script.
+- Изменённые файлы: `server/src/index.ts`, `server/test/groupDungeonRuntime.test.ts`, `server/test/dungeonAttemptsRuntime.test.ts`, `server/test/dungeonLegacySettlementAdapter.test.ts`, этот предметный audit и checkpoint.
+- Статическое чтение GitHub подтверждает наличие обоих capture calls, строгого тестового режима и регистрации suites. Тесты/CI не запускались ассистентом; не утверждать успешную компиляцию или тестирование.
+- Игровые формулы, RNG, дропы, распределение добычи, healing, XP/gold, лимиты входов, replay, сохранения, client protocol и dungeon data не менялись.
+- Следующий этап после пользовательского CI: проверить strict runtime capture на solo/group × win/loss; при успехе спроектировать атомарную транзакцию, заменяющую legacy one-shot persistence целиком. Не запускать отдельный durable start и не включать multi-step catacomb design в этот переход.
