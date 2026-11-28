@@ -1387,7 +1387,7 @@ PR #15 остаётся Draft/open и не объединён. Слияние б
 
 
 ### Continuation checkpoint — CI newline correction — 2026-11-16
-- Rechecked run 43936898345: server job failed at `dungeonEncounterConfig.test.ts:67` because the literal `\\n` was still present. The earlier correction commit did not remove it from the branch file.
+- Rechecked run 43936898345: server job failed at `dungeonEncounterConfig.test.ts:67` because the literal `\n` was still present. The earlier correction commit did not remove it from the branch file.
 - Replaced the literal escape with a true newline in commit `dca7f4e3b8b3bf57237835cdc4e777225c813c77` and verified the exact source at the new HEAD.
 - Run 43946425041 is active: data/docs + client passed; server + Playwright remained in progress. Next action: recheck this run and inspect logs if any job fails.
 - No production dungeon integration, combat, rewards, RNG or persistence behavior changed. PR #18 remains Draft/open/unmerged; `main` untouched.
@@ -3442,14 +3442,14 @@ PR #15 остаётся Draft/open и не объединён. Слияние б
 - PR #39 остаётся открытым. Рабочая ветка не изменилась.
 - Quality Gate run `46137179594`: Client TypeScript/Vite build — success; Playwright browser smoke tests — success; Data/docs/project structure — success; Server TypeScript build job — failure.
 - Server checks run `46137179599`: failure.
-- По логам обоих workflow подтверждена одна и та же причина: `server/test/resourceCatalog.test.ts:16:80`, esbuild `Syntax error "n"`. Внутри TypeScript-файла в новом тесте общего состава ресурсов записаны буквальные последовательности `\\n` вместо реальных переводов строк. Тестовый runner завершился: 502 tests, 501 pass, 1 fail; провалился только запуск файла `resourceCatalog.test.ts`. Шаг `Build server` пропущен вследствие предыдущего падения `npm test`.
+- По логам обоих workflow подтверждена одна и та же причина: `server/test/resourceCatalog.test.ts:16:80`, esbuild `Syntax error "n"`. Внутри TypeScript-файла в новом тесте общего состава ресурсов записаны буквальные последовательности `\n` вместо реальных переводов строк. Тестовый runner завершился: 502 tests, 501 pass, 1 fail; провалился только запуск файла `resourceCatalog.test.ts`. Шаг `Build server` пропущен вследствие предыдущего падения `npm test`.
 - Это подтверждённая непосредственная причина текущих двух CI failures; отдельные дополнительные ошибки компиляции после восстановления теста ещё не проверены, поскольку сборка не запускалась.
 - Исходный код и игровые данные не изменялись. CI повторно не запускался; использованы только уже существующие результаты workflow и их job logs.
 - Технический паспорт и начальная историческая часть checkpoint всё ещё содержат устаревшую точку от 2026-11-17; актуальные сведения о PR #39 и ресурсной работе уже присутствуют в последующих записях. Не переписывать исторические разделы задним числом.
 
 ### Приоритетный план продолжения
 
-1. **P0 — исправить синтаксис в `server/test/resourceCatalog.test.ts`:** заменить буквальные `\\n` в теле нового теста настоящими переводами строк, сохранив проверки 76 resource ID и ожидаемые количества групп. Не менять каталог/рецепты ради прохождения теста.
+1. **P0 — исправить синтаксис в `server/test/resourceCatalog.test.ts`:** заменить буквальные `\n` в теле нового теста настоящими переводами строк, сохранив проверки 76 resource ID и ожидаемые количества групп. Не менять каталог/рецепты ради прохождения теста.
 2. **P0 — после исправления дождаться пользовательской проверки CI** на новом точном HEAD. Не запускать workflow самостоятельно. Если серверный build откроет дополнительные ошибки, разбирать только подтверждённые ошибки, по одной.
 3. **P1 — закончить аудит и подключение источников ресурсов:** отдельная рудная добыча Шахтёром требует недостающих параметров; PvE-источники не назначать до утверждённого roster/распределения монстров по 32 зонам. Не использовать старые `FLDROP` как новые источники.
 4. **P1 — завершить функциональность рабочих гильдий** в границах уже утверждённого дизайна: Кузнец, Шахтёр, Зачарователь, Торговец. Не возвращать Алхимика; не вводить квесты вступления до отдельного этапа их разработки.
