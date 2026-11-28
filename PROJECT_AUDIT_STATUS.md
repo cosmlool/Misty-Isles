@@ -4290,3 +4290,16 @@ Quality Gate 43931230374 failed because the new dungeon test file contained a li
 - Обнаружен исторический контур `craftSpecialty` со значениями `smith/alchemist/relic` и UI-названием «Алхимик». Это не отдельная рабочая гильдия и не должно трактоваться как разрешение вернуть Алхимика. Не удалять его вслепую: сначала проверить старые сохранения, UI и зависимости/миграции.
 - Вывод: аудит источников сырья исчерпал подтверждённые документы; оставшиеся блокеры — утверждённые параметры рудного цикла и PvE roster для 32 зон. По рабочим гильдиям безопасно переходить к отдельному техническому этапу Торговца только после сверки точных списков входных предметов/результатов/цен; для Зачарователья требуется предметная спецификация. Баланс, список ресурсов, источники дропа, сохранения и runtime в этом аудите не менялись.
 - Следующий шаг: сверить уже утверждённые документы/данные на наличие подготовленного списка товаров Торговца, входных ресурсов и таблиц результатов экспедиций. Если их нет, зафиксировать этот ограниченный пробел и перейти к следующему полностью определённому сервису; не заполнять пробелы выдуманными предметами, шансами или ценами.
+
+
+## 2026-11-28 — CI принят; аудит durable lifecycle катакомб
+
+- Пользователь сообщил: CI прошёл. Workflow самостоятельно не запускались.
+- Повторно подтверждены ветка `feature/resource-catalog-implementation-2026-11-26`, PR #39 (open, Draft, merged=false) и HEAD `9de20f400978920015ae0efbac81e5066ce6afa0`.
+- Создан `DUNGEON_LIVE_RUNTIME_AUDIT.md`: проверены `DUNGEON_LIFECYCLE_DESIGN.md`, `DUNGEON_LIVE_HANDLER_INTEGRATION.md`, `DUNGEON_WAVE_RUNTIME_CONTRACT.md`, `server/src/index.ts`, `server/data/dungeon_encounters.json`, `dungeonEncounterConfig.ts`, `dungeonRunState.ts`, `dungeonEncounterPreparation.ts`, start/encounter/finalization WAL runtimes и тесты.
+- Подтверждено: production `runExpeditionDungeon()` остаётся синхронным legacy single-boss handler и не вызывает durable start/encounter/finalization. Четыре текущие записи encounter config — compatibility projection старых боссов, не новые катакомбы и не multi-step runtime.
+- Durable building blocks уже существуют и тестируются: run store/WAL, start transaction, round plan, immutable prepared encounter, encounter commit, finalization, recovery routing, outbox, resurrection preparation. Prepared encounter helper пока не вызывается live handler.
+- Безопасная следующая граница по lifecycle design: pure adapter/parity layer для подготовки полного immutable legacy settlement из существующего расчёта (включая RNG outcomes, loot recipients, HP/healing, персональные награды, player snapshots, reports/outbox), с regression parity tests. Не подключать start отдельно и не менять combat/death semantics.
+- Новые ступени/roster катакомб не создавать из старых `rooms` или четырёх legacy boss entries. Не смешивать будущую многоступенчатую конфигурацию с первым переходом durable single-encounter lifecycle.
+- Изменена только документация; код, данные, баланс, сохранения и клиент не менялись.
+- Следующая точка работы: реализовать и проверить pure legacy-settlement adapter/parity boundary; после отдельного CI подтверждения переключать production handler на WAL lifecycle. CI проверяет пользователь.
