@@ -3661,3 +3661,15 @@ PR #15 остаётся Draft/open и не объединён. Слияние б
 - Причина: тест ожидал `bossDamageByRound: [25, 25]`, но prepared encounter задаёт суммарный урон участников по боссу `50 + 40 = 90`; корректное равномерное целочисленное распределение на два раунда — `[45, 45]`. Production-код верен; исправлены только два одинаковых ошибочных ожидания (обычный commit и WAL recovery test).
 - Исправление: `8984cd98b3b111d692b4968231a2649936dc31b9`.
 - Ассистент не запускает CI/тесты. Нужно дождаться проверки пользователем на актуальном HEAD, не считать CI пройденным заранее.
+
+
+## Контрольная точка — 2026-11-28 (CI green, аудит переключения live dungeon runtime)
+
+- Пользователь подтвердил CI pass. Проверка GitHub на точном PR #39 HEAD `a2eff43f4d9b0ec6fa454c166726cbc589ce28ad` подтвердила оба workflow: Server checks run `46175433765` и Misty Isles Quality Gate run `46175433755`, оба `completed/success`.
+- PR #39 остаётся open, Draft, not merged; base `main`. HEAD на момент этой записи: `a2eff43f4d9b0ec6fa454c166726cbc589ce28ad`. Main не изменялся.
+- Повторно прочитаны текущие live handler, start/round/recovery/finalization runtimes и dungeon journals.
+- Подтверждена граница: `Room.runExpeditionDungeon()` в `server/src/index.ts` всё ещё выполняет legacy one-shot encounter. Он изменяет live Player objects при расчёте исхода, списывает попытки, начисляет награды и только затем создаёт prepared settlement/run envelope для атомарной terminal persistence. Он не вызывает `commitDungeonRunStart()` или `commitDungeonRunRound()`; активный resumable run игроку не выдаётся.
+- Нельзя просто вставить `commitDungeonRunStart()` перед текущим handler: текущая последовательность уже содержит side effects и RNG, а повтор/сбой между стартом и terminal settlement может привести к двойному списанию попытки либо неполному settlement.
+- Следующий технический этап: выделить pure/detached preparation из live handler. Рассчитывать бой и settlement на detached Player snapshots, не мутируя ONLINE_PLAYERS; сохранить прежние формулы, точный порядок RNG-вызовов, loot allocation, quest/report/outbox payloads и все итоговые значения. Затем подключить подготовленный результат к единому shared-WAL entry commit (players + active dungeon run + attempt/battle counters), после чего добавлять authenticated resume/round actions и atomic per-round commits. Terminal rewards/outbox должны применяться только на finalization.
+- Не включать частичный live переключатель и не оставлять legacy one-shot fallback после перехода. До завершения preparation boundary production behavior остаётся прежним.
+- В этом аудиторском шаге production code не менялся; тесты/CI ассистент не запускал. CI pass выше подтверждён GitHub на указанном HEAD.
