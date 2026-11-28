@@ -30,7 +30,8 @@ test('resource catalog contains the complete approved 76-ID inventory', () => {
     assert.equal(RESOURCE_ITEMS.filter(item => item.resourceGroup === group).length, count, 'unexpected resource count for ' + group);
   }
 });
-\ntest('each metal has exactly four direct-from-ingot universal blanks', () => {
+
+test('each metal has exactly four direct-from-ingot universal blanks', () => {
   const metals = ['copper', 'iron', 'steel', 'deep_silver', 'astralite'];
   const blankTypes = ['plate', 'rod', 'wire', 'sheet'];
   for (const metal of metals) {
