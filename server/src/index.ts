@@ -31,7 +31,7 @@ import { createDungeonRunRecord, validateDungeonRunStore, type DungeonRunRecord,
 import { resolveLegacyDungeonRequestReplay } from './dungeonLegacyRequestReplay.js';
 import { assertNoOverlappingActiveDungeonRuns, createDungeonRunRecoveryView, findActiveDungeonRunForParticipant, findActiveDungeonRunForParticipants } from './dungeonRunRecovery.js';
 import { markDungeonResultEventDelivered, type DungeonResultOutbox } from './dungeonRunFinalizationRuntime.js';
-import { dispatchPendingDungeonResultEvents, validateDungeonResultDeliveryOutbox } from './dungeonResultOutboxDelivery.js';
+import { dispatchPendingDungeonResultEvents } from './dungeonResultOutboxDelivery.js';
 import { calculateDungeonCombatPlan } from './dungeonCombatMath.js';
 import { prepareLegacyDungeonSettlement } from './dungeonLegacySettlementAdapter.js';
 import { commitPreparedLegacyDungeonSettlement } from './dungeonLegacySettlementCommitRuntime.js';
