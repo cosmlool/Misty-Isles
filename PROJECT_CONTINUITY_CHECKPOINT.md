@@ -3621,3 +3621,12 @@ PR #15 остаётся Draft/open и не объединён. Слияние б
 - Статическая сверка исходников GitHub выполнена. Тесты и CI после изменений не запускались; workflow не запускались ассистентом.
 - Важно: live `runExpeditionDungeon()` ещё не подключён к durable active entry/round actions. Текущий кодовый этап только подготавливает полное неизменяемое execution snapshot; это не заявляется как уже работающий resumable dungeon.
 - Следующий этап: подключить prepared execution к одному shared-WAL entry commit, который вместе сохраняет frozen run/round plan и списывает дневную попытку + battle counter ровно один раз. После этого добавить authenticated resume/advance action и per-round atomic player/run commit. Reward/quest/report/outbox settlement остаётся только в terminal transaction. После включения новой системы полностью заменить legacy one-shot combat handler.
+## 2026-11-28 — CI failure на подготовке возобновляемого забега исправлен
+
+- Пользователь сообщил, что CI не прошёл на HEAD `4fff3d87d135a504ec836ca7b7c5cf579313df91`. Проверены оба GitHub workflow и полные логи серверных jobs.
+- `Server checks` и `Misty Isles Quality Gate` имели одинаковый результат: 542/544 теста passed, 2 failed. Data/docs audit, browser smoke и client TypeScript/Vite build прошли; server build пропущен из-за раннего падения тестов.
+- Failure 1: интеграционный тест передавал player quests без `dungeonDay`, при этом production start transaction правильно сбрасывает daily attempts при смене дня. Fixture исправлен — обе записи теперь явно имеют `dungeonDay: '2026-11-28'`. Ожидаемые значения списания 1 и 2 сохранены.
+- Failure 2: старый тест ожидал, что startup validator сравнивает immutable entry `hpBefore` с изменяемым текущим HP. Это неверно для durable per-round resume. Тест изменён на реальное нарушение: entry HP 121 при frozen maxHealth 120; validator должен отклонить такой snapshot.
+- Production-код и игровые формулы не менялись. Исправлены только два тестовых fixture.
+- Новые commits: `f7e4bbe71f6491dedbfc0bf433bb8db364c43e24` (same-day attempt fixture), `09ed38ac3c8d6442c03569cb4883783974d6f410` (HP max invariant fixture).
+- Тесты/CI после исправлений не запускались ассистентом. Следующий шаг — пользовательская проверка CI; не начинать следующий функциональный этап до подтверждения green.
