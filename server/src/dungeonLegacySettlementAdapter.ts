@@ -78,7 +78,8 @@ export function prepareLegacyDungeonSettlement(input: {
     if (last?.id !== input.requestId ||
         JSON.stringify(last.report) !== JSON.stringify(report) ||
         last.text !== resultText ||
-        savedBinding?.dungeonId !== input.dungeonId ||
+        !savedBinding ||
+        savedBinding.dungeonId !== input.dungeonId ||
         typeof savedBinding.groupId !== 'string' ||
         typeof savedBinding.leaderId !== 'string' ||
         JSON.stringify(savedBinding.participantIds) !== JSON.stringify(input.participantIds)) {
