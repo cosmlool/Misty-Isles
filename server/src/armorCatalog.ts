@@ -1,6 +1,8 @@
 // Approved new armor recipes. Item records are stored in data/equipment_catalog.json.
 // Keep this catalog data-only: all 78 outputs must exist in the equipment catalog.
-export const ARMOR_RECIPES = [
+import type { ResourceRecipe } from './resourceCatalog.js';
+
+export const ARMOR_RECIPES: ResourceRecipe[] = [
   {
     "id": "craft_armor_fabric_hood_i",
     "name": "Рецепт: Капюшон туманного плетения — I",
