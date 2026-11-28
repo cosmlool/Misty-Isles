@@ -1,4 +1,5 @@
 import type { DungeonCombatMathResult } from './dungeonCombatMath.js';
+import type { DungeonRequestResultEvent } from './dungeonRequestResultPreparation.js';
 
 export type PreparedDungeonParticipantResult = {
   playerId: string;
@@ -30,6 +31,7 @@ export type PreparedDungeonEncounter = {
   drops: PreparedDungeonDrop[];
   participants: Record<string, PreparedDungeonParticipantResult>;
   playerSnapshots: Record<string, Record<string, unknown>>;
+  outboxEvents?: DungeonRequestResultEvent[];
 };
 
 function isRecord(value: unknown): value is Record<string, unknown> {
@@ -75,7 +77,8 @@ export function createPreparedDungeonEncounter(input: PreparedDungeonEncounter):
       input.combat.incoming.some(value => !Number.isFinite(value) || value < 0) ||
       input.combat.damageByParticipant.some(value => !Number.isFinite(value) || value < 0) ||
       !Array.isArray(input.drops) ||
-      !isRecord(input.participants) || !isRecord(input.playerSnapshots)) {
+      !isRecord(input.participants) || !isRecord(input.playerSnapshots) ||
+      (input.outboxEvents !== undefined && !Array.isArray(input.outboxEvents))) {
     throw new Error('Invalid prepared dungeon encounter header or combat result.');
   }
 
@@ -136,6 +139,26 @@ export function createPreparedDungeonEncounter(input: PreparedDungeonEncounter):
     playerSnapshots[playerId] = cloneJson(snapshot);
   }
 
+  let outboxEvents: DungeonRequestResultEvent[] | undefined;
+  if (input.outboxEvents !== undefined) {
+    if (input.outboxEvents.length !== ids.length) {
+      throw new Error('Prepared dungeon encounter must contain one outbox event per participant.');
+    }
+    outboxEvents = input.outboxEvents.map((event, index) => {
+      const playerId = ids[index];
+      const participant = participants[playerId];
+      if (!isRecord(event) || event.playerId !== playerId || event.runId !== input.runId ||
+          event.eventId !== `dungeon:${input.runId}:${playerId}:combatResult` ||
+          event.messageType !== 'combatResult' || !isRecord(event.payload) ||
+          event.payload.eventId !== event.eventId || event.payload.requestId !== input.requestId ||
+          event.payload.text !== participant.resultText ||
+          JSON.stringify(event.payload.report) !== JSON.stringify(participant.report)) {
+        throw new Error(`Prepared dungeon outbox event is inconsistent for participant ${playerId}.`);
+      }
+      return cloneJson(event) as unknown as DungeonRequestResultEvent;
+    });
+  }
+
   const prepared: PreparedDungeonEncounter = {
     version: 1,
     runId: input.runId,
@@ -153,6 +176,7 @@ export function createPreparedDungeonEncounter(input: PreparedDungeonEncounter):
     drops,
     participants,
     playerSnapshots,
+    ...(outboxEvents ? { outboxEvents } : {}),
   };
   return deepFreeze(prepared);
 }
