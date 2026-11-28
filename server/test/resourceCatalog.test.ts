@@ -1,6 +1,10 @@
 import assert from 'node:assert/strict';
+import { readFileSync } from 'node:fs';
 import test from 'node:test';
+import { ARMOR_RECIPES } from '../src/armorCatalog.js';
 import { RESOURCE_ITEMS, RESOURCE_RECIPES } from '../src/resourceCatalog.js';
+
+const EQUIPMENT_CATALOG = JSON.parse(readFileSync(new URL('../data/equipment_catalog.json', import.meta.url), 'utf8')) as any[];
 
 test('resource catalog has unique item and recipe identifiers', () => {
   const itemIds = RESOURCE_ITEMS.map(item => item.id);
@@ -467,3 +471,53 @@ test('leaves, roots and wood resin remain shared organic raw resources without p
   assert.equal(RESOURCE_RECIPES.some(entry => ['wood_resin', 'roots', 'leaves'].includes(entry.output)), false);
 });
 
+
+
+test('new armor catalog replaces the old active armor without deleting legacy item IDs', () => {
+  const armor = EQUIPMENT_CATALOG.filter(item => item.kind === 'armor');
+  const active = armor.filter(item => item.id.startsWith('armor_'));
+  const legacy = armor.filter(item => !item.id.startsWith('armor_'));
+  assert.equal(EQUIPMENT_CATALOG.length, 465);
+  assert.equal(armor.length, 398);
+  assert.equal(active.length, 78);
+  assert.equal(legacy.length, 320);
+  assert.ok(legacy.every(item => item.legacy === true));
+  assert.ok(active.every(item => item.legacy === false));
+  assert.equal(new Set(EQUIPMENT_CATALOG.map(item => item.id)).size, EQUIPMENT_CATALOG.length);
+  assert.deepEqual([...new Set(active.map(item => item.level))].sort((a,b) => a-b), [1,20,40,60,80,100]);
+  assert.ok(active.every(item =>
+    item.price === 0 &&
+    Number.isInteger(item.defense) &&
+    ['armor','helmet','gloves','boots','cloak'].includes(item.slot) &&
+    !('health' in item) &&
+    !('attributes' in item) &&
+    !('combatStats' in item) &&
+    !('effects' in item) &&
+    !('set' in item) &&
+    !('setBonus' in item)
+  ));
+});
+
+test('new armor has exactly 78 unique recipes with valid catalog outputs and approved materials', () => {
+  const activeArmor = EQUIPMENT_CATALOG.filter(item => item.kind === 'armor' && item.id.startsWith('armor_'));
+  const activeIds = new Set(activeArmor.map(item => item.id));
+  const allItemIds = new Set([...EQUIPMENT_CATALOG.map(item => item.id), ...RESOURCE_ITEMS.map(item => item.id)]);
+  assert.equal(ARMOR_RECIPES.length, 78);
+  assert.equal(new Set(ARMOR_RECIPES.map(recipe => recipe.id)).size, 78);
+  assert.equal(new Set([...RESOURCE_RECIPES, ...ARMOR_RECIPES].map(recipe => recipe.id)).size, RESOURCE_RECIPES.length + 78);
+  for (const recipe of ARMOR_RECIPES) {
+    assert.ok(recipe.id.startsWith('craft_armor_'));
+    assert.ok(activeIds.has(recipe.output), 'missing active output ' + recipe.output);
+    assert.equal(recipe.count, 1);
+    assert.equal(recipe.workGuild, 'blacksmith');
+    assert.ok([1,20,40,60,80,100].includes(recipe.level));
+    assert.ok(Number.isInteger(recipe.seconds) && recipe.seconds >= 180 && recipe.seconds <= 600);
+    assert.match(recipe.name, /^Рецепт: .+ — (I|II|III|IV|V|VI)$/);
+    assert.ok(recipe.description.includes('соответствующей ступени'));
+    assert.ok(Object.keys(recipe.materials).length > 0);
+    for (const [materialId, quantity] of Object.entries(recipe.materials)) {
+      assert.ok(allItemIds.has(materialId), 'unknown material ' + materialId + ' in ' + recipe.id);
+      assert.ok(Number.isInteger(quantity) && quantity > 0 && quantity <= 30);
+    }
+  }
+});
