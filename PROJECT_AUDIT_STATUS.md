@@ -4396,3 +4396,13 @@ Quality Gate 43931230374 failed because the new dungeon test file contained a li
 - Changed: `server/src/index.ts`, `server/test/playerPersistenceWriters.test.ts`, `AI_WORK_RULES.md`.
 - Static post-commit review confirms one local `runStartedAt` declaration in the dungeon handler, two references for win/loss, updated WAL assertion, and the new instruction. Tests/CI have not been run after these fixes.
 - Next: user verifies CI on the new HEAD. If green, continue durable active-run entry/per-round commit/recovery; when the new dungeon runtime takes over, fully replace the legacy one-shot runtime rather than maintaining two parallel combat implementations.
+## 2026-11-28 — immutable resumable dungeon execution preparation
+
+- CI on the preceding HEAD `3310a54cdb8e82491dfee7db98ad12bd9e3083e4` was confirmed by the user as successful; both PR workflows completed successfully. PR #39 remains open/Draft/not merged.
+- Added `server/src/dungeonRunExecutionPreparation.ts` to bind a fully prepared immutable encounter to an active run and derive a deterministic round plan from the already-calculated combat result.
+- Integer damage slices conserve the exact aggregate boss damage and per-participant incoming damage. No combat formulas, random rolls, healing, reward amounts, loot allocation, or client protocol were changed.
+- Fixed run validation so immutable prepared entry HP remains valid while the active participant HP changes between durable rounds. Both prepared entry HP and final HP are checked against the participant's frozen max HP; participant snapshot ownership remains validated. Initial attachment still requires exact entry HP parity.
+- Added and registered `dungeonRunExecutionPreparation.test.ts`: exact schedule, JSON restart between rounds, immutable terminal snapshot, idempotency/conflict rejection, invalid identities, and compatibility with atomic attempt charging.
+- Static source review completed. No tests or CI were run by the assistant.
+- Production handler remains the terminal one-shot path; active entry and per-round actions are not wired yet.
+- Next: commit prepared run + attempt/battle counter atomically through shared WAL, then implement authenticated resume/advance and per-round persistence. Terminal reward settlement/outbox remains a single final commit.
