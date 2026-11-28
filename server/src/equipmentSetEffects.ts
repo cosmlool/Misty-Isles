@@ -30,6 +30,7 @@ export type EquipmentSetCatalogItem = {
   slot?: unknown;
   profession?: unknown;
   setBonus?: unknown;
+  legacy?: unknown;
 };
 
 const SET_SLOTS = ['helmet', 'armor', 'gloves', 'boots', 'cloak'] as const;
@@ -152,7 +153,7 @@ export function validateEquipmentSetCatalog(input: unknown): string[] {
     }
 
     const hasSet = typeof item.set === 'string' && Boolean(item.set.trim());
-    if (item.kind === 'armor' && !hasSet) {
+    if (item.kind === 'armor' && item.legacy !== false && !hasSet) {
       errors.push(`catalog[${index}] armor item has no valid set`);
     }
     if (hasSet && item.kind !== 'armor') {
