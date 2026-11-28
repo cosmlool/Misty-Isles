@@ -3580,3 +3580,11 @@ PR #15 остаётся Draft/open и не объединён. Слияние б
 - **Текущий HEAD после кода и тестов:** `6b085bad314f2b8b404aec7205a26861e707de66` перед обновлением журналов; после их commit подтвердить новый HEAD.
 - PR #39 остаётся open/Draft/not merged. `main` не менялась.
 - **Следующий шаг:** пользователь проверяет CI на окончательном HEAD после журналов. После успешной проверки перейти к durable active-run entry + per-round commit/recovery. Не смешивать этот этап с новым catacomb content или изменением формул.
+
+
+### Final GitHub ref refresh — 2026-11-28
+
+- Финальный HEAD после production code, runtime tests, WAL tests и журналов: `fa75ccf3b3b099b8ed8703706a5b681f953a829b`.
+- PR #39 остаётся open, Draft, not merged; base `main`; рабочая ветка `feature/resource-catalog-implementation-2026-11-26`.
+- Пользовательский CI pass был подтверждён для предыдущего HEAD `8149085e889d00055542fffa0dc64b3b5ec91cfc`. На финальном HEAD `fa75ccf` CI ещё ожидается.
+- Ассистент не запускал тесты, CI или workflows. Source review и повторное чтение журналов выполнены; тестовые результаты не заявляются.

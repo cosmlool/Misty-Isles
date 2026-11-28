@@ -4369,3 +4369,11 @@ Quality Gate 43931230374 failed because the new dungeon test file contained a li
 - Не менялись combat/reward formulas, RNG, loot, healing, attempt rules, client protocol, dungeon data. Не реализованы active-run resume/per-round progression, spectator, AFK, resurrection runtime и multi-step rooms.
 - Ассистент не запускал тесты или CI. Текущий код ждёт пользовательской CI-проверки.
 - Следующий этап после CI: интеграция durable active-run entry, per-round commit и restart resume с сохранением legacy combat semantics.
+
+
+### Final GitHub ref refresh — 2026-11-28
+
+- Финальный HEAD после production code, runtime tests, WAL tests и журналов: `fa75ccf3b3b099b8ed8703706a5b681f953a829b`.
+- PR #39 остаётся open, Draft, not merged; base `main`; рабочая ветка `feature/resource-catalog-implementation-2026-11-26`.
+- Пользовательский CI pass был подтверждён для предыдущего HEAD `8149085e889d00055542fffa0dc64b3b5ec91cfc`. На финальном HEAD `fa75ccf` CI ещё ожидается.
+- Ассистент не запускал тесты, CI или workflows. Source review и повторное чтение журналов выполнены; тестовые результаты не заявляются.

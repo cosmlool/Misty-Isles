@@ -117,3 +117,11 @@ Next: after the user confirms CI for this HEAD, review the strict runtime result
 ### Следующий шаг
 
 После CI на текущем HEAD продолжить полноценный resumable lifecycle: атомарный вход/списание попытки и durable active run, затем сохранение каждого разрешённого раунда и восстановление после рестарта. Сохранить текущие combat/reward semantics; не добавлять новые комнаты/roster монстров в рамках этого технического этапа.
+
+
+### Final GitHub ref refresh — 2026-11-28
+
+- Финальный HEAD после production code, runtime tests, WAL tests и журналов: `fa75ccf3b3b099b8ed8703706a5b681f953a829b`.
+- PR #39 остаётся open, Draft, not merged; base `main`; рабочая ветка `feature/resource-catalog-implementation-2026-11-26`.
+- Пользовательский CI pass был подтверждён для предыдущего HEAD `8149085e889d00055542fffa0dc64b3b5ec91cfc`. На финальном HEAD `fa75ccf` CI ещё ожидается.
+- Ассистент не запускал тесты, CI или workflows. Source review и повторное чтение журналов выполнены; тестовые результаты не заявляются.
