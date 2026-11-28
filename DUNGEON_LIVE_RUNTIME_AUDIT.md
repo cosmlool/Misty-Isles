@@ -146,3 +146,12 @@ Next: after the user confirms CI for this HEAD, review the strict runtime result
 - Changed: `server/src/index.ts`, `server/test/playerPersistenceWriters.test.ts`, `AI_WORK_RULES.md`.
 - Static post-commit review confirms one local `runStartedAt` declaration in the dungeon handler, two references for win/loss, updated WAL assertion, and the new instruction. Tests/CI have not been run after these fixes.
 - Next: user verifies CI on the new HEAD. If green, continue durable active-run entry/per-round commit/recovery; when the new dungeon runtime takes over, fully replace the legacy one-shot runtime rather than maintaining two parallel combat implementations.
+## 2026-11-28 — immutable resumable execution preparation
+
+- Added `server/src/dungeonRunExecutionPreparation.ts`. It validates the active run and prepared encounter identity, checks the frozen entry HP against the run's participant HP, and creates the deterministic round plan from the already-calculated aggregate combat result.
+- Exact damage totals are conserved across round slices. The helper does not calculate combat, call RNG, select loot, heal, or issue rewards.
+- Updated `validateDungeonRunStore()` so the prepared encounter's `hpBefore` remains bound to entry-time health while `participants[id].health` can legitimately change after durable round commits. Prepared final HP is bounded by the participant's frozen max HP, and snapshot ownership remains checked.
+- Added `server/test/dungeonRunExecutionPreparation.test.ts` and registered it in `server/package.json`. Coverage includes JSON restart after a round, frozen settlement preservation, exact round schedule, idempotency/conflict rejection, and compatibility with atomic attempt charging.
+- Static GitHub reread confirms the helper, validator change, test and package registration are present. Tests and CI were not run by the assistant; the user checks CI.
+- This is not live lifecycle integration. Production still uses the terminal one-shot handler and does not create active runs or expose round actions.
+- Next bounded step: connect prepared execution to the shared-WAL entry transaction (attempt/battle counter + active run in one commit), then add authenticated resume/advance actions and per-round commits. Keep rewards and outbox delivery terminal-only.
