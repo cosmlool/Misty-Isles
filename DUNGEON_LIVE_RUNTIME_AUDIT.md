@@ -155,3 +155,11 @@ Next: after the user confirms CI for this HEAD, review the strict runtime result
 - Static GitHub reread confirms the helper, validator change, test and package registration are present. Tests and CI were not run by the assistant; the user checks CI.
 - This is not live lifecycle integration. Production still uses the terminal one-shot handler and does not create active runs or expose round actions.
 - Next bounded step: connect prepared execution to the shared-WAL entry transaction (attempt/battle counter + active run in one commit), then add authenticated resume/advance actions and per-round commits. Keep rewards and outbox delivery terminal-only.
+## 2026-11-28 — исправления двух CI assertions на HEAD 4fff3d8
+
+- На HEAD `4fff3d87d135a504ec836ca7b7c5cf579313df91` оба workflow упали только на двух серверных assertions: 542/544 теста прошли; browser smoke, client build и data/docs audit прошли. Server build был пропущен после test failure.
+- Ошибка в новом integration test: fixture не задавал `dungeonDay`, поэтому существующая и правильная логика трактовала запись как новый день и сбрасывала `dungeonRuns` в 0 перед списанием попытки. Исправлен fixture: обе записи игроков явно принадлежат проверяемому дню; ожидания по попыткам остаются 1 и 2.
+- Ошибка в startup validator test: он ожидал отклонения `hpBefore=99` только потому, что это не совпадало с durable current HP=100. Это противоречило новому инварианту: immutable entry HP может отличаться от текущего HP после уже зафиксированных раундов. Тест теперь подаёт невозможный `hpBefore=121` при `maxHealth=120`, проверяя настоящий защитный инвариант.
+- Production behavior не менялся. Изменены только `server/test/dungeonRunExecutionPreparation.test.ts` и `server/test/dungeonRunState.test.ts`.
+- Статическая сверка после коммитов обязательна; тесты и CI после исправлений не запускались ассистентом.
+- Следующий шаг: пользователь проверяет CI на новом HEAD. После green продолжить атомарный WAL entry commit.
