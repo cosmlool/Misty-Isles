@@ -4377,3 +4377,12 @@ Quality Gate 43931230374 failed because the new dungeon test file contained a li
 - PR #39 остаётся open, Draft, not merged; base `main`; рабочая ветка `feature/resource-catalog-implementation-2026-11-26`.
 - Пользовательский CI pass был подтверждён для предыдущего HEAD `8149085e889d00055542fffa0dc64b3b5ec91cfc`. На финальном HEAD `fa75ccf` CI ещё ожидается.
 - Ассистент не запускал тесты, CI или workflows. Source review и повторное чтение журналов выполнены; тестовые результаты не заявляются.
+
+## 2026-11-28 — CI failure diagnosis and correction: durable dungeon settlement
+
+- Inspected failed Quality Gate and Server checks for PR #39. Both ran the same server test suite (539 tests; 533 passed, 6 failed). Client build, browser smoke tests and data/docs audit passed; server build was skipped after the test step failed.
+- Solo/group runtime dungeon tests timed out because the new durable run snapshot required participant health not to exceed derived effectiveMaxHealth, while existing player snapshots can legitimately contain higher current HP. The run snapshot now uses `maxHealth = max(effectiveMaxHealth, hpBefore)`, preserving current HP and leaving combat/reward calculations untouched.
+- Three atomic settlement unit-test fixtures omitted the run envelope required by the commit API; all four calls now supply the matching run record.
+- A static source guard still asserted the old persistence call signature; it now asserts the current prepared-encounter + durable-run atomic commit signature.
+- Updated source/tests: `server/src/index.ts`, `server/test/dungeonLegacySettlementCommitRuntime.test.ts`, `server/test/playerPersistenceWriters.test.ts`.
+- No tests or workflows were run by the assistant. Fixes are committed on the existing PR branch only; user CI verification remains pending.
