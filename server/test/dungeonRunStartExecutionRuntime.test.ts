@@ -82,7 +82,7 @@ test('prepared encounter, deterministic round plan, daily attempts and battle co
     assert.deepEqual(savedRun.preparedEncounter, encounter);
     assert.equal(savedRun.roundPlan.totalRounds, 2);
     assert.equal(savedRun.roundPlan.nextRoundIndex, 0);
-    assert.deepEqual(savedRun.roundPlan.bossDamageByRound, [25, 25]);
+    assert.deepEqual(savedRun.roundPlan.bossDamageByRound, [45, 45]);
     assert.deepEqual(savedRun.roundPlan.incomingDamageByRound.p1, [5, 5]);
     assert.deepEqual(savedRun.roundPlan.incomingDamageByRound.p2, [10, 10]);
     assert.equal(JSON.parse(savedPlayers.p1.quests).dungeonRuns, 2);
@@ -190,7 +190,7 @@ test('WAL recovery restores the prepared execution plan and attempt charges as o
     assert.equal(savedPlayers.p2.battles, 8);
     assert.deepEqual(savedRun.preparedEncounter, encounter);
     assert.equal(savedRun.roundPlan.nextRoundIndex, 0);
-    assert.deepEqual(savedRun.roundPlan.bossDamageByRound, [25, 25]);
+    assert.deepEqual(savedRun.roundPlan.bossDamageByRound, [45, 45]);
     assert.equal(existsSync(restarted.journalFile), false);
   } finally {
     rmSync(dataDir, { recursive: true, force: true });
