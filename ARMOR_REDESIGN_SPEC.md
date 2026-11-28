@@ -253,3 +253,176 @@ D = \operatorname{round}(P \times K)
 - Все 78 recipe ID формируются как craft_<item_id>; коллизий с текущими рецептами и RESOURCE_RECIPES не обнаружено. Каждая запись использует output=<item_id>, count=1, materials из раздела 7.2 с множителем ступени, seconds из раздела 7.3, level=1/20/40/60/80/100, workGuild='blacksmith'.
 - В коде ITEMS загружает NEW_EQUIPMENT_ITEMS из equipment_catalog.json до проверки выходов рецептов; новые item ID должны быть включены в каталог одновременно с добавлением рецептов. Иначе обработчик craft отклонит рецепт, а craftClaim не выдаст результат.
 - Перед реализацией требуется отдельный аккуратный набор изменений: добавить 78 item-записей, вывести старые 320 броневых записей из актуального ассортимента через legacy=true, добавить 78 рецептов, проверить уникальность ID/слоты/материалы/выходы и соответствие сохранённым инвентарям. Никаких изменений в runtime-коде, тестах или каталогах в рамках этого проектного этапа не выполнялось.
+
+
+### 7.9. Полный манифест 78 предметов для equipment_catalog.json
+
+Все строки ниже — точные проектные значения для будущего внедрения. Поле price=0 оставлено техническим до отдельного этапа цен. Поле legacy=false у новых записей; старые записи выводятся из актуального ассортимента отдельным legacy-флагом, как описано в 7.8.
+
+| ID | Видимое имя | slot | item.level | defense | price |
+|---|---|---|---:|---:|---:|
+| `armor_fabric_hood_i` | Капюшон туманного плетения | helmet | 1 | 3 | 0 |
+| `armor_fabric_hood_ii` | Капюшон туманного плетения | helmet | 20 | 7 | 0 |
+| `armor_fabric_hood_iii` | Капюшон туманного плетения | helmet | 40 | 12 | 0 |
+| `armor_fabric_hood_iv` | Капюшон туманного плетения | helmet | 60 | 20 | 0 |
+| `armor_fabric_hood_v` | Капюшон туманного плетения | helmet | 80 | 29 | 0 |
+| `armor_fabric_hood_vi` | Капюшон туманного плетения | helmet | 100 | 39 | 0 |
+| `armor_fabric_jacket_i` | Куртка тихого ветра | armor | 1 | 10 | 0 |
+| `armor_fabric_jacket_ii` | Куртка тихого ветра | armor | 20 | 22 | 0 |
+| `armor_fabric_jacket_iii` | Куртка тихого ветра | armor | 40 | 40 | 0 |
+| `armor_fabric_jacket_iv` | Куртка тихого ветра | armor | 60 | 65 | 0 |
+| `armor_fabric_jacket_v` | Куртка тихого ветра | armor | 80 | 95 | 0 |
+| `armor_fabric_jacket_vi` | Куртка тихого ветра | armor | 100 | 130 | 0 |
+| `armor_fabric_gloves_i` | Перчатки тонкого шва | gloves | 1 | 2 | 0 |
+| `armor_fabric_gloves_ii` | Перчатки тонкого шва | gloves | 20 | 4 | 0 |
+| `armor_fabric_gloves_iii` | Перчатки тонкого шва | gloves | 40 | 8 | 0 |
+| `armor_fabric_gloves_iv` | Перчатки тонкого шва | gloves | 60 | 13 | 0 |
+| `armor_fabric_gloves_v` | Перчатки тонкого шва | gloves | 80 | 19 | 0 |
+| `armor_fabric_gloves_vi` | Перчатки тонкого шва | gloves | 100 | 26 | 0 |
+| `armor_fabric_boots_i` | Сапоги мягкого шага | boots | 1 | 3 | 0 |
+| `armor_fabric_boots_ii` | Сапоги мягкого шага | boots | 20 | 6 | 0 |
+| `armor_fabric_boots_iii` | Сапоги мягкого шага | boots | 40 | 10 | 0 |
+| `armor_fabric_boots_iv` | Сапоги мягкого шага | boots | 60 | 16 | 0 |
+| `armor_fabric_boots_v` | Сапоги мягкого шага | boots | 80 | 24 | 0 |
+| `armor_fabric_boots_vi` | Сапоги мягкого шага | boots | 100 | 33 | 0 |
+| `armor_leather_helm_i` | Шлем следопыта | helmet | 1 | 4 | 0 |
+| `armor_leather_helm_ii` | Шлем следопыта | helmet | 20 | 9 | 0 |
+| `armor_leather_helm_iii` | Шлем следопыта | helmet | 40 | 16 | 0 |
+| `armor_leather_helm_iv` | Шлем следопыта | helmet | 60 | 26 | 0 |
+| `armor_leather_helm_v` | Шлем следопыта | helmet | 80 | 38 | 0 |
+| `armor_leather_helm_vi` | Шлем следопыта | helmet | 100 | 52 | 0 |
+| `armor_leather_chest_i` | Панцирь звериной тропы | armor | 1 | 13 | 0 |
+| `armor_leather_chest_ii` | Панцирь звериной тропы | armor | 20 | 28 | 0 |
+| `armor_leather_chest_iii` | Панцирь звериной тропы | armor | 40 | 50 | 0 |
+| `armor_leather_chest_iv` | Панцирь звериной тропы | armor | 60 | 81 | 0 |
+| `armor_leather_chest_v` | Панцирь звериной тропы | armor | 80 | 119 | 0 |
+| `armor_leather_chest_vi` | Панцирь звериной тропы | armor | 100 | 163 | 0 |
+| `armor_leather_bracers_i` | Наручи ловкого хвата | gloves | 1 | 3 | 0 |
+| `armor_leather_bracers_ii` | Наручи ловкого хвата | gloves | 20 | 7 | 0 |
+| `armor_leather_bracers_iii` | Наручи ловкого хвата | gloves | 40 | 12 | 0 |
+| `armor_leather_bracers_iv` | Наручи ловкого хвата | gloves | 60 | 20 | 0 |
+| `armor_leather_bracers_v` | Наручи ловкого хвата | gloves | 80 | 29 | 0 |
+| `armor_leather_bracers_vi` | Наручи ловкого хвата | gloves | 100 | 39 | 0 |
+| `armor_leather_boots_i` | Сапоги крепкой поступи | boots | 1 | 4 | 0 |
+| `armor_leather_boots_ii` | Сапоги крепкой поступи | boots | 20 | 8 | 0 |
+| `armor_leather_boots_iii` | Сапоги крепкой поступи | boots | 40 | 14 | 0 |
+| `armor_leather_boots_iv` | Сапоги крепкой поступи | boots | 60 | 23 | 0 |
+| `armor_leather_boots_v` | Сапоги крепкой поступи | boots | 80 | 33 | 0 |
+| `armor_leather_boots_vi` | Сапоги крепкой поступи | boots | 100 | 46 | 0 |
+| `armor_metal_helm_i` | Шлем стража рубежа | helmet | 1 | 6 | 0 |
+| `armor_metal_helm_ii` | Шлем стража рубежа | helmet | 20 | 12 | 0 |
+| `armor_metal_helm_iii` | Шлем стража рубежа | helmet | 40 | 22 | 0 |
+| `armor_metal_helm_iv` | Шлем стража рубежа | helmet | 60 | 36 | 0 |
+| `armor_metal_helm_v` | Шлем стража рубежа | helmet | 80 | 52 | 0 |
+| `armor_metal_helm_vi` | Шлем стража рубежа | helmet | 100 | 72 | 0 |
+| `armor_metal_cuirass_i` | Кираса каменного дозора | armor | 1 | 17 | 0 |
+| `armor_metal_cuirass_ii` | Кираса каменного дозора | armor | 20 | 37 | 0 |
+| `armor_metal_cuirass_iii` | Кираса каменного дозора | armor | 40 | 68 | 0 |
+| `armor_metal_cuirass_iv` | Кираса каменного дозора | armor | 60 | 111 | 0 |
+| `armor_metal_cuirass_v` | Кираса каменного дозора | armor | 80 | 162 | 0 |
+| `armor_metal_cuirass_vi` | Кираса каменного дозора | armor | 100 | 221 | 0 |
+| `armor_metal_gauntlets_i` | Рукавицы железного караула | gloves | 1 | 4 | 0 |
+| `armor_metal_gauntlets_ii` | Рукавицы железного караула | gloves | 20 | 9 | 0 |
+| `armor_metal_gauntlets_iii` | Рукавицы железного караула | gloves | 40 | 16 | 0 |
+| `armor_metal_gauntlets_iv` | Рукавицы железного караула | gloves | 60 | 26 | 0 |
+| `armor_metal_gauntlets_v` | Рукавицы железного караула | gloves | 80 | 38 | 0 |
+| `armor_metal_gauntlets_vi` | Рукавицы железного караула | gloves | 100 | 52 | 0 |
+| `armor_metal_boots_i` | Сапоги бастионного шага | boots | 1 | 5 | 0 |
+| `armor_metal_boots_ii` | Сапоги бастионного шага | boots | 20 | 10 | 0 |
+| `armor_metal_boots_iii` | Сапоги бастионного шага | boots | 40 | 18 | 0 |
+| `armor_metal_boots_iv` | Сапоги бастионного шага | boots | 60 | 29 | 0 |
+| `armor_metal_boots_v` | Сапоги бастионного шага | boots | 80 | 43 | 0 |
+| `armor_metal_boots_vi` | Сапоги бастионного шага | boots | 100 | 59 | 0 |
+| `armor_shared_travel_cloak_i` | Плащ дорожного покрова | cloak | 1 | 2 | 0 |
+| `armor_shared_travel_cloak_ii` | Плащ дорожного покрова | cloak | 20 | 3 | 0 |
+| `armor_shared_travel_cloak_iii` | Плащ дорожного покрова | cloak | 40 | 6 | 0 |
+| `armor_shared_travel_cloak_iv` | Плащ дорожного покрова | cloak | 60 | 10 | 0 |
+| `armor_shared_travel_cloak_v` | Плащ дорожного покрова | cloak | 80 | 14 | 0 |
+| `armor_shared_travel_cloak_vi` | Плащ дорожного покрова | cloak | 100 | 20 | 0 |
+
+### 7.10. Полный манифест 78 рецептов для RECIPES
+
+Все рецепты имеют count=1, workGuild='blacksmith', profession не задаётся, описание — «Изготовление <имя> соответствующей ступени». Recipe.level — навык ремесла, который совпадает с порогами 1/20/40/60/80/100; output указывает на существующий item ID из таблицы 7.9. Время дано в секундах.
+
+| Recipe ID | Видимое имя рецепта | recipe.level | seconds | output | materials |
+|---|---|---:|---:|---|---|
+| `craft_armor_fabric_hood_i` | Рецепт: Капюшон туманного плетения — I | 1 | 180 | `armor_fabric_hood_i` | `fabric` ×2; `thread` ×2; `leather_strip` ×1 |
+| `craft_armor_fabric_hood_ii` | Рецепт: Капюшон туманного плетения — II | 20 | 240 | `armor_fabric_hood_ii` | `fabric` ×4; `thread` ×4; `leather_strip` ×2 |
+| `craft_armor_fabric_hood_iii` | Рецепт: Капюшон туманного плетения — III | 40 | 300 | `armor_fabric_hood_iii` | `fabric` ×6; `thread` ×6; `leather_strip` ×3 |
+| `craft_armor_fabric_hood_iv` | Рецепт: Капюшон туманного плетения — IV | 60 | 360 | `armor_fabric_hood_iv` | `fabric` ×8; `thread` ×8; `leather_strip` ×4 |
+| `craft_armor_fabric_hood_v` | Рецепт: Капюшон туманного плетения — V | 80 | 420 | `armor_fabric_hood_v` | `fabric` ×10; `thread` ×10; `leather_strip` ×5 |
+| `craft_armor_fabric_hood_vi` | Рецепт: Капюшон туманного плетения — VI | 100 | 480 | `armor_fabric_hood_vi` | `fabric` ×12; `thread` ×12; `leather_strip` ×6 |
+| `craft_armor_fabric_jacket_i` | Рецепт: Куртка тихого ветра — I | 1 | 300 | `armor_fabric_jacket_i` | `fabric` ×5; `thread` ×4; `leather_strip` ×3 |
+| `craft_armor_fabric_jacket_ii` | Рецепт: Куртка тихого ветра — II | 20 | 360 | `armor_fabric_jacket_ii` | `fabric` ×10; `thread` ×8; `leather_strip` ×6 |
+| `craft_armor_fabric_jacket_iii` | Рецепт: Куртка тихого ветра — III | 40 | 420 | `armor_fabric_jacket_iii` | `fabric` ×15; `thread` ×12; `leather_strip` ×9 |
+| `craft_armor_fabric_jacket_iv` | Рецепт: Куртка тихого ветра — IV | 60 | 480 | `armor_fabric_jacket_iv` | `fabric` ×20; `thread` ×16; `leather_strip` ×12 |
+| `craft_armor_fabric_jacket_v` | Рецепт: Куртка тихого ветра — V | 80 | 540 | `armor_fabric_jacket_v` | `fabric` ×25; `thread` ×20; `leather_strip` ×15 |
+| `craft_armor_fabric_jacket_vi` | Рецепт: Куртка тихого ветра — VI | 100 | 600 | `armor_fabric_jacket_vi` | `fabric` ×30; `thread` ×24; `leather_strip` ×18 |
+| `craft_armor_fabric_gloves_i` | Рецепт: Перчатки тонкого шва — I | 1 | 240 | `armor_fabric_gloves_i` | `fabric` ×2; `thread` ×2; `leather_strip` ×2 |
+| `craft_armor_fabric_gloves_ii` | Рецепт: Перчатки тонкого шва — II | 20 | 300 | `armor_fabric_gloves_ii` | `fabric` ×4; `thread` ×4; `leather_strip` ×4 |
+| `craft_armor_fabric_gloves_iii` | Рецепт: Перчатки тонкого шва — III | 40 | 360 | `armor_fabric_gloves_iii` | `fabric` ×6; `thread` ×6; `leather_strip` ×6 |
+| `craft_armor_fabric_gloves_iv` | Рецепт: Перчатки тонкого шва — IV | 60 | 420 | `armor_fabric_gloves_iv` | `fabric` ×8; `thread` ×8; `leather_strip` ×8 |
+| `craft_armor_fabric_gloves_v` | Рецепт: Перчатки тонкого шва — V | 80 | 480 | `armor_fabric_gloves_v` | `fabric` ×10; `thread` ×10; `leather_strip` ×10 |
+| `craft_armor_fabric_gloves_vi` | Рецепт: Перчатки тонкого шва — VI | 100 | 540 | `armor_fabric_gloves_vi` | `fabric` ×12; `thread` ×12; `leather_strip` ×12 |
+| `craft_armor_fabric_boots_i` | Рецепт: Сапоги мягкого шага — I | 1 | 270 | `armor_fabric_boots_i` | `fabric` ×2; `thread` ×2; `leather_blank` ×2; `leather_strip` ×2 |
+| `craft_armor_fabric_boots_ii` | Рецепт: Сапоги мягкого шага — II | 20 | 330 | `armor_fabric_boots_ii` | `fabric` ×4; `thread` ×4; `leather_blank` ×4; `leather_strip` ×4 |
+| `craft_armor_fabric_boots_iii` | Рецепт: Сапоги мягкого шага — III | 40 | 390 | `armor_fabric_boots_iii` | `fabric` ×6; `thread` ×6; `leather_blank` ×6; `leather_strip` ×6 |
+| `craft_armor_fabric_boots_iv` | Рецепт: Сапоги мягкого шага — IV | 60 | 450 | `armor_fabric_boots_iv` | `fabric` ×8; `thread` ×8; `leather_blank` ×8; `leather_strip` ×8 |
+| `craft_armor_fabric_boots_v` | Рецепт: Сапоги мягкого шага — V | 80 | 510 | `armor_fabric_boots_v` | `fabric` ×10; `thread` ×10; `leather_blank` ×10; `leather_strip` ×10 |
+| `craft_armor_fabric_boots_vi` | Рецепт: Сапоги мягкого шага — VI | 100 | 570 | `armor_fabric_boots_vi` | `fabric` ×12; `thread` ×12; `leather_blank` ×12; `leather_strip` ×12 |
+| `craft_armor_leather_helm_i` | Рецепт: Шлем следопыта — I | 1 | 180 | `armor_leather_helm_i` | `leather_blank` ×2; `leather_strip` ×1; `reinforced_fastening` ×1 |
+| `craft_armor_leather_helm_ii` | Рецепт: Шлем следопыта — II | 20 | 240 | `armor_leather_helm_ii` | `leather_blank` ×4; `leather_strip` ×2; `reinforced_fastening` ×2 |
+| `craft_armor_leather_helm_iii` | Рецепт: Шлем следопыта — III | 40 | 300 | `armor_leather_helm_iii` | `leather_blank` ×6; `leather_strip` ×3; `reinforced_fastening` ×3 |
+| `craft_armor_leather_helm_iv` | Рецепт: Шлем следопыта — IV | 60 | 360 | `armor_leather_helm_iv` | `leather_blank` ×8; `leather_strip` ×4; `reinforced_fastening` ×4 |
+| `craft_armor_leather_helm_v` | Рецепт: Шлем следопыта — V | 80 | 420 | `armor_leather_helm_v` | `leather_blank` ×10; `leather_strip` ×5; `reinforced_fastening` ×5 |
+| `craft_armor_leather_helm_vi` | Рецепт: Шлем следопыта — VI | 100 | 480 | `armor_leather_helm_vi` | `leather_blank` ×12; `leather_strip` ×6; `reinforced_fastening` ×6 |
+| `craft_armor_leather_chest_i` | Рецепт: Панцирь звериной тропы — I | 1 | 300 | `armor_leather_chest_i` | `leather_blank` ×5; `leather_strip` ×4; `reinforced_fastening` ×3 |
+| `craft_armor_leather_chest_ii` | Рецепт: Панцирь звериной тропы — II | 20 | 360 | `armor_leather_chest_ii` | `leather_blank` ×10; `leather_strip` ×8; `reinforced_fastening` ×6 |
+| `craft_armor_leather_chest_iii` | Рецепт: Панцирь звериной тропы — III | 40 | 420 | `armor_leather_chest_iii` | `leather_blank` ×15; `leather_strip` ×12; `reinforced_fastening` ×9 |
+| `craft_armor_leather_chest_iv` | Рецепт: Панцирь звериной тропы — IV | 60 | 480 | `armor_leather_chest_iv` | `leather_blank` ×20; `leather_strip` ×16; `reinforced_fastening` ×12 |
+| `craft_armor_leather_chest_v` | Рецепт: Панцирь звериной тропы — V | 80 | 540 | `armor_leather_chest_v` | `leather_blank` ×25; `leather_strip` ×20; `reinforced_fastening` ×15 |
+| `craft_armor_leather_chest_vi` | Рецепт: Панцирь звериной тропы — VI | 100 | 600 | `armor_leather_chest_vi` | `leather_blank` ×30; `leather_strip` ×24; `reinforced_fastening` ×18 |
+| `craft_armor_leather_bracers_i` | Рецепт: Наручи ловкого хвата — I | 1 | 240 | `armor_leather_bracers_i` | `processed_leather` ×2; `leather_blank` ×2; `leather_strip` ×2 |
+| `craft_armor_leather_bracers_ii` | Рецепт: Наручи ловкого хвата — II | 20 | 300 | `armor_leather_bracers_ii` | `processed_leather` ×4; `leather_blank` ×4; `leather_strip` ×4 |
+| `craft_armor_leather_bracers_iii` | Рецепт: Наручи ловкого хвата — III | 40 | 360 | `armor_leather_bracers_iii` | `processed_leather` ×6; `leather_blank` ×6; `leather_strip` ×6 |
+| `craft_armor_leather_bracers_iv` | Рецепт: Наручи ловкого хвата — IV | 60 | 420 | `armor_leather_bracers_iv` | `processed_leather` ×8; `leather_blank` ×8; `leather_strip` ×8 |
+| `craft_armor_leather_bracers_v` | Рецепт: Наручи ловкого хвата — V | 80 | 480 | `armor_leather_bracers_v` | `processed_leather` ×10; `leather_blank` ×10; `leather_strip` ×10 |
+| `craft_armor_leather_bracers_vi` | Рецепт: Наручи ловкого хвата — VI | 100 | 540 | `armor_leather_bracers_vi` | `processed_leather` ×12; `leather_blank` ×12; `leather_strip` ×12 |
+| `craft_armor_leather_boots_i` | Рецепт: Сапоги крепкой поступи — I | 1 | 270 | `armor_leather_boots_i` | `processed_leather` ×2; `leather_blank` ×3; `leather_strip` ×2; `reinforced_fastening` ×2 |
+| `craft_armor_leather_boots_ii` | Рецепт: Сапоги крепкой поступи — II | 20 | 330 | `armor_leather_boots_ii` | `processed_leather` ×4; `leather_blank` ×6; `leather_strip` ×4; `reinforced_fastening` ×4 |
+| `craft_armor_leather_boots_iii` | Рецепт: Сапоги крепкой поступи — III | 40 | 390 | `armor_leather_boots_iii` | `processed_leather` ×6; `leather_blank` ×9; `leather_strip` ×6; `reinforced_fastening` ×6 |
+| `craft_armor_leather_boots_iv` | Рецепт: Сапоги крепкой поступи — IV | 60 | 450 | `armor_leather_boots_iv` | `processed_leather` ×8; `leather_blank` ×12; `leather_strip` ×8; `reinforced_fastening` ×8 |
+| `craft_armor_leather_boots_v` | Рецепт: Сапоги крепкой поступи — V | 80 | 510 | `armor_leather_boots_v` | `processed_leather` ×10; `leather_blank` ×15; `leather_strip` ×10; `reinforced_fastening` ×10 |
+| `craft_armor_leather_boots_vi` | Рецепт: Сапоги крепкой поступи — VI | 100 | 570 | `armor_leather_boots_vi` | `processed_leather` ×12; `leather_blank` ×18; `leather_strip` ×12; `reinforced_fastening` ×12 |
+| `craft_armor_metal_helm_i` | Рецепт: Шлем стража рубежа — I | 1 | 180 | `armor_metal_helm_i` | `metal_copper_plate` ×1; `metal_copper_sheet` ×1; `reinforced_fastening` ×2; `fabric` ×1 |
+| `craft_armor_metal_helm_ii` | Рецепт: Шлем стража рубежа — II | 20 | 240 | `armor_metal_helm_ii` | `metal_iron_plate` ×2; `metal_iron_sheet` ×2; `reinforced_fastening` ×4; `fabric` ×2 |
+| `craft_armor_metal_helm_iii` | Рецепт: Шлем стража рубежа — III | 40 | 300 | `armor_metal_helm_iii` | `metal_steel_plate` ×3; `metal_steel_sheet` ×3; `reinforced_fastening` ×6; `fabric` ×3 |
+| `craft_armor_metal_helm_iv` | Рецепт: Шлем стража рубежа — IV | 60 | 360 | `armor_metal_helm_iv` | `metal_deep_silver_plate` ×4; `metal_deep_silver_sheet` ×4; `reinforced_fastening` ×8; `fabric` ×4 |
+| `craft_armor_metal_helm_v` | Рецепт: Шлем стража рубежа — V | 80 | 420 | `armor_metal_helm_v` | `metal_astralite_plate` ×5; `metal_astralite_sheet` ×5; `reinforced_fastening` ×10; `fabric` ×5 |
+| `craft_armor_metal_helm_vi` | Рецепт: Шлем стража рубежа — VI | 100 | 480 | `armor_metal_helm_vi` | `metal_astralite_plate` ×6; `metal_astralite_sheet` ×6; `reinforced_fastening` ×12; `fabric` ×6 |
+| `craft_armor_metal_cuirass_i` | Рецепт: Кираса каменного дозора — I | 1 | 300 | `armor_metal_cuirass_i` | `metal_copper_plate` ×3; `metal_copper_sheet` ×2; `reinforced_fastening` ×4; `fabric` ×2 |
+| `craft_armor_metal_cuirass_ii` | Рецепт: Кираса каменного дозора — II | 20 | 360 | `armor_metal_cuirass_ii` | `metal_iron_plate` ×6; `metal_iron_sheet` ×4; `reinforced_fastening` ×8; `fabric` ×4 |
+| `craft_armor_metal_cuirass_iii` | Рецепт: Кираса каменного дозора — III | 40 | 420 | `armor_metal_cuirass_iii` | `metal_steel_plate` ×9; `metal_steel_sheet` ×6; `reinforced_fastening` ×12; `fabric` ×6 |
+| `craft_armor_metal_cuirass_iv` | Рецепт: Кираса каменного дозора — IV | 60 | 480 | `armor_metal_cuirass_iv` | `metal_deep_silver_plate` ×12; `metal_deep_silver_sheet` ×8; `reinforced_fastening` ×16; `fabric` ×8 |
+| `craft_armor_metal_cuirass_v` | Рецепт: Кираса каменного дозора — V | 80 | 540 | `armor_metal_cuirass_v` | `metal_astralite_plate` ×15; `metal_astralite_sheet` ×10; `reinforced_fastening` ×20; `fabric` ×10 |
+| `craft_armor_metal_cuirass_vi` | Рецепт: Кираса каменного дозора — VI | 100 | 600 | `armor_metal_cuirass_vi` | `metal_astralite_plate` ×18; `metal_astralite_sheet` ×12; `reinforced_fastening` ×24; `fabric` ×12 |
+| `craft_armor_metal_gauntlets_i` | Рецепт: Рукавицы железного караула — I | 1 | 240 | `armor_metal_gauntlets_i` | `metal_copper_plate` ×2; `metal_copper_wire` ×2; `leather_blank` ×1; `fabric` ×1 |
+| `craft_armor_metal_gauntlets_ii` | Рецепт: Рукавицы железного караула — II | 20 | 300 | `armor_metal_gauntlets_ii` | `metal_iron_plate` ×4; `metal_iron_wire` ×4; `leather_blank` ×2; `fabric` ×2 |
+| `craft_armor_metal_gauntlets_iii` | Рецепт: Рукавицы железного караула — III | 40 | 360 | `armor_metal_gauntlets_iii` | `metal_steel_plate` ×6; `metal_steel_wire` ×6; `leather_blank` ×3; `fabric` ×3 |
+| `craft_armor_metal_gauntlets_iv` | Рецепт: Рукавицы железного караула — IV | 60 | 420 | `armor_metal_gauntlets_iv` | `metal_deep_silver_plate` ×8; `metal_deep_silver_wire` ×8; `leather_blank` ×4; `fabric` ×4 |
+| `craft_armor_metal_gauntlets_v` | Рецепт: Рукавицы железного караула — V | 80 | 480 | `armor_metal_gauntlets_v` | `metal_astralite_plate` ×10; `metal_astralite_wire` ×10; `leather_blank` ×5; `fabric` ×5 |
+| `craft_armor_metal_gauntlets_vi` | Рецепт: Рукавицы железного караула — VI | 100 | 540 | `armor_metal_gauntlets_vi` | `metal_astralite_plate` ×12; `metal_astralite_wire` ×12; `leather_blank` ×6; `fabric` ×6 |
+| `craft_armor_metal_boots_i` | Рецепт: Сапоги бастионного шага — I | 1 | 270 | `armor_metal_boots_i` | `metal_copper_plate` ×3; `metal_copper_wire` ×3; `leather_blank` ×2; `fabric` ×2; `reinforced_fastening` ×2 |
+| `craft_armor_metal_boots_ii` | Рецепт: Сапоги бастионного шага — II | 20 | 330 | `armor_metal_boots_ii` | `metal_iron_plate` ×6; `metal_iron_wire` ×6; `leather_blank` ×4; `fabric` ×4; `reinforced_fastening` ×4 |
+| `craft_armor_metal_boots_iii` | Рецепт: Сапоги бастионного шага — III | 40 | 390 | `armor_metal_boots_iii` | `metal_steel_plate` ×9; `metal_steel_wire` ×9; `leather_blank` ×6; `fabric` ×6; `reinforced_fastening` ×6 |
+| `craft_armor_metal_boots_iv` | Рецепт: Сапоги бастионного шага — IV | 60 | 450 | `armor_metal_boots_iv` | `metal_deep_silver_plate` ×12; `metal_deep_silver_wire` ×12; `leather_blank` ×8; `fabric` ×8; `reinforced_fastening` ×8 |
+| `craft_armor_metal_boots_v` | Рецепт: Сапоги бастионного шага — V | 80 | 510 | `armor_metal_boots_v` | `metal_astralite_plate` ×15; `metal_astralite_wire` ×15; `leather_blank` ×10; `fabric` ×10; `reinforced_fastening` ×10 |
+| `craft_armor_metal_boots_vi` | Рецепт: Сапоги бастионного шага — VI | 100 | 570 | `armor_metal_boots_vi` | `metal_astralite_plate` ×18; `metal_astralite_wire` ×18; `leather_blank` ×12; `fabric` ×12; `reinforced_fastening` ×12 |
+| `craft_armor_shared_travel_cloak_i` | Рецепт: Плащ дорожного покрова — I | 1 | 240 | `armor_shared_travel_cloak_i` | `fabric` ×3; `thread` ×3; `leather_strip` ×2; `leather_blank` ×1; `reinforced_fastening` ×1 |
+| `craft_armor_shared_travel_cloak_ii` | Рецепт: Плащ дорожного покрова — II | 20 | 300 | `armor_shared_travel_cloak_ii` | `fabric` ×6; `thread` ×6; `leather_strip` ×4; `leather_blank` ×2; `reinforced_fastening` ×2 |
+| `craft_armor_shared_travel_cloak_iii` | Рецепт: Плащ дорожного покрова — III | 40 | 360 | `armor_shared_travel_cloak_iii` | `fabric` ×9; `thread` ×9; `leather_strip` ×6; `leather_blank` ×3; `reinforced_fastening` ×3 |
+| `craft_armor_shared_travel_cloak_iv` | Рецепт: Плащ дорожного покрова — IV | 60 | 420 | `armor_shared_travel_cloak_iv` | `fabric` ×12; `thread` ×12; `leather_strip` ×8; `leather_blank` ×4; `reinforced_fastening` ×4 |
+| `craft_armor_shared_travel_cloak_v` | Рецепт: Плащ дорожного покрова — V | 80 | 480 | `armor_shared_travel_cloak_v` | `fabric` ×15; `thread` ×15; `leather_strip` ×10; `leather_blank` ×5; `reinforced_fastening` ×5 |
+| `craft_armor_shared_travel_cloak_vi` | Рецепт: Плащ дорожного покрова — VI | 100 | 540 | `armor_shared_travel_cloak_vi` | `fabric` ×18; `thread` ×18; `leather_strip` ×12; `leather_blank` ×6; `reinforced_fastening` ×6 |
+
+Манифест содержит 78 уникальных item ID и 78 уникальных recipe ID. Все предметы имеют одинаковое видимое имя внутри одной модели, но различные уровни и значения защиты; новые модели не добавляются.
