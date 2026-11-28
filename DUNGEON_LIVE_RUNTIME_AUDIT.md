@@ -46,9 +46,9 @@ Added `server/src/dungeonLegacySettlementAdapter.ts` as a pure mapping boundary 
 
 - The adapter accepts the frozen ordered roster, existing combat result, already-rolled drop IDs and recipients, each participant's post-healing HP, already-calculated personalized XP/gold, exact report/result text, complete `Player.toJSON()` snapshot, and exact legacy request/outbox event.
 - It does not call combat math, RNG, healing, reward calculation, clocks, persistence, or network sends.
-- It verifies roster order; player snapshot ID/HP; the saved `dungeonLastRequest` identity, report, text and binding; and the outbox event ID/run ID/recipient/message/payload. It then delegates immutable snapshot validation and freezing to `createPreparedDungeonEncounter()`.
+- It verifies roster order; player snapshot ID/HP; both saved request-history representations (`dungeonLastRequest` and `dungeonRequestHistory`) including report, text and binding; and the outbox event ID/run ID/recipient/message/payload. It then delegates immutable snapshot validation and freezing to `createPreparedDungeonEncounter()`.
 - `PreparedDungeonEncounter` now optionally retains the exact per-participant outbox events. The field is optional so previously persisted version-1 prepared snapshots remain readable; when supplied, it is strictly validated against the frozen roster, reports, result text and request ID.
-- Regression fixtures cover all four legacy outcome/party combinations: solo win, group win, solo loss and group loss. Assertions cover individualized XP/gold, post-healing/clamped HP, exact drop recipients, full player snapshots, request replay binding, outbox payload, immutability and input non-mutation.
+- Regression fixtures cover all four legacy outcome/party combinations: solo win, group win, solo loss and group loss. Assertions cover individualized XP/gold, post-healing/clamped HP, exact drop recipients, full player snapshots, request replay binding, outbox payload, JSON recovery of frozen outbox events, immutability and input non-mutation.
 
 ### Deliberate limit
 
