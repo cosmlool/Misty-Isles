@@ -4406,3 +4406,11 @@ Quality Gate 43931230374 failed because the new dungeon test file contained a li
 - Static source review completed. No tests or CI were run by the assistant.
 - Production handler remains the terminal one-shot path; active entry and per-round actions are not wired yet.
 - Next: commit prepared run + attempt/battle counter atomically through shared WAL, then implement authenticated resume/advance and per-round persistence. Terminal reward settlement/outbox remains a single final commit.
+## 2026-11-28 — two CI fixture corrections for resumable dungeon execution
+
+- CI on HEAD `4fff3d87d135a504ec836ca7b7c5cf579313df91` failed in both server test jobs with 542/544 passing and two assertion failures. Data/docs audit, browser smoke, and client build passed; server compile was skipped after the test step failed.
+- Corrected the new attempt-charge integration fixture to include the same `dungeonDay` as the test's target day. The production reset-on-new-day behavior is unchanged; assertions still verify one attempt per participant.
+- Corrected the run-store recovery test to assert a genuine invalid snapshot (`hpBefore` greater than frozen `maxHealth`) instead of requiring entry HP to equal mutable current HP after resumable round progress.
+- Production code and game formulas unchanged. Only two test fixtures changed.
+- Commits: `f7e4bbe71f6491dedbfc0bf433bb8db364c43e24`, `09ed38ac3c8d6442c03569cb4883783974d6f410`.
+- Static review only; no tests or CI run by the assistant. Await user CI result before proceeding.
