@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict';
-import { mkdtempSync, readFileSync, rmSync } from 'node:fs';
+import { existsSync, mkdtempSync, readFileSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import test from 'node:test';
@@ -177,7 +177,7 @@ test('WAL recovery restores the prepared execution plan and attempt charges as o
     assert.throws(() => commitDungeonRunStart({
       runtime, run, encounter, players, runs: {}, day: '2026-11-28',
     }), /simulated prepared-entry crash/);
-    assert.equal(store.hasPending(), true);
+    assert.equal(existsSync(store.journalFile), true);
 
     const restarted = createSharedStateTransactionStore({ dataDir, files });
     assert.equal(restarted.recover(), true);
@@ -191,7 +191,7 @@ test('WAL recovery restores the prepared execution plan and attempt charges as o
     assert.deepEqual(savedRun.preparedEncounter, encounter);
     assert.equal(savedRun.roundPlan.nextRoundIndex, 0);
     assert.deepEqual(savedRun.roundPlan.bossDamageByRound, [25, 25]);
-    assert.equal(restarted.hasPending(), false);
+    assert.equal(existsSync(restarted.journalFile), false);
   } finally {
     rmSync(dataDir, { recursive: true, force: true });
   }
