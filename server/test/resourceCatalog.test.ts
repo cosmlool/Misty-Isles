@@ -13,7 +13,7 @@ test('resource catalog has unique item and recipe identifiers', () => {
   assert.equal(new Set(recipeIds).size, recipeIds.length);
 });
 
-test('each metal has exactly four direct-from-ingot universal blanks', () => {
+test('resource catalog contains the complete approved 76-ID inventory', () => {\n  assert.equal(RESOURCE_ITEMS.length, 76);\n  const expectedCounts: Record<string, number> = {\n    mineral: 8,\n    metal: 29,\n    wood: 9,\n    organic: 3,\n    textile: 4,\n    leather: 5,\n    beast: 13,\n    combined: 4,\n    metalworking: 1,\n  };\n  for (const [group, count] of Object.entries(expectedCounts)) {\n    assert.equal(RESOURCE_ITEMS.filter(item => item.resourceGroup === group).length, count, 'unexpected resource count for ' + group);\n  }\n});\n\ntest('each metal has exactly four direct-from-ingot universal blanks', () => {
   const metals = ['copper', 'iron', 'steel', 'deep_silver', 'astralite'];
   const blankTypes = ['plate', 'rod', 'wire', 'sheet'];
   for (const metal of metals) {
