@@ -16,6 +16,7 @@ function player(input: {
   gold: number;
   loot: string[];
   result: 'win' | 'loss';
+  binding?: { dungeonId: string; groupId: string; leaderId: string; participantIds: string[] };
 }) {
   const report = {
     result: input.result,
@@ -24,9 +25,10 @@ function player(input: {
     rewards: { xp: input.xp, gold: input.gold, loot: input.loot.join(',') },
   };
   const text = input.result === 'win' ? `Won: ${input.id}` : `Lost: ${input.id}`;
+  const requestBinding = input.binding || binding;
   const quests = {
-    dungeonRequestHistory: [{ id: requestId, report, text, binding }],
-    dungeonLastRequest: { id: requestId, report, text, binding },
+    dungeonRequestHistory: [{ id: requestId, report, text, binding: requestBinding }],
+    dungeonLastRequest: { id: requestId, report, text, binding: requestBinding },
   };
   const eventId = `dungeon:${runId}:${input.id}:combatResult`;
   return {
@@ -103,6 +105,7 @@ test('adapts a solo loss with clamped HP, no rewards and an exact replay/outbox 
   const p1 = player({
     id: 'p1', hpBefore: 7, hpAfter: 1, incoming: 12, outgoing: 15,
     xp: 0, gold: 0, loot: [], result: 'loss',
+    binding: { dungeonId: 'dungeon_40', groupId: '', leaderId: 'p1', participantIds: ['p1'] },
   });
   const prepared = prepareLegacyDungeonSettlement({
     runId, requestId, dungeonId: 'dungeon_40', bossId: 'boss_40',
