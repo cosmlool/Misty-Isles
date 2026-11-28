@@ -3599,3 +3599,13 @@ PR #15 остаётся Draft/open и не объединён. Слияние б
 - Статически перечитаны обновлённые файлы после записи. Ассистент не запускал тесты и не запускал/перезапускал CI; исправления ожидают пользовательской проверки.
 - Workflow build был пропущен вследствие раннего падения server test step; успешная сборка нового HEAD не заявляется.
 - Следующий шаг: пользователь проверяет CI на новом HEAD. Не объединять PR #39; после успешной проверки продолжить следующий записанный этап durable active-run entry/per-round commit/recovery.
+
+## 2026-11-28 — повторный CI: устранён отсутствующий timestamp и обновлён контракт rollback
+
+- Проверены оба workflow на HEAD `00cd75ebadb16f2d3663b1d3c67ab13f4efb7520`: Server checks и Quality Gate падали одинаково; 536/539 серверных тестов прошли, 3 упали. Browser smoke, client TypeScript/Vite build и data/docs audit прошли. Server build был пропущен после неуспешного transaction recovery test step.
+- Два runtime timeout (solo и group dungeon) имели общую причину: production handler использовал `runStartedAt` при создании durable run, но переменная не была объявлена в области `runExpeditionDungeon()`. В результате win settlement прерывался до отправки combatResult. Добавлено локальное `const runStartedAt=Date.now()` после проверок входа/лимита и до расчёта боя; обе ветки win/loss используют единое время старта.
+- Третий failure — статическая проверка `playerPersistenceWriters.test.ts` продолжала требовать старый rollback через `else { applyPlayerSave(rollbackSnapshot) }`. Новый WAL-aware алгоритм сначала восстанавливает pending journal, затем сверяется с durable players store и применяет сохранённый durable snapshot (rollback snapshot только если durable запись отсутствует). Тест обновлён под новый контракт; старое поведение не возвращалось.
+- В `AI_WORK_RULES.md` добавлено постоянное правило: утверждённая новая реализация заменяет конфликтующую старую; не оставлять параллельный legacy/fallback runtime. Сохранения игроков защищать миграцией данных, а не сохранением старой игровой логики. Временный адаптер допускается только узкий и удаляемый.
+- Изменены: `server/src/index.ts`, `server/test/playerPersistenceWriters.test.ts`, `AI_WORK_RULES.md`.
+- Статическая сверка после коммитов подтверждает одну локальную декларацию `runStartedAt` внутри dungeon handler, две её ссылки (win/loss), обновлённое assertion и наличие нового правила в AI instructions. Тесты/CI после исправлений не запускались.
+- Следующий шаг: пользователь проверяет CI на новом HEAD. Если зелёный — продолжить durable active-run entry/per-round commit/recovery; при переходе полностью заменить legacy one-shot dungeon runtime новой системой, не поддерживать две параллельные боевые реализации.
