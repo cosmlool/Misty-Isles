@@ -85,7 +85,7 @@ test('legacy settlement writes complete players, terminal run and result outbox 
   const result = commitPreparedLegacyDungeonSettlement({
     runtime: memory.runtime,
     runId: run.runId,
-    runs: {},
+    runs: { [run.runId]: run },
     players,
     encounter,
     now: 150,
@@ -105,7 +105,7 @@ test('same committed legacy settlement is idempotent and does not write twice', 
   const { run, encounter, players } = fixture();
   const memory = memoryRuntime();
   const first = commitPreparedLegacyDungeonSettlement({
-    runtime: memory.runtime, runId: run.runId, runs: {}, players, encounter, now: 150, outbox: {},
+    runtime: memory.runtime, runId: run.runId, runs: { [run.runId]: run }, players, encounter, now: 150, outbox: {},
   });
   const retry = commitPreparedLegacyDungeonSettlement({
     runtime: memory.runtime, runId: run.runId, runs: first.runs, players,
@@ -134,7 +134,7 @@ test('WAL recovery completes the entire settlement after an interrupted target w
       shared: store, auction: { recover: () => false }, clans: { recover: () => false },
     });
     assert.throws(() => commitPreparedLegacyDungeonSettlement({
-      runtime, runId: run.runId, runs: {}, players, encounter, now: 150, outbox: {},
+      runtime, runId: run.runId, runs: { [run.runId]: run }, players, encounter, now: 150, outbox: {},
     }), /simulated crash/);
     assert.equal(existsSync(store.journalFile), true);
     assert.equal(existsSync(files.dungeonRuns), false);
@@ -168,6 +168,6 @@ test('recovery detected before settlement rejects stale snapshots without writin
     },
   };
   assert.throws(() => commitPreparedLegacyDungeonSettlement({
-    runtime, runId: run.runId, runs: {}, players, encounter, now: 150, outbox: {},
+    runtime, runId: run.runId, runs: { [run.runId]: run }, players, encounter, now: 150, outbox: {},
   }), /reload player, run and outbox snapshots/);
 });
