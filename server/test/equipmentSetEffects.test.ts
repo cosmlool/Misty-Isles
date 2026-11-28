@@ -15,10 +15,20 @@ import {
 const serverDir = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const equipment = JSON.parse(readFileSync(resolve(serverDir, 'data/equipment_catalog.json'), 'utf8'));
 
-test('current equipment catalog has 64 structurally complete five-piece sets', () => {
-  assert.deepEqual(validateEquipmentSetCatalog(equipment), []);
-  const setNames = new Set(equipment.filter((item: any) => item.set).map((item: any) => item.set));
+test('legacy equipment catalog retains 64 structurally complete five-piece sets', () => {
+  const legacyCatalog = equipment.filter((item: any) => item.legacy !== false);
+  assert.deepEqual(validateEquipmentSetCatalog(legacyCatalog), []);
+  const setNames = new Set(legacyCatalog.filter((item: any) => item.set).map((item: any) => item.set));
   assert.equal(setNames.size, 64);
+});
+
+test('new armor is intentionally independent of legacy armor sets', () => {
+  const legacyArmor = equipment.filter((item: any) => item.kind === 'armor' && item.legacy === true);
+  const activeArmor = equipment.filter((item: any) => item.kind === 'armor' && item.legacy === false);
+  assert.equal(legacyArmor.length, 320);
+  assert.equal(activeArmor.length, 78);
+  assert.ok(activeArmor.every((item: any) => !item.set && !item.setBonus && !item.profession));
+  assert.deepEqual(validateEquipmentSetCatalog(equipment), []);
 });
 
 test('set effect schema accepts typed targets, explicit scope and cumulative tiers', () => {
@@ -101,7 +111,7 @@ test('catalog validator rejects non-object catalog entries instead of silently s
 
 
 test('catalog profession coverage includes all eight live race-profession profiles', () => {
-  const armor = equipment.filter((item: any) => item.kind === 'armor');
+  const armor = equipment.filter((item: any) => item.kind === 'armor' && item.legacy !== false);
   const professionSetCounts = new Map<string, Set<string>>();
   for (const item of armor) {
     if (typeof item.profession !== 'string') continue;
