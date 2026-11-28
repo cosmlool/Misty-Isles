@@ -52,6 +52,7 @@ import { parseMonsterWeakness, resolveLegacyMonsterAttackMultiplier, resolveLega
 import { prepareXpProgression } from './xpProgression.js';
 import { isPasswordLengthWithinLimit } from './authPasswordPolicy.js';
 import { RESOURCE_ITEMS, RESOURCE_RECIPES } from './resourceCatalog.js';
+import { ARMOR_RECIPES } from './armorCatalog.js';
 import { isMiningActivityLocked, prepareMiningSettlement, readMiningJob, startMiningJob } from './miningOperations.js';
 
 const ONLINE_PLAYERS = new Map<string, Player>();
@@ -454,7 +455,9 @@ const RECIPES: Recipe[] = [
 RECIPES.push(...RESOURCE_RECIPES);
 // Retire old gear recipes from the visible crafting catalogue while preserving queued outputs.
 for(let i=RECIPES.length-1;i>=0;i--){const output=ITEMS.find(x=>x.id===RECIPES[i].output);if(output?.legacy)RECIPES.splice(i,1);}
-for(const legendary of NEW_EQUIPMENT_ITEMS.filter(x=>x.kind==='armor'&&x.rarity==='Легендарная')){const level=Math.max(1,Number(legendary.level||100));RECIPES.push({id:`craft_${legendary.id.toLowerCase()}`,name:`Изготовление: ${legendary.name}`,level,seconds:7200+level*120,output:legendary.id,count:1,profession:legendary.profession,materials:{'FLDROP-10-10-A':1,'FLDROP-10-10-B':1,abyss_shard:20,relic_fragment:25,crystal_shard:35,ash_ore:50},description:`Профессиональное изготовление части легендарного комплекта «${legendary.set}». Нужны трофеи Архонта Забвения.`});}
+// Register the approved new armor recipes only after legacy recipes have been retired.
+RECIPES.push(...ARMOR_RECIPES);
+for(const legendary of NEW_EQUIPMENT_ITEMS.filter(x=>x.kind==='armor'&&!x.legacy&&x.rarity==='Легендарная')){const level=Math.max(1,Number(legendary.level||100));RECIPES.push({id:`craft_${legendary.id.toLowerCase()}`,name:`Изготовление: ${legendary.name}`,level,seconds:7200+level*120,output:legendary.id,count:1,profession:legendary.profession,materials:{'FLDROP-10-10-A':1,'FLDROP-10-10-B':1,abyss_shard:20,relic_fragment:25,crystal_shard:35,ash_ore:50},description:`Профессиональное изготовление части легендарного комплекта «${legendary.set}». Нужны трофеи Архонта Забвения.`});}
 const GUILD_SKILLS:Record<string,any[]> = {
  'Кот':[{id:'arcane_burst',name:'Чародейский импульс',desc:'+18% атаки на 10 минут',effect:'attack',value:0.18},{id:'shadow_step',name:'Шаг тени',desc:'+12% критического шанса на 10 минут',effect:'crit',value:0.12}],
  'Собака':[{id:'iron_guard',name:'Железный караул',desc:'+20% защиты на 10 минут',effect:'defense',value:0.20},{id:'pack_howl',name:'Боевой вой',desc:'+12% опыта на 10 минут',effect:'xp',value:0.12}],
