@@ -74,9 +74,14 @@ export function prepareLegacyDungeonSettlement(input: {
     }
     const state = quests as Record<string, unknown>;
     const last = state.dungeonLastRequest as Record<string, unknown> | undefined;
+    const savedBinding = last?.binding as Record<string, unknown> | undefined;
     if (last?.id !== input.requestId ||
         JSON.stringify(last.report) !== JSON.stringify(report) ||
-        last.text !== resultText) {
+        last.text !== resultText ||
+        savedBinding?.dungeonId !== input.dungeonId ||
+        typeof savedBinding.groupId !== 'string' ||
+        typeof savedBinding.leaderId !== 'string' ||
+        JSON.stringify(savedBinding.participantIds) !== JSON.stringify(input.participantIds)) {
       throw new Error(`Legacy dungeon request history does not match participant ${playerId}.`);
     }
 
