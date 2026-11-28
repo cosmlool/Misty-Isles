@@ -4386,3 +4386,13 @@ Quality Gate 43931230374 failed because the new dungeon test file contained a li
 - A static source guard still asserted the old persistence call signature; it now asserts the current prepared-encounter + durable-run atomic commit signature.
 - Updated source/tests: `server/src/index.ts`, `server/test/dungeonLegacySettlementCommitRuntime.test.ts`, `server/test/playerPersistenceWriters.test.ts`.
 - No tests or workflows were run by the assistant. Fixes are committed on the existing PR branch only; user CI verification remains pending.
+
+## 2026-11-28 — repeat CI diagnosis and correction
+
+- Both workflows on HEAD `00cd75ebadb16f2d3663b1d3c67ab13f4efb7520` failed at the same server test stage: 536/539 passed, 3 failed. Browser smoke, client TypeScript/Vite build, and data/docs audit passed. Server build was skipped because transaction recovery tests failed first.
+- Solo and group dungeon runtime tests timed out for one shared production defect: `runExpeditionDungeon()` referenced `runStartedAt` without declaring it in the method scope. The resulting runtime exception prevented win settlement from emitting combatResult. Added one local timestamp after entry/attempt validation and before combat resolution; both win and loss durable run creation use it.
+- The third failure was a stale source assertion requiring the previous `else { applyPlayerSave(rollbackSnapshot) }` rollback path. The current WAL-aware behavior recovers a pending journal first, then reconciles from the durable players store, falling back to the rollback snapshot only when no durable player record exists. Updated the test to assert the new contract rather than reintroducing old behavior.
+- Added a permanent rule to `AI_WORK_RULES.md`: approved new implementations replace conflicting old runtime logic; do not keep parallel legacy/fallback paths. Protect existing player saves through data migration, not by retaining old gameplay implementations. Transitional adapters must be narrow and removable.
+- Changed: `server/src/index.ts`, `server/test/playerPersistenceWriters.test.ts`, `AI_WORK_RULES.md`.
+- Static post-commit review confirms one local `runStartedAt` declaration in the dungeon handler, two references for win/loss, updated WAL assertion, and the new instruction. Tests/CI have not been run after these fixes.
+- Next: user verifies CI on the new HEAD. If green, continue durable active-run entry/per-round commit/recovery; when the new dungeon runtime takes over, fully replace the legacy one-shot runtime rather than maintaining two parallel combat implementations.
