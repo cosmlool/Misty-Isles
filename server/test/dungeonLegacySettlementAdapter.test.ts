@@ -125,6 +125,52 @@ test('adapts a solo loss with clamped HP, no rewards and an exact replay/outbox 
   assert.deepEqual(prepared.playerSnapshots.p1, p1.playerSnapshot);
 });
 
+test('adapts a solo victory with its guaranteed resource and full player snapshot', () => {
+  const p1 = player({
+    id: 'p1', hpBefore: 80, hpAfter: 75, incoming: 5, outgoing: 140,
+    xp: 400, gold: 100, loot: ['dungeon_resource'], result: 'win',
+    binding: { dungeonId: 'dungeon_40', groupId: '', leaderId: 'p1', participantIds: ['p1'] },
+  });
+  const prepared = prepareLegacyDungeonSettlement({
+    runId, requestId, dungeonId: 'dungeon_40', bossId: 'boss_40',
+    preparedAt: 1_800_000_000_000,
+    participantIds: ['p1'],
+    combat: { rounds: 1, incoming: [5], win: true, damageByParticipant: [140] },
+    drops: [{ itemId: 'dungeon_resource', recipientId: 'p1' }],
+    players: [p1],
+  });
+
+  assert.equal(prepared.combat.win, true);
+  assert.deepEqual(prepared.drops, [{ itemId: 'dungeon_resource', recipientId: 'p1' }]);
+  assert.deepEqual(prepared.playerSnapshots.p1, p1.playerSnapshot);
+  assert.deepEqual(prepared.outboxEvents?.[0].payload, p1.outboxEvent.payload);
+});
+
+test('adapts a group loss without introducing rewards or loot', () => {
+  const p1 = player({
+    id: 'p1', hpBefore: 50, hpAfter: 1, incoming: 60, outgoing: 30,
+    xp: 0, gold: 0, loot: [], result: 'loss',
+  });
+  const p2 = player({
+    id: 'p2', hpBefore: 70, hpAfter: 1, incoming: 80, outgoing: 40,
+    xp: 0, gold: 0, loot: [], result: 'loss',
+  });
+  const prepared = prepareLegacyDungeonSettlement({
+    runId, requestId, dungeonId: 'dungeon_40', bossId: 'boss_40',
+    preparedAt: 1_800_000_000_000,
+    participantIds: ['p1', 'p2'],
+    combat: { rounds: 4, incoming: [60, 80], win: false, damageByParticipant: [30, 40] },
+    drops: [],
+    players: [p1, p2],
+  });
+
+  assert.equal(prepared.combat.win, false);
+  assert.deepEqual(prepared.drops, []);
+  assert.equal(prepared.participants.p1.xp, 0);
+  assert.equal(prepared.participants.p2.gold, 0);
+  assert.deepEqual(prepared.outboxEvents?.map(event => event.playerId), ['p1', 'p2']);
+});
+
 test('rejects roster order drift and mismatched request/outbox payloads', () => {
   const wrongOrder = groupWinFixture();
   wrongOrder.players.reverse();
