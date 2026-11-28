@@ -112,8 +112,8 @@ test('prepared execution can enter the existing atomic attempt-charge preparatio
     runs: {},
     day: '2026-11-28',
     players: {
-      p1: { id: 'p1', health: 100, maxHealth: 120, quests: JSON.stringify({ dungeonRuns: 0 }), battles: 4 },
-      p2: { id: 'p2', health: 90, maxHealth: 110, quests: JSON.stringify({ dungeonRuns: 1 }), battles: 7 },
+      p1: { id: 'p1', health: 100, maxHealth: 120, quests: JSON.stringify({ dungeonDay: '2026-11-28', dungeonRuns: 0 }), battles: 4 },
+      p2: { id: 'p2', health: 90, maxHealth: 110, quests: JSON.stringify({ dungeonDay: '2026-11-28', dungeonRuns: 1 }), battles: 7 },
     },
   });
   assert.equal(start.alreadyStarted, false);
