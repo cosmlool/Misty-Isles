@@ -113,7 +113,7 @@ test('group boss dungeon persists win rewards and loss costs for every participa
 
     child = spawn(process.execPath, ['--import', 'tsx', 'src/index.ts'], {
       cwd: serverDir,
-      env: { ...process.env, MISTY_DATA_DIR: dataDir, MISTY_PORT: String(port) },
+      env: { ...process.env, MISTY_DATA_DIR: dataDir, MISTY_PORT: String(port), MISTY_DUNGEON_PARITY_STRICT: '1' },
       stdio: 'ignore',
     });
     await waitForServer(port, child);
@@ -186,7 +186,7 @@ test('group boss dungeon persists win rewards and loss costs for every participa
     await stopServer(child!);
     child = spawn(process.execPath, ['--import', 'tsx', 'src/index.ts'], {
       cwd: serverDir,
-      env: { ...process.env, MISTY_DATA_DIR: dataDir, MISTY_PORT: String(port) },
+      env: { ...process.env, MISTY_DATA_DIR: dataDir, MISTY_PORT: String(port), MISTY_DUNGEON_PARITY_STRICT: '1' },
       stdio: 'ignore',
     });
     await waitForServer(port, child);
