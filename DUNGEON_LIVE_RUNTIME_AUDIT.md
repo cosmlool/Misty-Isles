@@ -55,3 +55,24 @@ Added `server/src/dungeonLegacySettlementAdapter.ts` as a pure mapping boundary 
 The adapter is not yet called from production `runExpeditionDungeon()`, and no WAL transaction or live behavior was changed. The new tests validate the adapter contract with explicit legacy-shaped fixtures; they are not yet a golden comparison captured from a live runtime execution. The next safe step is a narrow, side-effect-free capture at the existing handler's settlement point plus parity assertions against its actual pre-persistence Player snapshots and events. Only after that proof should the live handler be switched to durable start/encounter commit/finalization.
 
 No combat formulas, RNG call order, loot selection, reward modifiers, healing, attempt charging, request replay behavior, client protocol or player persistence timing changed. CI/tests were not run by the assistant; the user checks CI.
+
+
+## Live legacy settlement capture — 2026-11-28
+
+The user confirmed CI passed on the preceding adapter-only HEAD `a62248f`. The current runtime-capture commits are newer and have not yet been checked by CI.
+
+- Production `runExpeditionDungeon()` now calls `prepareLegacyDungeonSettlement()` immediately before the existing `persistDungeonResultPlayers()` call in both victory and defeat branches.
+- The capture takes the actual existing `combatPlan`, ordered participant IDs, already-rolled and allocated drop IDs/recipients, pre/post HP, actual per-player credited XP/gold, per-player loot IDs, exact member report/result text, complete `Player.toJSON()` snapshots and the exact request/outbox events already produced by the legacy settlement helper.
+- Per-member report/text values are retained during the existing result loop; no second report calculation, reward calculation, healing, random roll, drop allocation, or clock read is introduced. `preparedAt` uses the already-recorded activity timestamps.
+- The prepared snapshot is shadow-captured and not yet written to WAL or used as the source of live persistence. Existing `persistDungeonResultPlayers()`, rollback snapshots, deferred sends, replay behavior and outbox delivery remain the production path.
+- Capture validation is fail-open for normal runtime: a capture error is logged and legacy persistence proceeds unchanged. With `MISTY_DUNGEON_PARITY_STRICT=1`, the same error is rethrown so integration tests cannot silently pass when the capture contract is broken.
+- `groupDungeonRuntime.test.ts` enables strict capture on both server starts (including the restart/replay phase), covering real group win and loss. `dungeonAttemptsRuntime.test.ts` enables it for real solo win and loss plus personalized XP/gold modifier scenarios. The adapter unit suite also now exercises the exact `prepareDungeonMemberQuestSettlement()` helper and its generated request/outbox event rather than only a hand-written event fixture.
+- The server test script already includes both runtime suites and the adapter suite; no script expansion was needed.
+
+### Compatibility boundary
+
+No combat formula, RNG call order, loot roll/allocation, healing, XP/gold amount, attempt charging, request replay, player save timing, client protocol or dungeon data changed. The capture creates an immutable shadow object and is not yet durable lifecycle integration.
+
+Static GitHub source review confirms both live branches call the adapter before persistence and both runtime suites set strict mode. Tests and CI were not run by the assistant. The user must check CI on the current HEAD.
+
+Next: after the user confirms CI for this HEAD, review the strict runtime results. If green, the next bounded stage is a transactional durable commit design that replaces the legacy one-shot persistence atomically (not a partial durable start). Keep multi-step catacomb rooms and new combat rules out of that transition.
