@@ -113,7 +113,7 @@ test('group boss dungeon persists win rewards and loss costs for every participa
 
     child = spawn(process.execPath, ['--import', 'tsx', 'src/index.ts'], {
       cwd: serverDir,
-      env: { ...process.env, MISTY_DATA_DIR: dataDir, MISTY_PORT: String(port), MISTY_DUNGEON_PARITY_STRICT: '1' },
+      env: { ...process.env, MISTY_DATA_DIR: dataDir, MISTY_PORT: String(port) },
       stdio: 'ignore',
     });
     await waitForServer(port, child);
@@ -223,6 +223,23 @@ test('group boss dungeon persists win rewards and loss costs for every participa
     assert.equal(lossMember.report.result, 'loss');
 
     const saved = readPlayers(join(dataDir, 'players.json'));
+    const durableRuns = JSON.parse(readFileSync(join(dataDir, 'dungeon_runs.json'), 'utf8'));
+    const durableOutbox = JSON.parse(readFileSync(join(dataDir, 'dungeon_outbox.json'), 'utf8'));
+    const winRun = durableRuns.legacy_group_dungeon_win_001;
+    const lossRun = durableRuns.legacy_group_dungeon_loss_001;
+    assert.equal(winRun.status, 'completed', 'group victory must persist a terminal run');
+    assert.equal(winRun.terminalResult.outcome, 'win');
+    assert.deepEqual(winRun.preparedEncounter.participantIds, ids.slice(0, 2));
+    assert.equal(lossRun.status, 'completed', 'group defeat must persist a terminal run');
+    assert.equal(lossRun.terminalResult.outcome, 'loss');
+    assert.deepEqual(lossRun.preparedEncounter.participantIds, ids.slice(2));
+    for (const run of [winRun, lossRun]) {
+      for (const playerId of run.participantIds) {
+        const eventId = `dungeon:${run.runId}:${playerId}:combatResult`;
+        assert.equal(durableOutbox[eventId].runId, run.runId);
+        assert.equal(durableOutbox[eventId].playerId, playerId);
+      }
+    }
     for (const [id, result] of [[ids[0], win], [ids[1], winMember], [ids[2], loss], [ids[3], lossMember]] as const) {
       assert.equal(result.report.hpBefore, 1_000, 'each participant report must capture their own pre-fight health');
       assert.equal(result.report.hpAfter, saved[id].health, 'each participant report must show their own saved post-fight health');
