@@ -1,6 +1,7 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import { prepareLegacyDungeonSettlement } from '../src/dungeonLegacySettlementAdapter.js';
+import { validatePreparedDungeonEncounter } from '../src/dungeonEncounterPreparation.js';
 
 const requestId = 'request_123456';
 const runId = `legacy_${requestId}`;
@@ -99,6 +100,8 @@ test('adapts a group victory without recalculating personalized rewards, healing
   assert.deepEqual(prepared.playerSnapshots.p2, source.players[1].playerSnapshot);
   assert.equal(Object.isFrozen(prepared), true);
   assert.equal(Object.isFrozen(prepared.outboxEvents?.[0].payload), true);
+  const restored = validatePreparedDungeonEncounter(JSON.parse(JSON.stringify(prepared)));
+  assert.deepEqual(restored.outboxEvents, prepared.outboxEvents);
 });
 
 test('adapts a solo loss with clamped HP, no rewards and an exact replay/outbox result', () => {
