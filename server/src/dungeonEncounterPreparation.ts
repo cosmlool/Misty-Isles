@@ -147,12 +147,13 @@ export function createPreparedDungeonEncounter(input: PreparedDungeonEncounter):
     outboxEvents = input.outboxEvents.map((event, index) => {
       const playerId = ids[index];
       const participant = participants[playerId];
+      const payload = isRecord(event?.payload) ? event.payload : null;
       if (!isRecord(event) || event.playerId !== playerId || event.runId !== input.runId ||
           event.eventId !== `dungeon:${input.runId}:${playerId}:combatResult` ||
-          event.messageType !== 'combatResult' || !isRecord(event.payload) ||
-          event.payload.eventId !== event.eventId || event.payload.requestId !== input.requestId ||
-          event.payload.text !== participant.resultText ||
-          JSON.stringify(event.payload.report) !== JSON.stringify(participant.report)) {
+          event.messageType !== 'combatResult' || !payload ||
+          payload.eventId !== event.eventId || payload.requestId !== input.requestId ||
+          payload.text !== participant.resultText ||
+          JSON.stringify(payload.report) !== JSON.stringify(participant.report)) {
         throw new Error(`Prepared dungeon outbox event is inconsistent for participant ${playerId}.`);
       }
       return cloneJson(event) as unknown as DungeonRequestResultEvent;
